@@ -1,10 +1,10 @@
 import 'package:tano/models/note.dart';
 
-class NoteEdit {
+class NoteAction {
     String action;
     Note note;
 
-    NoteEdit({
+    NoteAction({
         this.action,
         this.note,
     });
