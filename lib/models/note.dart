@@ -4,6 +4,7 @@ class Note {
     String content;
     String date;
     bool important;
+    String category;
 
     Note({
         this.id,
@@ -11,6 +12,7 @@ class Note {
         this.content,
         this.date,
         this.important,
+        this.category,
     });
 
     factory Note.fromJson(Map<String, dynamic> json) => Note(
@@ -19,6 +21,7 @@ class Note {
         content: json['content'],
         date: json['date'],
         important: json['important'] == 0 ? false : true,
+        category: json['category'],
     );
 
     Map<String, dynamic> toJson() => {
@@ -27,5 +30,6 @@ class Note {
         "content": content,
         "date": date,
         "important": important ? 1 : 0,
+        "category": category,
     };
 }
