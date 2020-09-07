@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/pages/home.dart';
+import 'package:tano/pages/search.dart';
 import 'package:tano/pages/splash.dart';
 
 void main() {
@@ -11,13 +12,15 @@ class Tano extends StatelessWidget {
     Widget build(BuildContext context) {
         return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Tano',
+            title: 'TanoNote',
             theme: ThemeData(
-                primarySwatch: Colors.blueGrey,
+                primaryColor: Colors.blueGrey.shade50,
+                canvasColor: Colors.blueGrey.shade50,
             ),
             home: SplashScreen(),
             routes: <String, WidgetBuilder>{
                 '/home': (BuildContext context) => Home(),
+                '/search': (BuildContext context) => SearchPage(),
             },
         );
     }
