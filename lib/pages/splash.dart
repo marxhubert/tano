@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
     @override
-    SplashScreenState createState() => new SplashScreenState();
+    SplashScreenState createState() => SplashScreenState();
 }
 
 class SplashScreenState extends State<SplashScreen> {
     startTime() async {
-        var _duration = new Duration(seconds: 3);
-        return new Timer(_duration, navigationPage);
+        var _duration = Duration(seconds: 3);
+        return Timer(_duration, navigationPage);
     }
 
     void navigationPage() {
@@ -25,9 +25,9 @@ class SplashScreenState extends State<SplashScreen> {
 
     @override
     Widget build(BuildContext context) {
-        return new Scaffold(
+        return Scaffold(
             backgroundColor: Colors.blueGrey.shade50,
-            body: new Stack(
+            body: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
                     Center(

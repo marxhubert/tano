@@ -51,7 +51,7 @@ AlertDialog aboutInfo({BuildContext context, PackageInfo packageInfo}) {
         ),
         content: RichText(
             text: TextSpan(
-                text: 'TanoNote est un simple outil de prise de note qui pourra, je l\'epère vivement, vous être utile pour sauvegarder vos idées.\nJe vous invite à me faire part de vos remarques et conseils pour me donner le plaisir de continuer à l\'améliorer. Merci.',
+                text: 'TanoNote est un simple outil de prise de note qui pourra, je l\'espère vivement, vous être utile pour sauvegarder vos idées.\nJe vous invite à me faire part de vos remarques et conseils pour me donner le plaisir de continuer à l\'améliorer. Merci.',
                 style: TextStyle(
                     fontWeight: FontWeight.w400,
                     color: Colors.black87,

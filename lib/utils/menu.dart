@@ -9,7 +9,8 @@ class PopupItem {
 
 Map<String, PopupItem> menuItems = {
     'layout_title'  : PopupItem(title: 'Affichage', value: 'header', icon: null),
-    'compactlist' : PopupItem(title: 'Liste', icon: Icon(Icons.view_stream), value: 'compactlist'),
+    'compact' : PopupItem(title: 'Compact', icon: Icon(Icons.view_list), value: 'compact'),
+    'list' : PopupItem(title: 'Liste', icon: Icon(Icons.view_stream), value: 'list'),
     'gridlist' : PopupItem(title: 'Grille', icon: Icon(Icons.view_module), value: 'gridlist'),
 
     'sorting_separator'  : PopupItem(title: 'Separator', value: 'separator', icon: null),
