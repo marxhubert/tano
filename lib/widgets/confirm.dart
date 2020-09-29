@@ -12,9 +12,9 @@ Future<bool> getConfirmation({BuildContext context, String actionTitle, String a
                 actions: <Widget>[
                     FlatButton(
                         child: Text(
-                            'ANNULER',
+                            action.toLowerCase() == 'enregistrer' ? 'QUITTER' : 'ANNULER',
                             style: TextStyle(
-                                color: Colors.blue,
+                                color: action.toLowerCase() == 'enregistrer' ? Colors.red : Colors.blue,
                             ),
                         ),
                         onPressed: () {
@@ -25,7 +25,7 @@ Future<bool> getConfirmation({BuildContext context, String actionTitle, String a
                         child: Text(
                             action.toUpperCase(),
                             style: TextStyle(
-                                color: Colors.red,
+                                color: action.toLowerCase() == 'enregistrer' ? Colors.blue : Colors.red,
                             ),
                         ),
                         onPressed: () {

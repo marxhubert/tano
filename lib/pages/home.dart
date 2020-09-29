@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/services/database.dart';
@@ -7,7 +9,6 @@ import 'package:tano/utils/action.dart';
 import 'package:tano/pages/edit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/widgets/info.dart';
-import 'package:tano/widgets/drawer.dart';
 import 'package:tano/widgets/no_record.dart';
 import 'package:package_info/package_info.dart';
 
@@ -38,7 +39,7 @@ class HomeState extends State<Home> {
     Future<String> _getViewPrefFromSP() async {
         _prefs = await SharedPreferences.getInstance();
         if (!_prefs.containsKey('viewLayout')) {
-            _prefs.setString('viewLayout', 'compactlist');
+            _prefs.setString('viewLayout', 'list');
         }
         return _prefs.getString('viewLayout');
     }
@@ -131,30 +132,32 @@ class HomeState extends State<Home> {
                 fullscreenDialog: true
             ),
         );
-        switch (_noteAction.action) {
-            case 'Save':
-                if (add) {
+        if (null != _noteAction) {
+            switch (_noteAction.action) {
+                case 'Save':
+                    if (add) {
+                        setState(() {
+                            _database.note.add(_noteAction.note);
+                        });
+                    } else {
+                        setState(() {
+                            _database.note[index] = _noteAction.note;
+                        });
+                    }
+                    break;
+                case 'Delete':
                     setState(() {
-                        _database.note.add(_noteAction.note);
+                        _database.note.removeAt(index);
                     });
-                } else {
-                    setState(() {
-                        _database.note[index] = _noteAction.note;
-                    });
-                }
-                break;
-            case 'Delete':
-                setState(() {
-                    _database.note.removeAt(index);
-                });
-                break;
-            case 'Cancel':
-                break;
-            default:
-                break;
+                    break;
+                case 'Cancel':
+                    break;
+                default:
+                    break;
+            }
+            DbFileRoutines().writeNotes(dbToJson(_database));
+            _notesCount = _database.note.length;
         }
-        DbFileRoutines().writeNotes(dbToJson(_database));
-        _notesCount = _database.note.length;
     }
 
     _sortingBy(String sortBy) {
@@ -168,9 +171,15 @@ class HomeState extends State<Home> {
 
     _changeLayout(String viewLayout) {
         switch (viewLayout) {
-            case 'compactlist':
+            case 'compact':
                 setState(() {
-                    _viewLayout = 'compactlist';
+                    _viewLayout = 'compact';
+                    _setViewPrefToSP(_viewLayout);
+                });
+                break;
+            case 'list':
+                setState(() {
+                    _viewLayout = 'list';
                     _setViewPrefToSP(_viewLayout);
                 });
                 break;
@@ -189,14 +198,17 @@ class HomeState extends State<Home> {
         }
 
         switch (viewLayout) {
-            case 'compactlist':
-                return _compactListLayout(notes);
+            case 'compact':
+                return _compactLayout(notes);
+                break;
+            case 'list':
+                return _listLayout(notes);
                 break;
             case 'gridlist':
                 return _gridLayout(notes);
                 break;
             default:
-                return _compactListLayout(notes);
+                return _listLayout(notes);
                 break;
         }
     }
@@ -224,8 +236,8 @@ class HomeState extends State<Home> {
     Widget _gridLayout(List<Note> notes) {
         return GridView.count(
             crossAxisCount: 3,
+            padding: EdgeInsets.symmetric(horizontal: 4.5),
             children: List.generate(notes.length, (index) {
-                final alreadySelected = _selected.contains(index);
                 String _title = notes[index].title;
                 String _content = notes[index].content;
                 String _date = notes[index].date.toString().substring(0, 10);
@@ -388,86 +400,272 @@ class HomeState extends State<Home> {
         );
     }
 
-    Widget _compactListLayout(List<Note> notes) {
+    Widget _compactLayout(List<Note> notes) {
         return ListView.separated(
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
                 final alreadySelected = _selected.contains(index);
                 String _title = notes[index].title;
+                String _content = notes[index].content;
                 String _date = notes[index].date.toString().substring(0, 10);
                 final _important = notes[index].important;
-                return Row(
-                    children: <Widget>[
-                        Expanded(
-                            flex: 1,
-                            child: Card(
-                                elevation: 0.6,
-                                color: themeCategory(notes[index].category, false),
-                                shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                                ),
-                                child: Container(
-                                    margin: EdgeInsets.only(left: 2.7),
-                                    color: themeCategory(notes[index].category, true),
-                                    child: ListTile(
-                                        contentPadding: EdgeInsets.only(left: 9.0,),
-                                        title: Text(
-                                            _title,
-                                            style: TextStyle(
-                                                fontSize: 12.0,
-                                                fontWeight: FontWeight.bold
+                return Dismissible(
+                    key: Key(notes[index].id),
+                    background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.only(left: 21.0),
+                        child: Icon(
+                            Icons.delete_forever,
+                            color: Colors.blueGrey.shade50,
+                            size: 27.0,
+                        ),
+                    ),
+                    secondaryBackground: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: EdgeInsets.only(right: 21.0),
+                        child: Icon(
+                            Icons.delete_forever,
+                            color: Colors.blueGrey.shade50,
+                            size: 27.0,
+                        ),
+                    ),
+                    child: Row(
+                        children: <Widget>[
+                            Expanded(
+                                flex: 1,
+                                child: Card(
+                                    elevation: 0.6,
+                                    margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
+                                    color: themeCategory(notes[index].category, false),
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(Radius.circular(0.0)),
+                                    ),
+                                    child: Container(
+                                        margin: EdgeInsets.only(left: 2.7),
+                                        color: themeCategory(notes[index].category, true),
+                                        child: ListTile(
+                                            contentPadding: EdgeInsets.only(left: 9.0,),
+                                            title: Row(
+                                                children: <Widget>[
+                                                    Expanded(
+                                                        child: Text(
+                                                            _title,
+                                                            style: TextStyle(
+                                                                fontSize: 12.0,
+                                                                fontWeight: FontWeight.bold
+                                                            ),
+                                                            overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                    ),
+                                                    SizedBox(width: 9.0,),
+                                                    Text(
+                                                        _date,
+                                                        style: TextStyle(
+                                                            fontSize: 9.0,
+                                                            fontStyle: FontStyle.italic,
+                                                            color: Colors.black,
+                                                        ),
+                                                    ),
+                                                ],
                                             ),
-                                            overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle: Text(
-                                            _date,
-                                            style: TextStyle(
-                                                fontSize: 10.8,
-                                                fontStyle: FontStyle.italic,
+                                            trailing: IconButton(
+                                                icon: Icon(
+                                                    _important ? Icons.star : Icons.star_border,
+                                                    color: _important ? Colors.orange : null,
+                                                    size: 18.0,
+                                                ),
+                                                onPressed: () {
+                                                    if (_isInSelectionMode) {
+                                                        setState(() {
+                                                            _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
+                                                        });
+                                                    } else {
+                                                        setState(() {
+                                                            notes[index].important = !notes[index].important;
+                                                            _database.note[index] = notes[index];
+                                                            DbFileRoutines().writeNotes(dbToJson(_database));
+                                                        });
+                                                    }
+                                                },
                                             ),
-                                        ),
-                                        trailing: IconButton(
-                                            icon: Icon(
-                                                _important ? Icons.star : Icons.star_border,
-                                                color: _important ? Colors.orange : null,
-                                                size: 18.0,
-                                            ),
-                                            onPressed: () {
+                                            onTap: () {
                                                 if (_isInSelectionMode) {
                                                     setState(() {
                                                         _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
                                                     });
                                                 } else {
-                                                    setState(() {
-                                                        notes[index].important = !notes[index].important;
-                                                        _database.note[index] = notes[index];
-                                                        DbFileRoutines().writeNotes(dbToJson(_database));
-                                                    });
+                                                    _noteController(add: false, index: index, note: notes[index]);
                                                 }
                                             },
-                                        ),
-                                        onTap: () {
-                                            if (_isInSelectionMode) {
+                                            onLongPress: () {
                                                 setState(() {
-                                                    _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
+                                                    _selected.add(index);
+                                                    _isInSelectionMode = true;
+                                                    _actionButtons = 'multiple';
                                                 });
-                                            } else {
-                                                _noteController(add: false, index: index, note: notes[index]);
-                                            }
-                                        },
-                                        onLongPress: () {
-                                            setState(() {
-                                                _selected.add(index);
-                                                _isInSelectionMode = true;
-                                                _actionButtons = 'multiple';
-                                            });
-                                        },
+                                            },
+                                        ),
                                     ),
                                 ),
                             ),
+                            _showCheckboxForSelection(index, alreadySelected),
+                        ],
+                    ),
+                    confirmDismiss: (direction) async {
+                        return await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                    },
+                    onDismissed: (direction) {
+                        setState(() {
+                            _database.note.removeAt(index);
+                        });
+                        DbFileRoutines().writeNotes(dbToJson(_database));
+                    },
+                );
+            },
+            separatorBuilder: (BuildContext context, int index) {
+                return Padding(
+                    padding: EdgeInsets.only(bottom: 0.0),
+                );
+            },
+        );
+    }
+
+    Widget _listLayout(List<Note> notes) {
+        return ListView.separated(
+            itemCount: notes.length,
+            itemBuilder: (BuildContext context, int index) {
+                final alreadySelected = _selected.contains(index);
+                String _title = notes[index].title;
+                String _content = notes[index].content;
+                String _date = notes[index].date.toString().substring(0, 10);
+                final _important = notes[index].important;
+                return Dismissible(
+                    key: Key(notes[index].id),
+                    background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.only(left: 21.0),
+                        child: Icon(
+                            Icons.delete_forever,
+                            color: Colors.blueGrey.shade50,
+                            size: 27.0,
                         ),
-                        _showCheckboxForSelection(index, alreadySelected),
-                    ],
+                    ),
+                    secondaryBackground: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: EdgeInsets.only(right: 21.0),
+                        child: Icon(
+                            Icons.delete_forever,
+                            color: Colors.blueGrey.shade50,
+                            size: 27.0,
+                        ),
+                    ),
+                    child: Row(
+                        children: <Widget>[
+                            Expanded(
+                                flex: 1,
+                                child: Card(
+                                    elevation: 0.6,
+                                    margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
+                                    color: themeCategory(notes[index].category, false),
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(Radius.circular(0.0)),
+                                    ),
+                                    child: Container(
+                                        margin: EdgeInsets.only(left: 2.7),
+                                        color: themeCategory(notes[index].category, true),
+                                        child: ListTile(
+                                            contentPadding: EdgeInsets.only(left: 9.0,),
+                                            title: Text(
+                                                _title,
+                                                style: TextStyle(
+                                                    fontSize: 12.0,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                            ),
+                                            subtitle: Row(
+                                                children: <Widget>[
+                                                    Expanded(
+                                                        child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: <Widget>[
+                                                                Text(
+                                                                    _content,
+                                                                    maxLines: 3,
+                                                                    overflow: TextOverflow.clip,
+                                                                    style: TextStyle(
+                                                                        fontSize: 12.0,
+                                                                    ),
+                                                                ),
+                                                                Text(
+                                                                    _date,
+                                                                    style: TextStyle(
+                                                                        fontSize: 10.8,
+                                                                        fontStyle: FontStyle.italic,
+                                                                        color: Colors.black,
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                ],
+                                            ),
+                                            trailing: IconButton(
+                                                icon: Icon(
+                                                    _important ? Icons.star : Icons.star_border,
+                                                    color: _important ? Colors.orange : null,
+                                                    size: 18.0,
+                                                ),
+                                                onPressed: () {
+                                                    if (_isInSelectionMode) {
+                                                        setState(() {
+                                                            _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
+                                                        });
+                                                    } else {
+                                                        setState(() {
+                                                            notes[index].important = !notes[index].important;
+                                                            _database.note[index] = notes[index];
+                                                            DbFileRoutines().writeNotes(dbToJson(_database));
+                                                        });
+                                                    }
+                                                },
+                                            ),
+                                            onTap: () {
+                                                if (_isInSelectionMode) {
+                                                    setState(() {
+                                                        _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
+                                                    });
+                                                } else {
+                                                    _noteController(add: false, index: index, note: notes[index]);
+                                                }
+                                            },
+                                            onLongPress: () {
+                                                setState(() {
+                                                    _selected.add(index);
+                                                    _isInSelectionMode = true;
+                                                    _actionButtons = 'multiple';
+                                                });
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            ),
+                            _showCheckboxForSelection(index, alreadySelected),
+                        ],
+                    ),
+                    confirmDismiss: (direction) async {
+                        return await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                    },
+                    onDismissed: (direction) {
+                        setState(() {
+                            _database.note.removeAt(index);
+                        });
+                        DbFileRoutines().writeNotes(dbToJson(_database));
+                    },
                 );
             },
             separatorBuilder: (BuildContext context, int index) {
@@ -611,8 +809,11 @@ class HomeState extends State<Home> {
                         icon: Icon(Icons.more_vert),
                         onSelected: ((valueSelected) {
                             switch(valueSelected.value.toLowerCase()) {
-                                case "compactlist":
-                                    _changeLayout('compactlist');
+                                case "compact":
+                                    _changeLayout('compact');
+                                    break;
+                                case "list":
+                                    _changeLayout('list');
                                     break;
                                 case "gridlist":
                                     _changeLayout('gridlist');
@@ -652,17 +853,17 @@ class HomeState extends State<Home> {
                 ],
             ),
             body: Container(
-                padding: EdgeInsets.symmetric(horizontal: 4.5),
                 child: Column(
                     children: <Widget>[
                         Container(
-                            padding: EdgeInsets.symmetric(horizontal: 4.5),
+                            padding: EdgeInsets.symmetric(horizontal: 9.0),
                             child: Column(
                                 children: <Widget>[
                                     Container(
                                         margin: EdgeInsets.only(bottom: 4.5),
                                         child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                                            textBaseline: TextBaseline.alphabetic,
                                             children: <Widget>[
                                                 Expanded(
                                                     child: Text(
@@ -683,7 +884,6 @@ class HomeState extends State<Home> {
                                                                 fontWeight: FontWeight.w400,
                                                             ),
                                                         ),
-                                                        SizedBox(height: 3.0,)
                                                     ],
                                                 ),
                                             ],
@@ -710,6 +910,7 @@ class HomeState extends State<Home> {
                                                             style: TextStyle(
                                                                 fontWeight: FontWeight.w400,
                                                                 fontSize: 14.4,
+                                                                color: Colors.grey.shade600
                                                             ),
                                                         ),
                                                         onTap: () {
@@ -729,7 +930,7 @@ class HomeState extends State<Home> {
                                             _selected.length == 0
                                                 ? 'Aucune note sélectionnée'
                                                 : (_selected.length > 1
-                                                    ? (_selected.length == _notesCount ? 'Toutes les notes sont sélectionnées' : '${_selected.length} notes sélectionnées')
+                                                    ? (_selected.length == _notesCount ? 'Toutes les $_notesCount notes sont sélectionnées' : '${_selected.length}/$_notesCount notes sélectionnées')
                                                     : '${_selected.length} seule note sélectionnée'),
                                             style: TextStyle(
                                                 color: Colors.grey,
@@ -760,11 +961,11 @@ class HomeState extends State<Home> {
                                 initialData: [],
                                 future: _loadNotes(),
                                 builder: (BuildContext context, AsyncSnapshot snapshot) {
-                                    if (snapshot.hasData) {
-                                        List<Note> notes = List<Note>.generate(snapshot.data.length, (int index) => snapshot.data[index]);
-                                        return _layoutChanger(notes, _viewLayout);
+                                    while (!snapshot.hasData) {
+                                        return Center(child: CircularProgressIndicator());
                                     }
-                                    return Center(child: CircularProgressIndicator());
+                                    List<Note> notes = List<Note>.generate(snapshot.data.length, (int index) => snapshot.data[index]);
+                                    return _layoutChanger(notes, _viewLayout);
                                 },
                             ),
                         ),

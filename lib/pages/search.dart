@@ -221,7 +221,7 @@ class _SearchPageState extends State<SearchPage> {
                                                 decoration: InputDecoration(
                                                     hintText: 'Taper pour rechercher',
                                                     hintStyle: TextStyle(
-                                                        color: Colors.black
+                                                        color: Colors.grey.shade600
                                                     ),
                                                     border: InputBorder.none,
                                                 ),
