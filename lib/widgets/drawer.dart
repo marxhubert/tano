@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/pages/home.dart';
 import 'info.dart';
 
@@ -63,7 +64,7 @@ class _MenuListState extends State<MenuList> {
         children: <Widget>[
             ListTile(
                 leading: Icon(Icons.home),
-                title: Text('Accueil'),
+                title: Text(AppText.tr('home')),
                 onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
@@ -72,7 +73,7 @@ class _MenuListState extends State<MenuList> {
             Divider(color: Colors.grey,),
             ListTile(
                 leading: Icon(Icons.info),
-                title: Text('À propos'),
+                title: Text(AppText.tr('about')),
                 onTap: () {
                     Navigator.pop(context);
                     showDialog(context: context, builder: (BuildContext context) => aboutInfo(context: context, packageInfo: _packageInfo));

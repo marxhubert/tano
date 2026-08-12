@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/pages/edit.dart';
 import 'package:tano/services/database.dart';
@@ -110,7 +111,7 @@ class _SearchPageState extends State<SearchPage> {
             ? Column(children: <Widget>[
                 Padding(padding: EdgeInsets.only(bottom: 4.5),),
                 Text(
-                    'Aucun élément trouvé',
+                    AppText.tr('no_item_found'),
                     style: TextStyle(
                         fontStyle: FontStyle.italic,
                         fontSize: 12.0
@@ -222,7 +223,7 @@ class _SearchPageState extends State<SearchPage> {
                                                     fontSize: 14.4,
                                                 ),
                                                 decoration: InputDecoration(
-                                                    hintText: 'Taper pour rechercher',
+                                                    hintText: AppText.tr('type_to_search'),
                                                     hintStyle: TextStyle(
                                                         color: Colors.grey.shade600
                                                     ),
@@ -269,7 +270,7 @@ class _SearchPageState extends State<SearchPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: <Widget>[
                                         Text(
-                                            _searchResult.length == 1 ? '${_searchResult.length} seul résultat correspondant' : '${_searchResult.length} résultats correspondants',
+                                            _searchResult.length == 1 ? AppText.tr('single_result', <String, String>{'count': '${_searchResult.length}'}) : AppText.tr('results', <String, String>{'count': '${_searchResult.length}'}),
                                             style: TextStyle(
                                                 fontStyle: FontStyle.italic,
                                                 fontSize: 12.0

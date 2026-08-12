@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:tano/config/app_config.dart';
 
 class SplashScreen extends StatefulWidget {
     const SplashScreen({super.key});
@@ -53,7 +54,7 @@ class SplashScreenState extends State<SplashScreen> {
                                     child: Center(
                                         child: RichText(
                                             text: TextSpan(
-                                                text: 'Tano',
+                                                text: AppConfig.appName,
                                                 style: TextStyle(
                                                     fontSize: 21.0,
                                                     fontWeight: FontWeight.w900,
@@ -61,7 +62,7 @@ class SplashScreenState extends State<SplashScreen> {
                                                 ),
                                                 children: <TextSpan>[
                                                     TextSpan(
-                                                        text: 'Note',
+                                                        text: AppConfig.appNameSuffix,
                                                         style: TextStyle(
                                                             fontSize: 21.0,
                                                             fontWeight: FontWeight.w400,

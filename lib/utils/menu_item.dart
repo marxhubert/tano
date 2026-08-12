@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/config/app_config.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/pages/home.dart';
 
 class MenuItem {
@@ -10,8 +12,8 @@ class MenuItem {
 
 // Create a List of Menu Item for PopupMenuButton
 List<MenuItem> menuItemList = [
-    MenuItem(title: 'View', icon: Icon(Icons.view_list)),
-    MenuItem(title: 'About', icon: Icon(Icons.info_outline)),
+    MenuItem(title: AppText.tr('menu_view'), icon: Icon(Icons.view_list)),
+    MenuItem(title: AppText.tr('about'), icon: Icon(Icons.info_outline)),
 ];
 
 Future<void> addViewPrefToSP(BuildContext context, String viewPref) async {
@@ -44,7 +46,7 @@ AlertDialog viewDialog(BuildContext context) {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: <Widget>[
                                 Text(
-                                    'View',
+                                    AppText.tr('menu_view'),
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 21.0,
@@ -64,7 +66,7 @@ AlertDialog viewDialog(BuildContext context) {
                             children: <Widget>[
                                 ListTile(
                                     leading: Icon(Icons.view_stream, color: Colors.black,),
-                                    title: Text('List'),
+                                    title: Text(AppText.tr('menu_list')),
                                     contentPadding: EdgeInsets.only(left: 36.0),
                                     onTap: () {
                                         addViewPrefToSP(context, 'list');
@@ -73,7 +75,7 @@ AlertDialog viewDialog(BuildContext context) {
                                 Divider(thickness: 1.2,),
                                 ListTile(
                                     leading: Icon(Icons.view_module, color: Colors.black,),
-                                    title: Text('Grid'),
+                                    title: Text(AppText.tr('menu_grid')),
                                     contentPadding: EdgeInsets.only(left: 36.0),
                                     onTap: () {
                                         addViewPrefToSP(context, 'grid');
@@ -95,15 +97,15 @@ AlertDialog aboutDialog(BuildContext context) {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
                     const Text(
-                        'Tano',
+                        AppConfig.appName,
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18.0,
                         ),
                     ),
                     SizedBox(width: 9.0,),
-                    const Text(
-                        'v 0.1.0',
+                    Text(
+                        AppText.tr('legacy_version'),
                         style: TextStyle(
                             fontWeight: FontWeight.w400,
                             fontSize: 18.0,
@@ -111,12 +113,12 @@ AlertDialog aboutDialog(BuildContext context) {
                     )
                 ],
             ),
-        content: const Text(
-            'The main goal of Tano is to provide a simple tool that lets you write notes to keep your ideas, create to-do lists and organize your projects at the same place. Tano prioritizes ease of use over bells and whistles.\n\n\nMarx Hubert 2020\nshikamarx@gmail.com',
+        content: Text(
+            '${AppText.tr('about_description')}\n\n\n${AppConfig.authorName} ${DateTime.now().year}\n${AppConfig.authorEmail}',
         ),
         actions: <Widget>[
             TextButton(
-                child: const Text('CLOSE'),
+                child: Text(AppText.tr('close_button')),
                 onPressed: () {
                     Navigator.of(context).pop();
                 },

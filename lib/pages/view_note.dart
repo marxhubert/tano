@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/services/database.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/utils/note_edit.dart';
@@ -119,7 +120,7 @@ class _ViewNoteState extends State<ViewNote> {
                             ),
                             SizedBox(height: 27.0,),
                             Text(
-                                'Notes',
+                                AppText.tr('notes_section'),
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15.0,
@@ -134,7 +135,7 @@ class _ViewNoteState extends State<ViewNote> {
                 ),
             ),
             floatingActionButton: FloatingActionButton(
-                tooltip: 'Edit note',
+                tooltip: AppText.tr('edit_note'),
                 child: Icon(Icons.edit),
                 onPressed: () => _addOrEditNote(add: false, index: _index, note: _noteEdit.note!),
             ),
