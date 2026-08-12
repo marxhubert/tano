@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/services/database.dart';
 import 'package:tano/utils/action.dart';
@@ -95,7 +96,7 @@ class _EditNoteState extends State<EditNote> {
             ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                     content: Text(
-                        "Le contenu ne peut pas être vide"
+                        AppText.tr('content_empty')
                     ),
                 ),
             );
@@ -126,7 +127,7 @@ class _EditNoteState extends State<EditNote> {
             icon: Icon(Icons.clear),
             iconSize: 24.0,
             onPressed: () async {
-                final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: 'Supprimer la note', action: 'supprimer');
+                final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: AppText.tr('delete_note'), action: AppText.tr('delete'));
                 if (confirmDeletion == true) {
                     _deleteNote(_noteAction);
                 }
@@ -166,7 +167,7 @@ class _EditNoteState extends State<EditNote> {
     Future<bool> _onWillPopCallback() async {
         Note note = _setNote();
         if (note.toJson().toString() != _initialNote.toJson().toString()) {
-            final bool? confirm = await getConfirmation(context: context, actionTitle: 'Enregistrer avant de quitter', action: 'enregistrer');
+            final bool? confirm = await getConfirmation(context: context, actionTitle: AppText.tr('save_before_leave'), action: AppText.tr('save'));
             if (confirm == true) {
                 _saveNote(noteAction: _noteAction, willPop: true);
                 if (note.content == '') {
@@ -239,7 +240,7 @@ class _EditNoteState extends State<EditNote> {
                                                     fontSize: 21.0,
                                                 ),
                                                 decoration: InputDecoration(
-                                                    hintText: 'Le titre ici',
+                                                    hintText: AppText.tr('title_here'),
                                                     hintStyle: TextStyle(
                                                         color: Colors.grey,
                                                     ),
@@ -329,7 +330,7 @@ class _EditNoteState extends State<EditNote> {
                                                         height: 1.8,
                                                     ),
                                                     decoration: InputDecoration(
-                                                        hintText: 'Le contenu de la note ici',
+                                                        hintText: AppText.tr('content_here'),
                                                         border: InputBorder.none,
                                                         contentPadding: EdgeInsets.all(0.0),
                                                     ),

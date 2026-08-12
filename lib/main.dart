@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/pages/home.dart';
 import 'package:tano/pages/search.dart';
 import 'package:tano/pages/splash.dart';
 
-void main() {
+Future<void> main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await LocaleController.instance.init();
     runApp(Tano());
 }
 

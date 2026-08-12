@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 
 Widget noRecordFound() {
     return Center(
@@ -39,7 +40,7 @@ Widget noRecordFound() {
                         padding: EdgeInsets.only(bottom: 18.0),
                     ),
                     Text(
-                        'Pas de donnée',
+                        AppText.tr('no_data'),
                         style: TextStyle(
                             fontWeight: FontWeight.w400,
                             fontSize: 15.0,

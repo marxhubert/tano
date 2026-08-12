@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/services/database.dart';
 import 'package:tano/widgets/confirm.dart';
@@ -165,6 +166,21 @@ class HomeState extends State<Home> {
                 _setSortingPrefToSP(sortBy);
             });
         }
+    }
+
+    void _changeLanguage(String language) {
+        setState(() {
+            LocaleController.instance.setLanguage(language);
+        });
+    }
+
+    String _deleteActionTitle() {
+        if (_selected.length > 1) {
+            return _selected.length == _notesCount
+                ? AppText.tr('delete_all_notes')
+                : AppText.tr('delete_notes', <String, String>{'count': '${_selected.length}'});
+        }
+        return AppText.tr('delete_note');
     }
 
     void _changeLayout(String viewLayout) {
@@ -504,7 +520,7 @@ class HomeState extends State<Home> {
                         ],
                     ),
                     confirmDismiss: (direction) async {
-                        return await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                        return await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     },
                     onDismissed: (direction) {
                         setState(() {
@@ -647,7 +663,7 @@ class HomeState extends State<Home> {
                         ],
                     ),
                     confirmDismiss: (direction) async {
-                        return await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                        return await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     },
                     onDismissed: (direction) {
                         setState(() {
@@ -694,13 +710,13 @@ class HomeState extends State<Home> {
                     ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(
-                                "Aucune note sélectionnée"
+                                AppText.tr('no_note_selected')
                             ),
                         ),
                     );
                 } else {
                     final notes = <Note>[];
-                    final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                    final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     if (confirmDeletion == true) {
                         setState(() {
                             for (final int index in _selected) {
@@ -816,6 +832,10 @@ class HomeState extends State<Home> {
                                 case "category":
                                     _sortingBy('category');
                                     break;
+                                case "en":
+                                case "fr":
+                                    _changeLanguage(valueSelected.value);
+                                    break;
                                 case "info":
                                     showDialog(context: context, builder: (BuildContext context) => aboutInfo(context: context, packageInfo: _packageInfo));
                                     break;
@@ -829,8 +849,7 @@ class HomeState extends State<Home> {
                             return popupItems.map((PopupItem popupItem) {
                                 return PopupMenuItem<PopupItem>(
                                     value: popupItem,
-                                    height: 42.0,
-                                    child: popupButton(popupItem: popupItem, layout: _viewLayout, sort: _sortBy),
+                                    height: 42.0,                                                    child: popupButton(popupItem: popupItem, layout: _viewLayout, sort: _sortBy, lang: LocaleController.instance.language),
                                 );
                             }).toList();
                         },
@@ -850,9 +869,8 @@ class HomeState extends State<Home> {
                                             crossAxisAlignment: CrossAxisAlignment.baseline,
                                             textBaseline: TextBaseline.alphabetic,
                                             children: <Widget>[
-                                                Expanded(
-                                                    child: Text(
-                                                        'Toutes les notes',
+                                                Expanded(                                                        child: Text(
+                                                            AppText.tr('all_notes'),
                                                         style: TextStyle(
                                                             fontFamily: 'Calibri',
                                                             fontWeight: FontWeight.bold,
@@ -863,7 +881,7 @@ class HomeState extends State<Home> {
                                                 Column(
                                                     children: <Widget>[
                                                         Text(
-                                                            '$_notesCount ${_notesCount > 1 ? "notes" : "note"}',
+                                                            '$_notesCount ${_notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
                                                             style: TextStyle(
                                                                 fontFamily: 'Calibri',
                                                                 fontWeight: FontWeight.w400,
@@ -891,7 +909,7 @@ class HomeState extends State<Home> {
                                                 Expanded(
                                                     child: GestureDetector(
                                                         child: Text(
-                                                            'Rechercher',
+                                                            AppText.tr('search'),
                                                             style: TextStyle(
                                                                 fontWeight: FontWeight.w400,
                                                                 fontSize: 14.4,
@@ -913,10 +931,10 @@ class HomeState extends State<Home> {
                                         margin: EdgeInsets.only(bottom: 4.5),
                                         child: Text(
                                             _selected.isEmpty
-                                                ? 'Aucune note sélectionnée'
+                                                ? AppText.tr('no_note_selected')
                                                 : (_selected.length > 1
-                                                    ? (_selected.length == _notesCount ? 'Toutes les $_notesCount notes sont sélectionnées' : '${_selected.length}/$_notesCount notes sélectionnées')
-                                                    : '${_selected.length} seule note sélectionnée'),
+                                                    ? (_selected.length == _notesCount ? AppText.tr('all_notes_selected', <String, String>{'count': '$_notesCount'}) : AppText.tr('notes_selected', <String, String>{'count': '${_selected.length}', 'total': '$_notesCount'}))
+                                                    : AppText.tr('single_note_selected', <String, String>{'count': '${_selected.length}'})),
                                             style: TextStyle(
                                                 color: Colors.grey,
                                                 fontWeight: FontWeight.w400,
@@ -929,7 +947,7 @@ class HomeState extends State<Home> {
                                         margin: EdgeInsets.only(bottom: 4.5),
                                         alignment: Alignment.center,
                                         child: Text(
-                                            'Triage par ${(menuItems[_sortBy]?.title ?? '').toLowerCase()}',
+                                            AppText.tr('sorted_by', <String, String>{'sort': (menuItems[_sortBy]?.title ?? '').toLowerCase()}),
                                             style: TextStyle(
                                                 color: Colors.grey,
                                                 fontWeight: FontWeight.w400,

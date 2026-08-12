@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:tano/config/l10n.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/utils/note_edit.dart';
 
@@ -33,7 +34,7 @@ class _EditEntryState extends State<EditEntry> {
     void initState() {
         super.initState();
         _noteEdit = NoteEdit(action: 'Cancel', note: widget.noteEdit.note);
-        _actionTitle = widget.add ? 'Add' : 'Edit';
+        _actionTitle = widget.add ? AppText.tr('add_note') : AppText.tr('edit_note');
         if (widget.add) {
             _selectedDate = DateTime.now();
             _titleController.text = '';
@@ -73,7 +74,7 @@ class _EditEntryState extends State<EditEntry> {
     Widget build(BuildContext context) {
         return Scaffold(
             appBar: AppBar(
-                title: Text('$_actionTitle note'),
+                title: Text(_actionTitle),
                 automaticallyImplyLeading: true,
             ),
             body: SafeArea(
@@ -89,7 +90,7 @@ class _EditEntryState extends State<EditEntry> {
                                 autofocus: true,
                                 textInputAction: TextInputAction.newline,
                                 decoration: InputDecoration(
-                                    labelText: 'Title',
+                                    labelText: AppText.tr('title'),
                                 ),
                                 onSubmitted: (submitted) {
                                     FocusScope.of(context).requestFocus(_titleFocus);
@@ -105,7 +106,7 @@ class _EditEntryState extends State<EditEntry> {
                                 focusNode: _contentFocus,
                                 textCapitalization: TextCapitalization.sentences,
                                 decoration: InputDecoration(
-                                    labelText: 'Content',
+                                    labelText: AppText.tr('content'),
                                 ),
                                 maxLength: 3000,
                                 minLines: 3,
@@ -118,7 +119,7 @@ class _EditEntryState extends State<EditEntry> {
                                     Expanded(
                                         flex: 1,
                                         child: Text(
-                                            'This is mportant',
+                                            AppText.tr('important'),
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 15.0,
@@ -140,7 +141,7 @@ class _EditEntryState extends State<EditEntry> {
                 ),
             ),
             floatingActionButton: FloatingActionButton(
-                tooltip: 'Save changes',
+                tooltip: AppText.tr('save_changes'),
                 child: Icon(Icons.save),
                 onPressed: () => _saveAction(_noteEdit),
             ),
