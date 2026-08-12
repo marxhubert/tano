@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tano/config/app_config.dart';
+import 'package:tano/config/l10n.dart';
 
 AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo}) {
     return AlertDialog(
@@ -20,7 +22,7 @@ AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo})
                 Expanded(
                     child: RichText(
                         text: TextSpan(
-                            text: 'Tano',
+                            text: AppConfig.appName,
                             style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 color: Colors.black,
@@ -28,7 +30,7 @@ AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo})
                             ),
                             children: <TextSpan>[
                                 TextSpan(
-                                    text: 'Note',
+                                    text: AppConfig.appNameSuffix,
                                     style: TextStyle(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.black,
@@ -51,7 +53,7 @@ AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo})
         ),
         content: RichText(
             text: TextSpan(
-                text: 'TanoNote est un simple outil de prise de note qui pourra, je l\'espère vivement, vous être utile pour sauvegarder vos idées.\nJe vous invite à me faire part de vos remarques et conseils pour me donner le plaisir de continuer à l\'améliorer. Merci.',
+                text: AppText.tr('about_description'),
                 style: TextStyle(
                     fontWeight: FontWeight.w400,
                     color: Colors.black87,
@@ -60,7 +62,7 @@ AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo})
                 ),
                 children: <TextSpan>[
                     TextSpan(
-                        text: '\n\nMarx Hubert\nshikamarx@gmail.com',
+                        text: '\n\n${AppConfig.authorName}\n${AppConfig.authorEmail}',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -74,7 +76,7 @@ AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo})
         actions: [
             TextButton(
                 child: Text(
-                    'FERMER',
+                    AppText.tr('close_button'),
                     style: TextStyle(
                         color: Colors.blue,
                     ),
