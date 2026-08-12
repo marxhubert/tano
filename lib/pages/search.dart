@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tano/application/search_view_model.dart';
 import 'package:tano/config/l10n.dart';
 import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/pages/edit.dart';
 import 'package:tano/utils/action.dart';
@@ -17,63 +17,30 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-    late Database _database;
-    List<Note> _notes = [];
-    final List<Note> _searchResult = [];
+    late final SearchViewModel _viewModel;
     final TextEditingController _searchFieldController = TextEditingController();
 
     @override
     void initState() {
         super.initState();
-        _loadNotes().then((notes) {
-            setState(() {
-                _notes = notes;
-            });
-        });
-        _searchFieldController.text = '';
+        _viewModel = SearchViewModel(repository: widget.repository);
+        _viewModel.load();
     }
 
     @override
     void dispose() {
         _searchFieldController.dispose();
+        _viewModel.dispose();
         super.dispose();
     }
 
-    Future<List<Note>> _loadNotes() async {
-        final List<Note> notes = await widget.repository.loadNotes();
-        notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
-        _database = Database(note: notes);
-        return notes;
-    }
-
-    void _searchEngine(String keyword) {
-        if ('' == keyword.trim()) {
-            setState(() {
-                _searchResult.clear();
-            });
-        } else {
-            _searchResult.clear();
-            for (final Note note in _notes) {
-                bool isStringInTitle = note.title != null && note.title!.contains(RegExp(keyword, caseSensitive: false));
-                bool isStringInContent = note.content != null && note.content!.contains(RegExp(keyword, caseSensitive: false));
-                if (isStringInTitle || isStringInContent) {
-                    setState(() {
-                        if (!_searchResult.contains(note)) {
-                            _searchResult.add(note);
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    void _noteController({required bool add, required int index, required Note note}) async {
+    Future<void> _noteController({required Note note}) async {
         final NoteAction? result = await Navigator.push(
             context,
             MaterialPageRoute<NoteAction>(
                 builder: (context) => EditNote(
-                    add: add,
-                    index: index,
+                    add: false,
+                    index: _viewModel.results.indexOf(note),
                     noteAction: NoteAction(action: '', note: note),
                     repository: widget.repository,
                 ),
@@ -83,29 +50,7 @@ class _SearchPageState extends State<SearchPage> {
         if (result == null) {
             return;
         }
-        switch (result.action) {
-            case 'Save':
-                if (add) {
-                    setState(() {
-                        _database.note.add(result.note!);
-                    });
-                } else {
-                    setState(() {
-                        _database.note[index] = result.note!;
-                    });
-                }
-                break;
-            case 'Delete':
-                setState(() {
-                    _database.note.removeAt(index);
-                });
-                break;
-            case 'Cancel':
-                break;
-            default:
-                break;
-        }
-        await widget.repository.saveNotes(_database.note);
+        await _viewModel.applyNoteAction(original: note, action: result);
     }
 
     Widget _showSearchResult(List<Note> notes) {
@@ -168,7 +113,7 @@ class _SearchPageState extends State<SearchPage> {
                                             size: 18.0,
                                         ),
                                         onTap: () {
-                                            _noteController(add: false, index: index, note: notes[index]);
+                                            _noteController(note: notes[index]);
                                         },
                                     ),
                                 ),
@@ -187,111 +132,112 @@ class _SearchPageState extends State<SearchPage> {
 
     @override
     Widget build(BuildContext context) {
-        return Scaffold(
-            body: SafeArea(
-                child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 7.2),
-                    margin: EdgeInsets.only(top: 4.5),
-                    child: Column(
-                        children: <Widget>[
-                            Container(
-                                height: 36.0,
-                                decoration: BoxDecoration(
-                                    color: Colors.black12,
-                                    borderRadius: BorderRadius.circular(54.0),
-                                ),
-                                child: Row(
-                                    children: <Widget>[
-                                        GestureDetector(
-                                            child: Container(
-                                                width: 54.0,
-                                                decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(54.0),
-                                                ),
-                                                child: Center(
-                                                    child: Icon(Icons.arrow_back, size: 21.0,),
-                                                ),
-                                            ),
-                                            onTap: () => Navigator.pop(context),
+        return ListenableBuilder(
+            listenable: _viewModel,
+            builder: (BuildContext context, Widget? child) {
+                return Scaffold(
+                    body: SafeArea(
+                        child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7.2),
+                            margin: EdgeInsets.only(top: 4.5),
+                            child: Column(
+                                children: <Widget>[
+                                    Container(
+                                        height: 36.0,
+                                        decoration: BoxDecoration(
+                                            color: Colors.black12,
+                                            borderRadius: BorderRadius.circular(54.0),
                                         ),
-                                        Expanded(
-                                            flex: 1,
-                                            child: TextField(
-                                                showCursor: true,
-                                                controller: _searchFieldController,
-                                                autofocus: true,
-                                                textInputAction: TextInputAction.next,
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w400,
-                                                    fontSize: 14.4,
-                                                ),
-                                                decoration: InputDecoration(
-                                                    hintText: AppText.tr('type_to_search'),
-                                                    hintStyle: TextStyle(
-                                                        color: Colors.grey.shade600
+                                        child: Row(
+                                            children: <Widget>[
+                                                GestureDetector(
+                                                    child: Container(
+                                                        width: 54.0,
+                                                        decoration: BoxDecoration(
+                                                            borderRadius: BorderRadius.circular(54.0),
+                                                        ),
+                                                        child: Center(
+                                                            child: Icon(Icons.arrow_back, size: 21.0,),
+                                                        ),
                                                     ),
-                                                    border: InputBorder.none,
+                                                    onTap: () => Navigator.pop(context),
                                                 ),
-                                                onTap: () {
-                                                    setState(() {
-                                                        _searchResult.clear();
-                                                    });
-                                                },
-                                                onChanged: (String text) {
-                                                    setState(() {
-                                                        _searchEngine(text);
-                                                    });
-                                                },
-                                            ),
+                                                Expanded(
+                                                    flex: 1,
+                                                    child: TextField(
+                                                        showCursor: true,
+                                                        controller: _searchFieldController,
+                                                        autofocus: true,
+                                                        textInputAction: TextInputAction.next,
+                                                        style: TextStyle(
+                                                            fontWeight: FontWeight.w400,
+                                                            fontSize: 14.4,
+                                                        ),
+                                                        decoration: InputDecoration(
+                                                            hintText: AppText.tr('type_to_search'),
+                                                            hintStyle: TextStyle(
+                                                                color: Colors.grey.shade600
+                                                            ),
+                                                            border: InputBorder.none,
+                                                        ),
+                                                        onTap: () {
+                                                            _viewModel.search(_searchFieldController.text);
+                                                        },
+                                                        onChanged: (String text) {
+                                                            _viewModel.search(text);
+                                                        },
+                                                    ),
+                                                ),
+                                                _searchFieldController.text == ''
+                                                ? Offstage()
+                                                : GestureDetector(
+                                                    child: Container(
+                                                        width: 54.0,
+                                                        decoration: BoxDecoration(
+                                                            borderRadius: BorderRadius.circular(54.0),
+                                                        ),
+                                                        child: Center(
+                                                            child: Icon(Icons.clear, size: 21.0,),
+                                                        ),
+                                                    ),
+                                                    onTap: () {
+                                                        setState(() {
+                                                            _searchFieldController.clear();
+                                                        });
+                                                        _viewModel.search('');
+                                                    },
+                                                ),
+                                            ],
                                         ),
-                                        _searchFieldController.text == ''
-                                        ? Offstage()
-                                        : GestureDetector(
-                                            child: Container(
-                                                width: 54.0,
-                                                decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(54.0),
+                                    ),
+                                    _viewModel.hasResults
+                                    ? Container(
+                                        padding: EdgeInsets.symmetric(vertical: 4.5),
+                                        child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: <Widget>[
+                                                Text(
+                                                    _viewModel.resultCount == 1 ? AppText.tr('single_result', <String, String>{'count': '${_viewModel.resultCount}'}) : AppText.tr('results', <String, String>{'count': '${_viewModel.resultCount}'}),
+                                                    style: TextStyle(
+                                                        fontStyle: FontStyle.italic,
+                                                        fontSize: 12.0
+                                                    ),
                                                 ),
-                                                child: Center(
-                                                    child: Icon(Icons.clear, size: 21.0,),
-                                                ),
-                                            ),
-                                            onTap: () {
-                                                setState(() {
-                                                    _searchFieldController.text = '';
-                                                    _searchResult.clear();
-                                                });
-                                            },
+                                            ],
                                         ),
-                                    ],
-                                ),
+                                    )
+                                    : Offstage(),
+                                    Expanded(
+                                        child: Container(
+                                            child: _showSearchResult(_viewModel.results),
+                                        ),
+                                    ),
+                                ],
                             ),
-                            _searchResult.isNotEmpty
-                            ? Container(
-                                padding: EdgeInsets.symmetric(vertical: 4.5),
-                                child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                        Text(
-                                            _searchResult.length == 1 ? AppText.tr('single_result', <String, String>{'count': '${_searchResult.length}'}) : AppText.tr('results', <String, String>{'count': '${_searchResult.length}'}),
-                                            style: TextStyle(
-                                                fontStyle: FontStyle.italic,
-                                                fontSize: 12.0
-                                            ),
-                                        ),
-                                    ],
-                                ),
-                            )
-                            : Offstage(),
-                            Expanded(
-                                child: Container(
-                                    child: _showSearchResult(_searchResult),
-                                ),
-                            ),
-                        ],
+                        ),
                     ),
-                ),
-            ),
+                );
+            },
         );
     }
 }
