@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tano/config/l10n.dart';
+import 'package:tano/core/config/l10n.dart';
 
 Widget noRecordFound() {
   return Center(

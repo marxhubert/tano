@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tano/application/search_view_model.dart';
-import 'package:tano/config/l10n.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/pages/edit.dart';
-import 'package:tano/utils/action.dart';
-import 'package:tano/utils/menu.dart';
+import 'package:tano/features/search/search_view_model.dart';
+import 'package:tano/core/config/l10n.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/core/models/action.dart';
+import 'package:tano/core/widgets/menu.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, required this.repository});

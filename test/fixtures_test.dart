@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tano/fixtures/notes_fixtures.dart';
-import 'package:tano/models/database.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
+import 'package:tano/core/models/database.dart';
 
 void main() {
   group('buildNotesFixtures', () {
