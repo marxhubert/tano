@@ -64,7 +64,11 @@ class _EditNoteState extends State<EditNote> {
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
-    );      if (!_viewModel.isValid(title: _titleController.text, content: _contentController.text)) {
+    );
+    if (!_viewModel.isValid(
+      title: _titleController.text,
+      content: _contentController.text,
+    )) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(AppText.tr('content_empty'))));
@@ -117,6 +121,8 @@ class _EditNoteState extends State<EditNote> {
     Widget deleteActionButton = IconButton(
       icon: Icon(Icons.clear),
       iconSize: 24.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () async {
         final bool? confirmDeletion = await getConfirmation(
           context: context,
@@ -135,6 +141,8 @@ class _EditNoteState extends State<EditNote> {
         color: _viewModel.important ? Colors.orange : null,
       ),
       iconSize: 24.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () {
         _viewModel.toggleImportant();
       },
@@ -245,6 +253,7 @@ class _EditNoteState extends State<EditNote> {
                             return PopupMenuItem<PopupItem>(
                               value: popupItem,
                               child: popupButton(
+                                context: context,
                                 popupItem: popupItem,
                                 editMode: true,
                               ),
@@ -254,6 +263,7 @@ class _EditNoteState extends State<EditNote> {
                         child: Row(
                           children: <Widget>[
                             popupButton(
+                              context: context,
                               popupItem: categoryElements[_viewModel.category]!,
                               editMode: true,
                             ),
@@ -331,14 +341,12 @@ class _EditNoteState extends State<EditNote> {
         ),
         bottomNavigationBar: BottomAppBar(
           elevation: 0.0,
+          height: 36.0,
+          padding: EdgeInsets.zero,
           color: Colors.blueGrey.shade50,
-          child: Container(
-            height: 40.5,
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _showActionButtons(action: widget.add ? 'add' : 'edit'),
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: _showActionButtons(action: widget.add ? 'add' : 'edit'),
           ),
         ),
       ),

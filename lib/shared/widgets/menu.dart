@@ -5,7 +5,17 @@ class PopupItem {
   final String title;
   final String value;
   final Icon? icon;
-  PopupItem({required this.title, required this.value, this.icon});
+
+  /// When true, the icon (if any) is rendered at the end of the row,
+  /// right-aligned (used for the "Display" group).
+  final bool trailingIcon;
+
+  PopupItem({
+    required this.title,
+    required this.value,
+    this.icon,
+    this.trailingIcon = false,
+  });
 }
 
 /// Main menu items, resolved according to the current language.
@@ -20,16 +30,19 @@ Map<String, PopupItem> get menuItems {
       title: AppText.tr('menu_compact'),
       icon: Icon(Icons.view_list),
       value: 'compact',
+      trailingIcon: true,
     ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
       icon: Icon(Icons.view_stream),
       value: 'list',
+      trailingIcon: true,
     ),
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
       icon: Icon(Icons.view_module),
       value: 'gridlist',
+      trailingIcon: true,
     ),
 
     'sorting_separator': PopupItem(
@@ -45,22 +58,22 @@ Map<String, PopupItem> get menuItems {
     'date': PopupItem(
       title: AppText.tr('menu_date'),
       value: 'date',
-      icon: Icon(Icons.date_range),
+      icon: null,
     ),
     'alpha': PopupItem(
       title: AppText.tr('menu_title'),
       value: 'alpha',
-      icon: Icon(Icons.sort_by_alpha),
+      icon: null,
     ),
     'important': PopupItem(
       title: AppText.tr('menu_favorites'),
       value: 'important',
-      icon: Icon(Icons.star, color: Colors.orange),
+      icon: null,
     ),
     'category': PopupItem(
       title: AppText.tr('menu_category'),
       value: 'category',
-      icon: Icon(Icons.bookmark_border),
+      icon: null,
     ),
 
     'language_separator': PopupItem(
@@ -73,27 +86,15 @@ Map<String, PopupItem> get menuItems {
       value: 'header',
       icon: null,
     ),
-    'en': PopupItem(
-      title: AppText.tr('menu_english'),
-      value: 'en',
-      icon: Icon(Icons.language),
-    ),
-    'fr': PopupItem(
-      title: AppText.tr('menu_french'),
-      value: 'fr',
-      icon: Icon(Icons.language),
-    ),
+    'en': PopupItem(title: AppText.tr('menu_english'), value: 'en', icon: null),
+    'fr': PopupItem(title: AppText.tr('menu_french'), value: 'fr', icon: null),
 
     'info_separator': PopupItem(
       title: 'Separator',
       value: 'separator',
       icon: null,
     ),
-    'info': PopupItem(
-      title: AppText.tr('about'),
-      value: 'info',
-      icon: Icon(Icons.outlined_flag),
-    ),
+    'info': PopupItem(title: AppText.tr('about'), value: 'info', icon: null),
   };
 }
 
@@ -139,6 +140,7 @@ Map<String, PopupItem> get categoryElements {
 }
 
 Widget popupButton({
+  required BuildContext context,
   required PopupItem popupItem,
   String? layout,
   String? sort,
@@ -160,27 +162,53 @@ Widget popupButton({
     );
   }
 
-  return editMode
-      ? Row(
-          children: <Widget>[
-            popupItem.icon!,
-            SizedBox(width: 4.5),
-            Text(popupItem.title),
-          ],
+  final Icon? icon = popupItem.icon;
+  final bool isSelected =
+      !editMode &&
+      (popupItem.value == layout ||
+          popupItem.value == sort ||
+          popupItem.value == lang);
+  final Color? selectedColor = isSelected
+      ? Theme.of(context).colorScheme.primary
+      : null;
+
+  final Widget? leadingIcon = icon != null && !popupItem.trailingIcon
+      ? (isSelected
+            ? Icon(icon.icon, color: selectedColor, size: icon.size)
+            : icon)
+      : null;
+  final Widget? trailingIcon = icon != null && popupItem.trailingIcon
+      ? (isSelected
+            ? Icon(icon.icon, color: selectedColor, size: icon.size)
+            : icon)
+      : null;
+
+  // Only wrap the label in Expanded when a trailing icon must be pushed to
+  // the right edge. popupButton is also embedded in unbounded-width rows
+  // (e.g. the edit page title bar), where a flex child would throw.
+  final Widget label = popupItem.trailingIcon
+      ? Expanded(
+          child: Text(
+            popupItem.title,
+            style: selectedColor != null
+                ? TextStyle(color: selectedColor)
+                : null,
+            overflow: TextOverflow.ellipsis,
+          ),
         )
-      : Row(
-          children: <Widget>[
-            popupItem.icon!,
-            SizedBox(width: 4.5),
-            Text(popupItem.title),
-            Expanded(child: Offstage()),
-            (popupItem.value == layout ||
-                    popupItem.value == sort ||
-                    popupItem.value == lang)
-                ? Icon(Icons.arrow_back_ios, size: 14.4)
-                : Offstage(),
-          ],
+      : Text(
+          popupItem.title,
+          style: selectedColor != null ? TextStyle(color: selectedColor) : null,
+          overflow: TextOverflow.ellipsis,
         );
+
+  return Row(
+    children: <Widget>[
+      if (leadingIcon != null) ...<Widget>[leadingIcon, SizedBox(width: 4.5)],
+      label,
+      if (trailingIcon != null) ...<Widget>[SizedBox(width: 4.5), trailingIcon],
+    ],
+  );
 }
 
 Color themeCategory(String value, bool withShade) {
