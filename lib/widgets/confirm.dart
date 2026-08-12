@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:tano/config/l10n.dart';
 
 Future<bool?> getConfirmation({required BuildContext context, required String actionTitle, required String action}) async {
+    final bool isSave = action.toLowerCase() == AppText.tr('save').toLowerCase();
     return await showDialog<bool>(
         context: context,
         builder: (context) {
             return AlertDialog(
                 title: Text(actionTitle),
-                content: const Text(
-                    'Voulez-vous vraiment continuer ?',
+                content: Text(
+                    AppText.tr('confirm_question'),
                 ),
                 actions: <Widget>[
                     TextButton(
                         child: Text(
-                            action.toLowerCase() == 'enregistrer' ? 'QUITTER' : 'ANNULER',
+                            isSave ? AppText.tr('quit') : AppText.tr('cancel'),
                             style: TextStyle(
-                                color: action.toLowerCase() == 'enregistrer' ? Colors.red : Colors.blue,
+                                color: isSave ? Colors.red : Colors.blue,
                             ),
                         ),
                         onPressed: () {
@@ -25,7 +27,7 @@ Future<bool?> getConfirmation({required BuildContext context, required String ac
                         child: Text(
                             action.toUpperCase(),
                             style: TextStyle(
-                                color: action.toLowerCase() == 'enregistrer' ? Colors.blue : Colors.red,
+                                color: isSave ? Colors.blue : Colors.red,
                             ),
                         ),
                         onPressed: () {
