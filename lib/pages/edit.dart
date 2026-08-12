@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:tano/models/note.dart';
@@ -13,30 +12,30 @@ class EditNote extends StatefulWidget {
     final NoteAction noteAction;
 
     const EditNote({
-        Key key,
-        this.add,
-        this.index,
-        this.noteAction,
-    }) : super(key: key);
+        super.key,
+        required this.add,
+        required this.index,
+        required this.noteAction,
+    });
 
     @override
-    _EditNoteState createState() => _EditNoteState();
+    State<EditNote> createState() => _EditNoteState();
 }
 
 class _EditNoteState extends State<EditNote> {
-    Database _database;
-    NoteAction _noteAction;
-    String _id;
-    DateTime _selectedDate;
-    bool _important;
-    String _category;
-    TextEditingController _titleController = TextEditingController();
-    TextEditingController _contentController = TextEditingController();
-    FocusNode _titleFocus = FocusNode();
-    FocusNode _contentFocus = FocusNode();
-    int _noteContentLength;
+    late Database _database;
+    late NoteAction _noteAction;
+    late String _id;
+    late DateTime _selectedDate;
+    late bool _important;
+    late String _category;
+    final TextEditingController _titleController = TextEditingController();
+    final TextEditingController _contentController = TextEditingController();
+    final FocusNode _titleFocus = FocusNode();
+    final FocusNode _contentFocus = FocusNode();
+    int _noteContentLength = 0;
     final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
-    Note _initialNote;
+    late Note _initialNote;
 
     @override
     void initState() {
@@ -55,13 +54,13 @@ class _EditNoteState extends State<EditNote> {
             _noteContentLength = 0;
             _initialNote = _setNote(init: true);
         } else {
-            _id = _noteAction.note.id;
-            _selectedDate = DateTime.parse(_noteAction.note.date);
-            _titleController.text = _noteAction.note.title.replaceAll('\n', ' ');
-            _contentController.text = _noteAction.note.content;
-            _important = _noteAction.note.important;
-            _category = _noteAction.note.category ?? 'none';
-            _noteContentLength = _noteAction.note.content.length;
+            _id = _noteAction.note!.id ?? '';
+            _selectedDate = DateTime.parse(_noteAction.note!.date!);
+            _titleController.text = _noteAction.note!.title!.replaceAll('\n', ' ');
+            _contentController.text = _noteAction.note!.content ?? '';
+            _important = _noteAction.note!.important ?? false;
+            _category = _noteAction.note!.category ?? 'none';
+            _noteContentLength = _noteAction.note!.content?.length ?? 0;
             _initialNote = _setNote(init: true);
         }
     }
@@ -74,7 +73,7 @@ class _EditNoteState extends State<EditNote> {
         _contentFocus.dispose();
         super.dispose();
     }
-    
+
     Note _setNote({bool init = false}) {
         int max = 18 > _noteContentLength ? _noteContentLength : 18;
         String content = _contentController.text.trim();
@@ -90,10 +89,10 @@ class _EditNoteState extends State<EditNote> {
         );
     }
 
-    void _saveNote({NoteAction noteAction, bool willPop = false}) {
-        Note note = this._setNote();
-        if ('' == note.content.trim()) {
-            _scaffoldState.currentState.showSnackBar(
+    void _saveNote({required NoteAction noteAction, bool willPop = false}) {
+        Note note = _setNote();
+        if ('' == note.content!.trim()) {
+            ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                     content: Text(
                         "Le contenu ne peut pas être vide"
@@ -103,7 +102,7 @@ class _EditNoteState extends State<EditNote> {
         } else {
             noteAction.note = note;
             if (willPop) {
-                widget.add ? _database.note.add(noteAction.note) : _database.note[widget.index] = noteAction.note;
+                widget.add ? _database.note.add(noteAction.note!) : _database.note[widget.index] = noteAction.note!;
             } else {
                 noteAction.action = 'Save';
                 Navigator.pop(context, noteAction);
@@ -122,15 +121,13 @@ class _EditNoteState extends State<EditNote> {
         });
     }
 
-    List<Widget> _showActionButtons({int index, String action}) {
-        Set<int> selection = Set<int>();
-        selection.add(index);
+    List<Widget> _showActionButtons({required String action}) {
         Widget deleteActionButton = IconButton(
             icon: Icon(Icons.clear),
             iconSize: 24.0,
             onPressed: () async {
-                bool confirmDeletion = await getConfirmation(context: context, actionTitle: 'Supprimer la note', action: 'supprimer');
-                if (confirmDeletion) {
+                final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: 'Supprimer la note', action: 'supprimer');
+                if (confirmDeletion == true) {
                     _deleteNote(_noteAction);
                 }
             },
@@ -154,26 +151,23 @@ class _EditNoteState extends State<EditNote> {
                 return <Widget>[
                     Expanded(flex: 1, child: markAsImportantActionButton,),
                 ];
-                break;
             case 'edit':
                 return <Widget>[
                     Expanded(flex: 1, child: markAsImportantActionButton,),
                     Expanded(flex: 1, child: deleteActionButton,),
                 ];
-                break;
             default:
                 return <Widget>[
                     Expanded(flex: 1, child: markAsImportantActionButton,),
                 ];
-                break;
         }
     }
 
     Future<bool> _onWillPopCallback() async {
-        Note note = this._setNote();
+        Note note = _setNote();
         if (note.toJson().toString() != _initialNote.toJson().toString()) {
-            bool confirm = await getConfirmation(context: context, actionTitle: 'Enregistrer avant de quitter', action: 'enregistrer');
-            if (confirm) {
+            final bool? confirm = await getConfirmation(context: context, actionTitle: 'Enregistrer avant de quitter', action: 'enregistrer');
+            if (confirm == true) {
                 _saveNote(noteAction: _noteAction, willPop: true);
                 if (note.content == '') {
                     return false;
@@ -187,8 +181,17 @@ class _EditNoteState extends State<EditNote> {
 
     @override
     Widget build(BuildContext context) {
-        return WillPopScope(
-            onWillPop: () async => _onWillPopCallback(),
+        return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (bool didPop, Object? result) async {
+                if (didPop) {
+                    return;
+                }
+                final bool canLeave = await _onWillPopCallback();
+                if (canLeave && context.mounted) {
+                    Navigator.of(context).pop();
+                }
+            },
             child: Scaffold(
                 key: _scaffoldState,
                 appBar: AppBar(
@@ -198,8 +201,8 @@ class _EditNoteState extends State<EditNote> {
                         IconButton(
                             icon: Icon(Icons.arrow_back),
                             onPressed: () async {
-                                bool willPop = await _onWillPopCallback();
-                                if (willPop) {
+                                final bool willPop = await _onWillPopCallback();
+                                if (willPop && context.mounted) {
                                     Navigator.of(context).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
                                 }
                             },
@@ -213,11 +216,10 @@ class _EditNoteState extends State<EditNote> {
                         ),
                     ],
                 ),
-                body: Container(
-                    child: Column(
-                        children: <Widget>[
-                            Container(
-                                padding: EdgeInsets.symmetric(horizontal: 4.5, vertical: 0.0),
+                body: Column(
+                    children: <Widget>[
+                        Container(
+                            padding: EdgeInsets.symmetric(horizontal: 4.5, vertical: 0.0),
                                 child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.baseline,
                                     textBaseline: TextBaseline.alphabetic,
@@ -252,12 +254,6 @@ class _EditNoteState extends State<EditNote> {
                                         ),
                                         SizedBox(width: 9.0,),
                                         PopupMenuButton<PopupItem>(
-                                            child: Row(
-                                                children: <Widget>[
-                                                    popupButton(popupItem: categoryElements[_category], editMode: true),
-                                                    Icon(Icons.arrow_drop_down, size: 18.0,),
-                                                ],
-                                            ),
                                             onSelected: ((valueSelected) {
                                                 setState(() {
                                                     _category = valueSelected.value;
@@ -275,6 +271,12 @@ class _EditNoteState extends State<EditNote> {
                                                     );
                                                 }).toList();
                                             },
+                                            child: Row(
+                                                children: <Widget>[
+                                                    popupButton(popupItem: categoryElements[_category]!, editMode: true),
+                                                    Icon(Icons.arrow_drop_down, size: 18.0,),
+                                                ],
+                                            ),
                                         ),
                                     ],
                                 ),
@@ -301,7 +303,7 @@ class _EditNoteState extends State<EditNote> {
                                                             ),
                                                         ),
                                                         Text(
-                                                            '${_selectedDate.toString().substring(0, 16)}',
+                                                            _selectedDate.toString().substring(0, 16),
                                                             style: TextStyle(
                                                                 fontSize: 9.0,
                                                                 fontWeight: FontWeight.w300,
@@ -342,7 +344,6 @@ class _EditNoteState extends State<EditNote> {
                             ),
                         ],
                     ),
-                ),
                 bottomNavigationBar: BottomAppBar(
                     elevation: 0.0,
                     color: Colors.blueGrey.shade50,

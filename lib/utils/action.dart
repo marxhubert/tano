@@ -2,10 +2,10 @@ import 'package:tano/models/note.dart';
 
 class NoteAction {
     String action;
-    Note note;
+    Note? note;
 
     NoteAction({
-        this.action,
+        this.action = '',
         this.note,
     });
 }

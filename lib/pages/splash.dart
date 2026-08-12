@@ -1,16 +1,17 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
+    const SplashScreen({super.key});
+
     @override
     SplashScreenState createState() => SplashScreenState();
 }
 
 class SplashScreenState extends State<SplashScreen> {
-    startTime() async {
-        var _duration = Duration(seconds: 3);
-        return Timer(_duration, navigationPage);
+    void startTime() {
+        var duration = Duration(seconds: 3);
+        Timer(duration, navigationPage);
     }
 
     void navigationPage() {
@@ -36,7 +37,7 @@ class SplashScreenState extends State<SplashScreen> {
                                 Expanded(
                                     flex: 1,
                                     child: Center(
-                                        child: Container(
+                                        child: SizedBox(
                                             width: 90.0,
                                             height: 90.0,
                                             child: CircleAvatar(
@@ -47,7 +48,7 @@ class SplashScreenState extends State<SplashScreen> {
                                         ),
                                     ),
                                 ),
-                                Container(
+                                SizedBox(
                                     height: 90.0,
                                     child: Center(
                                         child: RichText(
