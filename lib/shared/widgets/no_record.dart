@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
-Widget noRecordFound() {
+Widget noRecordFound(BuildContext context) {
   return Center(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -33,7 +34,7 @@ Widget noRecordFound() {
                         alignment: Alignment.bottomRight,
                         child: Icon(
                           Icons.warning,
-                          color: Colors.black87,
+                          color: primaryTextColor(context),
                           size: 45.0,
                         ),
                       ),
