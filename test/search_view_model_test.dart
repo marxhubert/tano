@@ -5,47 +5,50 @@ import 'package:tano/models/note.dart';
 import 'package:tano/utils/action.dart';
 
 class _InMemoryNotesRepository implements NotesRepository {
-    _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
+  _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
 
-    final List<Note> notes;
+  final List<Note> notes;
 
-    @override
-    Future<List<Note>> loadNotes() async => List<Note>.of(notes);
+  @override
+  Future<List<Note>> loadNotes() async => List<Note>.of(notes);
 
-    @override
-    Future<void> saveNotes(List<Note> notes) async {
-        this.notes
-          ..clear()
-          ..addAll(notes);
-    }
+  @override
+  Future<void> saveNotes(List<Note> notes) async {
+    this.notes
+      ..clear()
+      ..addAll(notes);
+  }
 }
 
 Note _note(String id, {String? title, String? content, String? date}) {
-    return Note(
-        id: id,
-        title: title ?? 'Title $id',
-        content: content ?? 'Content $id',
-        date: date ?? '2026-08-01 10:00:00.000',
-        important: false,
-        category: 'none',
-    );
+  return Note(
+    id: id,
+    title: title ?? 'Title $id',
+    content: content ?? 'Content $id',
+    date: date ?? '2026-08-01 10:00:00.000',
+    important: false,
+    category: 'none',
+  );
 }
 
 void main() {
   group('SearchViewModel', () {
-    test('load() charge et trie les notes par date (plus récentes d\'abord)', () async {
-      final vm = SearchViewModel(
-        repository: _InMemoryNotesRepository(<Note>[
-          _note('1', date: '2026-08-01 10:00:00.000'),
-          _note('2', date: '2026-09-01 10:00:00.000'),
-        ]),
-      );
+    test(
+      'load() charge et trie les notes par date (plus récentes d\'abord)',
+      () async {
+        final vm = SearchViewModel(
+          repository: _InMemoryNotesRepository(<Note>[
+            _note('1', date: '2026-08-01 10:00:00.000'),
+            _note('2', date: '2026-09-01 10:00:00.000'),
+          ]),
+        );
 
-      await vm.load();
+        await vm.load();
 
-      vm.search('title');
-      expect(vm.results.first.id, '2');
-    });
+        vm.search('title');
+        expect(vm.results.first.id, '2');
+      },
+    );
 
     test('search() filtre par titre, insensible à la casse', () async {
       final vm = SearchViewModel(
@@ -91,36 +94,39 @@ void main() {
       expect(vm.hasResults, isFalse);
     });
 
-    test('applyNoteAction remplace la bonne note dans la liste complète', () async {
-      final repository = _InMemoryNotesRepository(<Note>[
-        _note('1', title: 'Alpha'),
-        _note('2', title: 'Beta'),
-        _note('3', title: 'Gamma'),
-      ]);
-      final vm = SearchViewModel(repository: repository);
-      await vm.load();
+    test(
+      'applyNoteAction remplace la bonne note dans la liste complète',
+      () async {
+        final repository = _InMemoryNotesRepository(<Note>[
+          _note('1', title: 'Alpha'),
+          _note('2', title: 'Beta'),
+          _note('3', title: 'Gamma'),
+        ]);
+        final vm = SearchViewModel(repository: repository);
+        await vm.load();
 
-      vm.search('alpha');
-      final Note found = vm.results.single;
-      final Note edited = Note(
-        id: found.id,
-        title: 'Alpha modifié',
-        content: found.content,
-        date: found.date,
-        important: found.important,
-        category: found.category,
-      );
+        vm.search('alpha');
+        final Note found = vm.results.single;
+        final Note edited = Note(
+          id: found.id,
+          title: 'Alpha modifié',
+          content: found.content,
+          date: found.date,
+          important: found.important,
+          category: found.category,
+        );
 
-      await vm.applyNoteAction(
-        original: found,
-        action: NoteAction(action: 'Save', note: edited),
-      );
+        await vm.applyNoteAction(
+          original: found,
+          action: NoteAction(action: 'Save', note: edited),
+        );
 
-      expect(repository.notes.map((n) => n.title), contains('Alpha modifié'));
-      // The update targets the note by identity even though the result list
-      // is only a subset of the full list.
-      expect(repository.notes[0].title, 'Alpha modifié');
-    });
+        expect(repository.notes.map((n) => n.title), contains('Alpha modifié'));
+        // The update targets the note by identity even though the result list
+        // is only a subset of the full list.
+        expect(repository.notes[0].title, 'Alpha modifié');
+      },
+    );
 
     test('applyNoteAction supprime la note', () async {
       final repository = _InMemoryNotesRepository(<Note>[

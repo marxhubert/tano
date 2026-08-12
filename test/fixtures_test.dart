@@ -12,7 +12,15 @@ void main() {
       final categories = buildNotesFixtures().map((n) => n.category).toSet();
       expect(
         categories,
-        containsAll(<String?>['note', 'work', 'personal', 'travel', 'life', 'project', 'none']),
+        containsAll(<String?>[
+          'note',
+          'work',
+          'personal',
+          'travel',
+          'life',
+          'project',
+          'none',
+        ]),
       );
     });
 

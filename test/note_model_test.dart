@@ -41,10 +41,12 @@ void main() {
 
   group('Database', () {
     test('encode et décode le JSON', () {
-      final db = Database(note: [
-        Note(id: '1', title: 'a', content: 'x', important: true),
-        Note(id: '2', title: 'b', content: 'y', important: false),
-      ]);
+      final db = Database(
+        note: [
+          Note(id: '1', title: 'a', content: 'x', important: true),
+          Note(id: '2', title: 'b', content: 'y', important: false),
+        ],
+      );
 
       final restored = dbFromJson(dbToJson(db));
 

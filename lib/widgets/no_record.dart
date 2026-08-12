@@ -2,51 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:tano/config/l10n.dart';
 
 Widget noRecordFound() {
-    return Center(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        SizedBox(
+          width: 90.0,
+          height: 90.0,
+          child: Stack(
+            children: <Widget>[
+              SizedBox(
+                width: 90.0,
+                height: 90.0,
+                child: CircleAvatar(
+                  backgroundColor: Colors.grey.shade500,
+                  child: Icon(
+                    Icons.bookmark_border,
+                    color: Colors.blueGrey.shade50,
+                    size: 45.0,
+                  ),
+                ),
+              ),
+              Row(
                 children: <Widget>[
-                    SizedBox(
-                        width: 90.0,
-                        height: 90.0,
-                        child: Stack(
-                            children: <Widget>[
-                                SizedBox(
-                                    width: 90.0,
-                                    height: 90.0,
-                                    child: CircleAvatar(
-                                        backgroundColor: Colors.grey.shade500,
-                                        child: Icon(Icons.bookmark_border, color: Colors.blueGrey.shade50, size: 45.0,),
-                                    ),
-                                ),
-                                Row(
-                                    children: <Widget>[
-                                        Expanded(child: Offstage(),),
-                                        Column(
-                                            children: <Widget>[
-                                                Expanded(child: Offstage(),),
-                                                Container(
-                                                    alignment: Alignment.bottomRight,
-                                                    child: Icon(Icons.warning, color: Colors.black87, size: 45.0,),
-                                                ),
-                                            ],
-                                        )
-                                    ],
-                                ),
-                            ],
+                  Expanded(child: Offstage()),
+                  Column(
+                    children: <Widget>[
+                      Expanded(child: Offstage()),
+                      Container(
+                        alignment: Alignment.bottomRight,
+                        child: Icon(
+                          Icons.warning,
+                          color: Colors.black87,
+                          size: 45.0,
                         ),
-                    ),
-                    Padding(
-                        padding: EdgeInsets.only(bottom: 18.0),
-                    ),
-                    Text(
-                        AppText.tr('no_data'),
-                        style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 15.0,
-                        ),
-                    ),
+                      ),
+                    ],
+                  ),
                 ],
-            ),
-    );
+              ),
+            ],
+          ),
+        ),
+        Padding(padding: EdgeInsets.only(bottom: 18.0)),
+        Text(
+          AppText.tr('no_data'),
+          style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15.0),
+        ),
+      ],
+    ),
+  );
 }
