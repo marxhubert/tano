@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:tano/config/l10n.dart';
+import 'package:tano/domain/notes_repository.dart';
+import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
-import 'package:tano/services/database.dart';
 import 'package:tano/utils/action.dart';
 import 'package:tano/utils/menu.dart';
 import 'package:tano/widgets/confirm.dart';
@@ -11,12 +12,14 @@ class EditNote extends StatefulWidget {
     final bool add;
     final int index;
     final NoteAction noteAction;
+    final NotesRepository repository;
 
     const EditNote({
         super.key,
         required this.add,
         required this.index,
         required this.noteAction,
+        required this.repository,
     });
 
     @override
@@ -41,8 +44,8 @@ class _EditNoteState extends State<EditNote> {
     @override
     void initState() {
         super.initState();
-        DbFileRoutines().readNotes().then((noteJson) {
-            _database = dbFromJson(noteJson);
+        widget.repository.loadNotes().then((notes) {
+            _database = Database(note: notes);
         });
         _noteAction = NoteAction(action: 'Cancel', note: widget.noteAction.note);
         if (widget.add) {
@@ -173,7 +176,7 @@ class _EditNoteState extends State<EditNote> {
                 if (note.content == '') {
                     return false;
                 }
-                await DbFileRoutines().writeNotes(dbToJson(_database));
+                await widget.repository.saveNotes(_database.note);
             }
         }
 

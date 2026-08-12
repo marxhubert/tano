@@ -1,13 +1,12 @@
 import 'package:tano/models/note.dart';
-import 'package:tano/services/database.dart';
 
-/// Builds a demo database seeded with 24 notes.
+/// Builds a demo note list seeded with 24 notes.
 ///
 /// The notes cover every category, span a wide range of dates spread
 /// over the past months, and mix favorite (`important`) and regular
 /// notes so every list layout, sort order and selection mode can be
 /// exercised.
-Database buildNotesFixtures() {
+List<Note> buildNotesFixtures() {
     final List<Note> notes = <Note>[];
     final DateTime baseDate = DateTime.now();
     // 24 notes distributed across the 7 categories (4/4/4/3/3/3/3).
@@ -35,7 +34,7 @@ Database buildNotesFixtures() {
         );
     }
 
-    return Database(note: notes);
+    return notes;
 }
 
 const Map<String, List<String>> _titles = <String, List<String>>{
