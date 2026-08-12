@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tano/config/app_config.dart';
-import 'package:tano/config/l10n.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/pages/home.dart';
+import 'package:tano/core/config/app_config.dart';
+import 'package:tano/core/config/l10n.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/features/notes/home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.repository});
