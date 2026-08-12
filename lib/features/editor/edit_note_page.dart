@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tano/application/edit_note_view_model.dart';
-import 'package:tano/config/l10n.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/utils/action.dart';
-import 'package:tano/utils/menu.dart';
-import 'package:tano/widgets/confirm.dart';
+import 'package:tano/features/editor/edit_note_view_model.dart';
+import 'package:tano/core/config/l10n.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/action.dart';
+import 'package:tano/core/widgets/menu.dart';
+import 'package:tano/core/widgets/confirm.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
@@ -64,8 +64,7 @@ class _EditNoteState extends State<EditNote> {
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
-    );
-    if (note.content!.trim().isEmpty) {
+    );      if (!_viewModel.isValid(title: _titleController.text, content: _contentController.text)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(AppText.tr('content_empty'))));
@@ -98,7 +97,7 @@ class _EditNoteState extends State<EditNote> {
       );
       if (confirm == true) {
         final Note note = _viewModel.buildNote(title: title, content: content);
-        if (note.content!.trim().isEmpty) {
+        if (!_viewModel.isValid(title: title, content: content)) {
           if (!mounted) {
             return false;
           }

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/utils/action.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/action.dart';
 
 /// Owns the state and the actions of the home screen.
 ///
