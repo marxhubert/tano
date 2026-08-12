@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -19,20 +20,20 @@ class DbFileRoutines {
         try {
             final file = await _localFile;
             if (!file.existsSync()) {
-                print("File does not exist: ${file.absolute}");
+                debugPrint("File does not exist: ${file.absolute}");
                 await writeNotes('{"notes": []}');
             }
             String contents = await file.readAsString();
             return contents;
         } catch(e) {
-            print("Error readNotes: $e");
+            debugPrint("Error readNotes: $e");
             return "";
         }
     }
 
     Future<File> writeNotes(String json) async {
         final file = await _localFile;
-        return file.writeAsString('$json');
+        return file.writeAsString(json);
     }
 }
 
@@ -53,11 +54,13 @@ class Database {
     List<Note> note;
 
     Database({
-        this.note,
-    });
+        List<Note>? note,
+    }) : note = note ?? [];
 
     factory Database.fromJson(Map<String, dynamic> json) => Database(
-        note: List<Note>.from(json["notes"].map((x) => Note.fromJson(x))),
+        note: json["notes"] == null
+            ? <Note>[]
+            : List<Note>.from((json["notes"] as List).map((x) => Note.fromJson(x))),
     );
 
     Map<String, dynamic> toJson() => {

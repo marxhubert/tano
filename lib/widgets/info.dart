@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:package_info/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-AlertDialog aboutInfo({BuildContext context, PackageInfo packageInfo}) {
+AlertDialog aboutInfo({required BuildContext context, PackageInfo? packageInfo}) {
     return AlertDialog(
         title: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
-                Container(
+                SizedBox(
                     width: 36.0,
                     height: 36.0,
                     child: CircleAvatar(
@@ -40,7 +40,7 @@ AlertDialog aboutInfo({BuildContext context, PackageInfo packageInfo}) {
                     ),
                 ),
                 Text(
-                    '${packageInfo.version}',
+                    packageInfo?.version ?? '',
                     style: TextStyle(
                         fontWeight: FontWeight.w400,
                         color: Colors.black,
@@ -72,7 +72,7 @@ AlertDialog aboutInfo({BuildContext context, PackageInfo packageInfo}) {
             ),
         ),
         actions: [
-            FlatButton(
+            TextButton(
                 child: Text(
                     'FERMER',
                     style: TextStyle(

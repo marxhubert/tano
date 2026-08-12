@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/services/database.dart';
 import 'package:tano/models/note.dart';
@@ -10,19 +9,19 @@ class ViewNote extends StatefulWidget {
     final NoteEdit noteEdit;
 
     const ViewNote({
-        Key key,
-        this.index,
-        this.noteEdit,
-    }) : super(key: key);
+        super.key,
+        required this.index,
+        required this.noteEdit,
+    });
 
     @override
-    _ViewNoteState createState() => _ViewNoteState();
+    State<ViewNote> createState() => _ViewNoteState();
 }
 
 class _ViewNoteState extends State<ViewNote> {
-    NoteEdit _noteEdit;
-    int _index;
-    Database _database;
+    late NoteEdit _noteEdit;
+    late int _index;
+    late Database _database;
 
     @override
     void initState() {
@@ -35,50 +34,54 @@ class _ViewNoteState extends State<ViewNote> {
     Future<List<Note>> _loadNotes() async {
         await DbFileRoutines().readNotes().then((noteJson) {
             _database = dbFromJson(noteJson);
-            _database.note.sort((note1, note2) => note2.date.compareTo(note1.date));
+            _database.note.sort((note1, note2) => note2.date!.compareTo(note1.date!));
         });
         return _database.note;
     }
 
-    void _addOrEditNote({bool add, int index, Note note}) async {
-        NoteEdit _noteEdit = NoteEdit(action: '', note: note);
-        _noteEdit = await Navigator.push(
+    void _addOrEditNote({required bool add, required int index, required Note note}) async {
+        final NoteEdit? result = await Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<NoteEdit>(
                 builder: (context) => EditEntry(
                     add: add,
                     index: index,
-                    noteEdit: _noteEdit,
+                    noteEdit: NoteEdit(action: '', note: note),
                 ),
                 fullscreenDialog: true
             ),
         );
-        switch (_noteEdit.action) {
+        if (result == null) {
+            return;
+        }
+        switch (result.action) {
             case 'Save':
                 if (add) {
                     setState(() {
-                        _database.note.add(_noteEdit.note);
+                        _database.note.add(result.note!);
                     });
                 } else {
                     setState(() {
-                        _database.note[index] = _noteEdit.note;
+                        _database.note[index] = result.note!;
                     });
                 }
-                DbFileRoutines().writeNotes(dbToJson(_database));
+                await DbFileRoutines().writeNotes(dbToJson(_database));
                 break;
             case 'Cancel':
                 break;
             default:
                 break;
         }
-        Navigator.pop(context, _noteEdit);
+        if (mounted) {
+            Navigator.pop(context, result);
+        }
     }
 
     @override
     Widget build(BuildContext context) {
         return Scaffold(
             appBar: AppBar(
-                title: Text('${_noteEdit.note.title}'),
+                title: Text(_noteEdit.note?.title ?? ''),
             ),
             body: SafeArea(
                 child: SingleChildScrollView(
@@ -91,7 +94,7 @@ class _ViewNoteState extends State<ViewNote> {
                                     Expanded(
                                         flex: 1,
                                         child: Text(
-                                            '${_noteEdit.note.title}',
+                                            _noteEdit.note?.title ?? '',
                                             style: TextStyle(
                                                 fontWeight: FontWeight.w400,
                                                 fontSize: 21.0
@@ -99,11 +102,11 @@ class _ViewNoteState extends State<ViewNote> {
                                         ),
                                     ),
                                     Switch(
-                                        value: _noteEdit.note.important,
+                                        value: _noteEdit.note?.important ?? false,
                                         onChanged: (value) {
                                             setState(() {
-                                                _noteEdit.note.important = !_noteEdit.note.important;
-                                                _database.note[_index] = _noteEdit.note;
+                                                _noteEdit.note!.important = !_noteEdit.note!.important!;
+                                                _database.note[_index] = _noteEdit.note!;
                                                 DbFileRoutines().writeNotes(dbToJson(_database));
                                             });
                                         }
@@ -112,7 +115,7 @@ class _ViewNoteState extends State<ViewNote> {
                             ),
                             SizedBox(height: 12.0,),
                             Text(
-                                _noteEdit.note.date.toString().substring(0, 10),
+                                _noteEdit.note?.date?.substring(0, 10) ?? '',
                             ),
                             SizedBox(height: 27.0,),
                             Text(
@@ -124,7 +127,7 @@ class _ViewNoteState extends State<ViewNote> {
                             ),
                             SizedBox(height: 9.0,),
                             Text(
-                                _noteEdit.note.content
+                                _noteEdit.note?.content ?? ''
                             ),
                         ],
                     ),
@@ -133,7 +136,7 @@ class _ViewNoteState extends State<ViewNote> {
             floatingActionButton: FloatingActionButton(
                 tooltip: 'Edit note',
                 child: Icon(Icons.edit),
-                onPressed: () => _addOrEditNote(add: false, index: _index, note: _noteEdit.note),
+                onPressed: () => _addOrEditNote(add: false, index: _index, note: _noteEdit.note!),
             ),
         );
     }
