@@ -8,6 +8,8 @@ void main() {
 }
 
 class Tano extends StatelessWidget {
+    const Tano({super.key});
+
     @override
     Widget build(BuildContext context) {
         return MaterialApp(

@@ -6,15 +6,17 @@ import 'package:tano/utils/action.dart';
 import 'package:tano/utils/menu.dart';
 
 class SearchPage extends StatefulWidget {
+    const SearchPage({super.key});
+
     @override
-    _SearchPageState createState() => _SearchPageState();
+    State<SearchPage> createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-    Database _database;
+    late Database _database;
     List<Note> _notes = [];
-    List<Note> _searchResult = [];
-    TextEditingController _searchFieldController = TextEditingController();
+    final List<Note> _searchResult = [];
+    final TextEditingController _searchFieldController = TextEditingController();
 
     @override
     void initState() {
@@ -36,7 +38,7 @@ class _SearchPageState extends State<SearchPage> {
     Future<List<Note>> _loadNotes() async {
         await DbFileRoutines().readNotes().then((noteJson) {
             _database = dbFromJson(noteJson);
-            _database.note.sort((note1, note2) => note2.date.compareTo(note1.date));
+            _database.note.sort((note1, note2) => note2.date!.compareTo(note1.date!));
         });
         return _database.note;
     }
@@ -48,9 +50,9 @@ class _SearchPageState extends State<SearchPage> {
             });
         } else {
             _searchResult.clear();
-            _notes.forEach((Note note) {
-                bool isStringInTitle = note.title.contains(RegExp(keyword, caseSensitive: false));
-                bool isStringInContent = note.content.contains(RegExp(keyword, caseSensitive: false));
+            for (final Note note in _notes) {
+                bool isStringInTitle = note.title != null && note.title!.contains(RegExp(keyword, caseSensitive: false));
+                bool isStringInContent = note.content != null && note.content!.contains(RegExp(keyword, caseSensitive: false));
                 if (isStringInTitle || isStringInContent) {
                     setState(() {
                         if (!_searchResult.contains(note)) {
@@ -58,32 +60,34 @@ class _SearchPageState extends State<SearchPage> {
                         }
                     });
                 }
-            });
+            }
         }
     }
 
-    void _noteController({bool add, int index, Note note}) async {
-        NoteAction _noteAction = NoteAction(action: '', note: note);
-        _noteAction = await Navigator.push(
+    void _noteController({required bool add, required int index, required Note note}) async {
+        final NoteAction? result = await Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<NoteAction>(
                 builder: (context) => EditNote(
                     add: add,
                     index: index,
-                    noteAction: _noteAction,
+                    noteAction: NoteAction(action: '', note: note),
                 ),
                 fullscreenDialog: true
             ),
         );
-        switch (_noteAction.action) {
+        if (result == null) {
+            return;
+        }
+        switch (result.action) {
             case 'Save':
                 if (add) {
                     setState(() {
-                        _database.note.add(_noteAction.note);
+                        _database.note.add(result.note!);
                     });
                 } else {
                     setState(() {
-                        _database.note[index] = _noteAction.note;
+                        _database.note[index] = result.note!;
                     });
                 }
                 break;
@@ -97,7 +101,7 @@ class _SearchPageState extends State<SearchPage> {
             default:
                 break;
         }
-        DbFileRoutines().writeNotes(dbToJson(_database));
+        await DbFileRoutines().writeNotes(dbToJson(_database));
     }
 
     Widget _showSearchResult(List<Note> notes) {
@@ -121,26 +125,26 @@ class _SearchPageState extends State<SearchPage> {
         return ListView.separated(
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
-                String _title = notes[index].title;
-                String _date = notes[index].date.toString().substring(0, 10);
-                final _important = notes[index].important;
+                String title = notes[index].title ?? '';
+                String date = notes[index].date.toString().substring(0, 10);
+                final bool important = notes[index].important == true;
                 return Row(
                     children: <Widget>[
                         Expanded(
                             flex: 1,
                             child: Card(
                                 elevation: 0.6,
-                                color: themeCategory(notes[index].category, false),
+                                color: themeCategory(notes[index].category ?? 'none', false),
                                 shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(0.0)),
                                 ),
                                 child: Container(
                                     margin: EdgeInsets.only(left: 2.7),
-                                    color: themeCategory(notes[index].category, true),
+                                    color: themeCategory(notes[index].category ?? 'none', true),
                                     child: ListTile(
                                         contentPadding: EdgeInsets.symmetric(horizontal: 9.0,),
                                         title: Text(
-                                            _title,
+                                            title,
                                             style: TextStyle(
                                                 fontSize: 14.4,
                                                 fontWeight: FontWeight.bold
@@ -148,15 +152,15 @@ class _SearchPageState extends State<SearchPage> {
                                             overflow: TextOverflow.ellipsis,
                                         ),
                                         subtitle: Text(
-                                            _date,
+                                            date,
                                             style: TextStyle(
                                                 fontSize: 12.0,
                                                 fontStyle: FontStyle.italic,
                                             ),
                                         ),
                                         trailing: Icon(
-                                            _important ? Icons.star : Icons.star_border,
-                                            color: _important ? Colors.orange : null,
+                                            important ? Icons.star : Icons.star_border,
+                                            color: important ? Colors.orange : null,
                                             size: 18.0,
                                         ),
                                         onTap: () {
@@ -206,7 +210,6 @@ class _SearchPageState extends State<SearchPage> {
                                             ),
                                             onTap: () => Navigator.pop(context),
                                         ),
-                                        //SizedBox(width: 12.0,),
                                         Expanded(
                                             flex: 1,
                                             child: TextField(
@@ -259,7 +262,7 @@ class _SearchPageState extends State<SearchPage> {
                                     ],
                                 ),
                             ),
-                            _searchResult.length > 0
+                            _searchResult.isNotEmpty
                             ? Container(
                                 padding: EdgeInsets.symmetric(vertical: 4.5),
                                 child: Row(

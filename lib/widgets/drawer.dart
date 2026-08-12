@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:package_info/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/pages/home.dart';
 import 'info.dart';
 
 class DrawerMenu extends StatefulWidget {
+    const DrawerMenu({super.key});
+
     @override
-    _DrawerMenuState createState() => _DrawerMenuState();
+    State<DrawerMenu> createState() => _DrawerMenuState();
 }
 
 class _DrawerMenuState extends State<DrawerMenu> {
@@ -17,12 +19,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
             children: <Widget>[
                 DrawerHeader(
                     padding: EdgeInsets.zero,
+                    decoration: BoxDecoration(color: Colors.black54),
                     child: Icon(
                         Icons.playlist_add_check,
                         size: 180.0,
                         color: Colors.white54,
                     ),
-                    decoration: BoxDecoration(color: Colors.black54),
                 ),
                 MenuList(),
             ],
@@ -32,17 +34,14 @@ class _DrawerMenuState extends State<DrawerMenu> {
 }
 
 class MenuList extends StatefulWidget {
+    const MenuList({super.key});
+
     @override
-    _MenuListState createState() => _MenuListState();
+    State<MenuList> createState() => _MenuListState();
 }
 
 class _MenuListState extends State<MenuList> {
-    PackageInfo _packageInfo = PackageInfo(
-        appName: 'Unknown',
-        packageName: 'Unknown',
-        version: 'Unknown',
-        buildNumber: 'Unknown',
-    );
+    PackageInfo? _packageInfo;
 
     @override
     void initState() {
@@ -52,6 +51,7 @@ class _MenuListState extends State<MenuList> {
 
     Future<void> _initPackageInfo() async {
         final PackageInfo info = await PackageInfo.fromPlatform();
+        if (!mounted) return;
         setState(() {
             _packageInfo = info;
         });
@@ -82,4 +82,3 @@ class _MenuListState extends State<MenuList> {
     );
     }
 }
-
