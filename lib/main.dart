@@ -10,10 +10,18 @@ void main() {
 }
 
 class Tano extends StatelessWidget {
-  const Tano({super.key, required this.repository});
+  const Tano({
+    super.key,
+    required this.repository,
+    this.themeMode = ThemeMode.system,
+  });
 
   /// Composition root: the concrete [NotesRepository] used by the whole app.
   final NotesRepository repository;
+
+  /// How the light/dark themes are selected. Exposed so tests can pin a
+  /// brightness instead of relying on the host platform.
+  final ThemeMode themeMode;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +32,16 @@ class Tano extends StatelessWidget {
         primaryColor: Colors.blueGrey.shade50,
         canvasColor: Colors.blueGrey.shade50,
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.dark,
+        ),
+        canvasColor: Colors.blueGrey.shade900,
+        scaffoldBackgroundColor: Colors.blueGrey.shade900,
+      ),
+      themeMode: themeMode,
       home: SplashScreen(repository: repository),
       routes: <String, WidgetBuilder>{
         '/home': (BuildContext context) => Home(repository: repository),

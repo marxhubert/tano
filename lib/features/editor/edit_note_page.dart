@@ -6,6 +6,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
@@ -277,7 +278,7 @@ class _EditNoteState extends State<EditNote> {
                 Expanded(
                   flex: 1,
                   child: Container(
-                    color: Colors.white,
+                    color: editorBackground(context),
                     padding: EdgeInsets.symmetric(horizontal: 9.0),
                     child: Column(
                       children: <Widget>[
@@ -343,7 +344,7 @@ class _EditNoteState extends State<EditNote> {
           elevation: 0.0,
           height: 36.0,
           padding: EdgeInsets.zero,
-          color: Colors.blueGrey.shade50,
+          color: barColor(context),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: _showActionButtons(action: widget.add ? 'add' : 'edit'),

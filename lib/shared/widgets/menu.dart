@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class PopupItem {
   final String title;
@@ -28,19 +29,19 @@ Map<String, PopupItem> get menuItems {
     ),
     'compact': PopupItem(
       title: AppText.tr('menu_compact'),
-      icon: Icon(Icons.view_list),
+      icon: Icon(Symbols.menu,),
       value: 'compact',
       trailingIcon: true,
     ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
-      icon: Icon(Icons.view_stream),
+      icon: Icon(Symbols.lists,),
       value: 'list',
       trailingIcon: true,
     ),
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
-      icon: Icon(Icons.view_module),
+      icon: Icon(Symbols.grid_view,),
       value: 'gridlist',
       trailingIcon: true,
     ),
@@ -211,21 +212,57 @@ Widget popupButton({
   );
 }
 
-Color themeCategory(String value, bool withShade) {
+Color themeCategory(
+  String value,
+  bool withShade, {
+  Brightness brightness = Brightness.light,
+}) {
+  if (!withShade) {
+    switch (value) {
+      case 'note':
+        return Colors.orange;
+      case 'work':
+        return Colors.red;
+      case 'personal':
+        return Colors.blue;
+      case 'travel':
+        return Colors.green;
+      case 'life':
+        return Colors.purple;
+      case 'project':
+        return Colors.yellow;
+      default:
+        return Colors.grey.shade600;
+    }
+  }
   switch (value) {
     case 'note':
-      return withShade ? Colors.orange.shade50 : Colors.orange;
+      return brightness == Brightness.dark
+          ? Colors.orange.shade900
+          : Colors.orange.shade50;
     case 'work':
-      return withShade ? Colors.red.shade50 : Colors.red;
+      return brightness == Brightness.dark
+          ? Colors.red.shade900
+          : Colors.red.shade50;
     case 'personal':
-      return withShade ? Colors.blue.shade50 : Colors.blue;
+      return brightness == Brightness.dark
+          ? Colors.blue.shade900
+          : Colors.blue.shade50;
     case 'travel':
-      return withShade ? Colors.green.shade50 : Colors.green;
+      return brightness == Brightness.dark
+          ? Colors.green.shade900
+          : Colors.green.shade50;
     case 'life':
-      return withShade ? Colors.purple.shade50 : Colors.purple;
+      return brightness == Brightness.dark
+          ? Colors.purple.shade900
+          : Colors.purple.shade50;
     case 'project':
-      return withShade ? Colors.yellow.shade50 : Colors.yellow;
+      return brightness == Brightness.dark
+          ? Colors.yellow.shade800
+          : Colors.yellow.shade50;
     default:
-      return withShade ? Colors.white : Colors.grey.shade600;
+      return brightness == Brightness.dark
+          ? Colors.grey.shade800
+          : Colors.white;
   }
 }

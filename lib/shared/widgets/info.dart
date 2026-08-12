@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 AlertDialog aboutInfo({
   required BuildContext context,
@@ -26,7 +27,7 @@ AlertDialog aboutInfo({
               text: AppConfig.appName,
               style: TextStyle(
                 fontWeight: FontWeight.w900,
-                color: Colors.black,
+                color: primaryTextColor(context),
                 fontSize: 18.0,
               ),
               children: <TextSpan>[
@@ -34,7 +35,7 @@ AlertDialog aboutInfo({
                   text: AppConfig.appNameSuffix,
                   style: TextStyle(
                     fontWeight: FontWeight.w400,
-                    color: Colors.black,
+                    color: primaryTextColor(context),
                     fontSize: 18.0,
                   ),
                 ),
@@ -46,7 +47,7 @@ AlertDialog aboutInfo({
           packageInfo?.version ?? '',
           style: TextStyle(
             fontWeight: FontWeight.w400,
-            color: Colors.black,
+            color: primaryTextColor(context),
             fontSize: 14.4,
           ),
         ),
@@ -57,7 +58,7 @@ AlertDialog aboutInfo({
         text: AppText.tr('about_description'),
         style: TextStyle(
           fontWeight: FontWeight.w400,
-          color: Colors.black87,
+          color: primaryTextColor(context),
           fontSize: 14.4,
           height: 1.5,
         ),
@@ -66,7 +67,7 @@ AlertDialog aboutInfo({
             text: '\n\n${AppConfig.authorName}\n${AppConfig.authorEmail}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: primaryTextColor(context),
               fontSize: 14.4,
               height: 1.5,
             ),

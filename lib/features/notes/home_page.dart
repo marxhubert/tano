@@ -12,6 +12,7 @@ import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, required this.repository, this.initialNotes});
@@ -137,7 +138,7 @@ class HomeState extends State<Home> {
 
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
-      return noRecordFound();
+      return noRecordFound(context);
     }
 
     switch (viewLayout) {
@@ -180,7 +181,11 @@ class HomeState extends State<Home> {
         return Card(
           margin: EdgeInsets.zero,
           elevation: 0.6,
-          color: themeCategory(notes[index].category ?? 'none', false),
+          color: themeCategory(
+            notes[index].category ?? 'none',
+            false,
+            brightness: Theme.of(context).brightness,
+          ),
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(0.0)),
           ),
@@ -188,7 +193,11 @@ class HomeState extends State<Home> {
             children: <Widget>[
               InkWell(
                 child: Container(
-                  color: themeCategory(notes[index].category ?? 'none', true),
+                  color: themeCategory(
+                    notes[index].category ?? 'none',
+                    true,
+                    brightness: Theme.of(context).brightness,
+                  ),
                   margin: EdgeInsets.only(bottom: 2.7),
                   child: Container(
                     padding: EdgeInsets.all(2.7),
@@ -371,13 +380,21 @@ class HomeState extends State<Home> {
                 child: Card(
                   elevation: 0.6,
                   margin: EdgeInsets.zero,
-                  color: themeCategory(notes[index].category ?? 'none', false),
+                  color: themeCategory(
+                    notes[index].category ?? 'none',
+                    false,
+                    brightness: Theme.of(context).brightness,
+                  ),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(0.0)),
                   ),
                   child: Container(
                     margin: EdgeInsets.only(left: 2.7),
-                    color: themeCategory(notes[index].category ?? 'none', true),
+                    color: themeCategory(
+                      notes[index].category ?? 'none',
+                      true,
+                      brightness: Theme.of(context).brightness,
+                    ),
                     child: ListTile(
                       contentPadding: EdgeInsets.only(left: 9.0),
                       title: Row(
@@ -393,12 +410,15 @@ class HomeState extends State<Home> {
                             ),
                           ),
                           SizedBox(width: 9.0),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 9.0,
-                              fontStyle: FontStyle.italic,
-                              color: Colors.black,
+                          Flexible(
+                            child: Text(
+                              date,
+                              style: TextStyle(
+                                fontSize: 9.0,
+                                fontStyle: FontStyle.italic,
+                                color: mutedTextColor(context),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -494,13 +514,21 @@ class HomeState extends State<Home> {
                 child: Card(
                   elevation: 0.6,
                   margin: EdgeInsets.zero,
-                  color: themeCategory(notes[index].category ?? 'none', false),
+                  color: themeCategory(
+                    notes[index].category ?? 'none',
+                    false,
+                    brightness: Theme.of(context).brightness,
+                  ),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(0.0)),
                   ),
                   child: Container(
                     margin: EdgeInsets.only(left: 2.7),
-                    color: themeCategory(notes[index].category ?? 'none', true),
+                    color: themeCategory(
+                      notes[index].category ?? 'none',
+                      true,
+                      brightness: Theme.of(context).brightness,
+                    ),
                     child: ListTile(
                       contentPadding: EdgeInsets.only(left: 9.0),
                       title: Text(
@@ -528,7 +556,7 @@ class HomeState extends State<Home> {
                                   style: TextStyle(
                                     fontSize: 10.8,
                                     fontStyle: FontStyle.italic,
-                                    color: Colors.black,
+                                    color: mutedTextColor(context),
                                   ),
                                 ),
                               ],
@@ -803,7 +831,7 @@ class HomeState extends State<Home> {
                             padding: EdgeInsets.symmetric(horizontal: 18.0),
                             margin: EdgeInsets.only(bottom: 4.5),
                             decoration: BoxDecoration(
-                              color: Colors.black12,
+                              color: chipFillColor(context),
                               borderRadius: BorderRadius.circular(54.0),
                             ),
                             child: Row(
@@ -906,7 +934,7 @@ class HomeState extends State<Home> {
             elevation: 0.0,
             height: 36.0,
             padding: EdgeInsets.zero,
-            color: Colors.blueGrey.shade50,
+            color: barColor(context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: _showActionButtons(action: _viewModel.actionButtons),

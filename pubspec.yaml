@@ -13,6 +13,7 @@ dependencies:
   path_provider: ^2.1.5
   shared_preferences: ^2.5.3
   package_info_plus: ^8.0.0
+  material_symbols_icons: ^4.2960.0
 
 dev_dependencies:
   flutter_test:

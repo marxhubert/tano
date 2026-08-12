@@ -11,6 +11,9 @@ Future<bool?> getConfirmation({
     context: context,
     builder: (context) {
       return AlertDialog(
+        // Keeps the dialog usable on very short windows or at large text
+        // scales: title and content scroll when space runs out.
+        scrollable: true,
         title: Text(actionTitle),
         content: Text(AppText.tr('confirm_question')),
         actions: <Widget>[
