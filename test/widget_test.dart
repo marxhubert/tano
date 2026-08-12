@@ -9,19 +9,19 @@ import 'package:tano/pages/splash.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
-    _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
+  _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
 
-    final List<Note> notes;
+  final List<Note> notes;
 
-    @override
-    Future<List<Note>> loadNotes() async => List<Note>.of(notes);
+  @override
+  Future<List<Note>> loadNotes() async => List<Note>.of(notes);
 
-    @override
-    Future<void> saveNotes(List<Note> notes) async {
-        this.notes
-          ..clear()
-          ..addAll(notes);
-    }
+  @override
+  Future<void> saveNotes(List<Note> notes) async {
+    this.notes
+      ..clear()
+      ..addAll(notes);
+  }
 }
 
 void main() {
@@ -36,9 +36,18 @@ void main() {
     );
   });
 
-  testWidgets('le splash affiche le logo puis navigue vers l\'accueil', (tester) async {
+  testWidgets('le splash affiche le logo puis navigue vers l\'accueil', (
+    tester,
+  ) async {
     final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
-      Note(id: '1', title: 'Hello', content: 'World', date: '2026-08-12 10:00:00.000', important: false, category: 'note'),
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+        important: false,
+        category: 'note',
+      ),
     ]);
 
     await tester.pumpWidget(Tano(repository: repository));
