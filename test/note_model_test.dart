@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
-import 'package:tano/services/database.dart';
 
 void main() {
   group('Note', () {

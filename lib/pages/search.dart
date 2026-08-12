@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:tano/config/l10n.dart';
+import 'package:tano/domain/notes_repository.dart';
+import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/pages/edit.dart';
-import 'package:tano/services/database.dart';
 import 'package:tano/utils/action.dart';
 import 'package:tano/utils/menu.dart';
 
 class SearchPage extends StatefulWidget {
-    const SearchPage({super.key});
+    const SearchPage({super.key, required this.repository});
+
+    final NotesRepository repository;
 
     @override
     State<SearchPage> createState() => _SearchPageState();
@@ -37,11 +40,10 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     Future<List<Note>> _loadNotes() async {
-        await DbFileRoutines().readNotes().then((noteJson) {
-            _database = dbFromJson(noteJson);
-            _database.note.sort((note1, note2) => note2.date!.compareTo(note1.date!));
-        });
-        return _database.note;
+        final List<Note> notes = await widget.repository.loadNotes();
+        notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
+        _database = Database(note: notes);
+        return notes;
     }
 
     void _searchEngine(String keyword) {
@@ -73,6 +75,7 @@ class _SearchPageState extends State<SearchPage> {
                     add: add,
                     index: index,
                     noteAction: NoteAction(action: '', note: note),
+                    repository: widget.repository,
                 ),
                 fullscreenDialog: true
             ),
@@ -102,7 +105,7 @@ class _SearchPageState extends State<SearchPage> {
             default:
                 break;
         }
-        await DbFileRoutines().writeNotes(dbToJson(_database));
+        await widget.repository.saveNotes(_database.note);
     }
 
     Widget _showSearchResult(List<Note> notes) {

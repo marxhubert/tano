@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tano/config/app_config.dart';
 import 'package:tano/config/l10n.dart';
+import 'package:tano/domain/notes_repository.dart';
+import 'package:tano/models/note.dart';
 import 'package:tano/pages/home.dart';
-import 'package:tano/services/database.dart';
 
 class SplashScreen extends StatefulWidget {
-    const SplashScreen({super.key});
+    const SplashScreen({super.key, required this.repository});
+
+    final NotesRepository repository;
 
     @override
     SplashScreenState createState() => SplashScreenState();
@@ -25,14 +28,15 @@ class SplashScreenState extends State<SplashScreen> {
             await LocaleController.instance.init();
 
             // The splash screen stays visible until the data is ready.
-            final String noteJson = await DbFileRoutines().readNotes();
-            // Parse the data so the home page never has to read it again.
-            final Database database = dbFromJson(noteJson);
+            final List<Note> notes = await widget.repository.loadNotes();
 
             if (!mounted) return;
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute<void>(
-                    builder: (BuildContext context) => Home(initialDatabase: database),
+                    builder: (BuildContext context) => Home(
+                        repository: widget.repository,
+                        initialNotes: notes,
+                    ),
                 ),
             );
         } catch (e) {

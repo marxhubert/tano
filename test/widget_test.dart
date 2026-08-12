@@ -1,28 +1,30 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/domain/notes_repository.dart';
 import 'package:tano/main.dart';
+import 'package:tano/models/note.dart';
 import 'package:tano/pages/home.dart';
 import 'package:tano/pages/splash.dart';
 
-class _FakePathProvider extends PathProviderPlatform {
-  final Directory directory;
+/// In-memory [NotesRepository] so the widget test never touches the disk.
+class _InMemoryNotesRepository implements NotesRepository {
+    _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
 
-  _FakePathProvider(this.directory);
+    final List<Note> notes;
 
-  @override
-  Future<String?> getApplicationDocumentsPath() async => directory.path;
+    @override
+    Future<List<Note>> loadNotes() async => List<Note>.of(notes);
 
-  @override
-  Future<String?> getApplicationSupportPath() async => directory.path;
+    @override
+    Future<void> saveNotes(List<Note> notes) async {
+        this.notes
+          ..clear()
+          ..addAll(notes);
+    }
 }
 
 void main() {
-  late Directory tempDir;
-
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     PackageInfo.setMockInitialValues(
@@ -34,19 +36,12 @@ void main() {
     );
   });
 
-  setUpAll(() async {
-    tempDir = await Directory.systemTemp.createTemp('tano_test');
-    PathProviderPlatform.instance = _FakePathProvider(tempDir);
-  });
-
-  tearDownAll(() async {
-    if (await tempDir.exists()) {
-      await tempDir.delete(recursive: true);
-    }
-  });
-
   testWidgets('le splash affiche le logo puis navigue vers l\'accueil', (tester) async {
-    await tester.pumpWidget(const Tano());
+    final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
+      Note(id: '1', title: 'Hello', content: 'World', date: '2026-08-12 10:00:00.000', important: false, category: 'note'),
+    ]);
+
+    await tester.pumpWidget(Tano(repository: repository));
 
     expect(find.byType(SplashScreen), findsOneWidget);
 
