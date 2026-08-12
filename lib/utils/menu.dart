@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class PopupItem {
     final String title;
     final String value;
-    final Icon icon;
-    PopupItem({this.title, this.value, this.icon});
+    final Icon? icon;
+    PopupItem({required this.title, required this.value, this.icon});
 }
 
 Map<String, PopupItem> menuItems = {
@@ -34,7 +34,7 @@ Map<String, PopupItem> categoryElements = {
     'none'     : PopupItem(title: 'Libre', icon: Icon(Icons.bookmark_border, color: null, size: 18.0,), value: 'none'),
 };
 
-Widget popupButton({PopupItem popupItem, String layout, String sort, bool editMode = false}) {
+Widget popupButton({required PopupItem popupItem, String? layout, String? sort, bool editMode = false}) {
     if ('separator' == popupItem.value) {
         return Container(
             color: Colors.grey,
@@ -56,14 +56,14 @@ Widget popupButton({PopupItem popupItem, String layout, String sort, bool editMo
     return editMode
         ? Row(
             children: <Widget>[
-                popupItem.icon,
+                popupItem.icon!,
                 SizedBox(width: 4.5),
                 Text(popupItem.title),
             ],
         )
         : Row(
             children: <Widget>[
-                popupItem.icon,
+                popupItem.icon!,
                 SizedBox(width: 4.5),
                 Text(popupItem.title),
                 Expanded(child: Offstage(),),
@@ -78,26 +78,17 @@ Color themeCategory(String value, bool withShade) {
     switch (value) {
         case 'note':
             return withShade ? Colors.orange.shade50 : Colors.orange;
-            break;
         case 'work':
             return withShade ? Colors.red.shade50 : Colors.red;
-            break;
         case 'personal':
             return withShade ? Colors.blue.shade50 : Colors.blue;
-            break;
         case 'travel':
             return withShade ? Colors.green.shade50 : Colors.green;
-            break;
         case 'life':
             return withShade ? Colors.purple.shade50 : Colors.purple;
-            break;
         case 'project':
             return withShade ? Colors.yellow.shade50 : Colors.yellow;
-            break;
         default:
             return withShade ? Colors.white : Colors.grey.shade600;
-            break;
     }
 }
-
-

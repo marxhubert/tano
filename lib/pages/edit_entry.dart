@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:tano/models/note.dart';
@@ -10,25 +9,25 @@ class EditEntry extends StatefulWidget {
     final NoteEdit noteEdit;
 
     const EditEntry({
-        Key key,
-        this.add,
-        this.index,
-        this.noteEdit,
-    }) : super(key: key);
+        super.key,
+        required this.add,
+        required this.index,
+        required this.noteEdit,
+    });
 
     @override
-    _EditEntryState createState() => _EditEntryState();
+    State<EditEntry> createState() => _EditEntryState();
 }
 
 class _EditEntryState extends State<EditEntry> {
-    NoteEdit _noteEdit;
-    String _actionTitle;
-    DateTime _selectedDate;
-    bool _important;
-    TextEditingController _titleController = TextEditingController();
-    TextEditingController _contentController = TextEditingController();
-    FocusNode _titleFocus = FocusNode();
-    FocusNode _contentFocus = FocusNode();
+    late NoteEdit _noteEdit;
+    late String _actionTitle;
+    late DateTime _selectedDate;
+    late bool _important;
+    final TextEditingController _titleController = TextEditingController();
+    final TextEditingController _contentController = TextEditingController();
+    final FocusNode _titleFocus = FocusNode();
+    final FocusNode _contentFocus = FocusNode();
 
     @override
     void initState() {
@@ -41,10 +40,10 @@ class _EditEntryState extends State<EditEntry> {
             _contentController.text = '';
             _important = false;
         } else {
-            _selectedDate = DateTime.parse(_noteEdit.note.date);
-            _titleController.text = _noteEdit.note.title;
-            _contentController.text = _noteEdit.note.content;
-            _important = _noteEdit.note.important;
+            _selectedDate = DateTime.parse(_noteEdit.note!.date!);
+            _titleController.text = _noteEdit.note!.title ?? '';
+            _contentController.text = _noteEdit.note!.content ?? '';
+            _important = _noteEdit.note!.important ?? false;
         }
     }
 
@@ -59,9 +58,9 @@ class _EditEntryState extends State<EditEntry> {
 
     void _saveAction(NoteEdit noteEdit) {
         noteEdit.action = 'Save';
-        String _id = widget.add ? Random().nextInt(999999).toString() : noteEdit.note.id;
+        String id = widget.add ? Random().nextInt(999999).toString() : noteEdit.note!.id ?? '';
         noteEdit.note = Note(
-            id: _id,
+            id: id,
             date: _selectedDate.toString(),
             title: _titleController.text,
             content: _contentController.text,

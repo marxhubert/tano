@@ -10,9 +10,11 @@ import 'package:tano/pages/edit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/widgets/info.dart';
 import 'package:tano/widgets/no_record.dart';
-import 'package:package_info/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class Home extends StatefulWidget {
+    const Home({super.key});
+
     @override
     HomeState createState() {
         return HomeState();
@@ -20,28 +22,23 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-    Database _database;
+    late Database _database;
     int _notesCount = 0;
-    SharedPreferences _prefs;
-    final _selected = Set<int>();
-    String _viewLayout;
-    String _actionButtons;
+    late SharedPreferences _prefs;
+    final _selected = <int>{};
+    String _viewLayout = 'list';
+    String _actionButtons = 'add';
     bool _isInSelectionMode = false;
-    String _sortBy;
+    String _sortBy = 'date';
     final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
-    PackageInfo _packageInfo = PackageInfo(
-        appName: 'Unknown',
-        packageName: 'Unknown',
-        version: 'Unknown',
-        buildNumber: 'Unknown',
-    );
+    PackageInfo? _packageInfo;
 
     Future<String> _getViewPrefFromSP() async {
         _prefs = await SharedPreferences.getInstance();
         if (!_prefs.containsKey('viewLayout')) {
             _prefs.setString('viewLayout', 'list');
         }
-        return _prefs.getString('viewLayout');
+        return _prefs.getString('viewLayout') ?? 'list';
     }
 
     Future<void> _setViewPrefToSP(String viewLayout) async {
@@ -54,7 +51,7 @@ class HomeState extends State<Home> {
         if (!_prefs.containsKey('sortBy')) {
             _prefs.setString('sortBy', 'date');
         }
-        return _prefs.getString('sortBy');
+        return _prefs.getString('sortBy') ?? 'date';
     }
 
     Future<void> _setSortingPrefToSP(String sortBy) async {
@@ -87,6 +84,7 @@ class HomeState extends State<Home> {
 
     Future<void> _initPackageInfo() async {
         final PackageInfo info = await PackageInfo.fromPlatform();
+        if (!mounted) return;
         setState(() {
             _packageInfo = info;
         });
@@ -105,62 +103,62 @@ class HomeState extends State<Home> {
     void _sortNotesBy(List<Note> notes) {
         switch (_sortBy) {
             case 'date':
-                notes.sort((note1, note2) => note2.date.compareTo(note1.date));
+                notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
                 break;
             case 'alpha':
-                notes.sort((note1, note2) => note1.title.compareTo(note2.title));
+                notes.sort((note1, note2) => note1.title!.compareTo(note2.title!));
                 break;
             case 'important':
                 notes.sort((note1, note2) => note2.important.toString().compareTo(note1.important.toString()));
                 break;
             case 'category':
-                notes.sort((note1, note2) => note1.category.compareTo(note2.category));
+                notes.sort((note1, note2) => note1.category!.compareTo(note2.category!));
                 break;
         }
     }
 
-    void _noteController({bool add, int index, Note note}) async {
-        NoteAction _noteAction = NoteAction(action: '', note: note);
-        _noteAction = await Navigator.push(
+    void _noteController({required bool add, required int index, required Note note}) async {
+        final NoteAction? result = await Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<NoteAction>(
                 builder: (context) => EditNote(
                     add: add,
                     index: index,
-                    noteAction: _noteAction,
+                    noteAction: NoteAction(action: '', note: note),
                 ),
                 fullscreenDialog: true
             ),
         );
-        if (null != _noteAction) {
-            switch (_noteAction.action) {
-                case 'Save':
-                    if (add) {
-                        setState(() {
-                            _database.note.add(_noteAction.note);
-                        });
-                    } else {
-                        setState(() {
-                            _database.note[index] = _noteAction.note;
-                        });
-                    }
-                    break;
-                case 'Delete':
-                    setState(() {
-                        _database.note.removeAt(index);
-                    });
-                    break;
-                case 'Cancel':
-                    break;
-                default:
-                    break;
-            }
-            DbFileRoutines().writeNotes(dbToJson(_database));
-            _notesCount = _database.note.length;
+        if (result == null) {
+            return;
         }
+        switch (result.action) {
+            case 'Save':
+                if (add) {
+                    setState(() {
+                        _database.note.add(result.note!);
+                    });
+                } else {
+                    setState(() {
+                        _database.note[index] = result.note!;
+                    });
+                }
+                break;
+            case 'Delete':
+                setState(() {
+                    _database.note.removeAt(index);
+                });
+                break;
+            case 'Cancel':
+                break;
+            default:
+                break;
+        }
+        await DbFileRoutines().writeNotes(dbToJson(_database));
+        _notesCount = _database.note.length;
     }
 
-    _sortingBy(String sortBy) {
+    void _sortingBy(String sortBy) {
         if ('' != sortBy) {
             setState(() {
                 _sortBy = sortBy;
@@ -169,7 +167,7 @@ class HomeState extends State<Home> {
         }
     }
 
-    _changeLayout(String viewLayout) {
+    void _changeLayout(String viewLayout) {
         switch (viewLayout) {
             case 'compact':
                 setState(() {
@@ -193,23 +191,19 @@ class HomeState extends State<Home> {
     }
 
     Widget _layoutChanger(List<Note> notes, String viewLayout) {
-        if (0 == notes.length) {
+        if (notes.isEmpty) {
             return noRecordFound();
         }
 
         switch (viewLayout) {
             case 'compact':
                 return _compactLayout(notes);
-                break;
             case 'list':
                 return _listLayout(notes);
-                break;
             case 'gridlist':
                 return _gridLayout(notes);
-                break;
             default:
                 return _listLayout(notes);
-                break;
         }
     }
 
@@ -228,7 +222,6 @@ class HomeState extends State<Home> {
                         _selected.add(index);
                     }
                 });
-                print(_selected);
             },
         );
     }
@@ -238,14 +231,14 @@ class HomeState extends State<Home> {
             crossAxisCount: 3,
             padding: EdgeInsets.symmetric(horizontal: 4.5),
             children: List.generate(notes.length, (index) {
-                String _title = notes[index].title;
-                String _content = notes[index].content;
-                String _date = notes[index].date.toString().substring(0, 10);
-                final _important = notes[index].important;
+                String title = notes[index].title ?? '';
+                String content = notes[index].content ?? '';
+                String date = notes[index].date.toString().substring(0, 10);
+                final bool important = notes[index].important ?? false;
                 return Card(
                     margin: EdgeInsets.all(2.7),
                     elevation: 0.6,
-                    color: themeCategory(notes[index].category, false),
+                    color: themeCategory(notes[index].category ?? 'none', false),
                     shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(0.0)),
                     ),
@@ -253,7 +246,7 @@ class HomeState extends State<Home> {
                         children: <Widget>[
                             InkWell(
                                 child: Container(
-                                    color: themeCategory(notes[index].category, true),
+                                    color: themeCategory(notes[index].category ?? 'none', true),
                                     margin: EdgeInsets.only(bottom: 2.7),
                                     child: Container(
                                         padding: EdgeInsets.all(2.7),
@@ -266,7 +259,7 @@ class HomeState extends State<Home> {
                                                         Expanded(
                                                             flex: 1,
                                                             child: Text(
-                                                                _title,
+                                                                title,
                                                                 style: TextStyle(
                                                                     fontWeight: FontWeight.bold,
                                                                     fontSize: 12.0
@@ -282,7 +275,7 @@ class HomeState extends State<Home> {
                                                 Expanded(
                                                     flex: 1,
                                                     child: Text(
-                                                        _content,
+                                                        content,
                                                         style: TextStyle(
                                                             fontSize: 10.8
                                                         ),
@@ -296,7 +289,7 @@ class HomeState extends State<Home> {
                                                         SizedBox(height: 14.4,),
                                                         Expanded(
                                                             child: Text(
-                                                                '$_date',
+                                                                date,
                                                                 style: TextStyle(
                                                                     fontSize: 9.0,
                                                                     fontStyle: FontStyle.italic,
@@ -326,10 +319,9 @@ class HomeState extends State<Home> {
                                     });
                                 },
                             ),
-                            Container(
-                                child: Row(
-                                    children: <Widget>[
-                                        Expanded(child: Offstage(),),
+                            Row(
+                                children: <Widget>[
+                                    Expanded(child: Offstage(),),
                                         Column(
                                             children: <Widget>[
                                                 Expanded(child: Offstage(),),
@@ -341,14 +333,14 @@ class HomeState extends State<Home> {
                                                         alignment: Alignment.bottomRight,
                                                         padding: EdgeInsets.all(4.5),
                                                         child: Icon(
-                                                            _important ? Icons.star : Icons.star_border,
-                                                            color: _important ? Colors.orange : null,
+                                                            important ? Icons.star : Icons.star_border,
+                                                            color: important ? Colors.orange : null,
                                                             size: 15.0,
                                                         ),
                                                     ),
                                                     onTap: () {
                                                         setState(() {
-                                                            notes[index].important = !notes[index].important;
+                                                            notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
                                                             DbFileRoutines().writeNotes(dbToJson(_database));
                                                         });
@@ -358,7 +350,6 @@ class HomeState extends State<Home> {
                                         )
                                     ],
                                 ),
-                            ),
                             _isInSelectionMode
                             ? GestureDetector(
                                 child: Container(
@@ -367,7 +358,7 @@ class HomeState extends State<Home> {
                                         ? Stack(
                                             children: <Widget>[
                                                 Center(
-                                                    child: Container(
+                                                    child: SizedBox(
                                                         width: 36.0,
                                                         height: 36.0,
                                                         child: CircleAvatar(
@@ -405,12 +396,11 @@ class HomeState extends State<Home> {
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
                 final alreadySelected = _selected.contains(index);
-                String _title = notes[index].title;
-                String _content = notes[index].content;
-                String _date = notes[index].date.toString().substring(0, 10);
-                final _important = notes[index].important;
+                String title = notes[index].title ?? '';
+                String date = notes[index].date.toString().substring(0, 10);
+                final bool important = notes[index].important ?? false;
                 return Dismissible(
-                    key: Key(notes[index].id),
+                    key: Key(notes[index].id ?? ''),
                     background: Container(
                         color: Colors.red,
                         alignment: Alignment.centerLeft,
@@ -438,20 +428,20 @@ class HomeState extends State<Home> {
                                 child: Card(
                                     elevation: 0.6,
                                     margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
-                                    color: themeCategory(notes[index].category, false),
+                                    color: themeCategory(notes[index].category ?? 'none', false),
                                     shape: const RoundedRectangleBorder(
                                         borderRadius: BorderRadius.all(Radius.circular(0.0)),
                                     ),
                                     child: Container(
                                         margin: EdgeInsets.only(left: 2.7),
-                                        color: themeCategory(notes[index].category, true),
+                                        color: themeCategory(notes[index].category ?? 'none', true),
                                         child: ListTile(
                                             contentPadding: EdgeInsets.only(left: 9.0,),
                                             title: Row(
                                                 children: <Widget>[
                                                     Expanded(
                                                         child: Text(
-                                                            _title,
+                                                            title,
                                                             style: TextStyle(
                                                                 fontSize: 12.0,
                                                                 fontWeight: FontWeight.bold
@@ -461,7 +451,7 @@ class HomeState extends State<Home> {
                                                     ),
                                                     SizedBox(width: 9.0,),
                                                     Text(
-                                                        _date,
+                                                        date,
                                                         style: TextStyle(
                                                             fontSize: 9.0,
                                                             fontStyle: FontStyle.italic,
@@ -472,8 +462,8 @@ class HomeState extends State<Home> {
                                             ),
                                             trailing: IconButton(
                                                 icon: Icon(
-                                                    _important ? Icons.star : Icons.star_border,
-                                                    color: _important ? Colors.orange : null,
+                                                    important ? Icons.star : Icons.star_border,
+                                                    color: important ? Colors.orange : null,
                                                     size: 18.0,
                                                 ),
                                                 onPressed: () {
@@ -483,7 +473,7 @@ class HomeState extends State<Home> {
                                                         });
                                                     } else {
                                                         setState(() {
-                                                            notes[index].important = !notes[index].important;
+                                                            notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
                                                             DbFileRoutines().writeNotes(dbToJson(_database));
                                                         });
@@ -537,12 +527,11 @@ class HomeState extends State<Home> {
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
                 final alreadySelected = _selected.contains(index);
-                String _title = notes[index].title;
-                String _content = notes[index].content;
-                String _date = notes[index].date.toString().substring(0, 10);
-                final _important = notes[index].important;
+                String title = notes[index].title ?? '';
+                String date = notes[index].date.toString().substring(0, 10);
+                final bool important = notes[index].important ?? false;
                 return Dismissible(
-                    key: Key(notes[index].id),
+                    key: Key(notes[index].id ?? ''),
                     background: Container(
                         color: Colors.red,
                         alignment: Alignment.centerLeft,
@@ -570,17 +559,17 @@ class HomeState extends State<Home> {
                                 child: Card(
                                     elevation: 0.6,
                                     margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
-                                    color: themeCategory(notes[index].category, false),
+                                    color: themeCategory(notes[index].category ?? 'none', false),
                                     shape: const RoundedRectangleBorder(
                                         borderRadius: BorderRadius.all(Radius.circular(0.0)),
                                     ),
                                     child: Container(
                                         margin: EdgeInsets.only(left: 2.7),
-                                        color: themeCategory(notes[index].category, true),
+                                        color: themeCategory(notes[index].category ?? 'none', true),
                                         child: ListTile(
                                             contentPadding: EdgeInsets.only(left: 9.0,),
                                             title: Text(
-                                                _title,
+                                                title,
                                                 style: TextStyle(
                                                     fontSize: 12.0,
                                                     fontWeight: FontWeight.bold
@@ -594,7 +583,7 @@ class HomeState extends State<Home> {
                                                             crossAxisAlignment: CrossAxisAlignment.start,
                                                             children: <Widget>[
                                                                 Text(
-                                                                    _content,
+                                                                    notes[index].content ?? '',
                                                                     maxLines: 3,
                                                                     overflow: TextOverflow.clip,
                                                                     style: TextStyle(
@@ -602,7 +591,7 @@ class HomeState extends State<Home> {
                                                                     ),
                                                                 ),
                                                                 Text(
-                                                                    _date,
+                                                                    date,
                                                                     style: TextStyle(
                                                                         fontSize: 10.8,
                                                                         fontStyle: FontStyle.italic,
@@ -616,8 +605,8 @@ class HomeState extends State<Home> {
                                             ),
                                             trailing: IconButton(
                                                 icon: Icon(
-                                                    _important ? Icons.star : Icons.star_border,
-                                                    color: _important ? Colors.orange : null,
+                                                    important ? Icons.star : Icons.star_border,
+                                                    color: important ? Colors.orange : null,
                                                     size: 18.0,
                                                 ),
                                                 onPressed: () {
@@ -627,7 +616,7 @@ class HomeState extends State<Home> {
                                                         });
                                                     } else {
                                                         setState(() {
-                                                            notes[index].important = !notes[index].important;
+                                                            notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
                                                             DbFileRoutines().writeNotes(dbToJson(_database));
                                                         });
@@ -676,7 +665,7 @@ class HomeState extends State<Home> {
         );
     }
 
-    List<Widget> _showActionButtons({int index, String action}) {
+    List<Widget> _showActionButtons({required String action}) {
         Widget addActionButton = IconButton(
             icon: Icon(Icons.add),
             iconSize: 24.0,
@@ -702,7 +691,7 @@ class HomeState extends State<Home> {
             iconSize: 24.0,
             onPressed: () async {
                 if (_selected.isEmpty) {
-                    _scaffoldState.currentState.showSnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(
                                 "Aucune note sélectionnée"
@@ -711,15 +700,15 @@ class HomeState extends State<Home> {
                     );
                 } else {
                     final notes = <Note>[];
-                    bool confirmDeletion = await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
-                    if (confirmDeletion) {
+                    final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: _selected.length > 1 ? 'Supprimer ${_selected.length == _notesCount ? 'toutes les' : 'les ${_selected.length}'} notes' : 'Supprimer la note', action: 'supprimer');
+                    if (confirmDeletion == true) {
                         setState(() {
-                            _selected.forEach((index) {
+                            for (final int index in _selected) {
                                 notes.add(_database.note[index]);
-                            });
-                            notes.forEach((note) {
+                            }
+                            for (final Note note in notes) {
                                 _database.note.remove(note);
-                            });
+                            }
                             DbFileRoutines().writeNotes(dbToJson(_database));
                             _notesCount = _database.note.length;
                             _selected.clear();
@@ -736,9 +725,9 @@ class HomeState extends State<Home> {
             iconSize: 21.0,
             onPressed: () {
                 setState(() {
-                    _database.note.forEach((note) {
+                    for (final Note note in _database.note) {
                         _selected.add(_database.note.indexOf(note));
-                    });
+                    }
                 });
             },
         );
@@ -758,7 +747,6 @@ class HomeState extends State<Home> {
                 return <Widget>[
                     Expanded(flex: 1, child: addActionButton,),
                 ];
-                break;
             case 'multiple':
                 return <Widget>[
                     Expanded(flex: 1, child: cancelActionButton,),
@@ -766,12 +754,10 @@ class HomeState extends State<Home> {
                     Expanded(flex: 1, child: selectNoneActionButton,),
                     Expanded(flex: 1, child: selectAllActionButton,),
                 ];
-                break;
             default:
                 return <Widget>[
                     Expanded(flex: 1, child: addActionButton,),
                 ];
-                break;
         }
     }
 
@@ -852,11 +838,10 @@ class HomeState extends State<Home> {
                     ),
                 ],
             ),
-            body: Container(
-                child: Column(
-                    children: <Widget>[
-                        Container(
-                            padding: EdgeInsets.symmetric(horizontal: 9.0),
+            body: Column(
+                children: <Widget>[
+                    Container(
+                        padding: EdgeInsets.symmetric(horizontal: 9.0),
                             child: Column(
                                 children: <Widget>[
                                     Container(
@@ -914,9 +899,9 @@ class HomeState extends State<Home> {
                                                             ),
                                                         ),
                                                         onTap: () {
-                                                            _isInSelectionMode == true
-                                                                ? print('Tano is in selection mode.')
-                                                                : Navigator.of(context).pushNamed('/search');
+                                                            if (!_isInSelectionMode) {
+                                                                Navigator.of(context).pushNamed('/search');
+                                                            }
                                                         },
                                                     ),
                                                 ),
@@ -927,7 +912,7 @@ class HomeState extends State<Home> {
                                     ? Container(
                                         margin: EdgeInsets.only(bottom: 4.5),
                                         child: Text(
-                                            _selected.length == 0
+                                            _selected.isEmpty
                                                 ? 'Aucune note sélectionnée'
                                                 : (_selected.length > 1
                                                     ? (_selected.length == _notesCount ? 'Toutes les $_notesCount notes sont sélectionnées' : '${_selected.length}/$_notesCount notes sélectionnées')
@@ -944,7 +929,7 @@ class HomeState extends State<Home> {
                                         margin: EdgeInsets.only(bottom: 4.5),
                                         alignment: Alignment.center,
                                         child: Text(
-                                            'Triage par ${menuItems[_sortBy].title.toLowerCase()}',
+                                            'Triage par ${(menuItems[_sortBy]?.title ?? '').toLowerCase()}',
                                             style: TextStyle(
                                                 color: Colors.grey,
                                                 fontWeight: FontWeight.w400,
@@ -971,7 +956,6 @@ class HomeState extends State<Home> {
                         ),
                     ],
                 ),
-            ),
             bottomNavigationBar: BottomAppBar(
                 elevation: 0.0,
                 color: Colors.blueGrey.shade50,

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/pages/home.dart';
@@ -6,7 +5,7 @@ import 'package:tano/pages/home.dart';
 class MenuItem {
     final String title;
     final Icon icon;
-    MenuItem({this.title, this.icon});
+    MenuItem({required this.title, required this.icon});
 }
 
 // Create a List of Menu Item for PopupMenuButton
@@ -15,9 +14,12 @@ List<MenuItem> menuItemList = [
     MenuItem(title: 'About', icon: Icon(Icons.info_outline)),
 ];
 
-addViewPrefToSP(BuildContext context, String viewPref) async {
+Future<void> addViewPrefToSP(BuildContext context, String viewPref) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('viewPref', viewPref);
+    if (!context.mounted) {
+        return;
+    }
     Navigator.pop(
         context,
         MaterialPageRoute(
@@ -30,9 +32,9 @@ addViewPrefToSP(BuildContext context, String viewPref) async {
 AlertDialog viewDialog(BuildContext context) {
     return AlertDialog(
         contentPadding: EdgeInsets.all(0.0),
-        content: Container(
-            height: 207.0,
+        content: SizedBox(
             width: 360.0,
+            height: 207.0,
             child: Column(
                 children: <Widget>[
                     Container(
@@ -89,10 +91,9 @@ AlertDialog viewDialog(BuildContext context) {
 AlertDialog aboutDialog(BuildContext context) {
     return AlertDialog(
         contentPadding: EdgeInsets.all(36.0),
-        title: Container(
-            child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
+        title: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
                     const Text(
                         'Tano',
                         style: TextStyle(
@@ -110,12 +111,11 @@ AlertDialog aboutDialog(BuildContext context) {
                     )
                 ],
             ),
-        ),
         content: const Text(
             'The main goal of Tano is to provide a simple tool that lets you write notes to keep your ideas, create to-do lists and organize your projects at the same place. Tano prioritizes ease of use over bells and whistles.\n\n\nMarx Hubert 2020\nshikamarx@gmail.com',
         ),
         actions: <Widget>[
-            FlatButton(
+            TextButton(
                 child: const Text('CLOSE'),
                 onPressed: () {
                     Navigator.of(context).pop();

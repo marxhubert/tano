@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tano/utils/dialog.dart';
 
-Future<String> dialogContent({BuildContext context, DialogAlert dialogAlert}) async {
-    return await showDialog(
+Future<String?> dialogContent({required BuildContext context, required DialogAlert dialogAlert}) async {
+    return await showDialog<String>(
         context: context,
         builder: (context) {
             return Dialog(
@@ -12,19 +12,19 @@ Future<String> dialogContent({BuildContext context, DialogAlert dialogAlert}) as
     );
 }
 
-_dialog({BuildContext context, DialogAlert dialogAlert}) {
-    String title = dialogAlert.title;
+Widget _dialog({required BuildContext context, required DialogAlert dialogAlert}) {
+    String title = dialogAlert.title ?? '';
     String subtitle = '';
-    Widget content = dialogAlert.content;
+    Widget? content = dialogAlert.content;
     List<Widget> actions = [];
 
     if (dialogAlert.subtitle != null) {
-        subtitle = dialogAlert.subtitle;
+        subtitle = dialogAlert.subtitle!;
     }
-    if (dialogAlert.actions.length > 0) {
-        dialogAlert.actions.forEach((FlatButton flatButton) {
-            actions.add(Expanded(child: flatButton));
-        });
+    if (dialogAlert.actions != null && dialogAlert.actions!.isNotEmpty) {
+        for (final Widget widget in dialogAlert.actions!) {
+            actions.add(Expanded(child: widget));
+        }
     }
 
     return Container(
@@ -43,7 +43,7 @@ _dialog({BuildContext context, DialogAlert dialogAlert}) {
                             children: <Widget>[
                                 Expanded(
                                     child: Text(
-                                        '$title',
+                                        title,
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: Colors.blue,
@@ -52,7 +52,7 @@ _dialog({BuildContext context, DialogAlert dialogAlert}) {
                                     ),
                                 ),
                                 Text(
-                                    '$subtitle',
+                                    subtitle,
                                     style: TextStyle(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.blue,
@@ -63,14 +63,12 @@ _dialog({BuildContext context, DialogAlert dialogAlert}) {
                         ),
                     ),
                 ),
-                Container(
-                    child: Column(
-                        children: <Widget>[
-                            content,
-                        ],
-                    ),
+                Column(
+                    children: <Widget>[
+                        content ?? const SizedBox.shrink(),
+                    ],
                 ),
-                actions.length == 0
+                actions.isEmpty
                 ? Offstage()
                 : Container(
                     color: Colors.blue,

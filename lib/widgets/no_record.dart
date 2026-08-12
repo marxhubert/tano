@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
 Widget noRecordFound() {
-    return Container(
-        child: Center(
+    return Center(
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                    Container(
+                    SizedBox(
                         width: 90.0,
                         height: 90.0,
                         child: Stack(
                             children: <Widget>[
-                                Container(
+                                SizedBox(
                                     width: 90.0,
                                     height: 90.0,
                                     child: CircleAvatar(
@@ -48,6 +47,5 @@ Widget noRecordFound() {
                     ),
                 ],
             ),
-        ),
     );
 }

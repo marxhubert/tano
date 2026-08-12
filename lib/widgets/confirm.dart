@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-Future<bool> getConfirmation({BuildContext context, String actionTitle, String action}) async {
-    return await showDialog(
+Future<bool?> getConfirmation({required BuildContext context, required String actionTitle, required String action}) async {
+    return await showDialog<bool>(
         context: context,
         builder: (context) {
             return AlertDialog(
@@ -10,7 +10,7 @@ Future<bool> getConfirmation({BuildContext context, String actionTitle, String a
                     'Voulez-vous vraiment continuer ?',
                 ),
                 actions: <Widget>[
-                    FlatButton(
+                    TextButton(
                         child: Text(
                             action.toLowerCase() == 'enregistrer' ? 'QUITTER' : 'ANNULER',
                             style: TextStyle(
@@ -21,7 +21,7 @@ Future<bool> getConfirmation({BuildContext context, String actionTitle, String a
                             Navigator.pop(context, false);
                         },
                     ),
-                    FlatButton(
+                    TextButton(
                         child: Text(
                             action.toUpperCase(),
                             style: TextStyle(

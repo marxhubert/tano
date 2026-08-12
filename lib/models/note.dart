@@ -1,10 +1,10 @@
 class Note {
-    String id;
-    String title;
-    String content;
-    String date;
-    bool important;
-    String category;
+    String? id;
+    String? title;
+    String? content;
+    String? date;
+    bool? important;
+    String? category;
 
     Note({
         this.id,
@@ -16,12 +16,12 @@ class Note {
     });
 
     factory Note.fromJson(Map<String, dynamic> json) => Note(
-        id: json['id'],
-        title: json['title'],
-        content: json['content'],
-        date: json['date'],
-        important: json['important'] == 0 ? false : true,
-        category: json['category'],
+        id: json['id'] as String?,
+        title: json['title'] as String?,
+        content: json['content'] as String?,
+        date: json['date'] as String?,
+        important: json['important'] == 1,
+        category: json['category'] as String?,
     );
 
     Map<String, dynamic> toJson() => {
@@ -29,7 +29,7 @@ class Note {
         "title": title,
         "content": content,
         "date": date,
-        "important": important ? 1 : 0,
+        "important": important == true ? 1 : 0,
         "category": category,
     };
 }
