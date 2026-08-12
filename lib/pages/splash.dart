@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tano/config/app_config.dart';
+import 'package:tano/config/l10n.dart';
+import 'package:tano/pages/home.dart';
+import 'package:tano/services/database.dart';
 
 class SplashScreen extends StatefulWidget {
     const SplashScreen({super.key});
@@ -10,19 +13,34 @@ class SplashScreen extends StatefulWidget {
 }
 
 class SplashScreenState extends State<SplashScreen> {
-    void startTime() {
-        var duration = Duration(seconds: 3);
-        Timer(duration, navigationPage);
-    }
-
-    void navigationPage() {
-        Navigator.of(context).pushReplacementNamed('/home');
-    }
-
     @override
     void initState() {
         super.initState();
-        startTime();
+        _loadInitialData();
+    }
+
+    Future<void> _loadInitialData() async {
+        try {
+            // Load locale data
+            await LocaleController.instance.init();
+
+            // The splash screen stays visible until the data is ready.
+            final String noteJson = await DbFileRoutines().readNotes();
+            // Parse the data so the home page never has to read it again.
+            final Database database = dbFromJson(noteJson);
+
+            if (!mounted) return;
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute<void>(
+                    builder: (BuildContext context) => Home(initialDatabase: database),
+                ),
+            );
+        } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error while loading : $e')),
+            );
+        }
     }
 
     @override
