@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tano/core/config/app_config.dart';
-import 'package:tano/core/config/l10n.dart';
+import 'package:tano/shared/config/app_config.dart';
+import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';

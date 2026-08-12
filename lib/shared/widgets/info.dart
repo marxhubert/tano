@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:tano/core/config/app_config.dart';
-import 'package:tano/core/config/l10n.dart';
+import 'package:tano/shared/config/app_config.dart';
+import 'package:tano/shared/config/l10n.dart';
 
 AlertDialog aboutInfo({
   required BuildContext context,

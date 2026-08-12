@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/core/config/l10n.dart';
+import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/search/search_page.dart';
 import 'package:tano/core/models/action.dart';
-import 'package:tano/core/widgets/menu.dart';
-import 'package:tano/core/widgets/confirm.dart';
-import 'package:tano/core/widgets/info.dart';
-import 'package:tano/core/widgets/no_record.dart';
+import 'package:tano/shared/widgets/menu.dart';
+import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/info.dart';
+import 'package:tano/shared/widgets/no_record.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, required this.repository, this.initialNotes});
