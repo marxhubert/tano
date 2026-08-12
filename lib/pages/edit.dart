@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:tano/application/edit_note_view_model.dart';
 import 'package:tano/config/l10n.dart';
 import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
 import 'package:tano/utils/action.dart';
 import 'package:tano/utils/menu.dart';
@@ -27,46 +26,27 @@ class EditNote extends StatefulWidget {
 }
 
 class _EditNoteState extends State<EditNote> {
-    late Database _database;
+    late final EditNoteViewModel _viewModel;
     late NoteAction _noteAction;
-    late String _id;
-    late DateTime _selectedDate;
-    late bool _important;
-    late String _category;
     final TextEditingController _titleController = TextEditingController();
     final TextEditingController _contentController = TextEditingController();
     final FocusNode _titleFocus = FocusNode();
     final FocusNode _contentFocus = FocusNode();
     int _noteContentLength = 0;
     final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
-    late Note _initialNote;
 
     @override
     void initState() {
         super.initState();
-        widget.repository.loadNotes().then((notes) {
-            _database = Database(note: notes);
-        });
+        _viewModel = EditNoteViewModel(
+            repository: widget.repository,
+            add: widget.add,
+            initialNote: widget.noteAction.note,
+        );
         _noteAction = NoteAction(action: 'Cancel', note: widget.noteAction.note);
-        if (widget.add) {
-            _id = Random().nextInt(999999).toString();
-            _selectedDate = DateTime.now();
-            _titleController.text = '';
-            _contentController.text = '';
-            _important = false;
-            _category = 'none';
-            _noteContentLength = 0;
-            _initialNote = _setNote(init: true);
-        } else {
-            _id = _noteAction.note!.id ?? '';
-            _selectedDate = DateTime.parse(_noteAction.note!.date!);
-            _titleController.text = _noteAction.note!.title!.replaceAll('\n', ' ');
-            _contentController.text = _noteAction.note!.content ?? '';
-            _important = _noteAction.note!.important ?? false;
-            _category = _noteAction.note!.category ?? 'none';
-            _noteContentLength = _noteAction.note!.content?.length ?? 0;
-            _initialNote = _setNote(init: true);
-        }
+        _titleController.text = widget.noteAction.note?.title?.replaceAll('\n', ' ') ?? '';
+        _contentController.text = widget.noteAction.note?.content ?? '';
+        _noteContentLength = widget.noteAction.note?.content?.length ?? 0;
     }
 
     @override
@@ -75,27 +55,16 @@ class _EditNoteState extends State<EditNote> {
         _contentController.dispose();
         _titleFocus.dispose();
         _contentFocus.dispose();
+        _viewModel.dispose();
         super.dispose();
     }
 
-    Note _setNote({bool init = false}) {
-        int max = 18 > _noteContentLength ? _noteContentLength : 18;
-        String content = _contentController.text.trim();
-        String title = _titleController.text.trim() != '' ? _titleController.text.trim() : content.substring(0, max).replaceAll('\n', ' ');
-
-        return Note(
-            id: _id,
-            date: _selectedDate.toString(),
-            title: init ? _titleController.text : title,
-            content: init ? _contentController.text : content,
-            important: _important,
-            category: _category,
+    void _saveNote({required NoteAction noteAction}) {
+        final Note note = _viewModel.buildNote(
+            title: _titleController.text,
+            content: _contentController.text,
         );
-    }
-
-    void _saveNote({required NoteAction noteAction, bool willPop = false}) {
-        Note note = _setNote();
-        if ('' == note.content!.trim()) {
+        if (note.content!.trim().isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                     content: Text(
@@ -105,12 +74,8 @@ class _EditNoteState extends State<EditNote> {
             );
         } else {
             noteAction.note = note;
-            if (willPop) {
-                widget.add ? _database.note.add(noteAction.note!) : _database.note[widget.index] = noteAction.note!;
-            } else {
-                noteAction.action = 'Save';
-                Navigator.pop(context, noteAction);
-            }
+            noteAction.action = 'Save';
+            Navigator.pop(context, noteAction);
         }
     }
 
@@ -123,6 +88,29 @@ class _EditNoteState extends State<EditNote> {
         setState(() {
             _noteContentLength = content.length;
         });
+    }
+
+    Future<bool> _onWillPopCallback() async {
+        final String title = _titleController.text;
+        final String content = _contentController.text;
+        if (_viewModel.isDirty(title: title, content: content)) {
+            final bool? confirm = await getConfirmation(context: context, actionTitle: AppText.tr('save_before_leave'), action: AppText.tr('save'));
+            if (confirm == true) {
+                final Note note = _viewModel.buildNote(title: title, content: content);
+                if (note.content!.trim().isEmpty) {
+                    if (!mounted) {
+                        return false;
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(AppText.tr('content_empty'))),
+                    );
+                    return false;
+                }
+                await _viewModel.persistSavedNote(note);
+            }
+        }
+
+        return true;
     }
 
     List<Widget> _showActionButtons({required String action}) {
@@ -139,14 +127,12 @@ class _EditNoteState extends State<EditNote> {
 
         Widget markAsImportantActionButton = IconButton(
             icon: Icon(
-                _important ? Icons.star : Icons.star_border,
-                color: _important ? Colors.orange : null,
+                _viewModel.important ? Icons.star : Icons.star_border,
+                color: _viewModel.important ? Colors.orange : null,
             ),
             iconSize: 24.0,
             onPressed: () {
-                setState(() {
-                    _important = !_important;
-                });
+                _viewModel.toggleImportant();
             },
         );
 
@@ -165,22 +151,6 @@ class _EditNoteState extends State<EditNote> {
                     Expanded(flex: 1, child: markAsImportantActionButton,),
                 ];
         }
-    }
-
-    Future<bool> _onWillPopCallback() async {
-        Note note = _setNote();
-        if (note.toJson().toString() != _initialNote.toJson().toString()) {
-            final bool? confirm = await getConfirmation(context: context, actionTitle: AppText.tr('save_before_leave'), action: AppText.tr('save'));
-            if (confirm == true) {
-                _saveNote(noteAction: _noteAction, willPop: true);
-                if (note.content == '') {
-                    return false;
-                }
-                await widget.repository.saveNotes(_database.note);
-            }
-        }
-
-        return true;
     }
 
     @override
@@ -220,134 +190,137 @@ class _EditNoteState extends State<EditNote> {
                         ),
                     ],
                 ),
-                body: Column(
-                    children: <Widget>[
-                        Container(
-                            padding: EdgeInsets.symmetric(horizontal: 4.5, vertical: 0.0),
-                                child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: <Widget>[
-                                        Expanded(
-                                            flex: 1,
-                                            child: TextField(
-                                                maxLines: 1,
-                                                maxLength: 54,
-                                                showCursor: true,
-                                                controller: _titleController,
-                                                textInputAction: TextInputAction.next,
-                                                textCapitalization: TextCapitalization.sentences,
-                                                style: TextStyle(
-                                                    fontFamily: 'Calibri',
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 21.0,
-                                                ),
-                                                decoration: InputDecoration(
-                                                    hintText: AppText.tr('title_here'),
-                                                    hintStyle: TextStyle(
-                                                        color: Colors.grey,
-                                                    ),
-                                                    border: InputBorder.none,
-                                                    counter: Offstage(),
-                                                    contentPadding: EdgeInsets.all(0.0),
-                                                ),
-                                                onSubmitted: (submitted) {
-                                                    FocusScope.of(context).requestFocus(_titleFocus);
-                                                },
-                                            ),
-                                        ),
-                                        SizedBox(width: 9.0,),
-                                        PopupMenuButton<PopupItem>(
-                                            onSelected: ((valueSelected) {
-                                                setState(() {
-                                                    _category = valueSelected.value;
-                                                });
-                                            }),
-                                            itemBuilder: (BuildContext context) {
-                                                final List<PopupItem> popupItems = [];
-                                                categoryElements.forEach((String key, PopupItem popupItem) {
-                                                    popupItems.add(popupItem);
-                                                });
-                                                return popupItems.map((PopupItem popupItem) {
-                                                    return PopupMenuItem<PopupItem>(
-                                                        value: popupItem,
-                                                        child: popupButton(popupItem: popupItem, editMode: true),
-                                                    );
-                                                }).toList();
-                                            },
-                                            child: Row(
-                                                children: <Widget>[
-                                                    popupButton(popupItem: categoryElements[_category]!, editMode: true),
-                                                    Icon(Icons.arrow_drop_down, size: 18.0,),
-                                                ],
-                                            ),
-                                        ),
-                                    ],
-                                ),
-                            ),
-                            Expanded(
-                                flex: 1,
-                                child: Container(
-                                    color: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 9.0),
-                                    child: Column(
+                body: ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (BuildContext context, Widget? child) {
+                        return Column(
+                            children: <Widget>[
+                                Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 4.5, vertical: 0.0),
+                                    child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
                                         children: <Widget>[
-                                            Container(
-                                                margin: EdgeInsets.symmetric(vertical: 1.0),
+                                            Expanded(
+                                                flex: 1,
+                                                child: TextField(
+                                                    maxLines: 1,
+                                                    maxLength: 54,
+                                                    showCursor: true,
+                                                    controller: _titleController,
+                                                    textInputAction: TextInputAction.next,
+                                                    textCapitalization: TextCapitalization.sentences,
+                                                    style: TextStyle(
+                                                        fontFamily: 'Calibri',
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 21.0,
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                        hintText: AppText.tr('title_here'),
+                                                        hintStyle: TextStyle(
+                                                            color: Colors.grey,
+                                                        ),
+                                                        border: InputBorder.none,
+                                                        counter: Offstage(),
+                                                        contentPadding: EdgeInsets.all(0.0),
+                                                    ),
+                                                    onSubmitted: (submitted) {
+                                                        FocusScope.of(context).requestFocus(_titleFocus);
+                                                    },
+                                                ),
+                                            ),
+                                            SizedBox(width: 9.0,),
+                                            PopupMenuButton<PopupItem>(
+                                                onSelected: ((valueSelected) {
+                                                    _viewModel.setCategory(valueSelected.value);
+                                                }),
+                                                itemBuilder: (BuildContext context) {
+                                                    final List<PopupItem> popupItems = [];
+                                                    categoryElements.forEach((String key, PopupItem popupItem) {
+                                                        popupItems.add(popupItem);
+                                                    });
+                                                    return popupItems.map((PopupItem popupItem) {
+                                                        return PopupMenuItem<PopupItem>(
+                                                            value: popupItem,
+                                                            child: popupButton(popupItem: popupItem, editMode: true),
+                                                        );
+                                                    }).toList();
+                                                },
                                                 child: Row(
                                                     children: <Widget>[
-                                                        Expanded(
-                                                            child: Text(
-                                                                '$_noteContentLength',
+                                                        popupButton(popupItem: categoryElements[_viewModel.category]!, editMode: true),
+                                                        Icon(Icons.arrow_drop_down, size: 18.0,),
+                                                    ],
+                                                ),
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                                Expanded(
+                                    flex: 1,
+                                    child: Container(
+                                        color: Colors.white,
+                                        padding: EdgeInsets.symmetric(horizontal: 9.0),
+                                        child: Column(
+                                            children: <Widget>[
+                                                Container(
+                                                    margin: EdgeInsets.symmetric(vertical: 1.0),
+                                                    child: Row(
+                                                        children: <Widget>[
+                                                            Expanded(
+                                                                child: Text(
+                                                                    '$_noteContentLength',
+                                                                    style: TextStyle(
+                                                                        fontSize: 9.0,
+                                                                        fontWeight: FontWeight.w300,
+                                                                        fontStyle: FontStyle.italic,
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Text(
+                                                                _viewModel.selectedDate.toString().substring(0, 16),
                                                                 style: TextStyle(
                                                                     fontSize: 9.0,
                                                                     fontWeight: FontWeight.w300,
                                                                     fontStyle: FontStyle.italic,
                                                                 ),
                                                             ),
-                                                        ),
-                                                        Text(
-                                                            _selectedDate.toString().substring(0, 16),
-                                                            style: TextStyle(
-                                                                fontSize: 9.0,
-                                                                fontWeight: FontWeight.w300,
-                                                                fontStyle: FontStyle.italic,
-                                                            ),
-                                                        ),
-                                                    ],
-                                                ),
-                                            ),
-                                            Expanded(
-                                                flex: 1,
-                                                child: TextField(
-                                                    maxLines: null,
-                                                    minLines: null,
-                                                    showCursor: true,
-                                                    autofocus: widget.add,
-                                                    focusNode: _contentFocus,
-                                                    controller: _contentController,
-                                                    textInputAction: TextInputAction.newline,
-                                                    textCapitalization: TextCapitalization.sentences,
-                                                    style: TextStyle(
-                                                        fontSize: 14.4,
-                                                        height: 1.8,
+                                                        ],
                                                     ),
-                                                    decoration: InputDecoration(
-                                                        hintText: AppText.tr('content_here'),
-                                                        border: InputBorder.none,
-                                                        contentPadding: EdgeInsets.all(0.0),
-                                                    ),
-                                                    onChanged: (String content) {
-                                                        _getNoteContentLength(content);
-                                                    },
                                                 ),
-                                            ),
-                                        ],
+                                                Expanded(
+                                                    flex: 1,
+                                                    child: TextField(
+                                                        maxLines: null,
+                                                        minLines: null,
+                                                        showCursor: true,
+                                                        autofocus: widget.add,
+                                                        focusNode: _contentFocus,
+                                                        controller: _contentController,
+                                                        textInputAction: TextInputAction.newline,
+                                                        textCapitalization: TextCapitalization.sentences,
+                                                        style: TextStyle(
+                                                            fontSize: 14.4,
+                                                            height: 1.8,
+                                                        ),
+                                                        decoration: InputDecoration(
+                                                            hintText: AppText.tr('content_here'),
+                                                            border: InputBorder.none,
+                                                            contentPadding: EdgeInsets.all(0.0),
+                                                        ),
+                                                        onChanged: (String content) {
+                                                            _getNoteContentLength(content);
+                                                        },
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
                                     ),
                                 ),
-                            ),
-                        ],
-                    ),
+                            ],
+                        );
+                    },
+                ),
                 bottomNavigationBar: BottomAppBar(
                     elevation: 0.0,
                     color: Colors.blueGrey.shade50,
