@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:tano/fixtures/notes_fixtures.dart';
 import 'package:tano/models/note.dart';
 
 // DbFileRoutines class
@@ -21,7 +22,9 @@ class DbFileRoutines {
             final file = await _localFile;
             if (!file.existsSync()) {
                 debugPrint("File does not exist: ${file.absolute}");
-                await writeNotes('{"notes": []}');
+                // First launch: seed the app with 24 demo notes so every
+                // category, date range and favorite status is represented.
+                await writeNotes(dbToJson(buildNotesFixtures()));
             }
             String contents = await file.readAsString();
             return contents;
