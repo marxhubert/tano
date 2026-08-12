@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:tano/config/l10n.dart';
+import 'package:tano/domain/notes_repository.dart';
+import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
-import 'package:tano/services/database.dart';
 import 'package:tano/widgets/confirm.dart';
 import 'package:tano/utils/menu.dart';
 import 'package:tano/utils/action.dart';
@@ -14,11 +15,13 @@ import 'package:tano/widgets/no_record.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class Home extends StatefulWidget {
-    const Home({super.key, this.initialDatabase});
+    const Home({super.key, required this.repository, this.initialNotes});
 
     /// Notes already loaded by the splash screen. When null (legacy
     /// navigation flows), the state falls back to reading them from disk.
-    final Database? initialDatabase;
+    final NotesRepository repository;
+
+    final List<Note>? initialNotes;
 
     @override
     HomeState createState() {
@@ -67,9 +70,9 @@ class HomeState extends State<Home> {
     @override
     void initState() {
         super.initState();
-        _database = widget.initialDatabase ?? Database();
+        _database = Database(note: widget.initialNotes ?? <Note>[]);
         _sortNotesBy(_database.note);
-        if (widget.initialDatabase == null) {
+        if (widget.initialNotes == null) {
             // Navigation flows that do not receive the data loaded by the
             // splash screen fall back to reading the notes from disk.
             _loadDatabaseFromDisk().then((database) {
@@ -110,8 +113,8 @@ class HomeState extends State<Home> {
     }
 
     Future<Database> _loadDatabaseFromDisk() async {
-        final String noteJson = await DbFileRoutines().readNotes();
-        return dbFromJson(noteJson);
+        final List<Note> notes = await widget.repository.loadNotes();
+        return Database(note: notes);
     }
 
     void _sortNotesBy(List<Note> notes) {
@@ -139,6 +142,7 @@ class HomeState extends State<Home> {
                     add: add,
                     index: index,
                     noteAction: NoteAction(action: '', note: note),
+                    repository: widget.repository,
                 ),
                 fullscreenDialog: true
             ),
@@ -168,7 +172,7 @@ class HomeState extends State<Home> {
             default:
                 break;
         }
-        await DbFileRoutines().writeNotes(dbToJson(_database));
+        await widget.repository.saveNotes(_database.note);
         _notesCount = _database.note.length;
     }
 
@@ -371,7 +375,7 @@ class HomeState extends State<Home> {
                                                         setState(() {
                                                             notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
-                                                            DbFileRoutines().writeNotes(dbToJson(_database));
+                                                            widget.repository.saveNotes(_database.note);
                                                         });
                                                     },
                                                 )
@@ -504,7 +508,7 @@ class HomeState extends State<Home> {
                                                         setState(() {
                                                             notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
-                                                            DbFileRoutines().writeNotes(dbToJson(_database));
+                                                            widget.repository.saveNotes(_database.note);
                                                         });
                                                     }
                                                 },
@@ -539,7 +543,7 @@ class HomeState extends State<Home> {
                         setState(() {
                             _database.note.removeAt(index);
                         });
-                        DbFileRoutines().writeNotes(dbToJson(_database));
+                        widget.repository.saveNotes(_database.note);
                     },
                 );
             },
@@ -647,7 +651,7 @@ class HomeState extends State<Home> {
                                                         setState(() {
                                                             notes[index].important = !(notes[index].important ?? false);
                                                             _database.note[index] = notes[index];
-                                                            DbFileRoutines().writeNotes(dbToJson(_database));
+                                                            widget.repository.saveNotes(_database.note);
                                                         });
                                                     }
                                                 },
@@ -682,7 +686,7 @@ class HomeState extends State<Home> {
                         setState(() {
                             _database.note.removeAt(index);
                         });
-                        DbFileRoutines().writeNotes(dbToJson(_database));
+                        widget.repository.saveNotes(_database.note);
                     },
                 );
             },
@@ -738,7 +742,7 @@ class HomeState extends State<Home> {
                             for (final Note note in notes) {
                                 _database.note.remove(note);
                             }
-                            DbFileRoutines().writeNotes(dbToJson(_database));
+                            widget.repository.saveNotes(_database.note);
                             _notesCount = _database.note.length;
                             _selected.clear();
                             _isInSelectionMode = false;
