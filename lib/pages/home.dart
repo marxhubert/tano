@@ -14,7 +14,11 @@ import 'package:tano/widgets/no_record.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class Home extends StatefulWidget {
-    const Home({super.key});
+    const Home({super.key, this.initialDatabase});
+
+    /// Notes already loaded by the splash screen. When null (legacy
+    /// navigation flows), the state falls back to reading them from disk.
+    final Database? initialDatabase;
 
     @override
     HomeState createState() {
@@ -63,16 +67,30 @@ class HomeState extends State<Home> {
     @override
     void initState() {
         super.initState();
-        _loadNotes().then((notes) {
-            setState(() {
-                _notesCount = notes.length;
+        _database = widget.initialDatabase ?? Database();
+        _sortNotesBy(_database.note);
+        if (widget.initialDatabase == null) {
+            // Navigation flows that do not receive the data loaded by the
+            // splash screen fall back to reading the notes from disk.
+            _loadDatabaseFromDisk().then((database) {
+                if (!mounted) return;
+                setState(() {
+                    _database = database;
+                    _notesCount = database.note.length;
+                    _sortNotesBy(_database.note);
+                });
             });
-        });
+        } else {
+            _notesCount = _database.note.length;
+        }
         _getViewPrefFromSP().then((viewLayout) {
             _viewLayout = viewLayout;
         });
         _getSortingPrefFromSP().then((sortBy) {
             _sortBy = sortBy;
+            setState(() {
+                _sortNotesBy(_database.note);
+            });
         });
         _actionButtons = 'add';
         _initPackageInfo();
@@ -91,14 +109,9 @@ class HomeState extends State<Home> {
         });
     }
 
-    Future<List<Note>> _loadNotes() async {
-        await DbFileRoutines().readNotes().then((noteJson) {
-            _database = dbFromJson(noteJson);
-            setState(() {
-                _sortNotesBy(_database.note);
-            });
-        });
-        return _database.note;
+    Future<Database> _loadDatabaseFromDisk() async {
+        final String noteJson = await DbFileRoutines().readNotes();
+        return dbFromJson(noteJson);
     }
 
     void _sortNotesBy(List<Note> notes) {
@@ -960,17 +973,7 @@ class HomeState extends State<Home> {
                             ),
                         ),
                         Expanded(
-                            child: FutureBuilder(
-                                initialData: [],
-                                future: _loadNotes(),
-                                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                                    while (!snapshot.hasData) {
-                                        return Center(child: CircularProgressIndicator());
-                                    }
-                                    List<Note> notes = List<Note>.generate(snapshot.data.length, (int index) => snapshot.data[index]);
-                                    return _layoutChanger(notes, _viewLayout);
-                                },
-                            ),
+                            child: _layoutChanger(_database.note, _viewLayout),
                         ),
                     ],
                 ),
