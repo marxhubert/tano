@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/fixtures/notes_fixtures.dart';
-import 'package:tano/models/database.dart';
-import 'package:tano/models/note.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
+import 'package:tano/core/models/database.dart';
+import 'package:tano/core/models/note.dart';
 
 /// File-backed [NotesRepository] implementation.
 ///

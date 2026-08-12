@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:tano/data/file_notes_repository.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/pages/home.dart';
-import 'package:tano/pages/search.dart';
-import 'package:tano/pages/splash.dart';
+import 'package:tano/core/repositories/file_notes_repository.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/features/notes/home_page.dart';
+import 'package:tano/features/search/search_page.dart';
+import 'package:tano/features/splash/splash_page.dart';
 
 void main() {
   runApp(Tano(repository: FileNotesRepository()));

@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tano/domain/notes_repository.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/pages/home.dart';
-import 'package:tano/pages/splash.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/features/notes/home_page.dart';
+import 'package:tano/features/splash/splash_page.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {

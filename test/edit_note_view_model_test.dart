@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tano/application/edit_note_view_model.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
+import 'package:tano/features/editor/edit_note_view_model.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
 
 class _InMemoryNotesRepository implements NotesRepository {
   _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];

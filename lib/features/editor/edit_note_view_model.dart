@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
 
 /// Owns the form state and the note-building logic of the edit screen.
 ///
@@ -66,13 +66,16 @@ class EditNoteViewModel extends ChangeNotifier {
       important: important,
       category: category,
     );
-  }
+  }    /// Whether the current form differs from the note as it was opened.
+    bool isDirty({required String title, required String content}) {
+        final Note current = buildNote(title: title, content: content);
+        return current.toJson().toString() != _initialNote.toJson().toString();
+    }
 
-  /// Whether the current form differs from the note as it was opened.
-  bool isDirty({required String title, required String content}) {
-    final Note current = buildNote(title: title, content: content);
-    return current.toJson().toString() != _initialNote.toJson().toString();
-  }
+    /// Business rule: a note is only savable when its content is not blank.
+    bool isValid({required String title, required String content}) {
+        return buildNote(title: title, content: content).content!.isNotEmpty;
+    }
 
   /// Persists a saved note: adds it or replaces the note with the same id,
   /// then saves the whole list.

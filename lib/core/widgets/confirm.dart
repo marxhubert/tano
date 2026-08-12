@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tano/config/l10n.dart';
+import 'package:tano/core/config/l10n.dart';
 
 Future<bool?> getConfirmation({
   required BuildContext context,

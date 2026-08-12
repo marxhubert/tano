@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/note.dart';
-import 'package:tano/utils/action.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/action.dart';
 
 /// Owns the search state and actions of the search page.
 ///

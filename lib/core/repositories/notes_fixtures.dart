@@ -1,4 +1,4 @@
-import 'package:tano/models/note.dart';
+import 'package:tano/core/models/note.dart';
 
 /// Builds a demo note list seeded with 24 notes.
 ///

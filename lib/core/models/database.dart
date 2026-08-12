@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:tano/models/note.dart';
+import 'package:tano/core/models/note.dart';
 
 /// Parses a JSON document into a [Database].
 Database dbFromJson(String str) {
