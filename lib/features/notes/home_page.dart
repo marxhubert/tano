@@ -168,7 +168,9 @@ class HomeState extends State<Home> {
   Widget _gridLayout(List<Note> notes) {
     return GridView.count(
       crossAxisCount: 3,
-      padding: EdgeInsets.symmetric(horizontal: 4.5),
+      padding: EdgeInsets.symmetric(horizontal: 12.0),
+      crossAxisSpacing: 12.0,
+      mainAxisSpacing: 12.0,
       children: List.generate(notes.length, (index) {
         String title = notes[index].title ?? '';
         String content = notes[index].content ?? '';
@@ -176,7 +178,7 @@ class HomeState extends State<Home> {
         final bool important = notes[index].important ?? false;
         final bool isSelected = _viewModel.selected.contains(index);
         return Card(
-          margin: EdgeInsets.all(2.7),
+          margin: EdgeInsets.zero,
           elevation: 0.6,
           color: themeCategory(notes[index].category ?? 'none', false),
           shape: const RoundedRectangleBorder(
@@ -334,6 +336,7 @@ class HomeState extends State<Home> {
   Widget _compactLayout(List<Note> notes) {
     return ListView.separated(
       itemCount: notes.length,
+      padding: EdgeInsets.symmetric(horizontal: 12.0),
       itemBuilder: (BuildContext context, int index) {
         final alreadySelected = _viewModel.selected.contains(index);
         String title = notes[index].title ?? '';
@@ -367,7 +370,7 @@ class HomeState extends State<Home> {
                 flex: 1,
                 child: Card(
                   elevation: 0.6,
-                  margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
+                  margin: EdgeInsets.zero,
                   color: themeCategory(notes[index].category ?? 'none', false),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(0.0)),
@@ -448,7 +451,7 @@ class HomeState extends State<Home> {
         );
       },
       separatorBuilder: (BuildContext context, int index) {
-        return Padding(padding: EdgeInsets.only(bottom: 0.0));
+        return SizedBox(height: 12.0);
       },
     );
   }
@@ -456,6 +459,7 @@ class HomeState extends State<Home> {
   Widget _listLayout(List<Note> notes) {
     return ListView.separated(
       itemCount: notes.length,
+      padding: EdgeInsets.symmetric(horizontal: 12.0),
       itemBuilder: (BuildContext context, int index) {
         final alreadySelected = _viewModel.selected.contains(index);
         String title = notes[index].title ?? '';
@@ -489,7 +493,7 @@ class HomeState extends State<Home> {
                 flex: 1,
                 child: Card(
                   elevation: 0.6,
-                  margin: EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.6),
+                  margin: EdgeInsets.zero,
                   color: themeCategory(notes[index].category ?? 'none', false),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(0.0)),
@@ -580,7 +584,7 @@ class HomeState extends State<Home> {
         );
       },
       separatorBuilder: (BuildContext context, int index) {
-        return Padding(padding: EdgeInsets.only(bottom: 0.0));
+        return SizedBox(height: 12.0);
       },
     );
   }
@@ -589,6 +593,8 @@ class HomeState extends State<Home> {
     Widget addActionButton = IconButton(
       icon: Icon(Icons.add),
       iconSize: 24.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () {
         _openNoteEditor(add: true, index: -1, note: Note());
       },
@@ -597,6 +603,8 @@ class HomeState extends State<Home> {
     Widget cancelActionButton = IconButton(
       icon: Icon(Icons.arrow_back),
       iconSize: 24.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () {
         _viewModel.exitSelectionMode();
       },
@@ -605,6 +613,8 @@ class HomeState extends State<Home> {
     Widget deleteActionButton = IconButton(
       icon: Icon(Icons.clear),
       iconSize: 24.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () async {
         if (!_viewModel.hasSelection) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -626,6 +636,8 @@ class HomeState extends State<Home> {
     Widget selectAllActionButton = IconButton(
       icon: Icon(Icons.check_circle),
       iconSize: 21.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () {
         _viewModel.selectAll();
       },
@@ -634,6 +646,8 @@ class HomeState extends State<Home> {
     Widget selectNoneActionButton = IconButton(
       icon: Icon(Icons.panorama_fish_eye),
       iconSize: 21.0,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
       onPressed: () {
         _viewModel.clearSelection();
       },
@@ -731,8 +745,9 @@ class HomeState extends State<Home> {
                         return popupItems.map((PopupItem popupItem) {
                           return PopupMenuItem<PopupItem>(
                             value: popupItem,
-                            height: 42.0,
+                            height: popupItem.value == 'separator' ? 8.0 : 28.0,
                             child: popupButton(
+                              context: context,
                               popupItem: popupItem,
                               layout: _viewModel.viewLayout,
                               sort: _viewModel.sortBy,
@@ -748,7 +763,7 @@ class HomeState extends State<Home> {
           body: Column(
             children: <Widget>[
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 9.0),
+                padding: EdgeInsets.symmetric(horizontal: 12.0),
                 child: Column(
                   children: <Widget>[
                     Container(
@@ -889,14 +904,12 @@ class HomeState extends State<Home> {
           ),
           bottomNavigationBar: BottomAppBar(
             elevation: 0.0,
+            height: 36.0,
+            padding: EdgeInsets.zero,
             color: Colors.blueGrey.shade50,
-            child: Container(
-              height: 40.5,
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _showActionButtons(action: _viewModel.actionButtons),
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: _showActionButtons(action: _viewModel.actionButtons),
             ),
           ),
         );
