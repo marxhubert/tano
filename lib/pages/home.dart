@@ -1,26 +1,25 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/application/home_view_model.dart';
 import 'package:tano/config/l10n.dart';
 import 'package:tano/domain/notes_repository.dart';
-import 'package:tano/models/database.dart';
 import 'package:tano/models/note.dart';
-import 'package:tano/widgets/confirm.dart';
-import 'package:tano/utils/menu.dart';
-import 'package:tano/utils/action.dart';
 import 'package:tano/pages/edit.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/pages/search.dart';
+import 'package:tano/utils/action.dart';
+import 'package:tano/utils/menu.dart';
+import 'package:tano/widgets/confirm.dart';
 import 'package:tano/widgets/info.dart';
 import 'package:tano/widgets/no_record.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 class Home extends StatefulWidget {
     const Home({super.key, required this.repository, this.initialNotes});
 
-    /// Notes already loaded by the splash screen. When null (legacy
-    /// navigation flows), the state falls back to reading them from disk.
     final NotesRepository repository;
 
+    /// Notes already loaded by the splash screen. When null (legacy
+    /// navigation flows), the view model falls back to loading them.
     final List<Note>? initialNotes;
 
     @override
@@ -30,77 +29,29 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-    late Database _database;
-    int _notesCount = 0;
-    late SharedPreferences _prefs;
-    final _selected = <int>{};
-    String _viewLayout = 'list';
-    String _actionButtons = 'add';
-    bool _isInSelectionMode = false;
-    String _sortBy = 'date';
+    late final HomeViewModel _viewModel;
     final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
     PackageInfo? _packageInfo;
-
-    Future<String> _getViewPrefFromSP() async {
-        _prefs = await SharedPreferences.getInstance();
-        if (!_prefs.containsKey('viewLayout')) {
-            _prefs.setString('viewLayout', 'list');
-        }
-        return _prefs.getString('viewLayout') ?? 'list';
-    }
-
-    Future<void> _setViewPrefToSP(String viewLayout) async {
-        _prefs = await SharedPreferences.getInstance();
-        _prefs.setString('viewLayout', viewLayout);
-    }
-
-    Future<String> _getSortingPrefFromSP() async {
-        _prefs = await SharedPreferences.getInstance();
-        if (!_prefs.containsKey('sortBy')) {
-            _prefs.setString('sortBy', 'date');
-        }
-        return _prefs.getString('sortBy') ?? 'date';
-    }
-
-    Future<void> _setSortingPrefToSP(String sortBy) async {
-        _prefs = await SharedPreferences.getInstance();
-        _prefs.setString('sortBy', sortBy);
-    }
 
     @override
     void initState() {
         super.initState();
-        _database = Database(note: widget.initialNotes ?? <Note>[]);
-        _sortNotesBy(_database.note);
+        _viewModel = HomeViewModel(
+            repository: widget.repository,
+            initialNotes: widget.initialNotes,
+        );
         if (widget.initialNotes == null) {
             // Navigation flows that do not receive the data loaded by the
-            // splash screen fall back to reading the notes from disk.
-            _loadDatabaseFromDisk().then((database) {
-                if (!mounted) return;
-                setState(() {
-                    _database = database;
-                    _notesCount = database.note.length;
-                    _sortNotesBy(_database.note);
-                });
-            });
-        } else {
-            _notesCount = _database.note.length;
+            // splash screen fall back to loading the notes themselves.
+            _viewModel.load();
         }
-        _getViewPrefFromSP().then((viewLayout) {
-            _viewLayout = viewLayout;
-        });
-        _getSortingPrefFromSP().then((sortBy) {
-            _sortBy = sortBy;
-            setState(() {
-                _sortNotesBy(_database.note);
-            });
-        });
-        _actionButtons = 'add';
+        _loadPreferences();
         _initPackageInfo();
     }
 
     @override
     void dispose() {
+        _viewModel.dispose();
         super.dispose();
     }
 
@@ -112,29 +63,31 @@ class HomeState extends State<Home> {
         });
     }
 
-    Future<Database> _loadDatabaseFromDisk() async {
-        final List<Note> notes = await widget.repository.loadNotes();
-        return Database(note: notes);
-    }
+    Future<SharedPreferences> _getPrefs() => SharedPreferences.getInstance();
 
-    void _sortNotesBy(List<Note> notes) {
-        switch (_sortBy) {
-            case 'date':
-                notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
-                break;
-            case 'alpha':
-                notes.sort((note1, note2) => note1.title!.compareTo(note2.title!));
-                break;
-            case 'important':
-                notes.sort((note1, note2) => note2.important.toString().compareTo(note1.important.toString()));
-                break;
-            case 'category':
-                notes.sort((note1, note2) => note1.category!.compareTo(note2.category!));
-                break;
+    Future<void> _loadPreferences() async {
+        final SharedPreferences prefs = await _getPrefs();
+        if (!prefs.containsKey('viewLayout')) {
+            await prefs.setString('viewLayout', 'list');
         }
+        _viewModel.setViewLayout(prefs.getString('viewLayout') ?? 'list');
+        if (!prefs.containsKey('sortBy')) {
+            await prefs.setString('sortBy', 'date');
+        }
+        _viewModel.setSortBy(prefs.getString('sortBy') ?? 'date');
     }
 
-    void _noteController({required bool add, required int index, required Note note}) async {
+    Future<void> _saveViewLayoutPref(String viewLayout) async {
+        final SharedPreferences prefs = await _getPrefs();
+        await prefs.setString('viewLayout', viewLayout);
+    }
+
+    Future<void> _saveSortingPref(String sortBy) async {
+        final SharedPreferences prefs = await _getPrefs();
+        await prefs.setString('sortBy', sortBy);
+    }
+
+    Future<void> _openNoteEditor({required bool add, required int index, required Note note}) async {
         final NoteAction? result = await Navigator.push(
             context,
             MaterialPageRoute<NoteAction>(
@@ -150,77 +103,30 @@ class HomeState extends State<Home> {
         if (result == null) {
             return;
         }
-        switch (result.action) {
-            case 'Save':
-                if (add) {
-                    setState(() {
-                        _database.note.add(result.note!);
-                    });
-                } else {
-                    setState(() {
-                        _database.note[index] = result.note!;
-                    });
-                }
-                break;
-            case 'Delete':
-                setState(() {
-                    _database.note.removeAt(index);
-                });
-                break;
-            case 'Cancel':
-                break;
-            default:
-                break;
-        }
-        await widget.repository.saveNotes(_database.note);
-        _notesCount = _database.note.length;
+        await _viewModel.applyNoteAction(add: add, index: index, action: result);
     }
 
     void _sortingBy(String sortBy) {
-        if ('' != sortBy) {
-            setState(() {
-                _sortBy = sortBy;
-                _setSortingPrefToSP(sortBy);
-            });
-        }
-    }
-
-    void _changeLanguage(String language) {
-        setState(() {
-            LocaleController.instance.setLanguage(language);
-        });
-    }
-
-    String _deleteActionTitle() {
-        if (_selected.length > 1) {
-            return _selected.length == _notesCount
-                ? AppText.tr('delete_all_notes')
-                : AppText.tr('delete_notes', <String, String>{'count': '${_selected.length}'});
-        }
-        return AppText.tr('delete_note');
+        _viewModel.setSortBy(sortBy);
+        _saveSortingPref(sortBy);
     }
 
     void _changeLayout(String viewLayout) {
-        switch (viewLayout) {
-            case 'compact':
-                setState(() {
-                    _viewLayout = 'compact';
-                    _setViewPrefToSP(_viewLayout);
-                });
-                break;
-            case 'list':
-                setState(() {
-                    _viewLayout = 'list';
-                    _setViewPrefToSP(_viewLayout);
-                });
-                break;
-            case 'gridlist':
-                setState(() {
-                    _viewLayout = 'gridlist';
-                    _setViewPrefToSP(_viewLayout);
-                });
-                break;
+        _viewModel.setViewLayout(viewLayout);
+        _saveViewLayoutPref(viewLayout);
+    }
+
+    void _changeLanguage(String language) {
+        LocaleController.instance.setLanguage(language);
+    }
+
+    String _deleteActionTitle() {
+        if (_viewModel.selectedCount > 1) {
+            return _viewModel.selectedCount == _viewModel.notesCount
+                ? AppText.tr('delete_all_notes')
+                : AppText.tr('delete_notes', <String, String>{'count': '${_viewModel.selectedCount}'});
         }
+        return AppText.tr('delete_note');
     }
 
     Widget _layoutChanger(List<Note> notes, String viewLayout) {
@@ -241,20 +147,14 @@ class HomeState extends State<Home> {
     }
 
     Widget _showCheckboxForSelection(int index, bool alreadySelected) {
-        if (!_isInSelectionMode) {
+        if (!_viewModel.isInSelectionMode) {
             return Container(child: null,);
         }
 
         return Checkbox(
             value: alreadySelected,
             onChanged: (value) {
-                setState(() {
-                    if (alreadySelected) {
-                        _selected.remove(index);
-                    } else {
-                        _selected.add(index);
-                    }
-                });
+                _viewModel.toggleSelection(index);
             },
         );
     }
@@ -268,6 +168,7 @@ class HomeState extends State<Home> {
                 String content = notes[index].content ?? '';
                 String date = notes[index].date.toString().substring(0, 10);
                 final bool important = notes[index].important ?? false;
+                final bool isSelected = _viewModel.selected.contains(index);
                 return Card(
                     margin: EdgeInsets.all(2.7),
                     elevation: 0.6,
@@ -336,20 +237,14 @@ class HomeState extends State<Home> {
                                     ),
                                 ),
                                 onTap: () {
-                                    if (_isInSelectionMode) {
-                                        setState(() {
-                                            _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                        });
+                                    if (_viewModel.isInSelectionMode) {
+                                        _viewModel.toggleSelection(index);
                                     } else {
-                                        _noteController(add: false, index: index, note: notes[index]);
+                                        _openNoteEditor(add: false, index: index, note: notes[index]);
                                     }
                                 },
                                 onLongPress: () {
-                                    setState(() {
-                                        _selected.add(index);
-                                        _isInSelectionMode = true;
-                                        _actionButtons = 'multiple';
-                                    });
+                                    _viewModel.enterSelectionMode(index);
                                 },
                             ),
                             Row(
@@ -372,22 +267,22 @@ class HomeState extends State<Home> {
                                                         ),
                                                     ),
                                                     onTap: () {
-                                                        setState(() {
-                                                            notes[index].important = !(notes[index].important ?? false);
-                                                            _database.note[index] = notes[index];
-                                                            widget.repository.saveNotes(_database.note);
-                                                        });
+                                                        if (_viewModel.isInSelectionMode) {
+                                                            _viewModel.toggleSelection(index);
+                                                        } else {
+                                                            _viewModel.toggleFavorite(index);
+                                                        }
                                                     },
                                                 )
                                             ],
                                         )
                                     ],
                                 ),
-                            _isInSelectionMode
+                            _viewModel.isInSelectionMode
                             ? GestureDetector(
                                 child: Container(
-                                    color: _selected.contains(index) ? Colors.black38 : Colors.black12,
-                                    child: _selected.contains(index)
+                                    color: isSelected ? Colors.black38 : Colors.black12,
+                                    child: isSelected
                                         ? Stack(
                                             children: <Widget>[
                                                 Center(
@@ -411,9 +306,7 @@ class HomeState extends State<Home> {
                                         ),
                                 ),
                                 onTap: () {
-                                    setState(() {
-                                        _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                    });
+                                    _viewModel.toggleSelection(index);
                                 },
                             )
                             : Offstage(),
@@ -428,7 +321,7 @@ class HomeState extends State<Home> {
         return ListView.separated(
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
-                final alreadySelected = _selected.contains(index);
+                final alreadySelected = _viewModel.selected.contains(index);
                 String title = notes[index].title ?? '';
                 String date = notes[index].date.toString().substring(0, 10);
                 final bool important = notes[index].important ?? false;
@@ -500,34 +393,22 @@ class HomeState extends State<Home> {
                                                     size: 18.0,
                                                 ),
                                                 onPressed: () {
-                                                    if (_isInSelectionMode) {
-                                                        setState(() {
-                                                            _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                                        });
+                                                    if (_viewModel.isInSelectionMode) {
+                                                        _viewModel.toggleSelection(index);
                                                     } else {
-                                                        setState(() {
-                                                            notes[index].important = !(notes[index].important ?? false);
-                                                            _database.note[index] = notes[index];
-                                                            widget.repository.saveNotes(_database.note);
-                                                        });
+                                                        _viewModel.toggleFavorite(index);
                                                     }
                                                 },
                                             ),
                                             onTap: () {
-                                                if (_isInSelectionMode) {
-                                                    setState(() {
-                                                        _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                                    });
+                                                if (_viewModel.isInSelectionMode) {
+                                                    _viewModel.toggleSelection(index);
                                                 } else {
-                                                    _noteController(add: false, index: index, note: notes[index]);
+                                                    _openNoteEditor(add: false, index: index, note: notes[index]);
                                                 }
                                             },
                                             onLongPress: () {
-                                                setState(() {
-                                                    _selected.add(index);
-                                                    _isInSelectionMode = true;
-                                                    _actionButtons = 'multiple';
-                                                });
+                                                _viewModel.enterSelectionMode(index);
                                             },
                                         ),
                                     ),
@@ -540,10 +421,7 @@ class HomeState extends State<Home> {
                         return await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     },
                     onDismissed: (direction) {
-                        setState(() {
-                            _database.note.removeAt(index);
-                        });
-                        widget.repository.saveNotes(_database.note);
+                        _viewModel.removeNote(index);
                     },
                 );
             },
@@ -559,7 +437,7 @@ class HomeState extends State<Home> {
         return ListView.separated(
             itemCount: notes.length,
             itemBuilder: (BuildContext context, int index) {
-                final alreadySelected = _selected.contains(index);
+                final alreadySelected = _viewModel.selected.contains(index);
                 String title = notes[index].title ?? '';
                 String date = notes[index].date.toString().substring(0, 10);
                 final bool important = notes[index].important ?? false;
@@ -643,34 +521,22 @@ class HomeState extends State<Home> {
                                                     size: 18.0,
                                                 ),
                                                 onPressed: () {
-                                                    if (_isInSelectionMode) {
-                                                        setState(() {
-                                                            _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                                        });
+                                                    if (_viewModel.isInSelectionMode) {
+                                                        _viewModel.toggleSelection(index);
                                                     } else {
-                                                        setState(() {
-                                                            notes[index].important = !(notes[index].important ?? false);
-                                                            _database.note[index] = notes[index];
-                                                            widget.repository.saveNotes(_database.note);
-                                                        });
+                                                        _viewModel.toggleFavorite(index);
                                                     }
                                                 },
                                             ),
                                             onTap: () {
-                                                if (_isInSelectionMode) {
-                                                    setState(() {
-                                                        _selected.contains(index) ? _selected.remove(index) : _selected.add(index);
-                                                    });
+                                                if (_viewModel.isInSelectionMode) {
+                                                    _viewModel.toggleSelection(index);
                                                 } else {
-                                                    _noteController(add: false, index: index, note: notes[index]);
+                                                    _openNoteEditor(add: false, index: index, note: notes[index]);
                                                 }
                                             },
                                             onLongPress: () {
-                                                setState(() {
-                                                    _selected.add(index);
-                                                    _isInSelectionMode = true;
-                                                    _actionButtons = 'multiple';
-                                                });
+                                                _viewModel.enterSelectionMode(index);
                                             },
                                         ),
                                     ),
@@ -683,10 +549,7 @@ class HomeState extends State<Home> {
                         return await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     },
                     onDismissed: (direction) {
-                        setState(() {
-                            _database.note.removeAt(index);
-                        });
-                        widget.repository.saveNotes(_database.note);
+                        _viewModel.removeNote(index);
                     },
                 );
             },
@@ -703,7 +566,7 @@ class HomeState extends State<Home> {
             icon: Icon(Icons.add),
             iconSize: 24.0,
             onPressed: () {
-                _noteController(add: true, index: -1, note: Note());
+                _openNoteEditor(add: true, index: -1, note: Note());
             },
         );
 
@@ -711,11 +574,7 @@ class HomeState extends State<Home> {
             icon: Icon(Icons.arrow_back),
             iconSize: 24.0,
             onPressed: () {
-                setState(() {
-                    _selected.clear();
-                    _isInSelectionMode = false;
-                    _actionButtons = 'add';
-                });
+                _viewModel.exitSelectionMode();
             },
         );
 
@@ -723,7 +582,7 @@ class HomeState extends State<Home> {
             icon: Icon(Icons.clear),
             iconSize: 24.0,
             onPressed: () async {
-                if (_selected.isEmpty) {
+                if (!_viewModel.hasSelection) {
                     ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(
@@ -732,22 +591,9 @@ class HomeState extends State<Home> {
                         ),
                     );
                 } else {
-                    final notes = <Note>[];
                     final bool? confirmDeletion = await getConfirmation(context: context, actionTitle: _deleteActionTitle(), action: AppText.tr('delete'));
                     if (confirmDeletion == true) {
-                        setState(() {
-                            for (final int index in _selected) {
-                                notes.add(_database.note[index]);
-                            }
-                            for (final Note note in notes) {
-                                _database.note.remove(note);
-                            }
-                            widget.repository.saveNotes(_database.note);
-                            _notesCount = _database.note.length;
-                            _selected.clear();
-                            _isInSelectionMode = false;
-                            _actionButtons = 'add';
-                        });
+                        await _viewModel.deleteSelected();
                     }
                 }
             },
@@ -757,11 +603,7 @@ class HomeState extends State<Home> {
             icon: Icon(Icons.check_circle),
             iconSize: 21.0,
             onPressed: () {
-                setState(() {
-                    for (final Note note in _database.note) {
-                        _selected.add(_database.note.indexOf(note));
-                    }
-                });
+                _viewModel.selectAll();
             },
         );
 
@@ -769,9 +611,7 @@ class HomeState extends State<Home> {
             icon: Icon(Icons.panorama_fish_eye),
             iconSize: 21.0,
             onPressed: () {
-                setState(() {
-                    _selected.clear();
-                });
+                _viewModel.clearSelection();
             },
         );
 
@@ -796,204 +636,210 @@ class HomeState extends State<Home> {
 
     @override
     Widget build(BuildContext context) {
-        return Scaffold(
-            key: _scaffoldState,
-            appBar: _isInSelectionMode
-            ? AppBar(
-                automaticallyImplyLeading: false,
-                actions: <Widget>[
-                    IconButton(
-                        icon: Icon(Icons.arrow_back),
-                        onPressed: () {
-                            setState(() {
-                                _selected.clear();
-                                _isInSelectionMode = false;
-                                _actionButtons = 'add';
-                            });
-                        },
+        return ListenableBuilder(
+            listenable: _viewModel,
+            builder: (BuildContext context, Widget? child) {
+                return Scaffold(
+                    key: _scaffoldState,
+                    appBar: _viewModel.isInSelectionMode
+                    ? AppBar(
+                        automaticallyImplyLeading: false,
+                        actions: <Widget>[
+                            IconButton(
+                                icon: Icon(Icons.arrow_back),
+                                onPressed: () {
+                                    _viewModel.exitSelectionMode();
+                                },
+                            ),
+                        ],
+                        elevation: 0.0,
+                    )
+                    : AppBar(
+                        elevation: 0.0,
+                        actions: <Widget>[
+                            IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                    _openNoteEditor(add: true, index: -1, note: Note());
+                                },
+                            ),
+                            PopupMenuButton<PopupItem>(
+                                icon: Icon(Icons.more_vert),
+                                onSelected: ((valueSelected) {
+                                    switch(valueSelected.value.toLowerCase()) {
+                                        case "compact":
+                                            _changeLayout('compact');
+                                            break;
+                                        case "list":
+                                            _changeLayout('list');
+                                            break;
+                                        case "gridlist":
+                                            _changeLayout('gridlist');
+                                            break;
+                                        case "date":
+                                            _sortingBy('date');
+                                            break;
+                                        case "alpha":
+                                            _sortingBy('alpha');
+                                            break;
+                                        case "important":
+                                            _sortingBy('important');
+                                            break;
+                                        case "category":
+                                            _sortingBy('category');
+                                            break;
+                                        case "en":
+                                        case "fr":
+                                            _changeLanguage(valueSelected.value);
+                                            break;
+                                        case "info":
+                                            showDialog(context: context, builder: (BuildContext context) => aboutInfo(context: context, packageInfo: _packageInfo));
+                                            break;
+                                    }
+                                }),
+                                itemBuilder: (BuildContext context) {
+                                    final List<PopupItem> popupItems = [];
+                                    menuItems.forEach((String key, PopupItem popupItem) {
+                                        popupItems.add(popupItem);
+                                    });
+                                    return popupItems.map((PopupItem popupItem) {
+                                        return PopupMenuItem<PopupItem>(
+                                            value: popupItem,
+                                            height: 42.0,
+                                            child: popupButton(popupItem: popupItem, layout: _viewModel.viewLayout, sort: _viewModel.sortBy, lang: LocaleController.instance.language),
+                                        );
+                                    }).toList();
+                                },
+                                padding: EdgeInsets.all(0.0),
+                            ),
+                        ],
                     ),
-                ],
-                elevation: 0.0,
-            )
-            : AppBar(
-                elevation: 0.0,
-                actions: <Widget>[
-                    IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () {
-                            _noteController(add: true, index: -1, note: Note());
-                        },
-                    ),
-                    PopupMenuButton<PopupItem>(
-                        icon: Icon(Icons.more_vert),
-                        onSelected: ((valueSelected) {
-                            switch(valueSelected.value.toLowerCase()) {
-                                case "compact":
-                                    _changeLayout('compact');
-                                    break;
-                                case "list":
-                                    _changeLayout('list');
-                                    break;
-                                case "gridlist":
-                                    _changeLayout('gridlist');
-                                    break;
-                                case "date":
-                                    _sortingBy('date');
-                                    break;
-                                case "alpha":
-                                    _sortingBy('alpha');
-                                    break;
-                                case "important":
-                                    _sortingBy('important');
-                                    break;
-                                case "category":
-                                    _sortingBy('category');
-                                    break;
-                                case "en":
-                                case "fr":
-                                    _changeLanguage(valueSelected.value);
-                                    break;
-                                case "info":
-                                    showDialog(context: context, builder: (BuildContext context) => aboutInfo(context: context, packageInfo: _packageInfo));
-                                    break;
-                            }
-                        }),
-                        itemBuilder: (BuildContext context) {
-                            final List<PopupItem> popupItems = [];
-                            menuItems.forEach((String key, PopupItem popupItem) {
-                                popupItems.add(popupItem);
-                            });
-                            return popupItems.map((PopupItem popupItem) {
-                                return PopupMenuItem<PopupItem>(
-                                    value: popupItem,
-                                    height: 42.0,                                                    child: popupButton(popupItem: popupItem, layout: _viewLayout, sort: _sortBy, lang: LocaleController.instance.language),
-                                );
-                            }).toList();
-                        },
-                        padding: EdgeInsets.all(0.0),
-                    ),
-                ],
-            ),
-            body: Column(
-                children: <Widget>[
-                    Container(
-                        padding: EdgeInsets.symmetric(horizontal: 9.0),
-                            child: Column(
-                                children: <Widget>[
-                                    Container(
-                                        margin: EdgeInsets.only(bottom: 4.5),
-                                        child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                                            textBaseline: TextBaseline.alphabetic,
-                                            children: <Widget>[
-                                                Expanded(                                                        child: Text(
-                                                            AppText.tr('all_notes'),
-                                                        style: TextStyle(
-                                                            fontFamily: 'Calibri',
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 21.0,
-                                                        ),
-                                                    ),
-                                                ),
-                                                Column(
+                    body: Column(
+                        children: <Widget>[
+                            Container(
+                                padding: EdgeInsets.symmetric(horizontal: 9.0),
+                                    child: Column(
+                                        children: <Widget>[
+                                            Container(
+                                                margin: EdgeInsets.only(bottom: 4.5),
+                                                child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                                    textBaseline: TextBaseline.alphabetic,
                                                     children: <Widget>[
-                                                        Text(
-                                                            '$_notesCount ${_notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                                                            style: TextStyle(
-                                                                fontFamily: 'Calibri',
-                                                                fontWeight: FontWeight.w400,
+                                                        Expanded(
+                                                            child: Text(
+                                                                AppText.tr('all_notes'),
+                                                                style: TextStyle(
+                                                                    fontFamily: 'Calibri',
+                                                                    fontWeight: FontWeight.bold,
+                                                                    fontSize: 21.0,
+                                                                ),
+                                                            ),
+                                                        ),
+                                                        Column(
+                                                            children: <Widget>[
+                                                                Text(
+                                                                    '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+                                                                    style: TextStyle(
+                                                                        fontFamily: 'Calibri',
+                                                                        fontWeight: FontWeight.w400,
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                        ),
+                                                    ],
+                                                ),
+                                            ),
+                                            _viewModel.notesCount == 0
+                                            ? Offstage()
+                                            : Container(
+                                                height: 36.0,
+                                                padding: EdgeInsets.symmetric(horizontal: 18.0),
+                                                margin: EdgeInsets.only(bottom: 4.5),
+                                                decoration: BoxDecoration(
+                                                    color: Colors.black12,
+                                                    borderRadius: BorderRadius.circular(54.0),
+                                                ),
+                                                child: Row(
+                                                    children: <Widget>[
+                                                        Icon(Icons.search, size: 21.0,),
+                                                        SizedBox(width: 9.0,),
+                                                        Expanded(
+                                                            child: GestureDetector(
+                                                                child: Text(
+                                                                    AppText.tr('search'),
+                                                                    style: TextStyle(
+                                                                        fontWeight: FontWeight.w400,
+                                                                        fontSize: 14.4,
+                                                                        color: Colors.grey.shade600
+                                                                    ),
+                                                                ),
+                                                                onTap: () {
+                                                                    if (!_viewModel.isInSelectionMode) {
+                                                                        Navigator.of(context).push(
+                                                                            MaterialPageRoute<void>(
+                                                                                builder: (BuildContext context) => SearchPage(repository: widget.repository),
+                                                                            ),
+                                                                        );
+                                                                    }
+                                                                },
                                                             ),
                                                         ),
                                                     ],
                                                 ),
-                                            ],
-                                        ),
-                                    ),
-                                    _notesCount == 0
-                                    ? Offstage()
-                                    : Container(
-                                        height: 36.0,
-                                        padding: EdgeInsets.symmetric(horizontal: 18.0),
-                                        margin: EdgeInsets.only(bottom: 4.5),
-                                        decoration: BoxDecoration(
-                                            color: Colors.black12,
-                                            borderRadius: BorderRadius.circular(54.0),
-                                        ),
-                                        child: Row(
-                                            children: <Widget>[
-                                                Icon(Icons.search, size: 21.0,),
-                                                SizedBox(width: 9.0,),
-                                                Expanded(
-                                                    child: GestureDetector(
-                                                        child: Text(
-                                                            AppText.tr('search'),
-                                                            style: TextStyle(
-                                                                fontWeight: FontWeight.w400,
-                                                                fontSize: 14.4,
-                                                                color: Colors.grey.shade600
-                                                            ),
-                                                        ),
-                                                        onTap: () {
-                                                            if (!_isInSelectionMode) {
-                                                                Navigator.of(context).pushNamed('/search');
-                                                            }
-                                                        },
+                                            ),
+                                            _viewModel.isInSelectionMode
+                                            ? Container(
+                                                margin: EdgeInsets.only(bottom: 4.5),
+                                                child: Text(
+                                                    _viewModel.selected.isEmpty
+                                                        ? AppText.tr('no_note_selected')
+                                                        : (_viewModel.selectedCount > 1
+                                                            ? (_viewModel.selectedCount == _viewModel.notesCount ? AppText.tr('all_notes_selected', <String, String>{'count': '${_viewModel.notesCount}'}) : AppText.tr('notes_selected', <String, String>{'count': '${_viewModel.selectedCount}', 'total': '${_viewModel.notesCount}'}))
+                                                            : AppText.tr('single_note_selected', <String, String>{'count': '${_viewModel.selectedCount}'})),
+                                                    style: TextStyle(
+                                                        color: Colors.grey,
+                                                        fontWeight: FontWeight.w400,
+                                                        fontSize: 12.0,
                                                     ),
                                                 ),
-                                            ],
-                                        ),
+                                            )
+                                            : _viewModel.notesCount > 0
+                                            ? Container(
+                                                margin: EdgeInsets.only(bottom: 4.5),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                    AppText.tr('sorted_by', <String, String>{'sort': (menuItems[_viewModel.sortBy]?.title ?? '').toLowerCase()}),
+                                                    style: TextStyle(
+                                                        color: Colors.grey,
+                                                        fontWeight: FontWeight.w400,
+                                                        fontSize: 12.0,
+                                                    ),
+                                                ),
+                                            )
+                                            : Offstage(),
+                                        ],
                                     ),
-                                    _isInSelectionMode
-                                    ? Container(
-                                        margin: EdgeInsets.only(bottom: 4.5),
-                                        child: Text(
-                                            _selected.isEmpty
-                                                ? AppText.tr('no_note_selected')
-                                                : (_selected.length > 1
-                                                    ? (_selected.length == _notesCount ? AppText.tr('all_notes_selected', <String, String>{'count': '$_notesCount'}) : AppText.tr('notes_selected', <String, String>{'count': '${_selected.length}', 'total': '$_notesCount'}))
-                                                    : AppText.tr('single_note_selected', <String, String>{'count': '${_selected.length}'})),
-                                            style: TextStyle(
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 12.0,
-                                            ),
-                                        ),
-                                    )
-                                    : _notesCount > 0
-                                    ? Container(
-                                        margin: EdgeInsets.only(bottom: 4.5),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                            AppText.tr('sorted_by', <String, String>{'sort': (menuItems[_sortBy]?.title ?? '').toLowerCase()}),
-                                            style: TextStyle(
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w400,
-                                                fontSize: 12.0,
-                                            ),
-                                        ),
-                                    )
-                                    : Offstage(),
-                                ],
+                                ),
+                            Expanded(
+                                child: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
+                            ),
+                        ],
+                    ),
+                    bottomNavigationBar: BottomAppBar(
+                        elevation: 0.0,
+                        color: Colors.blueGrey.shade50,
+                        child: Container(
+                            height: 40.5,
+                            alignment: Alignment.center,
+                            child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: _showActionButtons(action: _viewModel.actionButtons),
                             ),
                         ),
-                        Expanded(
-                            child: _layoutChanger(_database.note, _viewLayout),
-                        ),
-                    ],
-                ),
-            bottomNavigationBar: BottomAppBar(
-                elevation: 0.0,
-                color: Colors.blueGrey.shade50,
-                child: Container(
-                    height: 40.5,
-                    alignment: Alignment.center,
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: _showActionButtons(action: _actionButtons),
                     ),
-                ),
-            ),
-//            drawer: DrawerMenu(),
+                );
+            },
         );
     }
 }
