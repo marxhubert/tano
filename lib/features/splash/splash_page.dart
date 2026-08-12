@@ -5,6 +5,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.repository});
@@ -48,7 +49,7 @@ class SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade50,
+      backgroundColor: barColor(context),
       body: Stack(
         fit: StackFit.expand,
         children: <Widget>[
@@ -82,7 +83,7 @@ class SplashScreenState extends State<SplashScreen> {
                         style: TextStyle(
                           fontSize: 21.0,
                           fontWeight: FontWeight.w900,
-                          color: Colors.black87,
+                          color: primaryTextColor(context),
                         ),
                         children: <TextSpan>[
                           TextSpan(
@@ -90,7 +91,7 @@ class SplashScreenState extends State<SplashScreen> {
                             style: TextStyle(
                               fontSize: 21.0,
                               fontWeight: FontWeight.w400,
-                              color: Colors.black87,
+                              color: primaryTextColor(context),
                             ),
                           ),
                         ],

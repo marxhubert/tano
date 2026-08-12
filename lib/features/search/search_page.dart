@@ -6,6 +6,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, required this.repository});
@@ -82,13 +83,21 @@ class _SearchPageState extends State<SearchPage> {
               flex: 1,
               child: Card(
                 elevation: 0.6,
-                color: themeCategory(notes[index].category ?? 'none', false),
+                color: themeCategory(
+                  notes[index].category ?? 'none',
+                  false,
+                  brightness: Theme.of(context).brightness,
+                ),
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(0.0)),
                 ),
                 child: Container(
                   margin: EdgeInsets.only(left: 2.7),
-                  color: themeCategory(notes[index].category ?? 'none', true),
+                  color: themeCategory(
+                    notes[index].category ?? 'none',
+                    true,
+                    brightness: Theme.of(context).brightness,
+                  ),
                   child: ListTile(
                     contentPadding: EdgeInsets.symmetric(horizontal: 9.0),
                     title: Text(
@@ -142,7 +151,7 @@ class _SearchPageState extends State<SearchPage> {
                   Container(
                     height: 36.0,
                     decoration: BoxDecoration(
-                      color: Colors.black12,
+                      color: chipFillColor(context),
                       borderRadius: BorderRadius.circular(54.0),
                     ),
                     child: Row(
