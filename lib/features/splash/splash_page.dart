@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';
@@ -24,7 +23,7 @@ class SplashScreenState extends State<SplashScreen> {
 
   Future<void> _loadInitialData() async {
     try {
-      // The splash screen stays visible until the data is ready.
+      // The loader stays visible until the data is ready.
       final List<Note> notes = await widget.repository.loadNotes();
 
       if (!mounted) return;
@@ -46,59 +45,8 @@ class SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: barColor(context),
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Center(
-            child: Column(
-              children: <Widget>[
-                Expanded(
-                  flex: 1,
-                  child: Center(
-                    child: SizedBox(
-                      width: 90.0,
-                      height: 90.0,
-                      child: CircleAvatar(
-                        radius: 54.0,
-                        backgroundColor: Colors.black87,
-                        child: Icon(
-                          Icons.turned_in_not,
-                          color: Colors.white,
-                          size: 45.0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 90.0,
-                  child: Center(
-                    child: RichText(
-                      text: TextSpan(
-                        text: AppConfig.appName,
-                        style: TextStyle(
-                          fontSize: 21.0,
-                          fontWeight: FontWeight.w900,
-                          color: primaryTextColor(context),
-                        ),
-                        children: <TextSpan>[
-                          TextSpan(
-                            text: AppConfig.appNameSuffix,
-                            style: TextStyle(
-                              fontSize: 21.0,
-                              fontWeight: FontWeight.w400,
-                              color: primaryTextColor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      body: const Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
