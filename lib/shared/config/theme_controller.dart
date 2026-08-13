@@ -8,7 +8,7 @@ class ThemeController extends ChangeNotifier {
   static final ThemeController instance = ThemeController._();
 
   static const String _prefKey = 'themeMode';
-  
+
   ThemeMode _themeMode = ThemeMode.system;
 
   ThemeMode get themeMode => _themeMode;
@@ -25,16 +25,6 @@ class ThemeController extends ChangeNotifier {
       _themeMode = ThemeMode.system;
     }
     notifyListeners();
-  }
-
-  /// Toggles between light and dark mode.
-  Future<void> toggleTheme(BuildContext context) async {
-    final Brightness currentBrightness = Theme.of(context).brightness;
-    if (currentBrightness == Brightness.light) {
-      await setThemeMode(ThemeMode.dark);
-    } else {
-      await setThemeMode(ThemeMode.light);
-    }
   }
 
   /// Sets and saves the theme mode.
