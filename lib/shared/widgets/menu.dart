@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class PopupItem {
   final String title;
@@ -29,19 +28,19 @@ Map<String, PopupItem> get menuItems {
     ),
     'compact': PopupItem(
       title: AppText.tr('menu_compact'),
-      icon: Icon(Symbols.menu,),
+      icon: Icon(Icons.view_list),
       value: 'compact',
       trailingIcon: true,
     ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
-      icon: Icon(Symbols.lists,),
+      icon: Icon(Icons.view_stream),
       value: 'list',
       trailingIcon: true,
     ),
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
-      icon: Icon(Symbols.grid_view,),
+      icon: Icon(Icons.view_module),
       value: 'gridlist',
       trailingIcon: true,
     ),
