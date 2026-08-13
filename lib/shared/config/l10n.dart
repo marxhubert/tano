@@ -95,6 +95,9 @@ class AppText {
     'menu_english': 'English',
     'menu_french': 'French',
     'menu_view': 'View',
+    'theme_light': 'Light',
+    'theme_dark': 'Dark',
+    'theme_system': 'System',
     'legacy_version': 'v 0.1.0',
     // Categories
     'category_note': 'Note',
@@ -160,6 +163,9 @@ class AppText {
     'menu_english': 'Anglais',
     'menu_french': 'Français',
     'menu_view': 'Vue',
+    'theme_light': 'Clair',
+    'theme_dark': 'Sombre',
+    'theme_system': 'Système',
     'legacy_version': 'v 0.1.0',
     // Categories
     'category_note': 'Note',

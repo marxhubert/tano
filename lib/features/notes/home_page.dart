@@ -726,14 +726,35 @@ class HomeState extends State<Home> {
                         _openNoteEditor(add: true, index: -1, note: Note());
                       },
                     ),
-                    IconButton(
+                    PopupMenuButton<ThemeMode>(
                       icon: Icon(
                         Theme.of(context).brightness == Brightness.dark
-                            ? Icons.light_mode
-                            : Icons.dark_mode,
+                            ? Icons.dark_mode
+                            : Icons.light_mode,
                       ),
-                      onPressed: () {
-                        ThemeController.instance.toggleTheme(context);
+                      onSelected: (ThemeMode mode) {
+                        ThemeController.instance.setThemeMode(mode);
+                      },
+                      itemBuilder: (BuildContext context) {
+                        final ThemeMode current =
+                            ThemeController.instance.themeMode;
+                        return <PopupMenuEntry<ThemeMode>>[
+                          CheckedPopupMenuItem<ThemeMode>(
+                            value: ThemeMode.light,
+                            checked: current == ThemeMode.light,
+                            child: Text(AppText.tr('theme_light')),
+                          ),
+                          CheckedPopupMenuItem<ThemeMode>(
+                            value: ThemeMode.dark,
+                            checked: current == ThemeMode.dark,
+                            child: Text(AppText.tr('theme_dark')),
+                          ),
+                          CheckedPopupMenuItem<ThemeMode>(
+                            value: ThemeMode.system,
+                            checked: current == ThemeMode.system,
+                            child: Text(AppText.tr('theme_system')),
+                          ),
+                        ];
                       },
                     ),
                     PopupMenuButton<PopupItem>(
