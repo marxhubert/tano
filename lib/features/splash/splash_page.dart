@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/app_config.dart';
-import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';
@@ -25,9 +24,6 @@ class SplashScreenState extends State<SplashScreen> {
 
   Future<void> _loadInitialData() async {
     try {
-      // Load locale data
-      await LocaleController.instance.init();
-
       // The splash screen stays visible until the data is ready.
       final List<Note> notes = await widget.repository.loadNotes();
 

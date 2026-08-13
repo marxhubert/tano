@@ -8,6 +8,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/search/search_page.dart';
 import 'package:tano/core/models/action.dart';
+import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
@@ -723,6 +724,16 @@ class HomeState extends State<Home> {
                       icon: Icon(Icons.add),
                       onPressed: () {
                         _openNoteEditor(add: true, index: -1, note: Note());
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Icons.light_mode
+                            : Icons.dark_mode,
+                      ),
+                      onPressed: () {
+                        ThemeController.instance.toggleTheme(context);
                       },
                     ),
                     PopupMenuButton<PopupItem>(

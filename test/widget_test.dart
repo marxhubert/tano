@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
@@ -26,8 +28,10 @@ class _InMemoryNotesRepository implements NotesRepository {
 }
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await LocaleController.instance.init();
+    await ThemeController.instance.init();
     PackageInfo.setMockInitialValues(
       appName: 'tano',
       packageName: 'com.shikamarx.tano',
@@ -80,6 +84,8 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
+      expect(find.byType(Home), findsOneWidget);
+      
       // Ouvre le menu principal (⋮) : il ne doit pas planter même si
       // les items de tri/langue/à-propos n'ont pas d'icône.
       await tester.tap(find.byIcon(Icons.more_vert));
