@@ -34,7 +34,7 @@ Note _note(String id, {String? title, String? content, String? date}) {
 void main() {
   group('SearchViewModel', () {
     test(
-      'load() charge et trie les notes par date (plus récentes d\'abord)',
+      'load() loads and sorts the notes by date (newest first)',
       () async {
         final vm = SearchViewModel(
           repository: _InMemoryNotesRepository(<Note>[
@@ -50,7 +50,7 @@ void main() {
       },
     );
 
-    test('search() filtre par titre, insensible à la casse', () async {
+    test('search() filters by title, case-insensitively', () async {
       final vm = SearchViewModel(
         repository: _InMemoryNotesRepository(<Note>[
           _note('1', title: 'Groceries'),
@@ -65,22 +65,22 @@ void main() {
       expect(vm.results.first.id, '1');
     });
 
-    test('search() filtre aussi par contenu', () async {
+    test('search() also filters by content', () async {
       final vm = SearchViewModel(
         repository: _InMemoryNotesRepository(<Note>[
-          _note('1', content: 'Appeler le dentiste'),
-          _note('2', content: 'Rien à voir'),
+          _note('1', content: 'Call the dentist'),
+          _note('2', content: 'Nothing to do with it'),
         ]),
       );
       await vm.load();
 
-      vm.search('dentiste');
+      vm.search('dentist');
 
       expect(vm.resultCount, 1);
       expect(vm.results.first.id, '1');
     });
 
-    test('search() avec une requête vide vide les résultats', () async {
+    test('search() with an empty query clears the results', () async {
       final vm = SearchViewModel(
         repository: _InMemoryNotesRepository(<Note>[_note('1')]),
       );
@@ -95,7 +95,7 @@ void main() {
     });
 
     test(
-      'applyNoteAction remplace la bonne note dans la liste complète',
+      'applyNoteAction replaces the right note in the full list',
       () async {
         final repository = _InMemoryNotesRepository(<Note>[
           _note('1', title: 'Alpha'),
@@ -109,7 +109,7 @@ void main() {
         final Note found = vm.results.single;
         final Note edited = Note(
           id: found.id,
-          title: 'Alpha modifié',
+          title: 'Alpha modified',
           content: found.content,
           date: found.date,
           important: found.important,
@@ -121,14 +121,14 @@ void main() {
           action: NoteAction(action: 'Save', note: edited),
         );
 
-        expect(repository.notes.map((n) => n.title), contains('Alpha modifié'));
+        expect(repository.notes.map((n) => n.title), contains('Alpha modified'));
         // The update targets the note by identity even though the result list
         // is only a subset of the full list.
-        expect(repository.notes[0].title, 'Alpha modifié');
+        expect(repository.notes[0].title, 'Alpha modified');
       },
     );
 
-    test('applyNoteAction supprime la note', () async {
+    test('applyNoteAction deletes the note', () async {
       final repository = _InMemoryNotesRepository(<Note>[
         _note('1', title: 'Alpha'),
         _note('2', title: 'Beta'),

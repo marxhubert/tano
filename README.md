@@ -1,62 +1,62 @@
 # 📝 TanoNote
 
 [![Version](https://img.shields.io/badge/version-0.8.4--beta-orange)](https://github.com/marxhubert/tano/releases)
-[![Licence](https://img.shields.io/badge/Licence-Apache%202.0-blue.svg)](LICENSE)
-[![Plateformes](https://img.shields.io/badge/Plateformes-Android%20%7C%20iOS-brightgreen)](https://flutter.dev)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-brightgreen)](https://flutter.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%3E%3D3.8-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Stars](https://img.shields.io/github/stars/marxhubert/tano?style=social)](https://github.com/marxhubert/tano)
 
-**TanoNote** est une application de gestion de notes, de tâches et de projets, développée avec [Flutter](https://flutter.dev) pour Android et iOS. Rapide, légère et **100 % hors ligne** : toutes vos données restent sur votre appareil, rien n'est envoyé sur un serveur.
+**TanoNote** is a notes, tasks and projects management application built with [Flutter](https://flutter.dev) for Android and iOS. Fast, lightweight and **100 % offline**: all your data stays on your device, nothing is sent to a server.
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-- 📝 **Notes** — création, édition et suppression de notes avec titre, contenu et date.
-- 🗂 **Catégories colorées** — organisez vos notes par thème, chacune avec sa couleur.
-- ⭐ **Notes importantes** — mettez vos notes en avant d'un simple clic sur l'étoile.
-- 🔍 **Recherche instantanée** — insensible à la casse, dans les titres et les contenus.
-- 🎛 **Trois modes d'affichage** — liste, compact et grille.
-- ↕️ **Tri flexible** — par date, titre, favoris ou catégorie.
-- ☑️ **Sélection multiple** — appui long pour sélectionner, suppression en masse, tout sélectionner / désélectionner.
-- 👆 **Balayage pour supprimer** — glissez une note vers la gauche ou la droite pour la supprimer.
-- 🔒 **100 % local** — stockage dans un fichier JSON sur l'appareil, aucune donnée personnelle n'est transmise.
+- 📝 **Notes** — create, edit and delete notes with a title, content and date.
+- 🗂 **Colored categories** — organize your notes by theme, each with its own color.
+- ⭐ **Important notes** — highlight your notes with a single tap on the star.
+- 🔍 **Instant search** — case-insensitive, across titles and contents.
+- 🎛 **Three display modes** — list, compact and grid.
+- ↕️ **Flexible sorting** — by date, title, favorites or category.
+- ☑️ **Multiple selection** — long press to select, bulk delete, select all / deselect all.
+- 👆 **Swipe to delete** — swipe a note left or right to delete it.
+- 🔒 **100 % local** — stored in a JSON file on the device, no personal data is transmitted.
 
-## 🗂 Catégories
+## 🗂 Categories
 
-| Catégorie  | Couleur  |
-|------------|----------|
-| Note       | 🟠 Orange |
-| Travail    | 🔴 Rouge  |
-| Personnel  | 🔵 Bleu   |
-| Voyage     | 🟢 Vert   |
-| Vie        | 🟣 Violet |
-| Projet     | 🟡 Jaune  |
-| Libre      | ⚪ Gris   |
+| Category  | Color    |
+|-----------|----------|
+| Note      | 🟠 Orange |
+| Work      | 🔴 Red    |
+| Personal  | 🔵 Blue   |
+| Travel    | 🟢 Green  |
+| Life      | 🟣 Purple |
+| Project   | 🟡 Yellow |
+| Free      | ⚪ Gray   |
 
-## 🚀 Démarrage
+## 🚀 Getting started
 
-### Prérequis
+### Prerequisites
 
 - [Flutter](https://docs.flutter.dev/get-started/install) **3.x** (Dart **≥ 3.8.0**)
-- Android Studio / Xcode selon la plateforme cible
+- Android Studio / Xcode depending on the target platform
 
 ### Installation
 
 ```bash
-# Récupérer les dépendances
+# Fetch the dependencies
 flutter pub get
 
-# Lancer l'application (appareil ou émulateur connecté)
+# Run the application (connected device or emulator)
 flutter run
 ```
 
-### Construire une version de production
+### Build a production version
 
 ```bash
 # Android (APK)
 flutter build apk
 
-# iOS (nécessite macOS et Xcode)
+# iOS (requires macOS and Xcode)
 flutter build ios
 ```
 
@@ -66,37 +66,37 @@ flutter build ios
 flutter test
 ```
 
-## 🛠 Technologies utilisées
+## 🛠 Technologies used
 
-| Dépendance          | Rôle                                            |
+| Dependency          | Role                                            |
 |---------------------|-------------------------------------------------|
-| `path_provider`     | Accès au répertoire de documents de l'appareil  |
-| `shared_preferences`| Persistance des préférences (affichage, tri)    |
-| `package_info_plus` | Informations sur la version de l'application    |
-| `flutter_lints`     | Analyse statique du code                        |
+| `path_provider`     | Access to the device's documents directory       |
+| `shared_preferences`| Persistence of preferences (display, sorting)    |
+| `package_info_plus` | Application version information                   |
+| `flutter_lints`     | Static code analysis                             |
 
-## 📁 Structure du projet
+## 📁 Project structure
 
 ```
 lib/
-├── main.dart               # Point d'entrée de l'application
+├── main.dart               # Application entry point
 ├── models/
-│   └── note.dart           # Modèle de données Note
+│   └── note.dart           # Note data model
 ├── pages/
-│   ├── home.dart           # Écran principal (liste des notes)
-│   ├── edit.dart           # Édition d'une note
-│   ├── search.dart         # Recherche
-│   └── splash.dart         # Écran de démarrage
+│   ├── home.dart           # Main screen (note list)
+│   ├── edit.dart           # Note editing
+│   ├── search.dart         # Search
+│   └── splash.dart         # Splash screen
 ├── services/
-│   └── database.dart       # Lecture / écriture du stockage local
-├── utils/                  # Menus, actions, dialogues…
-└── widgets/                # Composants réutilisables
+│   └── database.dart       # Local storage read / write
+├── utils/                  # Menus, actions, dialogs…
+└── widgets/                # Reusable components
 ```
 
-## 🤝 Contribuer
+## 🤝 Contributing
 
-Les contributions sont les bienvenues ! Ouvrez une *issue* pour signaler un bug ou proposer une fonctionnalité, ou soumettez une *pull request* sur la branche `develop`.
+Contributions are welcome! Open an *issue* to report a bug or suggest a feature, or submit a *pull request* against the `develop` branch.
 
-## 📄 Licence
+## 📄 License
 
-Ce projet est distribué sous la licence **Apache License 2.0**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+This project is distributed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for more details.

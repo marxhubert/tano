@@ -27,9 +27,9 @@ List<Note> _demoNotes() => List<Note>.generate(
   12,
   (int i) => Note(
     id: 'note-$i',
-    title: 'Note numéro $i avec un titre assez long pour tester',
+    title: 'Note number $i with a title long enough to test',
     content:
-        'Contenu de la note $i. Lorem ipsum dolor sit amet, consectetur '
+        'Content of note $i. Lorem ipsum dolor sit amet, consectetur '
         'adipiscing elit, sed do eiusmod tempor incididunt ut labore.',
     date:
         '2026-08-${(i % 28 + 1).toString().padLeft(2, '0')} '
@@ -90,14 +90,14 @@ void main() {
       const Size(320, 480),
       const Size(240, 320),
     ]) {
-      testWidgets('accueil : layouts, menu et sélection sans débordement '
+      testWidgets('home: layouts, menu and selection without overflow '
           '(${themeMode.name}, ${size.width.toInt()}x${size.height.toInt()})', (
         tester,
       ) async {
         await _pumpApp(tester, size: size, themeMode: themeMode);
 
-        // Le thème demandé est bien appliqué (barre du bas sombre en mode
-        // sombre, claire en mode clair).
+        // The requested theme is correctly applied (dark bottom bar in dark
+        // mode, light in light mode).
         final bool isDark = themeMode == ThemeMode.dark;
         expect(
           Theme.of(tester.element(find.byType(BottomAppBar))).brightness,
@@ -109,13 +109,13 @@ void main() {
           isDark ? Colors.blueGrey.shade900 : Colors.blueGrey.shade50,
         );
 
-        // Les trois layouts.
+        // The three layouts.
         for (final String label in <String>['List', 'Grid', 'Compact']) {
           await _selectLayout(tester, label);
           expect(tester.takeException(), isNull, reason: 'layout $label');
         }
 
-        // Menu principal déplié puis refermé.
+        // Main menu expanded then closed.
         await tester.tap(find.byIcon(Icons.more_vert).first);
         await tester.pumpAndSettle();
         expect(find.text('Display'), findsOneWidget);
@@ -123,8 +123,8 @@ void main() {
         await tester.tapAt(const Offset(4, 4));
         await tester.pumpAndSettle();
 
-        // Mode sélection : long-press puis suppression -> dialogue confirm.
-        await tester.longPress(find.textContaining('Note numéro').first);
+        // Selection mode: long-press then delete -> confirm dialog.
+        await tester.longPress(find.textContaining('Note number').first);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await tester.tap(find.byIcon(Icons.clear).first);
@@ -132,25 +132,25 @@ void main() {
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // Annule le dialogue.
+        // Cancels the dialog.
         await tester.tap(find.text('CANCEL').last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('page edit : catégories, retour sale et dialogue confirm '
+      testWidgets('edit page: categories, dirty back navigation and confirm dialog '
           '(${themeMode.name}, ${size.width.toInt()}x${size.height.toInt()})', (
         tester,
       ) async {
         await _pumpApp(tester, size: size, themeMode: themeMode);
 
-        // Ouvre une note existante.
-        await tester.tap(find.textContaining('Note numéro').first);
+        // Opens an existing note.
+        await tester.tap(find.textContaining('Note number').first);
         await tester.pumpAndSettle();
         expect(find.byType(TextField), findsNWidgets(2));
         expect(tester.takeException(), isNull);
 
-        // Menu de catégorie.
+        // Category menu.
         await tester.tap(find.byIcon(Icons.arrow_drop_down));
         await tester.pumpAndSettle();
         expect(find.text('Note'), findsWidgets);
@@ -158,10 +158,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
 
-        // Saisie (rend la note "sale") puis retour -> dialogue confirm.
+        // Typing (marks the note "dirty") then back -> confirm dialog.
         await tester.enterText(
           find.byType(TextField).last,
-          'Du contenu fraîchement tapé',
+          'Freshly typed content',
         );
         await tester.pumpAndSettle();
         await tester.tap(find.byIcon(Icons.arrow_back).first);
@@ -169,7 +169,7 @@ void main() {
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // Quitte sans sauvegarder.
+        // Leaves without saving.
         await tester.tap(find.text('LEAVE').last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

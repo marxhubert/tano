@@ -35,7 +35,7 @@ void main() {
     );
   });
 
-  testWidgets('la page edit ne plante pas quand on ouvre le menu catégorie', (
+  testWidgets('the edit page does not crash when opening the category menu', (
     tester,
   ) async {
     final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
@@ -53,16 +53,16 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Ouvre une note existante -> page edit.
+    // Opens an existing note -> edit page.
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
 
-    // Saisit du texte dans le contenu (focus dans un TextField).
-    await tester.enterText(find.byType(TextField).last, 'Du nouveau contenu');
+    // Types text into the content (focus inside a TextField).
+    await tester.enterText(find.byType(TextField).last, 'Some new content');
     await tester.pumpAndSettle();
 
-    // Ouvre le menu de catégorie : c'est le chemin qui plantait.
+    // Opens the category menu: this is the path that used to crash.
     await tester.tap(find.byIcon(Icons.arrow_drop_down));
     await tester.pumpAndSettle();
 
