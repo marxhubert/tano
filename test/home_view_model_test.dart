@@ -30,7 +30,7 @@ Note _note(
   return Note(
     id: id,
     title: title ?? 'Note $id',
-    content: 'Contenu $id',
+    content: 'Content $id',
     date: date ?? '2026-08-01 10:00:00.000',
     important: important,
     category: category ?? 'none',
@@ -39,7 +39,7 @@ Note _note(
 
 void main() {
   group('HomeViewModel', () {
-    test('tri les notes par date (plus récentes d\'abord)', () {
+    test('sorts the notes by date (newest first)', () {
       final vm = HomeViewModel(
         repository: _InMemoryNotesRepository(),
         initialNotes: <Note>[
@@ -52,7 +52,7 @@ void main() {
       expect(vm.notesCount, 2);
     });
 
-    test('load() recharge les notes depuis le repository', () async {
+    test('load() reloads the notes from the repository', () async {
       final repository = _InMemoryNotesRepository(<Note>[_note('1')]);
       final vm = HomeViewModel(repository: repository);
 
@@ -62,7 +62,7 @@ void main() {
       expect(vm.notes.first.id, '1');
     });
 
-    test('toggleFavorite inverse le statut et persiste', () async {
+    test('toggleFavorite flips the status and persists', () async {
       final repository = _InMemoryNotesRepository(<Note>[_note('1')]);
       final vm = HomeViewModel(
         repository: repository,
@@ -75,7 +75,7 @@ void main() {
       expect(repository.notes[0].important, isTrue);
     });
 
-    test('setSortBy réordonne selon le tri choisi', () {
+    test('setSortBy reorders according to the chosen sorting', () {
       final vm = HomeViewModel(
         repository: _InMemoryNotesRepository(),
         initialNotes: <Note>[
@@ -89,7 +89,7 @@ void main() {
       expect(vm.notes.first.id, '2');
     });
 
-    test('setViewLayout ignore les valeurs inconnues', () {
+    test('setViewLayout ignores unknown values', () {
       final vm = HomeViewModel(repository: _InMemoryNotesRepository());
 
       vm.setViewLayout('bogus');
@@ -98,7 +98,7 @@ void main() {
     });
 
     test(
-      'la sélection multiple supprime toutes les notes sélectionnées',
+      'multiple selection deletes all the selected notes',
       () async {
         final repository = _InMemoryNotesRepository();
         final vm = HomeViewModel(
@@ -122,7 +122,7 @@ void main() {
       },
     );
 
-    test('applyNoteAction ajoute une note', () async {
+    test('applyNoteAction adds a note', () async {
       final repository = _InMemoryNotesRepository();
       final vm = HomeViewModel(repository: repository);
 
@@ -137,12 +137,12 @@ void main() {
       expect(repository.notes, hasLength(1));
     });
 
-    test('applyNoteAction remplace la note modifiée', () async {
+    test('applyNoteAction replaces the modified note', () async {
       final repository = _InMemoryNotesRepository();
       final vm = HomeViewModel(
         repository: repository,
         initialNotes: <Note>[
-          _note('1', title: 'Avant'),
+          _note('1', title: 'Before'),
           _note('2'),
         ],
       );
@@ -152,15 +152,15 @@ void main() {
         index: 0,
         action: NoteAction(
           action: 'Save',
-          note: _note('1', title: 'Après'),
+          note: _note('1', title: 'After'),
         ),
       );
 
-      expect(vm.notes[0].title, 'Après');
-      expect(repository.notes[0].title, 'Après');
+      expect(vm.notes[0].title, 'After');
+      expect(repository.notes[0].title, 'After');
     });
 
-    test('applyNoteAction supprime la note', () async {
+    test('applyNoteAction deletes the note', () async {
       final repository = _InMemoryNotesRepository();
       final vm = HomeViewModel(
         repository: repository,
@@ -177,7 +177,7 @@ void main() {
       expect(vm.notes.first.id, '2');
     });
 
-    test('removeNote retire une note (glisser-pour-supprimer)', () async {
+    test('removeNote removes a note (swipe-to-delete)', () async {
       final repository = _InMemoryNotesRepository();
       final vm = HomeViewModel(
         repository: repository,
@@ -191,7 +191,7 @@ void main() {
       expect(repository.notes, hasLength(1));
     });
 
-    test('exitSelectionMode vide la sélection', () {
+    test('exitSelectionMode clears the selection', () {
       final vm = HomeViewModel(
         repository: _InMemoryNotesRepository(),
         initialNotes: <Note>[_note('1'), _note('2')],

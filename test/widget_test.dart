@@ -41,7 +41,7 @@ void main() {
     );
   });
 
-  testWidgets('le splash affiche le logo puis navigue vers l\'accueil', (
+  testWidgets('the splash shows the logo then navigates to the home screen', (
     tester,
   ) async {
     final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
@@ -66,7 +66,7 @@ void main() {
   });
 
   testWidgets(
-    "le menu principal s'ouvre sans erreur et met en évidence l'item actif",
+    "the main menu opens without error and highlights the active item",
     (tester) async {
       final _InMemoryNotesRepository repository =
           _InMemoryNotesRepository(<Note>[
@@ -86,8 +86,8 @@ void main() {
 
       expect(find.byType(Home), findsOneWidget);
       
-      // Ouvre le menu principal (⋮) : il ne doit pas planter même si
-      // les items de tri/langue/à-propos n'ont pas d'icône.
+      // Opens the main menu (⋮): it must not crash even if the
+      // sorting/language/about items have no icon.
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
 
@@ -96,18 +96,18 @@ void main() {
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
 
-      // Les icônes d'affichage sont bien rendues à droite des items.
+      // The display icons are correctly rendered to the right of the items.
       expect(find.byIcon(Icons.view_stream), findsOneWidget);
 
-      // L'item actif (tri par date par défaut) est coloré avec la couleur
-      // du thème, à la place de l'ancien chevron.
+      // The active item (default date sorting) is colored with the theme
+      // color, replacing the old chevron.
       final Color primary = Theme.of(
         tester.element(find.text('Date')),
       ).colorScheme.primary;
       expect(tester.widget<Text>(find.text('Date')).style?.color, primary);
 
-      // Les items de tri n'ont pas d'icône : seule l'icône du groupe
-      // Affichage (view_list/view_stream/view_module) est présente.
+      // The sorting items have no icon: only the icon of the Display group
+      // (view_list/view_stream/view_module) is present.
       expect(find.byIcon(Icons.date_range), findsNothing);
       expect(find.byIcon(Icons.arrow_back_ios), findsNothing);
     },

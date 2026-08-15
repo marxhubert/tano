@@ -4,11 +4,11 @@ import 'package:tano/core/models/database.dart';
 
 void main() {
   group('buildNotesFixtures', () {
-    test('créé exactement 24 notes', () {
+    test('creates exactly 24 notes', () {
       expect(buildNotesFixtures(), hasLength(24));
     });
 
-    test('couvre toutes les catégories', () {
+    test('covers all the categories', () {
       final categories = buildNotesFixtures().map((n) => n.category).toSet();
       expect(
         categories,
@@ -24,18 +24,18 @@ void main() {
       );
     });
 
-    test('mélange favoris et notes classiques', () {
+    test('mixes favorites and regular notes', () {
       final notes = buildNotesFixtures();
       expect(notes.any((n) => n.important == true), isTrue);
       expect(notes.any((n) => n.important == false), isTrue);
     });
 
-    test('les dates sont toutes différentes', () {
+    test('the dates are all different', () {
       final dates = buildNotesFixtures().map((n) => n.date).toSet();
       expect(dates, hasLength(24));
     });
 
-    test('les notes ont un titre et un contenu non vides', () {
+    test('the notes have a non-empty title and content', () {
       for (final note in buildNotesFixtures()) {
         expect(note.title, isNotEmpty);
         expect(note.content, isNotEmpty);
@@ -43,7 +43,7 @@ void main() {
       }
     });
 
-    test('le JSON généré est lisible par le modèle', () {
+    test('the generated JSON is readable by the model', () {
       final notes = buildNotesFixtures();
       final restored = dbFromJson(dbToJson(Database(note: notes)));
       expect(restored.note, hasLength(24));

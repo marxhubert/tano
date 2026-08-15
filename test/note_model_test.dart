@@ -4,11 +4,11 @@ import 'package:tano/core/models/note.dart';
 
 void main() {
   group('Note', () {
-    test('sérialise et désérialise une note', () {
+    test('serializes and deserializes a note', () {
       final note = Note(
         id: '123',
-        title: 'Titre',
-        content: 'Contenu',
+        title: 'Title',
+        content: 'Content',
         date: '2026-08-12 10:00:00.000',
         important: true,
         category: 'work',
@@ -18,20 +18,20 @@ void main() {
       final restored = Note.fromJson(json);
 
       expect(restored.id, '123');
-      expect(restored.title, 'Titre');
-      expect(restored.content, 'Contenu');
+      expect(restored.title, 'Title');
+      expect(restored.content, 'Content');
       expect(restored.date, '2026-08-12 10:00:00.000');
       expect(restored.important, true);
       expect(restored.category, 'work');
     });
 
-    test('important est conservé quand false', () {
+    test('important is preserved when false', () {
       final note = Note(id: '1', title: 'a', important: false);
       final restored = Note.fromJson(note.toJson());
       expect(restored.important, false);
     });
 
-    test('les champs absents ont des valeurs par défaut sûres', () {
+    test('missing fields have safe default values', () {
       final restored = Note.fromJson(<String, dynamic>{});
       expect(restored.id, isNull);
       expect(restored.important, false);
@@ -40,7 +40,7 @@ void main() {
   });
 
   group('Database', () {
-    test('encode et décode le JSON', () {
+    test('encodes and decodes the JSON', () {
       final db = Database(
         note: [
           Note(id: '1', title: 'a', content: 'x', important: true),
@@ -57,12 +57,12 @@ void main() {
       expect(restored.note[1].important, false);
     });
 
-    test('liste de notes vide par défaut', () {
+    test('empty note list by default', () {
       expect(Database().note, isEmpty);
       expect(dbFromJson('{"notes": []}').note, isEmpty);
     });
 
-    test('gère un JSON sans clé notes', () {
+    test('handles a JSON without the notes key', () {
       expect(dbFromJson('{}').note, isEmpty);
     });
   });
