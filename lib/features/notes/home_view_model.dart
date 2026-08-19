@@ -22,6 +22,7 @@ class HomeViewModel extends ChangeNotifier {
   bool _isInSelectionMode = false;
   final Set<int> _selected = <int>{};
   String _actionButtons = 'add';
+  (List<Note>, List<int>)? _lastDeleted;
 
   List<Note> get notes => List<Note>.unmodifiable(_notes);
   int get notesCount => _notes.length;
@@ -42,9 +43,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void setViewLayout(String viewLayout) {
-    if (viewLayout != 'compact' &&
-        viewLayout != 'list' &&
-        viewLayout != 'gridlist') {
+    if (viewLayout != 'list' && viewLayout != 'gridlist') {
       return;
     }
     if (_viewLayout == viewLayout) {
@@ -110,9 +109,11 @@ class HomeViewModel extends ChangeNotifier {
   /// Deletes every selected note, leaves the selection mode and persists.
   Future<void> deleteSelected() async {
     final List<int> indexes = _selected.toList()..sort();
+    final List<Note> removed = indexes.map((int i) => _notes[i]).toList();
     for (final int index in indexes.reversed) {
       _notes.removeAt(index);
     }
+    _lastDeleted = (removed, indexes);
     _selected.clear();
     _isInSelectionMode = false;
     _actionButtons = 'add';
@@ -125,7 +126,25 @@ class HomeViewModel extends ChangeNotifier {
     if (index < 0 || index >= _notes.length) {
       return;
     }
-    _notes.removeAt(index);
+    final Note removed = _notes.removeAt(index);
+    _lastDeleted = (<Note>[removed], <int>[index]);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Restores the most recently deleted note(s) at their original positions.
+  Future<void> undoLastDelete() async {
+    final (List<Note>, List<int>)? record = _lastDeleted;
+    if (record == null) {
+      return;
+    }
+    final List<Note> notes = record.$1;
+    final List<int> indexes = record.$2;
+    for (int i = 0; i < indexes.length; i++) {
+      final int index = indexes[i] > _notes.length ? _notes.length : indexes[i];
+      _notes.insert(index, notes[i]);
+    }
+    _lastDeleted = null;
     await _persist();
     notifyListeners();
   }

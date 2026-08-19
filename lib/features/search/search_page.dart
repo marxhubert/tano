@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/features/search/search_view_model.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -75,21 +76,21 @@ class _SearchPageState extends State<SearchPage> {
       itemCount: notes.length,
       itemBuilder: (BuildContext context, int index) {
         String title = notes[index].title;
-        String date = notes[index].date.toString().substring(0, 10);
+        String date = formatNoteDate(notes[index].date);
         final bool important = notes[index].important;
         return Row(
           children: <Widget>[
             Expanded(
               flex: 1,
               child: Card(
-                elevation: 0.6,
+                elevation: 1.0,
                 color: themeCategory(
                   notes[index].category,
                   false,
                   brightness: Theme.of(context).brightness,
                 ),
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(0.0)),
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
                 ),
                 child: Container(
                   margin: EdgeInsets.only(left: 2.7),

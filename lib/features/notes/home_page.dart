@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -138,14 +139,26 @@ class HomeState extends State<Home> {
     return AppText.tr('delete_note');
   }
 
+  void _showUndoSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppText.tr('note_deleted')),
+        action: SnackBarAction(
+          label: AppText.tr('undo'),
+          onPressed: () {
+            _viewModel.undoLastDelete();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
       return noRecordFound(context);
     }
 
     switch (viewLayout) {
-      case 'compact':
-        return _compactLayout(notes);
       case 'list':
         return _listLayout(notes);
       case 'gridlist':
@@ -177,19 +190,24 @@ class HomeState extends State<Home> {
       children: List.generate(notes.length, (index) {
         String title = notes[index].title;
         String content = notes[index].content;
-        String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important;
+        String date = formatNoteDate(notes[index].date);
         final bool isSelected = _viewModel.selected.contains(index);
-        return Card(
-          margin: EdgeInsets.zero,
-          elevation: 0.6,
-          color: themeCategory(
-            notes[index].category,
-            false,
-            brightness: Theme.of(context).brightness,
-          ),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(0.0)),
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: themeCategory(
+              notes[index].category,
+              false,
+              brightness: Theme.of(context).brightness,
+            ),
+            borderRadius: BorderRadius.circular(12.0),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 2.0,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: Stack(
             children: <Widget>[
@@ -200,7 +218,6 @@ class HomeState extends State<Home> {
                     true,
                     brightness: Theme.of(context).brightness,
                   ),
-                  margin: EdgeInsets.only(bottom: 2.7),
                   child: Container(
                     padding: EdgeInsets.all(2.7),
                     child: Column(
@@ -266,37 +283,6 @@ class HomeState extends State<Home> {
                   _viewModel.enterSelectionMode(index);
                 },
               ),
-              Row(
-                children: <Widget>[
-                  Expanded(child: Offstage()),
-                  Column(
-                    children: <Widget>[
-                      Expanded(child: Offstage()),
-                      GestureDetector(
-                        child: Container(
-                          width: 45.0,
-                          height: 45.0,
-                          color: Colors.transparent,
-                          alignment: Alignment.bottomRight,
-                          padding: EdgeInsets.all(4.5),
-                          child: Icon(
-                            important ? Icons.star : Icons.star_border,
-                            color: important ? Colors.orange : null,
-                            size: 15.0,
-                          ),
-                        ),
-                        onTap: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
               _viewModel.isInSelectionMode
                   ? GestureDetector(
                       child: Container(
@@ -344,24 +330,24 @@ class HomeState extends State<Home> {
     );
   }
 
-  Widget _compactLayout(List<Note> notes) {
+  Widget _listLayout(List<Note> notes) {
     return ListView.separated(
       itemCount: notes.length,
       padding: EdgeInsets.symmetric(horizontal: 12.0),
       itemBuilder: (BuildContext context, int index) {
         final alreadySelected = _viewModel.selected.contains(index);
         String title = notes[index].title;
-        String date = notes[index].date.toString().substring(0, 10);
+        String date = formatNoteDate(notes[index].date);
         final bool important = notes[index].important;
         return Dismissible(
           key: Key(notes[index].id),
           background: Container(
-            color: Colors.red,
+            color: Colors.orange,
             alignment: Alignment.centerLeft,
             padding: EdgeInsets.only(left: 21.0),
             child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
+              important ? Icons.star_border : Icons.star,
+              color: Colors.white,
               size: 27.0,
             ),
           ),
@@ -379,19 +365,24 @@ class HomeState extends State<Home> {
             children: <Widget>[
               Expanded(
                 flex: 1,
-                child: Card(
-                  elevation: 0.6,
-                  margin: EdgeInsets.zero,
-                  color: themeCategory(
-                    notes[index].category,
-                    false,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(0.0)),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: themeCategory(
+                      notes[index].category,
+                      false,
+                      brightness: Theme.of(context).brightness,
+                    ),
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 2.0,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                   child: Container(
-                    margin: EdgeInsets.only(left: 2.7),
                     color: themeCategory(
                       notes[index].category,
                       true,
@@ -412,32 +403,20 @@ class HomeState extends State<Home> {
                             ),
                           ),
                           SizedBox(width: 9.0),
-                          Flexible(
-                            child: Text(
-                              date,
-                              style: TextStyle(
-                                fontSize: 9.0,
-                                fontStyle: FontStyle.italic,
-                                color: mutedTextColor(context),
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                          Text(
+                            date,
+                            style: TextStyle(
+                              fontSize: 9.0,
+                              color: mutedTextColor(context),
                             ),
                           ),
                         ],
                       ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          important ? Icons.star : Icons.star_border,
-                          color: important ? Colors.orange : null,
-                          size: 18.0,
-                        ),
-                        onPressed: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
+                      subtitle: Text(
+                        notes[index].content,
+                        maxLines: 3,
+                        overflow: TextOverflow.clip,
+                        style: TextStyle(fontSize: 12.0),
                       ),
                       onTap: () {
                         if (_viewModel.isInSelectionMode) {
@@ -461,6 +440,10 @@ class HomeState extends State<Home> {
             ],
           ),
           confirmDismiss: (direction) async {
+            if (direction == DismissDirection.startToEnd) {
+              _viewModel.toggleFavorite(index);
+              return false;
+            }
             return await getConfirmation(
               context: context,
               actionTitle: _deleteActionTitle(),
@@ -469,147 +452,7 @@ class HomeState extends State<Home> {
           },
           onDismissed: (direction) {
             _viewModel.removeNote(index);
-          },
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        return SizedBox(height: 12.0);
-      },
-    );
-  }
-
-  Widget _listLayout(List<Note> notes) {
-    return ListView.separated(
-      itemCount: notes.length,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      itemBuilder: (BuildContext context, int index) {
-        final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title;
-        String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important;
-        return Dismissible(
-          key: Key(notes[index].id),
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          secondaryBackground: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Card(
-                  elevation: 0.6,
-                  margin: EdgeInsets.zero,
-                  color: themeCategory(
-                    notes[index].category,
-                    false,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                  ),
-                  child: Container(
-                    margin: EdgeInsets.only(left: 2.7),
-                    color: themeCategory(
-                      notes[index].category,
-                      true,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.only(left: 9.0),
-                      title: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  notes[index].content,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.clip,
-                                  style: TextStyle(fontSize: 12.0),
-                                ),
-                                Text(
-                                  date,
-                                  style: TextStyle(
-                                    fontSize: 10.8,
-                                    fontStyle: FontStyle.italic,
-                                    color: mutedTextColor(context),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          important ? Icons.star : Icons.star_border,
-                          color: important ? Colors.orange : null,
-                          size: 18.0,
-                        ),
-                        onPressed: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
-                      ),
-                      onTap: () {
-                        if (_viewModel.isInSelectionMode) {
-                          _viewModel.toggleSelection(index);
-                        } else {
-                          _openNoteEditor(
-                            add: false,
-                            index: index,
-                            note: notes[index],
-                          );
-                        }
-                      },
-                      onLongPress: () {
-                        _viewModel.enterSelectionMode(index);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              _showCheckboxForSelection(index, alreadySelected),
-            ],
-          ),
-          confirmDismiss: (direction) async {
-            return await getConfirmation(
-              context: context,
-              actionTitle: _deleteActionTitle(),
-              action: AppText.tr('delete'),
-            );
-          },
-          onDismissed: (direction) {
-            _viewModel.removeNote(index);
+            _showUndoSnackBar();
           },
         );
       },
@@ -651,6 +494,7 @@ class HomeState extends State<Home> {
                 );
                 if (confirmDeletion == true) {
                   await _viewModel.deleteSelected();
+                  _showUndoSnackBar();
                 }
               }
             },
@@ -735,9 +579,6 @@ class HomeState extends State<Home> {
                       icon: Icon(Icons.more_vert),
                       onSelected: ((valueSelected) {
                         switch (valueSelected.value.toLowerCase()) {
-                          case "compact":
-                            _changeLayout('compact');
-                            break;
                           case "list":
                             _changeLayout('list');
                             break;
@@ -810,7 +651,6 @@ class HomeState extends State<Home> {
                             child: Text(
                               AppText.tr('all_notes'),
                               style: TextStyle(
-                                fontFamily: 'Calibri',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 21.0,
                               ),
@@ -821,7 +661,6 @@ class HomeState extends State<Home> {
                               Text(
                                 '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
                                 style: TextStyle(
-                                  fontFamily: 'Calibri',
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),

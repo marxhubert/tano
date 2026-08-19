@@ -210,7 +210,6 @@ class _EditNoteState extends State<EditNote> {
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.sentences,
                           style: TextStyle(
-                            fontFamily: 'Calibri',
                             fontWeight: FontWeight.bold,
                             fontSize: 21.0,
                           ),

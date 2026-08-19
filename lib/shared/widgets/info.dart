@@ -9,6 +9,7 @@ AlertDialog aboutInfo({
   PackageInfo? packageInfo,
 }) {
   return AlertDialog(
+    scrollable: true,
     title: Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
