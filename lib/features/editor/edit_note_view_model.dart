@@ -74,7 +74,7 @@ class EditNoteViewModel extends ChangeNotifier {
 
     /// Business rule: a note is only savable when its content is not blank.
     bool isValid({required String title, required String content}) {
-        return buildNote(title: title, content: content).content!.isNotEmpty;
+        return buildNote(title: title, content: content).content.isNotEmpty;
     }
 
   /// Persists a saved note: adds it or replaces the note with the same id,

@@ -33,9 +33,9 @@ void main() {
 
     test('missing fields have safe default values', () {
       final restored = Note.fromJson(<String, dynamic>{});
-      expect(restored.id, isNull);
+      expect(restored.id, '');
       expect(restored.important, false);
-      expect(restored.category, isNull);
+      expect(restored.category, 'none');
     });
   });
 

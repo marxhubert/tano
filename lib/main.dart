@@ -33,7 +33,10 @@ class Tano extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ThemeController.instance,
+      listenable: Listenable.merge([
+        ThemeController.instance,
+        LocaleController.instance,
+      ]),
       builder: (context, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,

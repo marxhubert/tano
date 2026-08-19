@@ -13,6 +13,7 @@ import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
+import 'package:tano/shared/widgets/action_bar.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class Home extends StatefulWidget {
@@ -100,7 +101,7 @@ class HomeState extends State<Home> {
         builder: (context) => EditNote(
           add: add,
           index: index,
-          noteAction: NoteAction(action: '', note: note),
+          noteAction: NoteAction(note: note),
           repository: widget.repository,
         ),
         fullscreenDialog: true,
@@ -174,16 +175,16 @@ class HomeState extends State<Home> {
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
       children: List.generate(notes.length, (index) {
-        String title = notes[index].title ?? '';
-        String content = notes[index].content ?? '';
+        String title = notes[index].title;
+        String content = notes[index].content;
         String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
+        final bool important = notes[index].important;
         final bool isSelected = _viewModel.selected.contains(index);
         return Card(
           margin: EdgeInsets.zero,
           elevation: 0.6,
           color: themeCategory(
-            notes[index].category ?? 'none',
+            notes[index].category,
             false,
             brightness: Theme.of(context).brightness,
           ),
@@ -195,7 +196,7 @@ class HomeState extends State<Home> {
               InkWell(
                 child: Container(
                   color: themeCategory(
-                    notes[index].category ?? 'none',
+                    notes[index].category,
                     true,
                     brightness: Theme.of(context).brightness,
                   ),
@@ -349,11 +350,11 @@ class HomeState extends State<Home> {
       padding: EdgeInsets.symmetric(horizontal: 12.0),
       itemBuilder: (BuildContext context, int index) {
         final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title ?? '';
+        String title = notes[index].title;
         String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
+        final bool important = notes[index].important;
         return Dismissible(
-          key: Key(notes[index].id ?? ''),
+          key: Key(notes[index].id),
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerLeft,
@@ -382,7 +383,7 @@ class HomeState extends State<Home> {
                   elevation: 0.6,
                   margin: EdgeInsets.zero,
                   color: themeCategory(
-                    notes[index].category ?? 'none',
+                    notes[index].category,
                     false,
                     brightness: Theme.of(context).brightness,
                   ),
@@ -392,7 +393,7 @@ class HomeState extends State<Home> {
                   child: Container(
                     margin: EdgeInsets.only(left: 2.7),
                     color: themeCategory(
-                      notes[index].category ?? 'none',
+                      notes[index].category,
                       true,
                       brightness: Theme.of(context).brightness,
                     ),
@@ -483,11 +484,11 @@ class HomeState extends State<Home> {
       padding: EdgeInsets.symmetric(horizontal: 12.0),
       itemBuilder: (BuildContext context, int index) {
         final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title ?? '';
+        String title = notes[index].title;
         String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
+        final bool important = notes[index].important;
         return Dismissible(
-          key: Key(notes[index].id ?? ''),
+          key: Key(notes[index].id),
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerLeft,
@@ -516,7 +517,7 @@ class HomeState extends State<Home> {
                   elevation: 0.6,
                   margin: EdgeInsets.zero,
                   color: themeCategory(
-                    notes[index].category ?? 'none',
+                    notes[index].category,
                     false,
                     brightness: Theme.of(context).brightness,
                   ),
@@ -526,7 +527,7 @@ class HomeState extends State<Home> {
                   child: Container(
                     margin: EdgeInsets.only(left: 2.7),
                     color: themeCategory(
-                      notes[index].category ?? 'none',
+                      notes[index].category,
                       true,
                       brightness: Theme.of(context).brightness,
                     ),
@@ -547,7 +548,7 @@ class HomeState extends State<Home> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  notes[index].content ?? '',
+                                  notes[index].content,
                                   maxLines: 3,
                                   overflow: TextOverflow.clip,
                                   style: TextStyle(fontSize: 12.0),
@@ -619,81 +620,54 @@ class HomeState extends State<Home> {
   }
 
   List<Widget> _showActionButtons({required String action}) {
-    Widget addActionButton = IconButton(
-      icon: Icon(Icons.add),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
+    final Widget addActionButton = BottomActionButton(
+      icon: Icons.add,
       onPressed: () {
         _openNoteEditor(add: true, index: -1, note: Note());
       },
     );
 
-    Widget cancelActionButton = IconButton(
-      icon: Icon(Icons.arrow_back),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.exitSelectionMode();
-      },
-    );
-
-    Widget deleteActionButton = IconButton(
-      icon: Icon(Icons.clear),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () async {
-        if (!_viewModel.hasSelection) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppText.tr('no_note_selected'))),
-          );
-        } else {
-          final bool? confirmDeletion = await getConfirmation(
-            context: context,
-            actionTitle: _deleteActionTitle(),
-            action: AppText.tr('delete'),
-          );
-          if (confirmDeletion == true) {
-            await _viewModel.deleteSelected();
-          }
-        }
-      },
-    );
-
-    Widget selectAllActionButton = IconButton(
-      icon: Icon(Icons.check_circle),
-      iconSize: 21.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.selectAll();
-      },
-    );
-
-    Widget selectNoneActionButton = IconButton(
-      icon: Icon(Icons.panorama_fish_eye),
-      iconSize: 21.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.clearSelection();
-      },
-    );
-
     switch (action) {
       case 'add':
-        return <Widget>[Expanded(flex: 1, child: addActionButton)];
+        return <Widget>[addActionButton];
       case 'multiple':
         return <Widget>[
-          Expanded(flex: 1, child: cancelActionButton),
-          Expanded(flex: 1, child: deleteActionButton),
-          Expanded(flex: 1, child: selectNoneActionButton),
-          Expanded(flex: 1, child: selectAllActionButton),
+          BottomActionButton(
+            icon: Icons.arrow_back,
+            onPressed: _viewModel.exitSelectionMode,
+          ),
+          BottomActionButton(
+            icon: Icons.clear,
+            onPressed: () async {
+              if (!_viewModel.hasSelection) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(AppText.tr('no_note_selected'))),
+                );
+              } else {
+                final bool? confirmDeletion = await getConfirmation(
+                  context: context,
+                  actionTitle: _deleteActionTitle(),
+                  action: AppText.tr('delete'),
+                );
+                if (confirmDeletion == true) {
+                  await _viewModel.deleteSelected();
+                }
+              }
+            },
+          ),
+          BottomActionButton(
+            icon: Icons.panorama_fish_eye,
+            iconSize: 21.0,
+            onPressed: _viewModel.clearSelection,
+          ),
+          BottomActionButton(
+            icon: Icons.check_circle,
+            iconSize: 21.0,
+            onPressed: _viewModel.selectAll,
+          ),
         ];
       default:
-        return <Widget>[Expanded(flex: 1, child: addActionButton)];
+        return <Widget>[addActionButton];
     }
   }
 

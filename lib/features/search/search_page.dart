@@ -42,7 +42,7 @@ class _SearchPageState extends State<SearchPage> {
         builder: (context) => EditNote(
           add: false,
           index: _viewModel.results.indexOf(note),
-          noteAction: NoteAction(action: '', note: note),
+          noteAction: NoteAction(note: note),
           repository: widget.repository,
         ),
         fullscreenDialog: true,
@@ -74,9 +74,9 @@ class _SearchPageState extends State<SearchPage> {
     return ListView.separated(
       itemCount: notes.length,
       itemBuilder: (BuildContext context, int index) {
-        String title = notes[index].title ?? '';
+        String title = notes[index].title;
         String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important == true;
+        final bool important = notes[index].important;
         return Row(
           children: <Widget>[
             Expanded(
@@ -84,7 +84,7 @@ class _SearchPageState extends State<SearchPage> {
               child: Card(
                 elevation: 0.6,
                 color: themeCategory(
-                  notes[index].category ?? 'none',
+                  notes[index].category,
                   false,
                   brightness: Theme.of(context).brightness,
                 ),
@@ -94,7 +94,7 @@ class _SearchPageState extends State<SearchPage> {
                 child: Container(
                   margin: EdgeInsets.only(left: 2.7),
                   color: themeCategory(
-                    notes[index].category ?? 'none',
+                    notes[index].category,
                     true,
                     brightness: Theme.of(context).brightness,
                   ),
