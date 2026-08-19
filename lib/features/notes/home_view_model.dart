@@ -68,7 +68,7 @@ class HomeViewModel extends ChangeNotifier {
       return;
     }
     final Note note = _notes[index];
-    note.important = !(note.important ?? false);
+    _notes[index] = note.copyWith(important: !note.important);
     _persist();
     notifyListeners();
   }
@@ -136,19 +136,18 @@ class HomeViewModel extends ChangeNotifier {
     required int index,
     required NoteAction action,
   }) async {
-    switch (action.action) {
-      case 'Save':
+    switch (action.kind) {
+      case NoteActionKind.save:
         if (add) {
           _notes.add(action.note!);
         } else {
           _notes[index] = action.note!;
         }
         break;
-      case 'Delete':
+      case NoteActionKind.delete:
         _notes.removeAt(index);
         break;
-      case 'Cancel':
-      default:
+      case NoteActionKind.cancel:
         break;
     }
     await _persist();
@@ -158,25 +157,20 @@ class HomeViewModel extends ChangeNotifier {
   void _sortNotes() {
     switch (_sortBy) {
       case 'date':
-        _notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
+        _notes.sort((note1, note2) => note2.date.compareTo(note1.date));
         break;
       case 'alpha':
-        _notes.sort(
-          (note1, note2) => (note1.title ?? '').compareTo(note2.title ?? ''),
-        );
+        _notes.sort((note1, note2) => note1.title.compareTo(note2.title));
         break;
       case 'important':
-        _notes.sort(
-          (note1, note2) => (note2.important ?? false).toString().compareTo(
-            (note1.important ?? false).toString(),
-          ),
-        );
+        _notes.sort((note1, note2) {
+          final int a = note1.important ? 1 : 0;
+          final int b = note2.important ? 1 : 0;
+          return b.compareTo(a);
+        });
         break;
       case 'category':
-        _notes.sort(
-          (note1, note2) =>
-              (note1.category ?? '').compareTo(note2.category ?? ''),
-        );
+        _notes.sort((note1, note2) => note1.category.compareTo(note2.category));
         break;
     }
   }

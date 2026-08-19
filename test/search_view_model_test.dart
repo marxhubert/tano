@@ -118,7 +118,7 @@ void main() {
 
         await vm.applyNoteAction(
           original: found,
-          action: NoteAction(action: 'Save', note: edited),
+          action: NoteAction(kind: NoteActionKind.save, note: edited),
         );
 
         expect(repository.notes.map((n) => n.title), contains('Alpha modified'));
@@ -141,7 +141,7 @@ void main() {
 
       await vm.applyNoteAction(
         original: found,
-        action: NoteAction(action: 'Delete'),
+        action: NoteAction(kind: NoteActionKind.delete),
       );
 
       expect(repository.notes, hasLength(1));

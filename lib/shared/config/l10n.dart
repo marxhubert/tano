@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Application language manager.
@@ -5,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// The chosen language is stored in the shared preferences and is used
 /// to resolve interface strings through [AppText]. The default language
 /// is English.
-class LocaleController {
+class LocaleController extends ChangeNotifier {
   LocaleController._();
 
   static final LocaleController instance = LocaleController._();
@@ -26,9 +27,11 @@ class LocaleController {
     _language = supportedLanguages.contains(saved) ? saved! : defaultLanguage;
   }
 
-  /// Saves and applies the new language.
+  /// Saves and applies the new language, then notifies listeners so the
+  /// whole interface re-renders with the new strings.
   Future<void> setLanguage(String language) async {
     _language = language;
+    notifyListeners();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, language);
   }

@@ -22,7 +22,7 @@ class SearchViewModel extends ChangeNotifier {
   /// Loads every note (newest first) and re-runs the current search.
   Future<void> load() async {
     final List<Note> notes = await repository.loadNotes();
-    notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
+    notes.sort((note1, note2) => note2.date.compareTo(note1.date));
     _allNotes = notes;
     _runSearch();
     notifyListeners();
@@ -45,21 +45,20 @@ class SearchViewModel extends ChangeNotifier {
     required NoteAction action,
   }) async {
     final int index = _allNotes.indexOf(original);
-    switch (action.action) {
-      case 'Save':
+    switch (action.kind) {
+      case NoteActionKind.save:
         if (index == -1) {
           _allNotes.add(action.note!);
         } else {
           _allNotes[index] = action.note!;
         }
         break;
-      case 'Delete':
+      case NoteActionKind.delete:
         if (index != -1) {
           _allNotes.removeAt(index);
         }
         break;
-      case 'Cancel':
-      default:
+      case NoteActionKind.cancel:
         break;
     }
     await repository.saveNotes(_allNotes);
@@ -74,12 +73,12 @@ class SearchViewModel extends ChangeNotifier {
       return;
     }
     for (final Note note in _allNotes) {
-      final bool inTitle =
-          note.title != null &&
-          note.title!.contains(RegExp(keyword, caseSensitive: false));
-      final bool inContent =
-          note.content != null &&
-          note.content!.contains(RegExp(keyword, caseSensitive: false));
+      final bool inTitle = note.title.contains(
+        RegExp(keyword, caseSensitive: false),
+      );
+      final bool inContent = note.content.contains(
+        RegExp(keyword, caseSensitive: false),
+      );
       if ((inTitle || inContent) && !_results.contains(note)) {
         _results.add(note);
       }

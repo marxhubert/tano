@@ -6,6 +6,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/action_bar.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class EditNote extends StatefulWidget {
@@ -44,11 +45,11 @@ class _EditNoteState extends State<EditNote> {
       add: widget.add,
       initialNote: widget.noteAction.note,
     );
-    _noteAction = NoteAction(action: 'Cancel', note: widget.noteAction.note);
+    _noteAction = NoteAction(kind: NoteActionKind.cancel, note: widget.noteAction.note);
     _titleController.text =
-        widget.noteAction.note?.title?.replaceAll('\n', ' ') ?? '';
+        widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
     _contentController.text = widget.noteAction.note?.content ?? '';
-    _noteContentLength = widget.noteAction.note?.content?.length ?? 0;
+    _noteContentLength = widget.noteAction.note?.content.length ?? 0;
   }
 
   @override
@@ -75,13 +76,13 @@ class _EditNoteState extends State<EditNote> {
       ).showSnackBar(SnackBar(content: Text(AppText.tr('content_empty'))));
     } else {
       noteAction.note = note;
-      noteAction.action = 'Save';
+      noteAction.kind = NoteActionKind.save;
       Navigator.pop(context, noteAction);
     }
   }
 
   void _deleteNote(NoteAction noteAction) {
-    noteAction.action = 'Delete';
+    noteAction.kind = NoteActionKind.delete;
     Navigator.pop(context, noteAction);
   }
 
@@ -119,46 +120,34 @@ class _EditNoteState extends State<EditNote> {
   }
 
   List<Widget> _showActionButtons({required String action}) {
-    Widget deleteActionButton = IconButton(
-      icon: Icon(Icons.clear),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () async {
-        final bool? confirmDeletion = await getConfirmation(
-          context: context,
-          actionTitle: AppText.tr('delete_note'),
-          action: AppText.tr('delete'),
-        );
-        if (confirmDeletion == true) {
-          _deleteNote(_noteAction);
-        }
-      },
-    );
-
-    Widget markAsImportantActionButton = IconButton(
-      icon: Icon(
-        _viewModel.important ? Icons.star : Icons.star_border,
-        color: _viewModel.important ? Colors.orange : null,
-      ),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.toggleImportant();
-      },
+    final Widget markAsImportantActionButton = BottomActionButton(
+      icon: _viewModel.important ? Icons.star : Icons.star_border,
+      color: _viewModel.important ? Colors.orange : null,
+      onPressed: _viewModel.toggleImportant,
     );
 
     switch (action) {
       case 'add':
-        return <Widget>[Expanded(flex: 1, child: markAsImportantActionButton)];
+        return <Widget>[markAsImportantActionButton];
       case 'edit':
         return <Widget>[
-          Expanded(flex: 1, child: markAsImportantActionButton),
-          Expanded(flex: 1, child: deleteActionButton),
+          markAsImportantActionButton,
+          BottomActionButton(
+            icon: Icons.clear,
+            onPressed: () async {
+              final bool? confirmDeletion = await getConfirmation(
+                context: context,
+                actionTitle: AppText.tr('delete_note'),
+                action: AppText.tr('delete'),
+              );
+              if (confirmDeletion == true) {
+                _deleteNote(_noteAction);
+              }
+            },
+          ),
         ];
       default:
-        return <Widget>[Expanded(flex: 1, child: markAsImportantActionButton)];
+        return <Widget>[markAsImportantActionButton];
     }
   }
 
@@ -340,15 +329,22 @@ class _EditNoteState extends State<EditNote> {
             );
           },
         ),
-        bottomNavigationBar: BottomAppBar(
-          elevation: 0.0,
-          height: 36.0,
-          padding: EdgeInsets.zero,
-          color: barColor(context),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: _showActionButtons(action: widget.add ? 'add' : 'edit'),
-          ),
+        bottomNavigationBar: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (BuildContext context, Widget? child) {
+            return BottomAppBar(
+              elevation: 0.0,
+              height: 36.0,
+              padding: EdgeInsets.zero,
+              color: barColor(context),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _showActionButtons(
+                  action: widget.add ? 'add' : 'edit',
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

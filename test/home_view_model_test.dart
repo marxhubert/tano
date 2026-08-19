@@ -129,7 +129,7 @@ void main() {
       await vm.applyNoteAction(
         add: true,
         index: -1,
-        action: NoteAction(action: 'Save', note: _note('9')),
+        action: NoteAction(kind: NoteActionKind.save, note: _note('9')),
       );
 
       expect(vm.notesCount, 1);
@@ -151,7 +151,7 @@ void main() {
         add: false,
         index: 0,
         action: NoteAction(
-          action: 'Save',
+          kind: NoteActionKind.save,
           note: _note('1', title: 'After'),
         ),
       );
@@ -170,7 +170,7 @@ void main() {
       await vm.applyNoteAction(
         add: false,
         index: 0,
-        action: NoteAction(action: 'Delete'),
+        action: NoteAction(kind: NoteActionKind.delete),
       );
 
       expect(vm.notesCount, 1);
