@@ -110,7 +110,7 @@ void main() {
         );
 
         // The three layouts.
-        for (final String label in <String>['List', 'Grid', 'Compact']) {
+        for (final String label in <String>['List', 'Grid']) {
           await _selectLayout(tester, label);
           expect(tester.takeException(), isNull, reason: 'layout $label');
         }

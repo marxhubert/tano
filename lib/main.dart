@@ -42,15 +42,16 @@ class Tano extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'TanoNote',
           theme: ThemeData(
-            primaryColor: Colors.blueGrey.shade50,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+            useMaterial3: true,
             canvasColor: Colors.blueGrey.shade50,
           ),
           darkTheme: ThemeData(
-            brightness: Brightness.dark,
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.blueGrey,
               brightness: Brightness.dark,
             ),
+            useMaterial3: true,
             canvasColor: Colors.blueGrey.shade900,
             scaffoldBackgroundColor: Colors.blueGrey.shade900,
           ),

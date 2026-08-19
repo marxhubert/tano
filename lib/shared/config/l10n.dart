@@ -59,6 +59,8 @@ class AppText {
     'delete_notes': 'Delete {count} notes',
     'delete_all_notes': 'Delete all notes',
     'delete': 'delete',
+    'note_deleted': 'Note deleted',
+    'undo': 'UNDO',
     'save_before_leave': 'Save before leaving',
     'save': 'save',
     'title_here': 'Title here',
@@ -86,7 +88,6 @@ class AppText {
     'about': 'About',
     // Menu
     'menu_display': 'Display',
-    'menu_compact': 'Compact',
     'menu_list': 'List',
     'menu_grid': 'Grid',
     'menu_sorting': 'Sorting',
@@ -127,6 +128,8 @@ class AppText {
     'delete_notes': 'Supprimer les {count} notes',
     'delete_all_notes': 'Supprimer toutes les notes',
     'delete': 'supprimer',
+    'note_deleted': 'Note supprimée',
+    'undo': 'ANNULER',
     'save_before_leave': 'Enregistrer avant de quitter',
     'save': 'enregistrer',
     'title_here': 'Le titre ici',
@@ -154,7 +157,6 @@ class AppText {
     'about': 'À propos',
     // Menu
     'menu_display': 'Affichage',
-    'menu_compact': 'Compact',
     'menu_list': 'Liste',
     'menu_grid': 'Grille',
     'menu_sorting': 'Triage',

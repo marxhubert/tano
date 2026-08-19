@@ -26,12 +26,6 @@ Map<String, PopupItem> get menuItems {
       value: 'header',
       icon: null,
     ),
-    'compact': PopupItem(
-      title: AppText.tr('menu_compact'),
-      icon: Icon(Icons.view_list),
-      value: 'compact',
-      trailingIcon: true,
-    ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
       icon: Icon(Icons.view_stream),
