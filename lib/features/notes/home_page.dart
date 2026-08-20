@@ -4,11 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/notes/widgets/search_fab.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
-import 'package:tano/features/search/search_page.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/menu.dart';
@@ -38,8 +38,10 @@ class _FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
-    return scaffoldGeometry.scaffoldSize.height -
-        scaffoldGeometry.floatingActionButtonSize.height - padding;
+    // Use contentBottom so the field stays above the soft keyboard.
+    return scaffoldGeometry.contentBottom -
+        scaffoldGeometry.floatingActionButtonSize.height -
+        padding;
   }
 }
 
@@ -62,6 +64,10 @@ class HomeState extends State<Home> {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   PackageInfo? _packageInfo;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchMode = false;
+  static const _sliverPadding = 12.0;
 
   @override
   void initState() {
@@ -81,6 +87,8 @@ class HomeState extends State<Home> {
 
   @override
   void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _viewModel.dispose();
     super.dispose();
   }
@@ -119,7 +127,6 @@ class HomeState extends State<Home> {
 
   Future<void> _openNoteEditor({
     required bool add,
-    required int index,
     required Note note,
   }) async {
     final NoteAction? result = await Navigator.push(
@@ -127,7 +134,7 @@ class HomeState extends State<Home> {
       MaterialPageRoute<NoteAction>(
         builder: (context) => EditNote(
           add: add,
-          index: index,
+          index: -1,
           noteAction: NoteAction(note: note),
           repository: widget.repository,
         ),
@@ -137,7 +144,11 @@ class HomeState extends State<Home> {
     if (result == null) {
       return;
     }
-    await _viewModel.applyNoteAction(add: add, index: index, action: result);
+    await _viewModel.applyNoteAction(
+      add: add,
+      originalId: note.id,
+      action: result,
+    );
   }
 
   void _sortingBy(String sortBy) {
@@ -152,6 +163,29 @@ class HomeState extends State<Home> {
 
   void _changeLanguage(String language) {
     LocaleController.instance.setLanguage(language);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _viewModel.setSearchQuery('');
+  }
+
+  void _enterSearchMode() {
+    setState(() {
+      _isSearchMode = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _exitSearchMode() {
+    _clearSearch();
+    setState(() {
+      _isSearchMode = false;
+    });
   }
 
   String _deleteActionTitle() {
@@ -181,23 +215,37 @@ class HomeState extends State<Home> {
 
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
-      return noRecordFound(context);
+      if (_viewModel.hasSearchQuery) {
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Text(
+              AppText.tr('no_note_found'),
+              style: TextStyle(fontSize: 12.0),
+            ),
+          ),
+        );
+      }
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: noRecordFound(context),
+      );
     }
 
     switch (viewLayout) {
       case 'gridlist':
         return NoteGridView(
           viewModel: _viewModel,
-          onOpenNote: (int index, Note note) {
-            _openNoteEditor(add: false, index: index, note: note);
+          onOpenNote: (Note note) {
+            _openNoteEditor(add: false, note: note);
           },
         );
       case 'list':
       default:
         return NoteListView(
           viewModel: _viewModel,
-          onOpenNote: (int index, Note note) {
-            _openNoteEditor(add: false, index: index, note: note);
+          onOpenNote: (Note note) {
+            _openNoteEditor(add: false, note: note);
           },
           onShowUndoSnackBar: _showUndoSnackBar,
           confirmDelete: _confirmDelete,
@@ -275,6 +323,10 @@ class HomeState extends State<Home> {
               : AppBar(
                   elevation: 0.0,
                   actions: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.search),
+                      onPressed: _enterSearchMode,
+                    ),
                     PopupMenuButton<PopupItem>(
                       icon: Icon(Icons.more_vert),
                       onSelected: ((valueSelected) {
@@ -344,138 +396,98 @@ class HomeState extends State<Home> {
                     ),
                   ],
                 ),
-          body: Column(
-            children: <Widget>[
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.0),
-                child: Column(
-                  children: <Widget>[
-                    Container(
-                      margin: EdgeInsets.only(bottom: 4.5),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              AppText.tr('all_notes'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 21.0,
-                              ),
-                            ),
+          body: CustomScrollView(
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(_sliverPadding, _sliverPadding, _sliverPadding, 0.0),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          AppText.tr('all_notes'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 24.0,
+                            letterSpacing: -2.0,
                           ),
-                          Column(
-                            children: <Widget>[
-                              Text(
-                                '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    _viewModel.notesCount == 0
-                        ? Offstage()
-                        : Container(
-                            height: 36.0,
-                            padding: EdgeInsets.symmetric(horizontal: 18.0),
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            decoration: BoxDecoration(
-                              color: chipFillColor(context),
-                              borderRadius: BorderRadius.circular(54.0),
+                      _viewModel.isInSelectionMode
+                      ? Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _viewModel.selected.isEmpty
+                                ? AppText.tr('no_note_selected')
+                                : (_viewModel.selectedCount > 1
+                                ? (_viewModel.selectedCount ==
+                                _viewModel.notesCount
+                                ? AppText.tr(
+                              'all_notes_selected',
+                              <String, String>{
+                                'count':
+                                '${_viewModel.notesCount}',
+                              },
+                            )
+                                : AppText.tr('notes_selected', <
+                                String,
+                                String
+                            >{
+                              'count':
+                              '${_viewModel.selectedCount}',
+                              'total':
+                              '${_viewModel.notesCount}',
+                            }))
+                                : AppText.tr(
+                              'single_note_selected',
+                              <String, String>{
+                                'count':
+                                '${_viewModel.selectedCount}',
+                              },
+                            )),
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 12.0,
                             ),
-                            child: Row(
-                              children: <Widget>[
-                                Icon(Icons.search, size: 21.0),
-                                SizedBox(width: 9.0),
-                                Expanded(
-                                  child: GestureDetector(
-                                    child: Text(
-                                      AppText.tr('search'),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14.4,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      if (!_viewModel.isInSelectionMode) {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute<void>(
-                                            builder: (BuildContext context) =>
-                                                SearchPage(
-                                                  repository: widget.repository,
-                                                ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                    _viewModel.isInSelectionMode
-                        ? Container(
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            child: Text(
-                              _viewModel.selected.isEmpty
-                                  ? AppText.tr('no_note_selected')
-                                  : (_viewModel.selectedCount > 1
-                                        ? (_viewModel.selectedCount ==
-                                                  _viewModel.notesCount
-                                              ? AppText.tr(
-                                                  'all_notes_selected',
-                                                  <String, String>{
-                                                    'count':
-                                                        '${_viewModel.notesCount}',
-                                                  },
-                                                )
-                                              : AppText.tr('notes_selected', <
-                                                  String,
-                                                  String
-                                                >{
-                                                  'count':
-                                                      '${_viewModel.selectedCount}',
-                                                  'total':
-                                                      '${_viewModel.notesCount}',
-                                                }))
-                                        : AppText.tr(
-                                            'single_note_selected',
-                                            <String, String>{
-                                              'count':
-                                                  '${_viewModel.selectedCount}',
-                                            },
-                                          )),
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12.0,
-                              ),
-                            ),
-                          )
-                        : Offstage(),
-                  ],
+                        ),
+                      )
+                      : Text(
+                        '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              Expanded(
-                child: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
+              SliverPadding(
+                padding: const EdgeInsets.all(_sliverPadding),
+                sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
               ),
             ],
           ),
           floatingActionButtonLocation: const _FlushEndFabLocation(),
           floatingActionButton: _viewModel.isInSelectionMode
             ? null
-            : FloatingActionButton(
-                onPressed: () {
-                  _openNoteEditor(add: true, index: -1, note: Note());
+            : SearchFab(
+                isSearchMode: _isSearchMode,
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onAdd: () {
+                  _openNoteEditor(add: true, note: Note());
                 },
-                shape: const CircleBorder(),
-                child: Icon(Icons.add),
+                onSearchChanged: (String value) {
+                  _viewModel.setSearchQuery(value);
+                },
+                onReset: _clearSearch,
+                onClose: _exitSearchMode,
               ),
           bottomNavigationBar: _viewModel.isInSelectionMode
             ? BottomAppBar(

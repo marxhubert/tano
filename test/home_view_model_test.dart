@@ -69,7 +69,7 @@ void main() {
         initialNotes: repository.notes,
       );
 
-      vm.toggleFavorite(0);
+      vm.toggleFavorite('1');
 
       expect(vm.notes[0].important, isTrue);
       expect(repository.notes[0].important, isTrue);
@@ -106,8 +106,8 @@ void main() {
           initialNotes: <Note>[_note('1'), _note('2'), _note('3')],
         );
 
-        vm.enterSelectionMode(0);
-        vm.toggleSelection(2);
+        vm.enterSelectionMode('1');
+        vm.toggleSelection('3');
 
         expect(vm.hasSelection, isTrue);
         expect(vm.selectedCount, 2);
@@ -128,7 +128,7 @@ void main() {
 
       await vm.applyNoteAction(
         add: true,
-        index: -1,
+        originalId: '',
         action: NoteAction(kind: NoteActionKind.save, note: _note('9')),
       );
 
@@ -149,7 +149,7 @@ void main() {
 
       await vm.applyNoteAction(
         add: false,
-        index: 0,
+        originalId: '1',
         action: NoteAction(
           kind: NoteActionKind.save,
           note: _note('1', title: 'After'),
@@ -169,7 +169,7 @@ void main() {
 
       await vm.applyNoteAction(
         add: false,
-        index: 0,
+        originalId: '1',
         action: NoteAction(kind: NoteActionKind.delete),
       );
 
@@ -184,7 +184,7 @@ void main() {
         initialNotes: <Note>[_note('1'), _note('2')],
       );
 
-      await vm.removeNote(1);
+      await vm.removeNote('2');
 
       expect(vm.notesCount, 1);
       expect(vm.notes.first.id, '1');
@@ -197,7 +197,7 @@ void main() {
         initialNotes: <Note>[_note('1'), _note('2')],
       );
 
-      vm.enterSelectionMode(0);
+      vm.enterSelectionMode('1');
       vm.selectAll();
       vm.exitSelectionMode();
 

@@ -104,7 +104,7 @@ void main() {
         );
 
         // The add action is a floating button when not in selection mode.
-        expect(find.byType(FloatingActionButton), findsOneWidget);
+        expect(find.byIcon(Icons.add), findsOneWidget);
 
         // The three layouts.
         for (final String label in <String>['List', 'Grid']) {

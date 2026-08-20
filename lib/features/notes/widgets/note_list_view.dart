@@ -17,18 +17,19 @@ class NoteListView extends StatelessWidget {
   });
 
   final HomeViewModel viewModel;
-  final void Function(int index, Note note) onOpenNote;
+  final void Function(Note note) onOpenNote;
   final VoidCallback onShowUndoSnackBar;
   final Future<bool?> Function() confirmDelete;
 
   @override
   Widget build(BuildContext context) {
     final List<Note> notes = viewModel.notes;
-    return ListView.separated(
+    return SliverList.separated(
       itemCount: notes.length,
-      padding: EdgeInsets.all(12.0),
       itemBuilder: (BuildContext context, int index) {
-        final bool alreadySelected = viewModel.selected.contains(index);
+        final bool alreadySelected = viewModel.selected.contains(
+          notes[index].id,
+        );
         final String title = notes[index].title;
         final String date = formatNoteDate(notes[index].date);
         final bool important = notes[index].important;
@@ -118,30 +119,30 @@ class NoteListView extends StatelessWidget {
                       ),
                       onTap: () {
                         if (viewModel.isInSelectionMode) {
-                          viewModel.toggleSelection(index);
+                          viewModel.toggleSelection(notes[index].id);
                         } else {
-                          onOpenNote(index, notes[index]);
+                          onOpenNote(notes[index]);
                         }
                       },
                       onLongPress: () {
-                        viewModel.enterSelectionMode(index);
+                        viewModel.enterSelectionMode(notes[index].id);
                       },
                     ),
                   ),
                 ),
               ),
-              _showCheckboxForSelection(index, alreadySelected),
+              _showCheckboxForSelection(notes[index].id, alreadySelected),
             ],
           ),
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.startToEnd) {
-              viewModel.toggleFavorite(index);
+              viewModel.toggleFavorite(notes[index].id);
               return false;
             }
             return await confirmDelete();
           },
           onDismissed: (direction) {
-            viewModel.removeNote(index);
+            viewModel.removeNote(notes[index].id);
             onShowUndoSnackBar();
           },
         );
@@ -152,7 +153,7 @@ class NoteListView extends StatelessWidget {
     );
   }
 
-  Widget _showCheckboxForSelection(int index, bool alreadySelected) {
+  Widget _showCheckboxForSelection(String id, bool alreadySelected) {
     if (!viewModel.isInSelectionMode) {
       return Container(child: null);
     }
@@ -160,7 +161,7 @@ class NoteListView extends StatelessWidget {
     return Checkbox(
       value: alreadySelected,
       onChanged: (value) {
-        viewModel.toggleSelection(index);
+        viewModel.toggleSelection(id);
       },
     );
   }

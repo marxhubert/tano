@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tano/core/repositories/file_notes_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
-import 'package:tano/features/search/search_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -59,7 +58,6 @@ class Tano extends StatelessWidget {
           home: SplashScreen(repository: repository),
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => Home(repository: repository),
-            '/search': (BuildContext context) => SearchPage(repository: repository),
           },
         );
       },
