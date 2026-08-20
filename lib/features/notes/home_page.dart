@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/features/notes/widgets/note_grid_view.dart';
+import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -159,306 +160,31 @@ class HomeState extends State<Home> {
     }
 
     switch (viewLayout) {
-      case 'list':
-        return _listLayout(notes);
       case 'gridlist':
-        return _gridLayout(notes);
+        return NoteGridView(
+          viewModel: _viewModel,
+          onOpenNote: (int index, Note note) {
+            _openNoteEditor(add: false, index: index, note: note);
+          },
+        );
+      case 'list':
       default:
-        return _listLayout(notes);
+        return NoteListView(
+          viewModel: _viewModel,
+          onOpenNote: (int index, Note note) {
+            _openNoteEditor(add: false, index: index, note: note);
+          },
+          onShowUndoSnackBar: _showUndoSnackBar,
+          confirmDelete: _confirmDelete,
+        );
     }
   }
 
-  Widget _showCheckboxForSelection(int index, bool alreadySelected) {
-    if (!_viewModel.isInSelectionMode) {
-      return Container(child: null);
-    }
-
-    return Checkbox(
-      value: alreadySelected,
-      onChanged: (value) {
-        _viewModel.toggleSelection(index);
-      },
-    );
-  }
-
-  Widget _gridLayout(List<Note> notes) {
-    return GridView.count(
-      crossAxisCount: 3,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      crossAxisSpacing: 12.0,
-      mainAxisSpacing: 12.0,
-      children: List.generate(notes.length, (index) {
-        String title = notes[index].title;
-        String content = notes[index].content;
-        String date = formatNoteDate(notes[index].date);
-        final bool isSelected = _viewModel.selected.contains(index);
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: themeCategory(
-              notes[index].category,
-              false,
-              brightness: Theme.of(context).brightness,
-            ),
-            borderRadius: BorderRadius.circular(12.0),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 2.0,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: <Widget>[
-              InkWell(
-                child: Container(
-                  color: themeCategory(
-                    notes[index].category,
-                    true,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(2.7),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              flex: 1,
-                              child: Text(
-                                title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.0,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(padding: EdgeInsets.only(bottom: 1.8)),
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            content,
-                            style: TextStyle(fontSize: 10.8),
-                            overflow: TextOverflow.clip,
-                            maxLines: null,
-                          ),
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            SizedBox(height: 14.4),
-                            Expanded(
-                              child: Text(
-                                date,
-                                style: TextStyle(
-                                  fontSize: 9.0,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                onTap: () {
-                  if (_viewModel.isInSelectionMode) {
-                    _viewModel.toggleSelection(index);
-                  } else {
-                    _openNoteEditor(
-                      add: false,
-                      index: index,
-                      note: notes[index],
-                    );
-                  }
-                },
-                onLongPress: () {
-                  _viewModel.enterSelectionMode(index);
-                },
-              ),
-              _viewModel.isInSelectionMode
-                  ? GestureDetector(
-                      child: Container(
-                        color: isSelected ? Colors.black38 : Colors.black12,
-                        child: isSelected
-                            ? Stack(
-                                children: <Widget>[
-                                  Center(
-                                    child: SizedBox(
-                                      width: 36.0,
-                                      height: 36.0,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.white,
-                                        radius: 100.0,
-                                        child: null,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: 45.0,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.panorama_fish_eye,
-                                  size: 45.0,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                      ),
-                      onTap: () {
-                        _viewModel.toggleSelection(index);
-                      },
-                    )
-                  : Offstage(),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _listLayout(List<Note> notes) {
-    return ListView.separated(
-      itemCount: notes.length,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      itemBuilder: (BuildContext context, int index) {
-        final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title;
-        String date = formatNoteDate(notes[index].date);
-        final bool important = notes[index].important;
-        return Dismissible(
-          key: Key(notes[index].id),
-          background: Container(
-            color: Colors.orange,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            child: Icon(
-              important ? Icons.star_border : Icons.star,
-              color: Colors.white,
-              size: 27.0,
-            ),
-          ),
-          secondaryBackground: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: themeCategory(
-                      notes[index].category,
-                      false,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    borderRadius: BorderRadius.circular(12.0),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 2.0,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    color: themeCategory(
-                      notes[index].category,
-                      true,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.only(left: 9.0),
-                      title: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: 9.0),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 9.0,
-                              color: mutedTextColor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        notes[index].content,
-                        maxLines: 3,
-                        overflow: TextOverflow.clip,
-                        style: TextStyle(fontSize: 12.0),
-                      ),
-                      onTap: () {
-                        if (_viewModel.isInSelectionMode) {
-                          _viewModel.toggleSelection(index);
-                        } else {
-                          _openNoteEditor(
-                            add: false,
-                            index: index,
-                            note: notes[index],
-                          );
-                        }
-                      },
-                      onLongPress: () {
-                        _viewModel.enterSelectionMode(index);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              _showCheckboxForSelection(index, alreadySelected),
-            ],
-          ),
-          confirmDismiss: (direction) async {
-            if (direction == DismissDirection.startToEnd) {
-              _viewModel.toggleFavorite(index);
-              return false;
-            }
-            return await getConfirmation(
-              context: context,
-              actionTitle: _deleteActionTitle(),
-              action: AppText.tr('delete'),
-            );
-          },
-          onDismissed: (direction) {
-            _viewModel.removeNote(index);
-            _showUndoSnackBar();
-          },
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        return SizedBox(height: 12.0);
-      },
+  Future<bool?> _confirmDelete() {
+    return getConfirmation(
+      context: context,
+      actionTitle: _deleteActionTitle(),
+      action: AppText.tr('delete'),
     );
   }
 
