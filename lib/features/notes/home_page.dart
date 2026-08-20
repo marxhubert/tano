@@ -2,18 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/features/notes/widgets/note_grid_view.dart';
+import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/notes/widgets/search_fab.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
-import 'package:tano/features/search/search_page.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
+import 'package:tano/shared/widgets/action_bar.dart';
 import 'package:tano/shared/widgets/theme.dart';
+
+/// Places the floating action button flush against the bottom-right corner
+/// of the screen (no margin).
+class _FlushEndFabLocation extends StandardFabLocation {
+  static const padding = 24;
+  const _FlushEndFabLocation();
+
+  @override
+  double getOffsetX(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    return scaffoldGeometry.scaffoldSize.width -
+        scaffoldGeometry.floatingActionButtonSize.width - padding;
+  }
+
+  @override
+  double getOffsetY(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    double offset = scaffoldGeometry.contentBottom -
+        scaffoldGeometry.floatingActionButtonSize.height -
+        padding;
+    if (scaffoldGeometry.snackBarSize.height > 0.0) {
+      // Push the FAB up so it stays above the SnackBar.
+      offset -= (scaffoldGeometry.snackBarSize.height - 12.0);
+    }
+    return offset;
+  }
+}
 
 class Home extends StatefulWidget {
   const Home({super.key, required this.repository, this.initialNotes});
@@ -34,6 +68,13 @@ class HomeState extends State<Home> {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   PackageInfo? _packageInfo;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  bool _isSearchMode = false;
+  bool _showAppBarTitle = false;
+  bool _wasInSelectionMode = false;
+  static const _sliverPadding = 12.0;
 
   @override
   void initState() {
@@ -42,6 +83,7 @@ class HomeState extends State<Home> {
       repository: widget.repository,
       initialNotes: widget.initialNotes,
     );
+    _wasInSelectionMode = _viewModel.isInSelectionMode;
     if (widget.initialNotes == null) {
       // Navigation flows that do not receive the data loaded by the
       // splash screen fall back to loading the notes themselves.
@@ -49,12 +91,43 @@ class HomeState extends State<Home> {
     }
     _loadPreferences();
     _initPackageInfo();
+    _scrollController.addListener(_onScroll);
+    _viewModel.addListener(_onViewModelChanged);
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  void _onViewModelChanged() {
+    if (_viewModel.isInSelectionMode && _isSearchMode) {
+      setState(() {
+        _isSearchMode = false;
+      });
+      _searchFocusNode.unfocus();
+    } else if (_wasInSelectionMode && !_viewModel.isInSelectionMode) {
+      // We just exited selection mode: clear search to return to the full list.
+      if (_viewModel.hasSearchQuery) {
+        _clearSearch();
+      }
+    }
+    _wasInSelectionMode = _viewModel.isInSelectionMode;
+  }
+
+  void _onScroll() {
+    final bool showTitle = _scrollController.offset > 120;
+    if (showTitle != _showAppBarTitle) {
+      setState(() {
+        _showAppBarTitle = showTitle;
+      });
+    }
   }
 
   Future<void> _initPackageInfo() async {
@@ -91,7 +164,6 @@ class HomeState extends State<Home> {
 
   Future<void> _openNoteEditor({
     required bool add,
-    required int index,
     required Note note,
   }) async {
     final NoteAction? result = await Navigator.push(
@@ -99,8 +171,8 @@ class HomeState extends State<Home> {
       MaterialPageRoute<NoteAction>(
         builder: (context) => EditNote(
           add: add,
-          index: index,
-          noteAction: NoteAction(action: '', note: note),
+          index: -1,
+          noteAction: NoteAction(note: note),
           repository: widget.repository,
         ),
         fullscreenDialog: true,
@@ -109,7 +181,11 @@ class HomeState extends State<Home> {
     if (result == null) {
       return;
     }
-    await _viewModel.applyNoteAction(add: add, index: index, action: result);
+    await _viewModel.applyNoteAction(
+      add: add,
+      originalId: note.id,
+      action: result,
+    );
   }
 
   void _sortingBy(String sortBy) {
@@ -126,6 +202,29 @@ class HomeState extends State<Home> {
     LocaleController.instance.setLanguage(language);
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    _viewModel.setSearchQuery('');
+  }
+
+  void _enterSearchMode() {
+    setState(() {
+      _isSearchMode = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _exitSearchMode() {
+    _clearSearch();
+    setState(() {
+      _isSearchMode = false;
+    });
+  }
+
   String _deleteActionTitle() {
     if (_viewModel.selectedCount > 1) {
       return _viewModel.selectedCount == _viewModel.notesCount
@@ -137,564 +236,103 @@ class HomeState extends State<Home> {
     return AppText.tr('delete_note');
   }
 
+  void _showUndoSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppText.tr('note_deleted')),
+        action: SnackBarAction(
+          label: AppText.tr('undo'),
+          onPressed: () {
+            _viewModel.undoLastDelete();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
-      return noRecordFound(context);
+      if (_viewModel.hasSearchQuery) {
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Text(
+              AppText.tr('no_note_found'),
+              style: TextStyle(fontSize: 12.0),
+            ),
+          ),
+        );
+      }
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: noRecordFound(context),
+      );
     }
 
     switch (viewLayout) {
-      case 'compact':
-        return _compactLayout(notes);
-      case 'list':
-        return _listLayout(notes);
       case 'gridlist':
-        return _gridLayout(notes);
+        return NoteGridView(
+          viewModel: _viewModel,
+          onOpenNote: (Note note) {
+            _openNoteEditor(add: false, note: note);
+          },
+        );
+      case 'list':
       default:
-        return _listLayout(notes);
-    }
-  }
-
-  Widget _showCheckboxForSelection(int index, bool alreadySelected) {
-    if (!_viewModel.isInSelectionMode) {
-      return Container(child: null);
-    }
-
-    return Checkbox(
-      value: alreadySelected,
-      onChanged: (value) {
-        _viewModel.toggleSelection(index);
-      },
-    );
-  }
-
-  Widget _gridLayout(List<Note> notes) {
-    return GridView.count(
-      crossAxisCount: 3,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      crossAxisSpacing: 12.0,
-      mainAxisSpacing: 12.0,
-      children: List.generate(notes.length, (index) {
-        String title = notes[index].title ?? '';
-        String content = notes[index].content ?? '';
-        String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
-        final bool isSelected = _viewModel.selected.contains(index);
-        return Card(
-          margin: EdgeInsets.zero,
-          elevation: 0.6,
-          color: themeCategory(
-            notes[index].category ?? 'none',
-            false,
-            brightness: Theme.of(context).brightness,
-          ),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(0.0)),
-          ),
-          child: Stack(
-            children: <Widget>[
-              InkWell(
-                child: Container(
-                  color: themeCategory(
-                    notes[index].category ?? 'none',
-                    true,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  margin: EdgeInsets.only(bottom: 2.7),
-                  child: Container(
-                    padding: EdgeInsets.all(2.7),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              flex: 1,
-                              child: Text(
-                                title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.0,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(padding: EdgeInsets.only(bottom: 1.8)),
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            content,
-                            style: TextStyle(fontSize: 10.8),
-                            overflow: TextOverflow.clip,
-                            maxLines: null,
-                          ),
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            SizedBox(height: 14.4),
-                            Expanded(
-                              child: Text(
-                                date,
-                                style: TextStyle(
-                                  fontSize: 9.0,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                onTap: () {
-                  if (_viewModel.isInSelectionMode) {
-                    _viewModel.toggleSelection(index);
-                  } else {
-                    _openNoteEditor(
-                      add: false,
-                      index: index,
-                      note: notes[index],
-                    );
-                  }
-                },
-                onLongPress: () {
-                  _viewModel.enterSelectionMode(index);
-                },
-              ),
-              Row(
-                children: <Widget>[
-                  Expanded(child: Offstage()),
-                  Column(
-                    children: <Widget>[
-                      Expanded(child: Offstage()),
-                      GestureDetector(
-                        child: Container(
-                          width: 45.0,
-                          height: 45.0,
-                          color: Colors.transparent,
-                          alignment: Alignment.bottomRight,
-                          padding: EdgeInsets.all(4.5),
-                          child: Icon(
-                            important ? Icons.star : Icons.star_border,
-                            color: important ? Colors.orange : null,
-                            size: 15.0,
-                          ),
-                        ),
-                        onTap: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              _viewModel.isInSelectionMode
-                  ? GestureDetector(
-                      child: Container(
-                        color: isSelected ? Colors.black38 : Colors.black12,
-                        child: isSelected
-                            ? Stack(
-                                children: <Widget>[
-                                  Center(
-                                    child: SizedBox(
-                                      width: 36.0,
-                                      height: 36.0,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.white,
-                                        radius: 100.0,
-                                        child: null,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: 45.0,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.panorama_fish_eye,
-                                  size: 45.0,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                      ),
-                      onTap: () {
-                        _viewModel.toggleSelection(index);
-                      },
-                    )
-                  : Offstage(),
-            ],
-          ),
+        return NoteListView(
+          viewModel: _viewModel,
+          onOpenNote: (Note note) {
+            _openNoteEditor(add: false, note: note);
+          },
+          onShowUndoSnackBar: _showUndoSnackBar,
+          confirmDelete: _confirmDelete,
         );
-      }),
+    }
+  }
+
+  Future<bool?> _confirmDelete() {
+    return getConfirmation(
+      context: context,
+      actionTitle: _deleteActionTitle(),
+      action: AppText.tr('delete'),
     );
   }
 
-  Widget _compactLayout(List<Note> notes) {
-    return ListView.separated(
-      itemCount: notes.length,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      itemBuilder: (BuildContext context, int index) {
-        final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title ?? '';
-        String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
-        return Dismissible(
-          key: Key(notes[index].id ?? ''),
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          secondaryBackground: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Card(
-                  elevation: 0.6,
-                  margin: EdgeInsets.zero,
-                  color: themeCategory(
-                    notes[index].category ?? 'none',
-                    false,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                  ),
-                  child: Container(
-                    margin: EdgeInsets.only(left: 2.7),
-                    color: themeCategory(
-                      notes[index].category ?? 'none',
-                      true,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.only(left: 9.0),
-                      title: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: 9.0),
-                          Flexible(
-                            child: Text(
-                              date,
-                              style: TextStyle(
-                                fontSize: 9.0,
-                                fontStyle: FontStyle.italic,
-                                color: mutedTextColor(context),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          important ? Icons.star : Icons.star_border,
-                          color: important ? Colors.orange : null,
-                          size: 18.0,
-                        ),
-                        onPressed: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
-                      ),
-                      onTap: () {
-                        if (_viewModel.isInSelectionMode) {
-                          _viewModel.toggleSelection(index);
-                        } else {
-                          _openNoteEditor(
-                            add: false,
-                            index: index,
-                            note: notes[index],
-                          );
-                        }
-                      },
-                      onLongPress: () {
-                        _viewModel.enterSelectionMode(index);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              _showCheckboxForSelection(index, alreadySelected),
-            ],
-          ),
-          confirmDismiss: (direction) async {
-            return await getConfirmation(
+  List<Widget> _showActionButtons() {
+    return <Widget>[
+      _SelectionActionButton(
+        icon: Icons.delete,
+        label: AppText.tr('delete'),
+        color: Colors.red,
+        onPressed: () async {
+          if (!_viewModel.hasSelection) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppText.tr('no_note_selected'))),
+            );
+          } else {
+            final bool? confirmDeletion = await getConfirmation(
               context: context,
               actionTitle: _deleteActionTitle(),
               action: AppText.tr('delete'),
             );
-          },
-          onDismissed: (direction) {
-            _viewModel.removeNote(index);
-          },
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        return SizedBox(height: 12.0);
-      },
-    );
-  }
-
-  Widget _listLayout(List<Note> notes) {
-    return ListView.separated(
-      itemCount: notes.length,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
-      itemBuilder: (BuildContext context, int index) {
-        final alreadySelected = _viewModel.selected.contains(index);
-        String title = notes[index].title ?? '';
-        String date = notes[index].date.toString().substring(0, 10);
-        final bool important = notes[index].important ?? false;
-        return Dismissible(
-          key: Key(notes[index].id ?? ''),
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          secondaryBackground: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Card(
-                  elevation: 0.6,
-                  margin: EdgeInsets.zero,
-                  color: themeCategory(
-                    notes[index].category ?? 'none',
-                    false,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                  ),
-                  child: Container(
-                    margin: EdgeInsets.only(left: 2.7),
-                    color: themeCategory(
-                      notes[index].category ?? 'none',
-                      true,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.only(left: 9.0),
-                      title: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  notes[index].content ?? '',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.clip,
-                                  style: TextStyle(fontSize: 12.0),
-                                ),
-                                Text(
-                                  date,
-                                  style: TextStyle(
-                                    fontSize: 10.8,
-                                    fontStyle: FontStyle.italic,
-                                    color: mutedTextColor(context),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          important ? Icons.star : Icons.star_border,
-                          color: important ? Colors.orange : null,
-                          size: 18.0,
-                        ),
-                        onPressed: () {
-                          if (_viewModel.isInSelectionMode) {
-                            _viewModel.toggleSelection(index);
-                          } else {
-                            _viewModel.toggleFavorite(index);
-                          }
-                        },
-                      ),
-                      onTap: () {
-                        if (_viewModel.isInSelectionMode) {
-                          _viewModel.toggleSelection(index);
-                        } else {
-                          _openNoteEditor(
-                            add: false,
-                            index: index,
-                            note: notes[index],
-                          );
-                        }
-                      },
-                      onLongPress: () {
-                        _viewModel.enterSelectionMode(index);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              _showCheckboxForSelection(index, alreadySelected),
-            ],
-          ),
-          confirmDismiss: (direction) async {
-            return await getConfirmation(
-              context: context,
-              actionTitle: _deleteActionTitle(),
-              action: AppText.tr('delete'),
-            );
-          },
-          onDismissed: (direction) {
-            _viewModel.removeNote(index);
-          },
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        return SizedBox(height: 12.0);
-      },
-    );
-  }
-
-  List<Widget> _showActionButtons({required String action}) {
-    Widget addActionButton = IconButton(
-      icon: Icon(Icons.add),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _openNoteEditor(add: true, index: -1, note: Note());
-      },
-    );
-
-    Widget cancelActionButton = IconButton(
-      icon: Icon(Icons.arrow_back),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.exitSelectionMode();
-      },
-    );
-
-    Widget deleteActionButton = IconButton(
-      icon: Icon(Icons.clear),
-      iconSize: 24.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () async {
-        if (!_viewModel.hasSelection) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppText.tr('no_note_selected'))),
-          );
-        } else {
-          final bool? confirmDeletion = await getConfirmation(
-            context: context,
-            actionTitle: _deleteActionTitle(),
-            action: AppText.tr('delete'),
-          );
-          if (confirmDeletion == true) {
-            await _viewModel.deleteSelected();
+            if (confirmDeletion == true) {
+              await _viewModel.deleteSelected();
+              _showUndoSnackBar();
+            }
           }
-        }
-      },
-    );
-
-    Widget selectAllActionButton = IconButton(
-      icon: Icon(Icons.check_circle),
-      iconSize: 21.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.selectAll();
-      },
-    );
-
-    Widget selectNoneActionButton = IconButton(
-      icon: Icon(Icons.panorama_fish_eye),
-      iconSize: 21.0,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () {
-        _viewModel.clearSelection();
-      },
-    );
-
-    switch (action) {
-      case 'add':
-        return <Widget>[Expanded(flex: 1, child: addActionButton)];
-      case 'multiple':
-        return <Widget>[
-          Expanded(flex: 1, child: cancelActionButton),
-          Expanded(flex: 1, child: deleteActionButton),
-          Expanded(flex: 1, child: selectNoneActionButton),
-          Expanded(flex: 1, child: selectAllActionButton),
-        ];
-      default:
-        return <Widget>[Expanded(flex: 1, child: addActionButton)];
-    }
+        },
+      ),
+      _SelectionActionButton(
+        icon: Icons.check_box_outline_blank,
+        label: AppText.tr('select_none'),
+        onPressed: _viewModel.clearSelection,
+      ),
+      _SelectionActionButton(
+        icon: Icons.select_all,
+        label: AppText.tr('select_all'),
+        onPressed: _viewModel.selectAll,
+      ),
+    ];
   }
 
   @override
@@ -707,273 +345,289 @@ class HomeState extends State<Home> {
           appBar: _viewModel.isInSelectionMode
               ? AppBar(
                   automaticallyImplyLeading: false,
+                  title: _showAppBarTitle
+                      ? Text(
+                          AppText.tr('all_notes'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18.0,
+                            letterSpacing: -1.0,
+                          ),
+                        )
+                      : null,
+                  centerTitle: true,
                   actions: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.arrow_back),
-                      onPressed: () {
-                        _viewModel.exitSelectionMode();
-                      },
+                    TextButton(
+                      onPressed: _viewModel.exitSelectionMode,
+                      child: Text(
+                        AppText.tr('cancel'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.0,
+                        ),
+                      ),
                     ),
                   ],
                   elevation: 0.0,
                 )
               : AppBar(
                   elevation: 0.0,
-                  actions: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        _openNoteEditor(add: true, index: -1, note: Note());
-                      },
-                    ),
-                    PopupMenuButton<ThemeMode>(
-                      icon: Icon(
-                        Theme.of(context).brightness == Brightness.dark
-                            ? Icons.dark_mode
-                            : Icons.light_mode,
-                      ),
-                      onSelected: (ThemeMode mode) {
-                        ThemeController.instance.setThemeMode(mode);
-                      },
-                      itemBuilder: (BuildContext context) {
-                        final ThemeMode current =
-                            ThemeController.instance.themeMode;
-                        return <PopupMenuEntry<ThemeMode>>[
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.light,
-                            checked: current == ThemeMode.light,
-                            child: Text(AppText.tr('theme_light')),
+                  title: _showAppBarTitle
+                      ? Text(
+                          AppText.tr('all_notes'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18.0,
+                            letterSpacing: -1.0,
                           ),
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.dark,
-                            checked: current == ThemeMode.dark,
-                            child: Text(AppText.tr('theme_dark')),
-                          ),
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.system,
-                            checked: current == ThemeMode.system,
-                            child: Text(AppText.tr('theme_system')),
-                          ),
-                        ];
-                      },
-                    ),
-                    PopupMenuButton<PopupItem>(
-                      icon: Icon(Icons.more_vert),
-                      onSelected: ((valueSelected) {
-                        switch (valueSelected.value.toLowerCase()) {
-                          case "compact":
-                            _changeLayout('compact');
-                            break;
-                          case "list":
-                            _changeLayout('list');
-                            break;
-                          case "gridlist":
-                            _changeLayout('gridlist');
-                            break;
-                          case "date":
-                            _sortingBy('date');
-                            break;
-                          case "alpha":
-                            _sortingBy('alpha');
-                            break;
-                          case "important":
-                            _sortingBy('important');
-                            break;
-                          case "category":
-                            _sortingBy('category');
-                            break;
-                          case "en":
-                          case "fr":
-                            _changeLanguage(valueSelected.value);
-                            break;
-                          case "info":
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => aboutInfo(
-                                context: context,
-                                packageInfo: _packageInfo,
-                              ),
-                            );
-                            break;
-                        }
-                      }),
-                      itemBuilder: (BuildContext context) {
-                        final List<PopupItem> popupItems = [];
-                        menuItems.forEach((String key, PopupItem popupItem) {
-                          popupItems.add(popupItem);
-                        });
-                        return popupItems.map((PopupItem popupItem) {
-                          return PopupMenuItem<PopupItem>(
-                            value: popupItem,
-                            height: popupItem.value == 'separator' ? 8.0 : 28.0,
-                            child: popupButton(
-                              context: context,
-                              popupItem: popupItem,
-                              layout: _viewModel.viewLayout,
-                              sort: _viewModel.sortBy,
-                              lang: LocaleController.instance.language,
-                            ),
-                          );
-                        }).toList();
-                      },
-                      padding: EdgeInsets.all(0.0),
-                    ),
-                  ],
-                ),
-          body: Column(
-            children: <Widget>[
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.0),
-                child: Column(
-                  children: <Widget>[
-                    Container(
-                      margin: EdgeInsets.only(bottom: 4.5),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: <Widget>[
-                          Expanded(
+                        )
+                      : null,
+                  centerTitle: true,
+                  actions: _isSearchMode
+                      ? <Widget>[
+                          TextButton(
+                            onPressed: _exitSearchMode,
                             child: Text(
-                              AppText.tr('all_notes'),
-                              style: TextStyle(
-                                fontFamily: 'Calibri',
+                              AppText.tr('cancel'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 21.0,
+                                fontSize: 12.0,
                               ),
                             ),
                           ),
-                          Column(
-                            children: <Widget>[
-                              Text(
-                                '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                                style: TextStyle(
-                                  fontFamily: 'Calibri',
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
+                        ]
+                      : <Widget>[
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: _enterSearchMode,
+                          ),
+                          PopupMenuButton<PopupItem>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: ((valueSelected) {
+                              switch (valueSelected.value.toLowerCase()) {
+                                case "list":
+                                  _changeLayout('list');
+                                  break;
+                                case "gridlist":
+                                  _changeLayout('gridlist');
+                                  break;
+                                case "date":
+                                  _sortingBy('date');
+                                  break;
+                                case "alpha":
+                                  _sortingBy('alpha');
+                                  break;
+                                case "important":
+                                  _sortingBy('important');
+                                  break;
+                                case "category":
+                                  _sortingBy('category');
+                                  break;
+                                case "theme_light":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.light);
+                                  break;
+                                case "theme_dark":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.dark);
+                                  break;
+                                case "theme_system":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.system);
+                                  break;
+                                case "en":
+                                case "fr":
+                                  _changeLanguage(valueSelected.value);
+                                  break;
+                                case "info":
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) =>
+                                        aboutInfo(
+                                      context: context,
+                                      packageInfo: _packageInfo,
+                                    ),
+                                  );
+                                  break;
+                              }
+                            }),
+                            itemBuilder: (BuildContext context) {
+                              final List<PopupItem> popupItems = [];
+                              menuItems
+                                  .forEach((String key, PopupItem popupItem) {
+                                popupItems.add(popupItem);
+                              });
+                              return popupItems.map((PopupItem popupItem) {
+                                return PopupMenuItem<PopupItem>(
+                                  value: popupItem,
+                                  height: popupItem.value == 'separator'
+                                      ? 8.0
+                                      : 28.0,
+                                  child: popupButton(
+                                    context: context,
+                                    popupItem: popupItem,
+                                    layout: _viewModel.viewLayout,
+                                    sort: _viewModel.sortBy,
+                                    lang: LocaleController.instance.language,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            padding: EdgeInsets.only(right: 12.0),
                           ),
                         ],
-                      ),
-                    ),
-                    _viewModel.notesCount == 0
-                        ? Offstage()
-                        : Container(
-                            height: 36.0,
-                            padding: EdgeInsets.symmetric(horizontal: 18.0),
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            decoration: BoxDecoration(
-                              color: chipFillColor(context),
-                              borderRadius: BorderRadius.circular(54.0),
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                Icon(Icons.search, size: 21.0),
-                                SizedBox(width: 9.0),
-                                Expanded(
-                                  child: GestureDetector(
-                                    child: Text(
-                                      AppText.tr('search'),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14.4,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      if (!_viewModel.isInSelectionMode) {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute<void>(
-                                            builder: (BuildContext context) =>
-                                                SearchPage(
-                                                  repository: widget.repository,
-                                                ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                ),
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(_sliverPadding, _sliverPadding, _sliverPadding, 0.0),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          AppText.tr('all_notes'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 24.0,
+                            letterSpacing: -2.0,
                           ),
-                    _viewModel.isInSelectionMode
-                        ? Container(
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            child: Text(
-                              _viewModel.selected.isEmpty
-                                  ? AppText.tr('no_note_selected')
-                                  : (_viewModel.selectedCount > 1
-                                        ? (_viewModel.selectedCount ==
-                                                  _viewModel.notesCount
-                                              ? AppText.tr(
-                                                  'all_notes_selected',
-                                                  <String, String>{
-                                                    'count':
-                                                        '${_viewModel.notesCount}',
-                                                  },
-                                                )
-                                              : AppText.tr('notes_selected', <
-                                                  String,
-                                                  String
-                                                >{
-                                                  'count':
-                                                      '${_viewModel.selectedCount}',
-                                                  'total':
-                                                      '${_viewModel.notesCount}',
-                                                }))
-                                        : AppText.tr(
-                                            'single_note_selected',
-                                            <String, String>{
-                                              'count':
-                                                  '${_viewModel.selectedCount}',
-                                            },
-                                          )),
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12.0,
-                              ),
+                        ),
+                      ),
+                      _viewModel.isInSelectionMode
+                      ? Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _viewModel.selected.isEmpty
+                                ? AppText.tr('no_note_selected')
+                                : (_viewModel.selectedCount > 1
+                                ? (_viewModel.selectedCount ==
+                                _viewModel.notesCount
+                                ? AppText.tr(
+                              'all_notes_selected',
+                              <String, String>{
+                                'count':
+                                '${_viewModel.notesCount}',
+                              },
+                            )
+                                : AppText.tr('notes_selected', <
+                                String,
+                                String
+                            >{
+                              'count':
+                              '${_viewModel.selectedCount}',
+                              'total':
+                              '${_viewModel.notesCount}',
+                            }))
+                                : AppText.tr(
+                              'single_note_selected',
+                              <String, String>{
+                                'count':
+                                '${_viewModel.selectedCount}',
+                              },
+                            )),
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 12.0,
                             ),
-                          )
-                        : _viewModel.notesCount > 0
-                        ? Container(
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            alignment: Alignment.center,
-                            child: Text(
-                              AppText.tr('sorted_by', <String, String>{
-                                'sort':
-                                    (menuItems[_viewModel.sortBy]?.title ?? '')
-                                        .toLowerCase(),
-                              }),
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12.0,
-                              ),
-                            ),
-                          )
-                        : Offstage(),
-                  ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      : Text(
+                        '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              Expanded(
-                child: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
+              SliverPadding(
+                padding: const EdgeInsets.all(_sliverPadding),
+                sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
               ),
             ],
           ),
-          bottomNavigationBar: BottomAppBar(
-            elevation: 0.0,
-            height: 36.0,
-            padding: EdgeInsets.zero,
-            color: barColor(context),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _showActionButtons(action: _viewModel.actionButtons),
-            ),
+          floatingActionButtonLocation: const _FlushEndFabLocation(),
+          floatingActionButton: HomeFab(
+            isSearchMode: _isSearchMode,
+            isSelectionMode: _viewModel.isInSelectionMode,
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            onAdd: () {
+              _openNoteEditor(add: true, note: Note());
+            },
+            onSearchChanged: (String value) {
+              _viewModel.setSearchQuery(value);
+            },
+            onReset: _clearSearch,
+            onDelete: () async {
+              if (!_viewModel.hasSelection) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(AppText.tr('no_note_selected'))),
+                );
+              } else {
+                final bool? confirmDeletion = await getConfirmation(
+                  context: context,
+                  actionTitle: _deleteActionTitle(),
+                  action: AppText.tr('delete'),
+                );
+                if (confirmDeletion == true) {
+                  await _viewModel.deleteSelected();
+                  _showUndoSnackBar();
+                }
+              }
+            },
+            onClearSelection: _viewModel.clearSelection,
+            onSelectAll: _viewModel.selectAll,
           ),
+          bottomNavigationBar: null,
         );
       },
+    );
+  }
+}
+
+class _SelectionActionButton extends StatelessWidget {
+  const _SelectionActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 24.0, color: color),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.0,
+                color: color,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

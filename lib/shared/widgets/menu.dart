@@ -26,12 +26,6 @@ Map<String, PopupItem> get menuItems {
       value: 'header',
       icon: null,
     ),
-    'compact': PopupItem(
-      title: AppText.tr('menu_compact'),
-      icon: Icon(Icons.view_list),
-      value: 'compact',
-      trailingIcon: true,
-    ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
       icon: Icon(Icons.view_stream),
@@ -73,6 +67,32 @@ Map<String, PopupItem> get menuItems {
     'category': PopupItem(
       title: AppText.tr('menu_category'),
       value: 'category',
+      icon: null,
+    ),
+
+    'theme_separator': PopupItem(
+      title: 'Separator',
+      value: 'separator',
+      icon: null,
+    ),
+    'theme_title': PopupItem(
+      title: AppText.tr('menu_theme'),
+      value: 'header',
+      icon: null,
+    ),
+    'theme_light': PopupItem(
+      title: AppText.tr('theme_light'),
+      value: 'theme_light',
+      icon: null,
+    ),
+    'theme_dark': PopupItem(
+      title: AppText.tr('theme_dark'),
+      value: 'theme_dark',
+      icon: null,
+    ),
+    'theme_system': PopupItem(
+      title: AppText.tr('theme_system'),
+      value: 'theme_system',
       icon: null,
     ),
 

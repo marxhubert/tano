@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tano/core/repositories/file_notes_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
-import 'package:tano/features/search/search_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -33,21 +32,25 @@ class Tano extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ThemeController.instance,
+      listenable: Listenable.merge([
+        ThemeController.instance,
+        LocaleController.instance,
+      ]),
       builder: (context, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'TanoNote',
           theme: ThemeData(
-            primaryColor: Colors.blueGrey.shade50,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+            useMaterial3: true,
             canvasColor: Colors.blueGrey.shade50,
           ),
           darkTheme: ThemeData(
-            brightness: Brightness.dark,
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.blueGrey,
               brightness: Brightness.dark,
             ),
+            useMaterial3: true,
             canvasColor: Colors.blueGrey.shade900,
             scaffoldBackgroundColor: Colors.blueGrey.shade900,
           ),
@@ -55,7 +58,6 @@ class Tano extends StatelessWidget {
           home: SplashScreen(repository: repository),
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => Home(repository: repository),
-            '/search': (BuildContext context) => SearchPage(repository: repository),
           },
         );
       },

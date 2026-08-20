@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Application language manager.
@@ -5,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// The chosen language is stored in the shared preferences and is used
 /// to resolve interface strings through [AppText]. The default language
 /// is English.
-class LocaleController {
+class LocaleController extends ChangeNotifier {
   LocaleController._();
 
   static final LocaleController instance = LocaleController._();
@@ -26,9 +27,11 @@ class LocaleController {
     _language = supportedLanguages.contains(saved) ? saved! : defaultLanguage;
   }
 
-  /// Saves and applies the new language.
+  /// Saves and applies the new language, then notifies listeners so the
+  /// whole interface re-renders with the new strings.
   Future<void> setLanguage(String language) async {
     _language = language;
+    notifyListeners();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, language);
   }
@@ -56,6 +59,10 @@ class AppText {
     'delete_notes': 'Delete {count} notes',
     'delete_all_notes': 'Delete all notes',
     'delete': 'delete',
+    'select_all': 'Select all',
+    'select_none': 'Select none',
+    'note_deleted': 'Note deleted',
+    'undo': 'UNDO',
     'save_before_leave': 'Save before leaving',
     'save': 'save',
     'title_here': 'Title here',
@@ -63,6 +70,7 @@ class AppText {
     'content_empty': 'Content cannot be empty',
     'type_to_search': 'Type to search',
     'no_item_found': 'No item found',
+    'no_note_found': 'No note found',
     'single_result': '{count} single matching result',
     'results': '{count} matching results',
     'confirm_question': 'Are you sure you want to continue?',
@@ -83,10 +91,10 @@ class AppText {
     'about': 'About',
     // Menu
     'menu_display': 'Display',
-    'menu_compact': 'Compact',
     'menu_list': 'List',
     'menu_grid': 'Grid',
     'menu_sorting': 'Sorting',
+    'menu_theme': 'Theme',
     'menu_date': 'Date',
     'menu_title': 'Title',
     'menu_favorites': 'Favorites',
@@ -124,6 +132,10 @@ class AppText {
     'delete_notes': 'Supprimer les {count} notes',
     'delete_all_notes': 'Supprimer toutes les notes',
     'delete': 'supprimer',
+    'select_all': 'Tout sélectionner',
+    'select_none': 'Tout désélectionner',
+    'note_deleted': 'Note supprimée',
+    'undo': 'ANNULER',
     'save_before_leave': 'Enregistrer avant de quitter',
     'save': 'enregistrer',
     'title_here': 'Le titre ici',
@@ -131,6 +143,7 @@ class AppText {
     'content_empty': 'Le contenu ne peut pas être vide',
     'type_to_search': 'Taper pour rechercher',
     'no_item_found': 'Aucun élément trouvé',
+    'no_note_found': 'Aucune note trouvée',
     'single_result': '{count} seul résultat correspondant',
     'results': '{count} résultats correspondants',
     'confirm_question': 'Voulez-vous vraiment continuer ?',
@@ -151,10 +164,10 @@ class AppText {
     'about': 'À propos',
     // Menu
     'menu_display': 'Affichage',
-    'menu_compact': 'Compact',
     'menu_list': 'Liste',
     'menu_grid': 'Grille',
     'menu_sorting': 'Triage',
+    'menu_theme': 'Thème',
     'menu_date': 'Date',
     'menu_title': 'Titre',
     'menu_favorites': 'Favoris',
