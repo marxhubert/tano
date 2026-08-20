@@ -18,6 +18,31 @@ import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/action_bar.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
+/// Places the floating action button flush against the bottom-right corner
+/// of the screen (no margin).
+class _FlushEndFabLocation extends StandardFabLocation {
+  static const padding = 24;
+  const _FlushEndFabLocation();
+
+  @override
+  double getOffsetX(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    return scaffoldGeometry.scaffoldSize.width -
+        scaffoldGeometry.floatingActionButtonSize.width - padding;
+  }
+
+  @override
+  double getOffsetY(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    return scaffoldGeometry.scaffoldSize.height -
+        scaffoldGeometry.floatingActionButtonSize.height - padding;
+  }
+}
+
 class Home extends StatefulWidget {
   const Home({super.key, required this.repository, this.initialNotes});
 
@@ -188,57 +213,43 @@ class HomeState extends State<Home> {
     );
   }
 
-  List<Widget> _showActionButtons({required String action}) {
-    final Widget addActionButton = BottomActionButton(
-      icon: Icons.add,
-      onPressed: () {
-        _openNoteEditor(add: true, index: -1, note: Note());
-      },
-    );
-
-    switch (action) {
-      case 'add':
-        return <Widget>[addActionButton];
-      case 'multiple':
-        return <Widget>[
-          BottomActionButton(
-            icon: Icons.arrow_back,
-            onPressed: _viewModel.exitSelectionMode,
-          ),
-          BottomActionButton(
-            icon: Icons.clear,
-            onPressed: () async {
-              if (!_viewModel.hasSelection) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppText.tr('no_note_selected'))),
-                );
-              } else {
-                final bool? confirmDeletion = await getConfirmation(
-                  context: context,
-                  actionTitle: _deleteActionTitle(),
-                  action: AppText.tr('delete'),
-                );
-                if (confirmDeletion == true) {
-                  await _viewModel.deleteSelected();
-                  _showUndoSnackBar();
-                }
-              }
-            },
-          ),
-          BottomActionButton(
-            icon: Icons.panorama_fish_eye,
-            iconSize: 21.0,
-            onPressed: _viewModel.clearSelection,
-          ),
-          BottomActionButton(
-            icon: Icons.check_circle,
-            iconSize: 21.0,
-            onPressed: _viewModel.selectAll,
-          ),
-        ];
-      default:
-        return <Widget>[addActionButton];
-    }
+  List<Widget> _showActionButtons() {
+    return <Widget>[
+      BottomActionButton(
+        icon: Icons.arrow_back,
+        onPressed: _viewModel.exitSelectionMode,
+      ),
+      BottomActionButton(
+        icon: Icons.clear,
+        onPressed: () async {
+          if (!_viewModel.hasSelection) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppText.tr('no_note_selected'))),
+            );
+          } else {
+            final bool? confirmDeletion = await getConfirmation(
+              context: context,
+              actionTitle: _deleteActionTitle(),
+              action: AppText.tr('delete'),
+            );
+            if (confirmDeletion == true) {
+              await _viewModel.deleteSelected();
+              _showUndoSnackBar();
+            }
+          }
+        },
+      ),
+      BottomActionButton(
+        icon: Icons.panorama_fish_eye,
+        iconSize: 21.0,
+        onPressed: _viewModel.clearSelection,
+      ),
+      BottomActionButton(
+        icon: Icons.check_circle,
+        iconSize: 21.0,
+        onPressed: _viewModel.selectAll,
+      ),
+    ];
   }
 
   @override
@@ -264,43 +275,6 @@ class HomeState extends State<Home> {
               : AppBar(
                   elevation: 0.0,
                   actions: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        _openNoteEditor(add: true, index: -1, note: Note());
-                      },
-                    ),
-                    PopupMenuButton<ThemeMode>(
-                      icon: Icon(
-                        Theme.of(context).brightness == Brightness.dark
-                            ? Icons.dark_mode
-                            : Icons.light_mode,
-                      ),
-                      onSelected: (ThemeMode mode) {
-                        ThemeController.instance.setThemeMode(mode);
-                      },
-                      itemBuilder: (BuildContext context) {
-                        final ThemeMode current =
-                            ThemeController.instance.themeMode;
-                        return <PopupMenuEntry<ThemeMode>>[
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.light,
-                            checked: current == ThemeMode.light,
-                            child: Text(AppText.tr('theme_light')),
-                          ),
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.dark,
-                            checked: current == ThemeMode.dark,
-                            child: Text(AppText.tr('theme_dark')),
-                          ),
-                          CheckedPopupMenuItem<ThemeMode>(
-                            value: ThemeMode.system,
-                            checked: current == ThemeMode.system,
-                            child: Text(AppText.tr('theme_system')),
-                          ),
-                        ];
-                      },
-                    ),
                     PopupMenuButton<PopupItem>(
                       icon: Icon(Icons.more_vert),
                       onSelected: ((valueSelected) {
@@ -322,6 +296,15 @@ class HomeState extends State<Home> {
                             break;
                           case "category":
                             _sortingBy('category');
+                            break;
+                          case "theme_light":
+                            ThemeController.instance.setThemeMode(ThemeMode.light);
+                            break;
+                          case "theme_dark":
+                            ThemeController.instance.setThemeMode(ThemeMode.dark);
+                            break;
+                          case "theme_system":
+                            ThemeController.instance.setThemeMode(ThemeMode.system);
                             break;
                           case "en":
                           case "fr":
@@ -475,23 +458,6 @@ class HomeState extends State<Home> {
                               ),
                             ),
                           )
-                        : _viewModel.notesCount > 0
-                        ? Container(
-                            margin: EdgeInsets.only(bottom: 4.5),
-                            alignment: Alignment.center,
-                            child: Text(
-                              AppText.tr('sorted_by', <String, String>{
-                                'sort':
-                                    (menuItems[_viewModel.sortBy]?.title ?? '')
-                                        .toLowerCase(),
-                              }),
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12.0,
-                              ),
-                            ),
-                          )
                         : Offstage(),
                   ],
                 ),
@@ -501,16 +467,28 @@ class HomeState extends State<Home> {
               ),
             ],
           ),
-          bottomNavigationBar: BottomAppBar(
-            elevation: 0.0,
-            height: 36.0,
-            padding: EdgeInsets.zero,
-            color: barColor(context),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _showActionButtons(action: _viewModel.actionButtons),
-            ),
-          ),
+          floatingActionButtonLocation: const _FlushEndFabLocation(),
+          floatingActionButton: _viewModel.isInSelectionMode
+            ? null
+            : FloatingActionButton(
+                onPressed: () {
+                  _openNoteEditor(add: true, index: -1, note: Note());
+                },
+                shape: const CircleBorder(),
+                child: Icon(Icons.add),
+              ),
+          bottomNavigationBar: _viewModel.isInSelectionMode
+            ? BottomAppBar(
+                elevation: 0.0,
+                height: 36.0,
+                padding: EdgeInsets.zero,
+                color: barColor(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _showActionButtons(),
+                ),
+              )
+            : null,
         );
       },
     );
