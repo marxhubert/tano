@@ -28,22 +28,32 @@ class SearchFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
     final double btnMargin = 24.0;
     final double btnHeight = 56.0;
     final double expandedHeight = 48.0;
-    final double expandedWidth = MediaQuery.of(context).size.width - btnMargin;
+    final double expandedWidth = screenWidth - btnMargin;
+    final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
+
+    final double currentWidth = isSearchMode
+        ? (isKeyboardClosed ? expandedWidth * 0.9 : expandedWidth)
+        : btnHeight;
+
+    final double tx = isSearchMode
+        ? (currentWidth / 2 - screenWidth / 2 + btnMargin)
+        : 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       height: isSearchMode ? expandedHeight : btnHeight,
-      width: isSearchMode ? expandedWidth : btnHeight,
+      width: currentWidth,
       clipBehavior: Clip.hardEdge,
       alignment: Alignment.center,
       transform: Matrix4.translationValues(
-          isSearchMode ? btnMargin / 2 : 0,
-          isSearchMode ? (btnMargin - 8.0) : 0,
-          0,
+        tx,
+        (isSearchMode && !isKeyboardClosed) ? btnMargin - 8.0 : 0.0,
+        0.0,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
@@ -74,7 +84,6 @@ class SearchFab extends StatelessWidget {
                   onChanged: onSearchChanged,
                   onTapOutside: (_) {
                     focusNode.unfocus();
-                    onClose();
                   },
                 ),
               ),
