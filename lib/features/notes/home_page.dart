@@ -38,10 +38,14 @@ class _FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
-    // Use contentBottom so the field stays above the soft keyboard.
-    return scaffoldGeometry.contentBottom -
+    double offset = scaffoldGeometry.contentBottom -
         scaffoldGeometry.floatingActionButtonSize.height -
         padding;
+    if (scaffoldGeometry.snackBarSize.height > 0.0) {
+      // Push the FAB up so it stays above the SnackBar.
+      offset -= (scaffoldGeometry.snackBarSize.height - 12.0);
+    }
+    return offset;
   }
 }
 
@@ -66,7 +70,10 @@ class HomeState extends State<Home> {
   PackageInfo? _packageInfo;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   bool _isSearchMode = false;
+  bool _showAppBarTitle = false;
+  bool _wasInSelectionMode = false;
   static const _sliverPadding = 12.0;
 
   @override
@@ -76,6 +83,7 @@ class HomeState extends State<Home> {
       repository: widget.repository,
       initialNotes: widget.initialNotes,
     );
+    _wasInSelectionMode = _viewModel.isInSelectionMode;
     if (widget.initialNotes == null) {
       // Navigation flows that do not receive the data loaded by the
       // splash screen fall back to loading the notes themselves.
@@ -83,14 +91,43 @@ class HomeState extends State<Home> {
     }
     _loadPreferences();
     _initPackageInfo();
+    _scrollController.addListener(_onScroll);
+    _viewModel.addListener(_onViewModelChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  void _onViewModelChanged() {
+    if (_viewModel.isInSelectionMode && _isSearchMode) {
+      setState(() {
+        _isSearchMode = false;
+      });
+      _searchFocusNode.unfocus();
+    } else if (_wasInSelectionMode && !_viewModel.isInSelectionMode) {
+      // We just exited selection mode: clear search to return to the full list.
+      if (_viewModel.hasSearchQuery) {
+        _clearSearch();
+      }
+    }
+    _wasInSelectionMode = _viewModel.isInSelectionMode;
+  }
+
+  void _onScroll() {
+    final bool showTitle = _scrollController.offset > 120;
+    if (showTitle != _showAppBarTitle) {
+      setState(() {
+        _showAppBarTitle = showTitle;
+      });
+    }
   }
 
   Future<void> _initPackageInfo() async {
@@ -263,12 +300,10 @@ class HomeState extends State<Home> {
 
   List<Widget> _showActionButtons() {
     return <Widget>[
-      BottomActionButton(
-        icon: Icons.arrow_back,
-        onPressed: _viewModel.exitSelectionMode,
-      ),
-      BottomActionButton(
-        icon: Icons.clear,
+      _SelectionActionButton(
+        icon: Icons.delete,
+        label: AppText.tr('delete'),
+        color: Colors.red,
         onPressed: () async {
           if (!_viewModel.hasSelection) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -287,14 +322,14 @@ class HomeState extends State<Home> {
           }
         },
       ),
-      BottomActionButton(
-        icon: Icons.panorama_fish_eye,
-        iconSize: 21.0,
+      _SelectionActionButton(
+        icon: Icons.check_box_outline_blank,
+        label: AppText.tr('select_none'),
         onPressed: _viewModel.clearSelection,
       ),
-      BottomActionButton(
-        icon: Icons.check_circle,
-        iconSize: 21.0,
+      _SelectionActionButton(
+        icon: Icons.select_all,
+        label: AppText.tr('select_all'),
         onPressed: _viewModel.selectAll,
       ),
     ];
@@ -310,18 +345,44 @@ class HomeState extends State<Home> {
           appBar: _viewModel.isInSelectionMode
               ? AppBar(
                   automaticallyImplyLeading: false,
+                  title: _showAppBarTitle
+                      ? Text(
+                          AppText.tr('all_notes'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18.0,
+                            letterSpacing: -1.0,
+                          ),
+                        )
+                      : null,
+                  centerTitle: true,
                   actions: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.arrow_back),
-                      onPressed: () {
-                        _viewModel.exitSelectionMode();
-                      },
+                    TextButton(
+                      onPressed: _viewModel.exitSelectionMode,
+                      child: Text(
+                        AppText.tr('cancel'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.0,
+                        ),
+                      ),
                     ),
                   ],
                   elevation: 0.0,
                 )
               : AppBar(
                   elevation: 0.0,
+                  title: _showAppBarTitle
+                      ? Text(
+                          AppText.tr('all_notes'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18.0,
+                            letterSpacing: -1.0,
+                          ),
+                        )
+                      : null,
+                  centerTitle: true,
                   actions: _isSearchMode
                       ? <Widget>[
                           TextButton(
@@ -417,6 +478,7 @@ class HomeState extends State<Home> {
                         ],
                 ),
           body: CustomScrollView(
+            controller: _scrollController,
             slivers: <Widget>[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(_sliverPadding, _sliverPadding, _sliverPadding, 0.0),
@@ -494,35 +556,78 @@ class HomeState extends State<Home> {
             ],
           ),
           floatingActionButtonLocation: const _FlushEndFabLocation(),
-          floatingActionButton: _viewModel.isInSelectionMode
-            ? null
-            : SearchFab(
-                isSearchMode: _isSearchMode,
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onAdd: () {
-                  _openNoteEditor(add: true, note: Note());
-                },
-                onSearchChanged: (String value) {
-                  _viewModel.setSearchQuery(value);
-                },
-                onReset: _clearSearch,
-                onClose: _exitSearchMode,
-              ),
-          bottomNavigationBar: _viewModel.isInSelectionMode
-            ? BottomAppBar(
-                elevation: 0.0,
-                height: 36.0,
-                padding: EdgeInsets.zero,
-                color: barColor(context),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: _showActionButtons(),
-                ),
-              )
-            : null,
+          floatingActionButton: HomeFab(
+            isSearchMode: _isSearchMode,
+            isSelectionMode: _viewModel.isInSelectionMode,
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            onAdd: () {
+              _openNoteEditor(add: true, note: Note());
+            },
+            onSearchChanged: (String value) {
+              _viewModel.setSearchQuery(value);
+            },
+            onReset: _clearSearch,
+            onDelete: () async {
+              if (!_viewModel.hasSelection) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(AppText.tr('no_note_selected'))),
+                );
+              } else {
+                final bool? confirmDeletion = await getConfirmation(
+                  context: context,
+                  actionTitle: _deleteActionTitle(),
+                  action: AppText.tr('delete'),
+                );
+                if (confirmDeletion == true) {
+                  await _viewModel.deleteSelected();
+                  _showUndoSnackBar();
+                }
+              }
+            },
+            onClearSelection: _viewModel.clearSelection,
+            onSelectAll: _viewModel.selectAll,
+          ),
+          bottomNavigationBar: null,
         );
       },
+    );
+  }
+}
+
+class _SelectionActionButton extends StatelessWidget {
+  const _SelectionActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 24.0, color: color),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.0,
+                color: color,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -124,7 +124,7 @@ void main() {
         await tester.longPress(find.textContaining('Note number').first);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        await tester.tap(find.byIcon(Icons.clear).first);
+        await tester.tap(find.byIcon(Icons.delete).first);
         await tester.pumpAndSettle();
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);

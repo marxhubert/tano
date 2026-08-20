@@ -61,27 +61,36 @@ class NoteListView extends StatelessWidget {
               size: 27.0,
             ),
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: themeCategory(
-                      notes[index].category,
-                      false,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    borderRadius: BorderRadius.circular(12.0),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 2.0,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: themeCategory(
+                notes[index].category,
+                false,
+                brightness: Theme.of(context).brightness,
+              ),
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 2.0,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: <Widget>[
+                InkWell(
+                  onTap: () {
+                    if (viewModel.isInSelectionMode) {
+                      viewModel.toggleSelection(notes[index].id);
+                    } else {
+                      onOpenNote(notes[index]);
+                    }
+                  },
+                  onLongPress: () {
+                    viewModel.enterSelectionMode(notes[index].id);
+                  },
                   child: Container(
                     color: themeCategory(
                       notes[index].category,
@@ -117,22 +126,53 @@ class NoteListView extends StatelessWidget {
                         overflow: TextOverflow.clip,
                         style: TextStyle(fontSize: 12.0),
                       ),
-                      onTap: () {
-                        if (viewModel.isInSelectionMode) {
-                          viewModel.toggleSelection(notes[index].id);
-                        } else {
-                          onOpenNote(notes[index]);
-                        }
-                      },
-                      onLongPress: () {
-                        viewModel.enterSelectionMode(notes[index].id);
-                      },
                     ),
                   ),
                 ),
-              ),
-              _showCheckboxForSelection(notes[index].id, alreadySelected),
-            ],
+                if (viewModel.isInSelectionMode)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () {
+                        viewModel.toggleSelection(notes[index].id);
+                      },
+                      child: Container(
+                        color: alreadySelected ? Colors.black38 : Colors.black12,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: alreadySelected
+                                ? Stack(
+                                    alignment: Alignment.center,
+                                    children: <Widget>[
+                                      SizedBox(
+                                        width: 18.0,
+                                        height: 18.0,
+                                        child: CircleAvatar(
+                                          backgroundColor: Colors.white,
+                                          radius: 100.0,
+                                          child: null,
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 24.0,
+                                        color: Colors.blue,
+                                      ),
+                                    ],
+                                  )
+                                : const Icon(
+                                    Icons.panorama_fish_eye,
+                                    size: 24.0,
+                                    color: Colors.black54,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.startToEnd) {
@@ -149,19 +189,6 @@ class NoteListView extends StatelessWidget {
       },
       separatorBuilder: (BuildContext context, int index) {
         return SizedBox(height: 12.0);
-      },
-    );
-  }
-
-  Widget _showCheckboxForSelection(String id, bool alreadySelected) {
-    if (!viewModel.isInSelectionMode) {
-      return Container(child: null);
-    }
-
-    return Checkbox(
-      value: alreadySelected,
-      onChanged: (value) {
-        viewModel.toggleSelection(id);
       },
     );
   }
