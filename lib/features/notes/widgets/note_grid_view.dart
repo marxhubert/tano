@@ -107,42 +107,43 @@ class NoteGridView extends StatelessWidget {
               ),
               viewModel.isInSelectionMode
                   ? GestureDetector(
-                      child: Container(
-                        color: isSelected ? Colors.black38 : Colors.black12,
-                        child: isSelected
-                            ? Stack(
-                                children: <Widget>[
-                                  Center(
-                                    child: SizedBox(
-                                      width: 36.0,
-                                      height: 36.0,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.white,
-                                        radius: 100.0,
-                                        child: null,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: 45.0,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.panorama_fish_eye,
-                                  size: 45.0,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                      ),
                       onTap: () {
                         viewModel.toggleSelection(notes[index].id);
                       },
+                      child: Container(
+                        color: isSelected ? Colors.black38 : Colors.black12,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: isSelected
+                                ? Stack(
+                                    alignment: Alignment.center,
+                                    children: <Widget>[
+                                      SizedBox(
+                                        width: 18.0,
+                                        height: 18.0,
+                                        child: CircleAvatar(
+                                          backgroundColor: Colors.white,
+                                          radius: 100.0,
+                                          child: null,
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 24.0,
+                                        color: Colors.blue,
+                                      ),
+                                    ],
+                                  )
+                                : const Icon(
+                                    Icons.panorama_fish_eye,
+                                    size: 24.0,
+                                    color: Colors.black54,
+                                  ),
+                          ),
+                        ),
+                      ),
                     )
                   : Offstage(),
             ],
