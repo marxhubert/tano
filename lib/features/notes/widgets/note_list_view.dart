@@ -26,7 +26,7 @@ class NoteListView extends StatelessWidget {
     final List<Note> notes = viewModel.notes;
     return ListView.separated(
       itemCount: notes.length,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
+      padding: EdgeInsets.all(12.0),
       itemBuilder: (BuildContext context, int index) {
         final bool alreadySelected = viewModel.selected.contains(index);
         final String title = notes[index].title;

@@ -96,18 +96,15 @@ void main() {
       ) async {
         await _pumpApp(tester, size: size, themeMode: themeMode);
 
-        // The requested theme is correctly applied (dark bottom bar in dark
-        // mode, light in light mode).
+        // The requested theme is correctly applied.
         final bool isDark = themeMode == ThemeMode.dark;
         expect(
-          Theme.of(tester.element(find.byType(BottomAppBar))).brightness,
+          Theme.of(tester.element(find.byType(Scaffold).first)).brightness,
           isDark ? Brightness.dark : Brightness.light,
         );
-        final BottomAppBar bar = tester.widget(find.byType(BottomAppBar));
-        expect(
-          bar.color,
-          isDark ? Colors.blueGrey.shade900 : Colors.blueGrey.shade50,
-        );
+
+        // The add action is a floating button when not in selection mode.
+        expect(find.byType(FloatingActionButton), findsOneWidget);
 
         // The three layouts.
         for (final String label in <String>['List', 'Grid']) {

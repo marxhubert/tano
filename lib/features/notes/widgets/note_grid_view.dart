@@ -22,7 +22,7 @@ class NoteGridView extends StatelessWidget {
 
     return GridView.count(
       crossAxisCount: 3,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
+      padding: EdgeInsets.all(12.0),
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
       children: List.generate(notes.length, (index) {
