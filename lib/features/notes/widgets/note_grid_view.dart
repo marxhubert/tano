@@ -14,22 +14,21 @@ class NoteGridView extends StatelessWidget {
   });
 
   final HomeViewModel viewModel;
-  final void Function(int index, Note note) onOpenNote;
+  final void Function(Note note) onOpenNote;
 
   @override
   Widget build(BuildContext context) {
     final List<Note> notes = viewModel.notes;
 
-    return GridView.count(
+    return SliverGrid.count(
       crossAxisCount: 3,
-      padding: EdgeInsets.all(12.0),
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
       children: List.generate(notes.length, (index) {
         final String title = notes[index].title;
         final String content = notes[index].content;
         final String date = formatNoteDate(notes[index].date);
-        final bool isSelected = viewModel.selected.contains(index);
+        final bool isSelected = viewModel.selected.contains(notes[index].id);
 
         return Container(
           clipBehavior: Clip.antiAlias,
@@ -68,15 +67,16 @@ class NoteGridView extends StatelessWidget {
                           title,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
+                            fontSize: 11.0,
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Expanded(
                           flex: 1,
                           child: Text(
                             content,
-                            style: TextStyle(fontSize: 10.8),
+                            style: TextStyle(fontSize: 10.0),
                             overflow: TextOverflow.clip,
                             maxLines: null,
                           ),
@@ -85,8 +85,10 @@ class NoteGridView extends StatelessWidget {
                           date,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 9.0,
+                            fontSize: 8.0,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -94,13 +96,13 @@ class NoteGridView extends StatelessWidget {
                 ),
                 onTap: () {
                   if (viewModel.isInSelectionMode) {
-                    viewModel.toggleSelection(index);
+                    viewModel.toggleSelection(notes[index].id);
                   } else {
-                    onOpenNote(index, notes[index]);
+                    onOpenNote(notes[index]);
                   }
                 },
                 onLongPress: () {
-                  viewModel.enterSelectionMode(index);
+                  viewModel.enterSelectionMode(notes[index].id);
                 },
               ),
               viewModel.isInSelectionMode
@@ -139,7 +141,7 @@ class NoteGridView extends StatelessWidget {
                               ),
                       ),
                       onTap: () {
-                        viewModel.toggleSelection(index);
+                        viewModel.toggleSelection(notes[index].id);
                       },
                     )
                   : Offstage(),
