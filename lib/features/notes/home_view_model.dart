@@ -17,21 +17,25 @@ class HomeViewModel extends ChangeNotifier {
   final NotesRepository repository;
 
   List<Note> _notes;
+  String _searchQuery = '';
   String _sortBy = 'date';
   String _viewLayout = 'list';
   bool _isInSelectionMode = false;
-  final Set<int> _selected = <int>{};
+  final Set<String> _selected = <String>{};
   String _actionButtons = 'add';
+  (List<Note>, List<int>)? _lastDeleted;
 
-  List<Note> get notes => List<Note>.unmodifiable(_notes);
-  int get notesCount => _notes.length;
+  /// Notes currently displayed, filtered by the search query.
+  List<Note> get notes => List<Note>.unmodifiable(_filteredNotes());
+  int get notesCount => _filteredNotes().length;
   String get sortBy => _sortBy;
   String get viewLayout => _viewLayout;
   bool get isInSelectionMode => _isInSelectionMode;
   String get actionButtons => _actionButtons;
   bool get hasSelection => _selected.isNotEmpty;
   int get selectedCount => _selected.length;
-  Set<int> get selected => _selected;
+  Set<String> get selected => _selected;
+  bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
   /// Loads the notes from the repository. Used when no initial notes are
   /// provided (e.g. navigation flows that do not come from the splash).
@@ -41,10 +45,17 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the search query; the displayed [notes] are re-filtered.
+  void setSearchQuery(String query) {
+    if (_searchQuery == query) {
+      return;
+    }
+    _searchQuery = query;
+    notifyListeners();
+  }
+
   void setViewLayout(String viewLayout) {
-    if (viewLayout != 'compact' &&
-        viewLayout != 'list' &&
-        viewLayout != 'gridlist') {
+    if (viewLayout != 'list' && viewLayout != 'gridlist') {
       return;
     }
     if (_viewLayout == viewLayout) {
@@ -63,34 +74,35 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleFavorite(int index) {
-    if (index < 0 || index >= _notes.length) {
+  void toggleFavorite(String id) {
+    final int index = _notes.indexWhere((Note note) => note.id == id);
+    if (index == -1) {
       return;
     }
     final Note note = _notes[index];
-    note.important = !(note.important ?? false);
+    _notes[index] = note.copyWith(important: !note.important);
     _persist();
     notifyListeners();
   }
 
-  /// Long press: start the multi-selection mode with [index] selected.
-  void enterSelectionMode(int index) {
-    _selected.add(index);
+  /// Long press: start the multi-selection mode with [id] selected.
+  void enterSelectionMode(String id) {
+    _selected.add(id);
     _isInSelectionMode = true;
     _actionButtons = 'multiple';
     notifyListeners();
   }
 
-  void toggleSelection(int index) {
-    if (!_selected.remove(index)) {
-      _selected.add(index);
+  void toggleSelection(String id) {
+    if (!_selected.remove(id)) {
+      _selected.add(id);
     }
     notifyListeners();
   }
 
   void selectAll() {
-    for (int i = 0; i < _notes.length; i++) {
-      _selected.add(i);
+    for (final Note note in _filteredNotes()) {
+      _selected.add(note.id);
     }
     notifyListeners();
   }
@@ -109,10 +121,16 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Deletes every selected note, leaves the selection mode and persists.
   Future<void> deleteSelected() async {
-    final List<int> indexes = _selected.toList()..sort();
-    for (final int index in indexes.reversed) {
-      _notes.removeAt(index);
+    final List<Note> removed = <Note>[];
+    final List<int> indexes = <int>[];
+    for (int i = 0; i < _notes.length; i++) {
+      if (_selected.contains(_notes[i].id)) {
+        removed.add(_notes[i]);
+        indexes.add(i);
+      }
     }
+    _notes.removeWhere((Note note) => _selected.contains(note.id));
+    _lastDeleted = (removed, indexes);
     _selected.clear();
     _isInSelectionMode = false;
     _actionButtons = 'add';
@@ -121,11 +139,30 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// Removes a single note (e.g. swipe-to-delete) and persists.
-  Future<void> removeNote(int index) async {
-    if (index < 0 || index >= _notes.length) {
+  Future<void> removeNote(String id) async {
+    final int index = _notes.indexWhere((Note note) => note.id == id);
+    if (index == -1) {
       return;
     }
-    _notes.removeAt(index);
+    final Note removed = _notes.removeAt(index);
+    _lastDeleted = (<Note>[removed], <int>[index]);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Restores the most recently deleted note(s) at their original positions.
+  Future<void> undoLastDelete() async {
+    final (List<Note>, List<int>)? record = _lastDeleted;
+    if (record == null) {
+      return;
+    }
+    final List<Note> notes = record.$1;
+    final List<int> indexes = record.$2;
+    for (int i = 0; i < indexes.length; i++) {
+      final int index = indexes[i] > _notes.length ? _notes.length : indexes[i];
+      _notes.insert(index, notes[i]);
+    }
+    _lastDeleted = null;
     await _persist();
     notifyListeners();
   }
@@ -133,50 +170,60 @@ class HomeViewModel extends ChangeNotifier {
   /// Applies the result of the edit screen (add / update / delete).
   Future<void> applyNoteAction({
     required bool add,
-    required int index,
+    required String originalId,
     required NoteAction action,
   }) async {
-    switch (action.action) {
-      case 'Save':
+    switch (action.kind) {
+      case NoteActionKind.save:
         if (add) {
           _notes.add(action.note!);
         } else {
-          _notes[index] = action.note!;
+          final int index = _notes.indexWhere(
+            (Note note) => note.id == originalId,
+          );
+          if (index != -1) {
+            _notes[index] = action.note!;
+          }
         }
         break;
-      case 'Delete':
-        _notes.removeAt(index);
+      case NoteActionKind.delete:
+        _notes.removeWhere((Note note) => note.id == originalId);
         break;
-      case 'Cancel':
-      default:
+      case NoteActionKind.cancel:
         break;
     }
     await _persist();
     notifyListeners();
   }
 
+  List<Note> _filteredNotes() {
+    final String keyword = _searchQuery.trim();
+    if (keyword.isEmpty) {
+      return _notes;
+    }
+    return _notes.where((Note note) {
+      return note.title.contains(RegExp(keyword, caseSensitive: false)) ||
+          note.content.contains(RegExp(keyword, caseSensitive: false));
+    }).toList();
+  }
+
   void _sortNotes() {
     switch (_sortBy) {
       case 'date':
-        _notes.sort((note1, note2) => note2.date!.compareTo(note1.date!));
+        _notes.sort((note1, note2) => note2.date.compareTo(note1.date));
         break;
       case 'alpha':
-        _notes.sort(
-          (note1, note2) => (note1.title ?? '').compareTo(note2.title ?? ''),
-        );
+        _notes.sort((note1, note2) => note1.title.compareTo(note2.title));
         break;
       case 'important':
-        _notes.sort(
-          (note1, note2) => (note2.important ?? false).toString().compareTo(
-            (note1.important ?? false).toString(),
-          ),
-        );
+        _notes.sort((note1, note2) {
+          final int a = note1.important ? 1 : 0;
+          final int b = note2.important ? 1 : 0;
+          return b.compareTo(a);
+        });
         break;
       case 'category':
-        _notes.sort(
-          (note1, note2) =>
-              (note1.category ?? '').compareTo(note2.category ?? ''),
-        );
+        _notes.sort((note1, note2) => note1.category.compareTo(note2.category));
         break;
     }
   }

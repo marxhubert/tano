@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/features/editor/edit_note_page.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
@@ -69,5 +70,51 @@ void main() {
     expect(find.text('Note'), findsWidgets);
     await tester.tap(find.text('Work').last);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('toggling the star in the editor updates the icon reactively', (
+    tester,
+  ) async {
+    final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+        important: false,
+        category: 'note',
+      ),
+    ]);
+
+    await tester.pumpWidget(Tano(repository: repository));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Hello'));
+    await tester.pumpAndSettle();
+
+    final Finder editorStar = find.descendant(
+      of: find.byType(EditNote),
+      matching: find.byIcon(Icons.star_border),
+    );
+    expect(editorStar, findsOneWidget);
+
+    await tester.tap(editorStar);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(EditNote),
+        matching: find.byIcon(Icons.star),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(EditNote),
+        matching: find.byIcon(Icons.star_border),
+      ),
+      findsNothing,
+    );
   });
 }
