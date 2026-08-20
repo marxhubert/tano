@@ -322,79 +322,99 @@ class HomeState extends State<Home> {
                 )
               : AppBar(
                   elevation: 0.0,
-                  actions: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.search),
-                      onPressed: _enterSearchMode,
-                    ),
-                    PopupMenuButton<PopupItem>(
-                      icon: Icon(Icons.more_vert),
-                      onSelected: ((valueSelected) {
-                        switch (valueSelected.value.toLowerCase()) {
-                          case "list":
-                            _changeLayout('list');
-                            break;
-                          case "gridlist":
-                            _changeLayout('gridlist');
-                            break;
-                          case "date":
-                            _sortingBy('date');
-                            break;
-                          case "alpha":
-                            _sortingBy('alpha');
-                            break;
-                          case "important":
-                            _sortingBy('important');
-                            break;
-                          case "category":
-                            _sortingBy('category');
-                            break;
-                          case "theme_light":
-                            ThemeController.instance.setThemeMode(ThemeMode.light);
-                            break;
-                          case "theme_dark":
-                            ThemeController.instance.setThemeMode(ThemeMode.dark);
-                            break;
-                          case "theme_system":
-                            ThemeController.instance.setThemeMode(ThemeMode.system);
-                            break;
-                          case "en":
-                          case "fr":
-                            _changeLanguage(valueSelected.value);
-                            break;
-                          case "info":
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => aboutInfo(
-                                context: context,
-                                packageInfo: _packageInfo,
+                  actions: _isSearchMode
+                      ? <Widget>[
+                          TextButton(
+                            onPressed: _exitSearchMode,
+                            child: Text(
+                              AppText.tr('cancel'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.0,
                               ),
-                            );
-                            break;
-                        }
-                      }),
-                      itemBuilder: (BuildContext context) {
-                        final List<PopupItem> popupItems = [];
-                        menuItems.forEach((String key, PopupItem popupItem) {
-                          popupItems.add(popupItem);
-                        });
-                        return popupItems.map((PopupItem popupItem) {
-                          return PopupMenuItem<PopupItem>(
-                            value: popupItem,
-                            height: popupItem.value == 'separator' ? 8.0 : 28.0,
-                            child: popupButton(
-                              context: context,
-                              popupItem: popupItem,
-                              layout: _viewModel.viewLayout,
-                              sort: _viewModel.sortBy,
-                              lang: LocaleController.instance.language,
                             ),
-                          );
-                        }).toList();
-                      },
-                      padding: EdgeInsets.all(0.0),
-                    ),
-                  ],
+                          ),
+                        ]
+                      : <Widget>[
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: _enterSearchMode,
+                          ),
+                          PopupMenuButton<PopupItem>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: ((valueSelected) {
+                              switch (valueSelected.value.toLowerCase()) {
+                                case "list":
+                                  _changeLayout('list');
+                                  break;
+                                case "gridlist":
+                                  _changeLayout('gridlist');
+                                  break;
+                                case "date":
+                                  _sortingBy('date');
+                                  break;
+                                case "alpha":
+                                  _sortingBy('alpha');
+                                  break;
+                                case "important":
+                                  _sortingBy('important');
+                                  break;
+                                case "category":
+                                  _sortingBy('category');
+                                  break;
+                                case "theme_light":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.light);
+                                  break;
+                                case "theme_dark":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.dark);
+                                  break;
+                                case "theme_system":
+                                  ThemeController.instance
+                                      .setThemeMode(ThemeMode.system);
+                                  break;
+                                case "en":
+                                case "fr":
+                                  _changeLanguage(valueSelected.value);
+                                  break;
+                                case "info":
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) =>
+                                        aboutInfo(
+                                      context: context,
+                                      packageInfo: _packageInfo,
+                                    ),
+                                  );
+                                  break;
+                              }
+                            }),
+                            itemBuilder: (BuildContext context) {
+                              final List<PopupItem> popupItems = [];
+                              menuItems
+                                  .forEach((String key, PopupItem popupItem) {
+                                popupItems.add(popupItem);
+                              });
+                              return popupItems.map((PopupItem popupItem) {
+                                return PopupMenuItem<PopupItem>(
+                                  value: popupItem,
+                                  height: popupItem.value == 'separator'
+                                      ? 8.0
+                                      : 28.0,
+                                  child: popupButton(
+                                    context: context,
+                                    popupItem: popupItem,
+                                    layout: _viewModel.viewLayout,
+                                    sort: _viewModel.sortBy,
+                                    lang: LocaleController.instance.language,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            padding: EdgeInsets.only(right: 12.0),
+                          ),
+                        ],
                 ),
           body: CustomScrollView(
             slivers: <Widget>[
