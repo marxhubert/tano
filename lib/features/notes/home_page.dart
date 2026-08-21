@@ -357,21 +357,54 @@ class HomeState extends State<Home> {
                       : null,
                   centerTitle: true,
                   actions: <Widget>[
-                    TextButton(
-                      onPressed: _viewModel.exitSelectionMode,
-                      child: Text(
-                        AppText.tr('cancel'),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.0,
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: TextButton(
+                        onPressed: _viewModel.exitSelectionMode,
+                        child: Text(
+                          AppText.tr('cancel'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.0,
+                          ),
                         ),
                       ),
                     ),
                   ],
-                  elevation: 0.0,
+                  elevation: _showAppBarTitle ? 2.0 : 0.0,
+                  shadowColor: _showAppBarTitle
+                      ? Colors.black.withValues(alpha: 0.05)
+                      : Colors.transparent,
+                  shape: _showAppBarTitle
+                      ? Border(
+                          bottom: BorderSide(
+                            color: getBorderColor(
+                              barColor(context),
+                              isDark:
+                                  Theme.of(context).brightness == Brightness.dark,
+                            ),
+                            width: 0.5,
+                          ),
+                        )
+                      : null,
                 )
               : AppBar(
-                  elevation: 0.0,
+                  elevation: _showAppBarTitle ? 2.0 : 0.0,
+                  shadowColor: _showAppBarTitle
+                      ? Colors.black.withValues(alpha: 0.05)
+                      : Colors.transparent,
+                  shape: _showAppBarTitle
+                      ? Border(
+                          bottom: BorderSide(
+                            color: getBorderColor(
+                              barColor(context),
+                              isDark:
+                                  Theme.of(context).brightness == Brightness.dark,
+                            ),
+                            width: 0.5,
+                          ),
+                        )
+                      : null,
                   title: _showAppBarTitle
                       ? Text(
                           AppText.tr('all_notes'),
@@ -385,13 +418,16 @@ class HomeState extends State<Home> {
                   centerTitle: true,
                   actions: _isSearchMode
                       ? <Widget>[
-                          TextButton(
-                            onPressed: _exitSearchMode,
-                            child: Text(
-                              AppText.tr('cancel'),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12.0,
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: TextButton(
+                              onPressed: _exitSearchMode,
+                              child: Text(
+                                AppText.tr('cancel'),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.0,
+                                ),
                               ),
                             ),
                           ),
@@ -473,7 +509,7 @@ class HomeState extends State<Home> {
                                 );
                               }).toList();
                             },
-                            padding: EdgeInsets.only(right: 12.0),
+                            padding: const EdgeInsets.only(right: 18.0),
                           ),
                         ],
                 ),
@@ -481,7 +517,7 @@ class HomeState extends State<Home> {
             controller: _scrollController,
             slivers: <Widget>[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(_sliverPadding, _sliverPadding, _sliverPadding, 0.0),
+                padding: const EdgeInsets.fromLTRB(_sliverPadding + 6, _sliverPadding, _sliverPadding + 6, 0.0),
                 sliver: SliverToBoxAdapter(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,

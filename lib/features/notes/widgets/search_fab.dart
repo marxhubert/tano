@@ -93,7 +93,7 @@ class HomeFab extends StatelessWidget {
           _SelectionFabButton(
             icon: Icons.delete,
             label: capitalizedDelete,
-            color: Colors.red.shade200,
+            color: const Color(0xFFFF8A80), // Vibrant but balanced red for FAB
             onPressed: onDelete,
           ),
           _SelectionFabButton(

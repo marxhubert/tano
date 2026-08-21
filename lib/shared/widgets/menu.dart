@@ -63,7 +63,7 @@ Map<String, PopupItem> get menuItems {
     'important': PopupItem(
       title: AppText.tr('menu_favorites'),
       value: 'important',
-      icon: null,
+      icon: const Icon(Icons.bookmark, color: tanoAmber, size: 18.0),
     ),
     'category': PopupItem(
       title: AppText.tr('menu_category'),
