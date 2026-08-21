@@ -253,10 +253,11 @@ class _EditNoteState extends State<EditNote> {
                           children: <Widget>[
                             popupButton(
                               context: context,
-                              popupItem: categoryElements[_viewModel.category]!,
+                              popupItem: categoryElements[_viewModel.category] ??
+                                  categoryElements['neutral']!,
                               editMode: true,
                             ),
-                            Icon(Icons.arrow_drop_down, size: 18.0),
+                            const Icon(Icons.arrow_drop_down, size: 18.0),
                           ],
                         ),
                       ),

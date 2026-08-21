@@ -13,13 +13,16 @@ void main() {
       expect(
         categories,
         containsAll(<String?>[
-          'note',
-          'work',
-          'personal',
-          'travel',
-          'life',
-          'project',
-          'none',
+          'neutral',
+          'action',
+          'success',
+          'warning',
+          'error',
+          'purple',
+          'yellow',
+          'reference',
+          'subtle',
+          'archive',
         ]),
       );
     });

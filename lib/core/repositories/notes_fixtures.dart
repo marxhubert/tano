@@ -11,23 +11,30 @@ List<Note> buildNotesFixtures() {
   final DateTime baseDate = DateTime.now();
   // 24 notes distributed across the 7 categories (4/4/4/3/3/3/3).
   final List<String> categories = <String>[
-    'note',
-    'work',
-    'personal',
-    'travel',
-    'life',
-    'project',
-    'none',
+    'neutral',
+    'action',
+    'success',
+    'warning',
+    'error',
+    'purple',
+    'yellow',
+    'reference',
+    'subtle',
+    'archive',
   ];
 
   for (int i = 0; i < 24; i++) {
     final String category = categories[i % categories.length];
     final int variant = i ~/ categories.length;
+    
+    // Map the new categories to old titles/contents for now to keep the demo data.
+    final String lookupKey = _categoryMap[category] ?? 'neutral';
+    
     notes.add(
       Note(
         id: 'fixture-${i + 1}',
-        title: _titles[category]![variant],
-        content: _contents[category]![variant],
+        title: _titles[lookupKey]![variant % 4],
+        content: _contents[lookupKey]![variant % 4],
         // Different dates: 6 days apart, plus a small offset so
         // no two notes share the exact same timestamp.
         date: baseDate.subtract(Duration(days: i * 6 + (i % 3))).toString(),
@@ -40,6 +47,19 @@ List<Note> buildNotesFixtures() {
 
   return notes;
 }
+
+const Map<String, String> _categoryMap = {
+  'neutral': 'none',
+  'action': 'work',
+  'success': 'note',
+  'warning': 'personal',
+  'error': 'travel',
+  'purple': 'life',
+  'yellow': 'project',
+  'reference': 'note',
+  'subtle': 'personal',
+  'archive': 'none',
+};
 
 const Map<String, List<String>> _titles = <String, List<String>>{
   'note': <String>[
