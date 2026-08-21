@@ -168,26 +168,24 @@ class _EditNoteState extends State<EditNote> {
         key: _scaffoldState,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          elevation: 0.0,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 6.0),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20.0),
+              onPressed: () async {
+                final bool willPop = await _onWillPopCallback();
+                if (willPop && context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/home',
+                    (Route<dynamic> route) => false,
+                  );
+                }
+              },
+            ),
+          ),
           actions: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () async {
-                  final bool willPop = await _onWillPopCallback();
-                  if (willPop && context.mounted) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/home',
-                      (Route<dynamic> route) => false,
-                    );
-                  }
-                },
-              ),
-            ),
-            const Expanded(child: Offstage()),
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
+              padding: const EdgeInsets.only(right: 6.0),
               child: IconButton(
                 icon: const Icon(Icons.check),
                 onPressed: () => _saveNote(noteAction: _noteAction),

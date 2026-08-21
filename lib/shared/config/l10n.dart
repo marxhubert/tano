@@ -89,6 +89,7 @@ class AppText {
     'close_button': 'CLOSE',
     'home': 'Home',
     'about': 'About',
+    'settings': 'Settings',
     // Menu
     'menu_display': 'Display',
     'menu_list': 'List',
@@ -162,6 +163,7 @@ class AppText {
     'close_button': 'FERMER',
     'home': 'Accueil',
     'about': 'À propos',
+    'settings': 'Paramètres',
     // Menu
     'menu_display': 'Affichage',
     'menu_list': 'Liste',
