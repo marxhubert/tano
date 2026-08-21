@@ -133,6 +133,8 @@ class _EditNoteState extends State<EditNote> {
           return PageScaffold(
             scaffoldKey: _scaffoldState,
             title: widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
+            titleController: _titleController,
+            titleHint: AppText.tr('title_here'),
             onPop: () async {
               final bool willPop = await _onWillPopCallback();
               if (willPop && context.mounted) {
@@ -152,78 +154,28 @@ class _EditNoteState extends State<EditNote> {
               ),
             ],
             slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    TextField(
-                      maxLines: 1,
-                      maxLength: 54,
-                      showCursor: true,
-                      controller: _titleController,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 21.0,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: AppText.tr('title_here'),
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        border: InputBorder.none,
-                        counter: const Offstage(),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onSubmitted: (submitted) {
-                        FocusScope.of(context).requestFocus(_contentFocus);
-                      },
+              SliverPadding(
+                padding: const EdgeInsets.all(18.0),
+                sliver: SliverToBoxAdapter(
+                  child: TextField(
+                    maxLines: null,
+                    minLines: 10,
+                    showCursor: true,
+                    autofocus: widget.add,
+                    focusNode: _contentFocus,
+                    controller: _contentController,
+                    textInputAction: TextInputAction.newline,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: const TextStyle(fontSize: 14.4, height: 1.8),
+                    decoration: InputDecoration(
+                      hintText: AppText.tr('add_note'),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            '$_noteContentLength',
-                            style: const TextStyle(
-                              fontSize: 9.0,
-                              fontWeight: FontWeight.w300,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          _viewModel.selectedDate.toString().substring(
-                                0,
-                                16,
-                              ),
-                          style: const TextStyle(
-                            fontSize: 9.0,
-                            fontWeight: FontWeight.w300,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    TextField(
-                      maxLines: null,
-                      minLines: 10,
-                      showCursor: true,
-                      autofocus: widget.add,
-                      focusNode: _contentFocus,
-                      controller: _contentController,
-                      textInputAction: TextInputAction.newline,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: const TextStyle(fontSize: 14.4, height: 1.8),
-                      decoration: InputDecoration(
-                        hintText: AppText.tr('content_here'),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (String content) {
-                        _getNoteContentLength(content);
-                      },
-                    ),
-                  ],
+                    onChanged: (String content) {
+                      _getNoteContentLength(content);
+                    },
+                  ),
                 ),
               ),
             ],
