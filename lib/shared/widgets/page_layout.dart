@@ -50,6 +50,8 @@ class PageScaffold extends StatefulWidget {
     this.floatingActionButtonLocation,
     this.scaffoldKey,
     this.onPop,
+    this.titleController,
+    this.titleHint,
   });
 
   final String title;
@@ -61,6 +63,8 @@ class PageScaffold extends StatefulWidget {
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final GlobalKey<ScaffoldState>? scaffoldKey;
   final VoidCallback? onPop;
+  final TextEditingController? titleController;
+  final String? titleHint;
 
   @override
   State<PageScaffold> createState() => _PageScaffoldState();
@@ -77,13 +81,19 @@ class _PageScaffoldState extends State<PageScaffold> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    widget.titleController?.addListener(_onTitleChanged);
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
+    widget.titleController?.removeListener(_onTitleChanged);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onTitleChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onScroll() {
@@ -99,6 +109,11 @@ class _PageScaffoldState extends State<PageScaffold> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bgColor = barColor(context);
+
+    final String appBarTitle = widget.titleController != null &&
+            widget.titleController!.text.isNotEmpty
+        ? widget.titleController!.text
+        : widget.title;
 
     return Scaffold(
       key: widget.scaffoldKey,
@@ -128,12 +143,13 @@ class _PageScaffoldState extends State<PageScaffold> {
             : null,
         title: _showAppBarTitle
             ? Text(
-                widget.title,
+                appBarTitle,
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18.0,
                   letterSpacing: -1.0,
                 ),
+                overflow: TextOverflow.ellipsis,
               )
             : null,
         centerTitle: true,
@@ -163,14 +179,36 @@ class _PageScaffoldState extends State<PageScaffold> {
                 textBaseline: TextBaseline.alphabetic,
                 children: <Widget>[
                   Expanded(
-                    child: Text(
-                      widget.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 24.0,
-                        letterSpacing: -2.0,
-                      ),
-                    ),
+                    child: widget.titleController != null
+                        ? TextField(
+                            controller: widget.titleController,
+                            maxLines: 3,
+                            minLines: 1,
+                            maxLength: 100,
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 24.0,
+                              letterSpacing: -2.0,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: widget.titleHint,
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              counter: const Offstage(),
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                            ),
+                          )
+                        : Text(
+                            widget.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 24.0,
+                              letterSpacing: -2.0,
+                            ),
+                          ),
                   ),
                   if (widget.headerTrailing != null) widget.headerTrailing!,
                 ],
