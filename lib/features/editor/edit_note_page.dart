@@ -121,8 +121,8 @@ class _EditNoteState extends State<EditNote> {
 
   List<Widget> _showActionButtons({required String action}) {
     final Widget markAsImportantActionButton = BottomActionButton(
-      icon: _viewModel.important ? Icons.star : Icons.star_border,
-      color: _viewModel.important ? Colors.orange : null,
+      icon: _viewModel.important ? Icons.bookmark : Icons.bookmark_border,
+      color: _viewModel.important ? tanoAmber : null,
       onPressed: _viewModel.toggleImportant,
     );
 
@@ -170,22 +170,28 @@ class _EditNoteState extends State<EditNote> {
           automaticallyImplyLeading: false,
           elevation: 0.0,
           actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.arrow_back),
-              onPressed: () async {
-                final bool willPop = await _onWillPopCallback();
-                if (willPop && context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/home',
-                    (Route<dynamic> route) => false,
-                  );
-                }
-              },
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () async {
+                  final bool willPop = await _onWillPopCallback();
+                  if (willPop && context.mounted) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/home',
+                      (Route<dynamic> route) => false,
+                    );
+                  }
+                },
+              ),
             ),
-            Expanded(child: Offstage()),
-            IconButton(
-              icon: Icon(Icons.check),
-              onPressed: () => _saveNote(noteAction: _noteAction),
+            const Expanded(child: Offstage()),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.check),
+                onPressed: () => _saveNote(noteAction: _noteAction),
+              ),
             ),
           ],
         ),

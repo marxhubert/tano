@@ -48,6 +48,21 @@ Color getTextColor(Color background) {
       : Colors.white;
 }
 
+/// Helper to get a subtle border color based on the background.
+Color getBorderColor(Color background, {bool isDark = false}) {
+  if (background == Colors.white ||
+      background == darkBackground ||
+      background == const Color(0xFF1E1E1E)) {
+    return isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.1);
+  }
+
+  // Light mode: make the border slightly darker
+  // Dark mode: make the border slightly lighter
+  return Color.lerp(background, isDark ? Colors.white : Colors.black, 0.12)!;
+}
+
 /// Dynamic surface color for bars and background.
 Color barColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark

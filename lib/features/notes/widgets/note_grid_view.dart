@@ -26,20 +26,27 @@ class NoteGridView extends StatelessWidget {
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
       children: List.generate(notes.length, (index) {
+        final bool isDark = Theme.of(context).brightness == Brightness.dark;
+        final Color bgColor = themeCategory(
+          notes[index].category,
+          true,
+          brightness: Theme.of(context).brightness,
+        );
+        final Color borderColor = getBorderColor(bgColor, isDark: isDark);
+        final Color textColor = getTextColor(bgColor);
+
         final String title = notes[index].title;
         final String content = notes[index].content;
         final String date = formatNoteDate(notes[index].date);
+        final bool important = notes[index].important;
         final bool isSelected = viewModel.selected.contains(notes[index].id);
 
         return Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: themeCategory(
-              notes[index].category,
-              false,
-              brightness: Theme.of(context).brightness,
-            ),
+            color: bgColor,
             borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: borderColor, width: 0.5),
             boxShadow: <BoxShadow>[
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -50,6 +57,16 @@ class NoteGridView extends StatelessWidget {
           ),
           child: Stack(
             children: <Widget>[
+              if (important)
+                Positioned(
+                  top: -4.0,
+                  right: 2.0,
+                  child: Icon(
+                    Icons.bookmark,
+                    size: 16.0,
+                    color: tanoAmber.withValues(alpha: 0.8),
+                  ),
+                ),
               InkWell(
                 onTap: () {
                   if (viewModel.isInSelectionMode) {
@@ -61,60 +78,48 @@ class NoteGridView extends StatelessWidget {
                 onLongPress: () {
                   viewModel.enterSelectionMode(notes[index].id);
                 },
-                child: Builder(builder: (context) {
-                  final Color bgColor = themeCategory(
-                    notes[index].category,
-                    true,
-                    brightness: Theme.of(context).brightness,
-                  );
-                  final Color textColor = getTextColor(bgColor);
-
-                  return Container(
-                    color: bgColor,
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4.0,
-                        children: <Widget>[
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11.0,
-                              color: textColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              content,
-                              style: TextStyle(
-                                fontSize: 10.0,
-                                color: textColor.withValues(alpha: 0.8),
-                              ),
-                              overflow: TextOverflow.clip,
-                              maxLines: null,
-                            ),
-                          ),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 8.0,
-                              color: textColor.withValues(alpha: 0.6),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                child: Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4.0,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11.0,
+                          color: textColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  );
-                }),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          content,
+                          style: TextStyle(
+                            fontSize: 10.0,
+                            color: textColor.withValues(alpha: 0.8),
+                          ),
+                          overflow: TextOverflow.clip,
+                          maxLines: null,
+                        ),
+                      ),
+                      Text(
+                        date,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 8.0,
+                          color: textColor.withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
               ),
               viewModel.isInSelectionMode
                   ? GestureDetector(
@@ -140,17 +145,19 @@ class NoteGridView extends StatelessWidget {
                                           child: null,
                                         ),
                                       ),
-                                      const Icon(
+                                      Icon(
                                         Icons.check_circle,
                                         size: 24.0,
-                                        color: Colors.blue,
+                                        color: isDark ? TanoStates.action.dark : tanoTeal,
                                       ),
                                     ],
                                   )
-                                : const Icon(
+                                : Icon(
                                     Icons.panorama_fish_eye,
                                     size: 24.0,
-                                    color: Colors.black54,
+                                    color: isDark
+                                        ? TanoStates.action.dark
+                                        : tanoTeal.withValues(alpha: 0.6),
                                   ),
                           ),
                         ),
