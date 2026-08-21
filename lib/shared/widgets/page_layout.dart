@@ -1,6 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
+/// Places the floating action button flush against the bottom-right corner
+/// of the screen (no margin).
+class FlushEndFabLocation extends StandardFabLocation {
+  static const padding = 24;
+  const FlushEndFabLocation();
+
+  @override
+  double getOffsetX(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    return scaffoldGeometry.scaffoldSize.width -
+        scaffoldGeometry.floatingActionButtonSize.width -
+        padding;
+  }
+
+  @override
+  double getOffsetY(
+    ScaffoldPrelayoutGeometry scaffoldGeometry,
+    double adjustment,
+  ) {
+    double offset = scaffoldGeometry.contentBottom -
+        scaffoldGeometry.floatingActionButtonSize.height -
+        padding;
+    if (scaffoldGeometry.snackBarSize.height > 0.0) {
+      // Push the FAB up so it stays above the SnackBar.
+      offset -= (scaffoldGeometry.snackBarSize.height - 12.0);
+    }
+    return offset;
+  }
+}
+
 /// A shared scaffold that handles:
 /// 1. A dynamic AppBar that shows the title only when scrolling down.
 /// 2. A back button (arrow_back_ios_new) for non-home pages.
