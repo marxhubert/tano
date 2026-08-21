@@ -37,9 +37,9 @@ class NoteListView extends StatelessWidget {
           key: Key(notes[index].id),
           background: Container(
             alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            decoration: BoxDecoration(
-              color: Colors.orange,
+            padding: const EdgeInsets.only(left: 21.0),
+            decoration: const BoxDecoration(
+              color: tanoAmber,
               borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
             ),
             child: Icon(
@@ -50,8 +50,8 @@ class NoteListView extends StatelessWidget {
           ),
           secondaryBackground: Container(
             alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.only(right: 21.0),
+            decoration: const BoxDecoration(
               color: Colors.red,
               borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
             ),
@@ -91,43 +91,52 @@ class NoteListView extends StatelessWidget {
                   onLongPress: () {
                     viewModel.enterSelectionMode(notes[index].id);
                   },
-                  child: Container(
-                    color: themeCategory(
+                  child: Builder(builder: (context) {
+                    final Color bgColor = themeCategory(
                       notes[index].category,
                       true,
                       brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      title: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.bold,
+                    );
+                    final Color textColor = getTextColor(bgColor);
+
+                    return Container(
+                      color: bgColor,
+                      child: ListTile(
+                        title: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          SizedBox(width: 9.0),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 9.0,
-                              color: mutedTextColor(context),
+                            SizedBox(width: 9.0),
+                            Text(
+                              date,
+                              style: TextStyle(
+                                fontSize: 9.0,
+                                color: textColor.withValues(alpha: 0.6),
+                              ),
                             ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          notes[index].content,
+                          maxLines: 3,
+                          overflow: TextOverflow.clip,
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: textColor.withValues(alpha: 0.8),
                           ),
-                        ],
+                        ),
                       ),
-                      subtitle: Text(
-                        notes[index].content,
-                        maxLines: 3,
-                        overflow: TextOverflow.clip,
-                        style: TextStyle(fontSize: 12.0),
-                      ),
-                    ),
-                  ),
+                    );
+                  }),
                 ),
                 if (viewModel.isInSelectionMode)
                   Positioned.fill(

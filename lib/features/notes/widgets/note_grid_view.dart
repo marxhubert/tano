@@ -4,6 +4,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/menu.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid of note cards, one card per note.
 class NoteGridView extends StatelessWidget {
@@ -50,50 +51,6 @@ class NoteGridView extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               InkWell(
-                child: Container(
-                  color: themeCategory(
-                    notes[index].category,
-                    true,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 4.0,
-                      children: <Widget>[
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11.0,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            content,
-                            style: TextStyle(fontSize: 10.0),
-                            overflow: TextOverflow.clip,
-                            maxLines: null,
-                          ),
-                        ),
-                        Text(
-                          date,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 8.0,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 onTap: () {
                   if (viewModel.isInSelectionMode) {
                     viewModel.toggleSelection(notes[index].id);
@@ -104,6 +61,60 @@ class NoteGridView extends StatelessWidget {
                 onLongPress: () {
                   viewModel.enterSelectionMode(notes[index].id);
                 },
+                child: Builder(builder: (context) {
+                  final Color bgColor = themeCategory(
+                    notes[index].category,
+                    true,
+                    brightness: Theme.of(context).brightness,
+                  );
+                  final Color textColor = getTextColor(bgColor);
+
+                  return Container(
+                    color: bgColor,
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4.0,
+                        children: <Widget>[
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.0,
+                              color: textColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              content,
+                              style: TextStyle(
+                                fontSize: 10.0,
+                                color: textColor.withValues(alpha: 0.8),
+                              ),
+                              overflow: TextOverflow.clip,
+                              maxLines: null,
+                            ),
+                          ),
+                          Text(
+                            date,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 8.0,
+                              color: textColor.withValues(alpha: 0.6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
               ),
               viewModel.isInSelectionMode
                   ? GestureDetector(

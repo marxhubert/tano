@@ -18,7 +18,7 @@ class EditNoteViewModel extends ChangeNotifier {
            ? DateTime.now()
            : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
     important = initialNote?.important ?? false;
-    category = initialNote?.category ?? 'none';
+    category = initialNote?.category ?? 'neutral';
     _initialNote = _buildInitialNote(
       title: initialNote?.title ?? '',
       content: initialNote?.content ?? '',

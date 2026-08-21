@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class PopupItem {
   final String title;
@@ -121,40 +122,55 @@ Map<String, PopupItem> get menuItems {
 /// Category list items, resolved according to the current language.
 Map<String, PopupItem> get categoryElements {
   return <String, PopupItem>{
-    'note': PopupItem(
-      title: AppText.tr('category_note'),
-      icon: Icon(Icons.bookmark, color: Colors.orange, size: 18.0),
-      value: 'note',
-    ),
-    'work': PopupItem(
-      title: AppText.tr('category_work'),
-      icon: Icon(Icons.bookmark, color: Colors.red, size: 18.0),
-      value: 'work',
-    ),
-    'personal': PopupItem(
-      title: AppText.tr('category_personal'),
-      icon: Icon(Icons.bookmark, color: Colors.blue, size: 18.0),
-      value: 'personal',
-    ),
-    'travel': PopupItem(
-      title: AppText.tr('category_travel'),
-      icon: Icon(Icons.bookmark, color: Colors.green, size: 18.0),
-      value: 'travel',
-    ),
-    'life': PopupItem(
-      title: AppText.tr('category_life'),
-      icon: Icon(Icons.bookmark, color: Colors.purple, size: 18.0),
-      value: 'life',
-    ),
-    'project': PopupItem(
-      title: AppText.tr('category_project'),
-      icon: Icon(Icons.bookmark, color: Colors.yellow, size: 18.0),
-      value: 'project',
-    ),
-    'none': PopupItem(
+    'neutral': PopupItem(
       title: AppText.tr('category_none'),
-      icon: Icon(Icons.bookmark_border, color: null, size: 18.0),
-      value: 'none',
+      icon: const Icon(Icons.bookmark_border, size: 18.0),
+      value: 'neutral',
+    ),
+    'action': PopupItem(
+      title: AppText.tr('category_work'),
+      icon: const Icon(Icons.bookmark, color: tanoTeal, size: 18.0),
+      value: 'action',
+    ),
+    'success': PopupItem(
+      title: AppText.tr('category_note'),
+      icon: const Icon(Icons.bookmark, color: Colors.green, size: 18.0),
+      value: 'success',
+    ),
+    'warning': PopupItem(
+      title: AppText.tr('category_personal'),
+      icon: const Icon(Icons.bookmark, color: Colors.orange, size: 18.0),
+      value: 'warning',
+    ),
+    'error': PopupItem(
+      title: AppText.tr('category_travel'),
+      icon: const Icon(Icons.bookmark, color: Colors.red, size: 18.0),
+      value: 'error',
+    ),
+    'purple': PopupItem(
+      title: AppText.tr('category_life'),
+      icon: const Icon(Icons.bookmark, color: Colors.purple, size: 18.0),
+      value: 'purple',
+    ),
+    'yellow': PopupItem(
+      title: AppText.tr('category_project'),
+      icon: const Icon(Icons.bookmark, color: Colors.yellow, size: 18.0),
+      value: 'yellow',
+    ),
+    'reference': PopupItem(
+      title: 'Reference',
+      icon: const Icon(Icons.bookmark, color: Colors.blue, size: 18.0),
+      value: 'reference',
+    ),
+    'subtle': PopupItem(
+      title: 'Subtle',
+      icon: const Icon(Icons.bookmark, color: Colors.blueGrey, size: 18.0),
+      value: 'subtle',
+    ),
+    'archive': PopupItem(
+      title: 'Archive',
+      icon: const Icon(Icons.bookmark, color: Colors.grey, size: 18.0),
+      value: 'archive',
     ),
   };
 }
@@ -229,59 +245,4 @@ Widget popupButton({
       if (trailingIcon != null) ...<Widget>[SizedBox(width: 4.5), trailingIcon],
     ],
   );
-}
-
-Color themeCategory(
-  String value,
-  bool withShade, {
-  Brightness brightness = Brightness.light,
-}) {
-  if (!withShade) {
-    switch (value) {
-      case 'note':
-        return Colors.orange;
-      case 'work':
-        return Colors.red;
-      case 'personal':
-        return Colors.blue;
-      case 'travel':
-        return Colors.green;
-      case 'life':
-        return Colors.purple;
-      case 'project':
-        return Colors.yellow;
-      default:
-        return Colors.grey.shade600;
-    }
-  }
-  switch (value) {
-    case 'note':
-      return brightness == Brightness.dark
-          ? Colors.orange.shade900
-          : Colors.orange.shade50;
-    case 'work':
-      return brightness == Brightness.dark
-          ? Colors.red.shade900
-          : Colors.red.shade50;
-    case 'personal':
-      return brightness == Brightness.dark
-          ? Colors.blue.shade900
-          : Colors.blue.shade50;
-    case 'travel':
-      return brightness == Brightness.dark
-          ? Colors.green.shade900
-          : Colors.green.shade50;
-    case 'life':
-      return brightness == Brightness.dark
-          ? Colors.purple.shade900
-          : Colors.purple.shade50;
-    case 'project':
-      return brightness == Brightness.dark
-          ? Colors.yellow.shade800
-          : Colors.yellow.shade50;
-    default:
-      return brightness == Brightness.dark
-          ? Colors.grey.shade800
-          : Colors.white;
-  }
 }

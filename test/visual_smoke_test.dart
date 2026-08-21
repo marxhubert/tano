@@ -36,12 +36,12 @@ List<Note> _demoNotes() => List<Note>.generate(
         '10:00:00.000',
     important: i.isEven,
     category: <String>[
-      'note',
-      'work',
-      'personal',
-      'travel',
-      'life',
-      'project',
+      'neutral',
+      'action',
+      'success',
+      'warning',
+      'error',
+      'purple',
     ][i % 6],
   ),
 );
@@ -150,7 +150,7 @@ void main() {
         // Category menu.
         await tester.tap(find.byIcon(Icons.arrow_drop_down));
         await tester.pumpAndSettle();
-        expect(find.text('Note'), findsWidgets);
+        expect(find.text('Free'), findsWidgets);
         await tester.tap(find.text('Work').last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
