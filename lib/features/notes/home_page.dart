@@ -15,7 +15,7 @@ import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
-import 'package:tano/shared/widgets/action_bar.dart';
+import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Places the floating action button flush against the bottom-right corner
@@ -67,12 +67,9 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
-  PackageInfo? _packageInfo;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
   bool _isSearchMode = false;
-  bool _showAppBarTitle = false;
   bool _wasInSelectionMode = false;
   static const _sliverPadding = 12.0;
 
@@ -90,8 +87,6 @@ class HomeState extends State<Home> {
       _viewModel.load();
     }
     _loadPreferences();
-    _initPackageInfo();
-    _scrollController.addListener(_onScroll);
     _viewModel.addListener(_onViewModelChanged);
   }
 
@@ -99,8 +94,6 @@ class HomeState extends State<Home> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
@@ -121,23 +114,6 @@ class HomeState extends State<Home> {
     _wasInSelectionMode = _viewModel.isInSelectionMode;
   }
 
-  void _onScroll() {
-    final bool showTitle = _scrollController.offset > 120;
-    if (showTitle != _showAppBarTitle) {
-      setState(() {
-        _showAppBarTitle = showTitle;
-      });
-    }
-  }
-
-  Future<void> _initPackageInfo() async {
-    final PackageInfo info = await PackageInfo.fromPlatform();
-    if (!mounted) return;
-    setState(() {
-      _packageInfo = info;
-    });
-  }
-
   Future<SharedPreferences> _getPrefs() => SharedPreferences.getInstance();
 
   Future<void> _loadPreferences() async {
@@ -155,11 +131,6 @@ class HomeState extends State<Home> {
   Future<void> _saveViewLayoutPref(String viewLayout) async {
     final SharedPreferences prefs = await _getPrefs();
     await prefs.setString('viewLayout', viewLayout);
-  }
-
-  Future<void> _saveSortingPref(String sortBy) async {
-    final SharedPreferences prefs = await _getPrefs();
-    await prefs.setString('sortBy', sortBy);
   }
 
   Future<void> _openNoteEditor({
@@ -188,18 +159,9 @@ class HomeState extends State<Home> {
     );
   }
 
-  void _sortingBy(String sortBy) {
-    _viewModel.setSortBy(sortBy);
-    _saveSortingPref(sortBy);
-  }
-
   void _changeLayout(String viewLayout) {
     _viewModel.setViewLayout(viewLayout);
     _saveViewLayoutPref(viewLayout);
-  }
-
-  void _changeLanguage(String language) {
-    LocaleController.instance.setLanguage(language);
   }
 
   void _clearSearch() {
@@ -258,7 +220,7 @@ class HomeState extends State<Home> {
           child: Center(
             child: Text(
               AppText.tr('no_note_found'),
-              style: TextStyle(fontSize: 12.0),
+              style: const TextStyle(fontSize: 12.0),
             ),
           ),
         );
@@ -298,39 +260,80 @@ class HomeState extends State<Home> {
     );
   }
 
-  List<Widget> _showActionButtons() {
+  List<Widget>? _buildAppBarActions() {
+    if (_viewModel.isInSelectionMode) {
+      return <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(right: 12.0),
+          child: TextButton(
+            onPressed: _viewModel.exitSelectionMode,
+            child: Text(
+              AppText.tr('cancel'),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12.0,
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    if (_isSearchMode) {
+      return <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(right: 12.0),
+          child: TextButton(
+            onPressed: _exitSearchMode,
+            child: Text(
+              AppText.tr('cancel'),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12.0,
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
     return <Widget>[
-      _SelectionActionButton(
-        icon: Icons.delete,
-        label: AppText.tr('delete'),
-        color: Colors.red,
-        onPressed: () async {
-          if (!_viewModel.hasSelection) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppText.tr('no_note_selected'))),
-            );
-          } else {
-            final bool? confirmDeletion = await getConfirmation(
-              context: context,
-              actionTitle: _deleteActionTitle(),
-              action: AppText.tr('delete'),
-            );
-            if (confirmDeletion == true) {
-              await _viewModel.deleteSelected();
-              _showUndoSnackBar();
-            }
+      IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: _enterSearchMode,
+      ),
+      PopupMenuButton<PopupItem>(
+        icon: const Icon(Icons.more_vert),
+        onSelected: ((valueSelected) {
+          switch (valueSelected.value.toLowerCase()) {
+            case "list":
+              _changeLayout('list');
+              break;
+            case "gridlist":
+              _changeLayout('gridlist');
+              break;
+            case "settings":
+              Navigator.of(context).pushNamed('/settings');
+              break;
           }
+        }),
+        itemBuilder: (BuildContext context) {
+          final List<PopupItem> popupItems = [];
+          menuItems.forEach((String key, PopupItem popupItem) {
+            popupItems.add(popupItem);
+          });
+          return popupItems.map((PopupItem popupItem) {
+            return PopupMenuItem<PopupItem>(
+              value: popupItem,
+              height: popupItem.value == 'separator' ? 8.0 : 28.0,
+              child: popupButton(
+                context: context,
+                popupItem: popupItem,
+                layout: _viewModel.viewLayout,
+                lang: LocaleController.instance.language,
+              ),
+            );
+          }).toList();
         },
-      ),
-      _SelectionActionButton(
-        icon: Icons.check_box_outline_blank,
-        label: AppText.tr('select_none'),
-        onPressed: _viewModel.clearSelection,
-      ),
-      _SelectionActionButton(
-        icon: Icons.select_all,
-        label: AppText.tr('select_all'),
-        onPressed: _viewModel.selectAll,
+        padding: const EdgeInsets.only(right: 12.0),
       ),
     ];
   }
@@ -340,257 +343,59 @@ class HomeState extends State<Home> {
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (BuildContext context, Widget? child) {
-        return Scaffold(
-          key: _scaffoldState,
-          appBar: _viewModel.isInSelectionMode
-              ? AppBar(
-                  automaticallyImplyLeading: false,
-                  title: _showAppBarTitle
-                      ? Text(
-                          AppText.tr('all_notes'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18.0,
-                            letterSpacing: -1.0,
-                          ),
-                        )
-                      : null,
-                  centerTitle: true,
-                  actions: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: TextButton(
-                        onPressed: _viewModel.exitSelectionMode,
-                        child: Text(
-                          AppText.tr('cancel'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
-                          ),
-                        ),
+        return PageScaffold(
+          title: AppText.tr('all_notes'),
+          isHome: true,
+          scaffoldKey: _scaffoldState,
+          actions: _buildAppBarActions(),
+          headerTrailing: _viewModel.isInSelectionMode
+              ? Flexible(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _viewModel.selected.isEmpty
+                          ? AppText.tr('no_note_selected')
+                          : (_viewModel.selectedCount > 1
+                              ? (_viewModel.selectedCount ==
+                                      _viewModel.notesCount
+                                  ? AppText.tr(
+                                      'all_notes_selected',
+                                      <String, String>{
+                                        'count': '${_viewModel.notesCount}',
+                                      },
+                                    )
+                                  : AppText.tr('notes_selected', <String,
+                                      String>{
+                                      'count': '${_viewModel.selectedCount}',
+                                      'total': '${_viewModel.notesCount}',
+                                    }))
+                              : AppText.tr(
+                                  'single_note_selected',
+                                  <String, String>{
+                                    'count': '${_viewModel.selectedCount}',
+                                  },
+                                )),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12.0,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                  elevation: _showAppBarTitle ? 2.0 : 0.0,
-                  shadowColor: _showAppBarTitle
-                      ? Colors.black.withValues(alpha: 0.05)
-                      : Colors.transparent,
-                  shape: _showAppBarTitle
-                      ? Border(
-                          bottom: BorderSide(
-                            color: getBorderColor(
-                              barColor(context),
-                              isDark:
-                                  Theme.of(context).brightness == Brightness.dark,
-                            ),
-                            width: 0.5,
-                          ),
-                        )
-                      : null,
+                  ),
                 )
-              : AppBar(
-                  elevation: _showAppBarTitle ? 2.0 : 0.0,
-                  shadowColor: _showAppBarTitle
-                      ? Colors.black.withValues(alpha: 0.05)
-                      : Colors.transparent,
-                  shape: _showAppBarTitle
-                      ? Border(
-                          bottom: BorderSide(
-                            color: getBorderColor(
-                              barColor(context),
-                              isDark:
-                                  Theme.of(context).brightness == Brightness.dark,
-                            ),
-                            width: 0.5,
-                          ),
-                        )
-                      : null,
-                  title: _showAppBarTitle
-                      ? Text(
-                          AppText.tr('all_notes'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18.0,
-                            letterSpacing: -1.0,
-                          ),
-                        )
-                      : null,
-                  centerTitle: true,
-                  actions: _isSearchMode
-                      ? <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: TextButton(
-                              onPressed: _exitSearchMode,
-                              child: Text(
-                                AppText.tr('cancel'),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ]
-                      : <Widget>[
-                          IconButton(
-                            icon: const Icon(Icons.search),
-                            onPressed: _enterSearchMode,
-                          ),
-                          PopupMenuButton<PopupItem>(
-                            icon: const Icon(Icons.more_vert),
-                            onSelected: ((valueSelected) {
-                              switch (valueSelected.value.toLowerCase()) {
-                                case "list":
-                                  _changeLayout('list');
-                                  break;
-                                case "gridlist":
-                                  _changeLayout('gridlist');
-                                  break;
-                                case "date":
-                                  _sortingBy('date');
-                                  break;
-                                case "alpha":
-                                  _sortingBy('alpha');
-                                  break;
-                                case "important":
-                                  _sortingBy('important');
-                                  break;
-                                case "category":
-                                  _sortingBy('category');
-                                  break;
-                                case "theme_light":
-                                  ThemeController.instance
-                                      .setThemeMode(ThemeMode.light);
-                                  break;
-                                case "theme_dark":
-                                  ThemeController.instance
-                                      .setThemeMode(ThemeMode.dark);
-                                  break;
-                                case "theme_system":
-                                  ThemeController.instance
-                                      .setThemeMode(ThemeMode.system);
-                                  break;
-                                case "en":
-                                case "fr":
-                                  _changeLanguage(valueSelected.value);
-                                  break;
-                                case "info":
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) =>
-                                        aboutInfo(
-                                      context: context,
-                                      packageInfo: _packageInfo,
-                                    ),
-                                  );
-                                  break;
-                              }
-                            }),
-                            itemBuilder: (BuildContext context) {
-                              final List<PopupItem> popupItems = [];
-                              menuItems
-                                  .forEach((String key, PopupItem popupItem) {
-                                popupItems.add(popupItem);
-                              });
-                              return popupItems.map((PopupItem popupItem) {
-                                return PopupMenuItem<PopupItem>(
-                                  value: popupItem,
-                                  height: popupItem.value == 'separator'
-                                      ? 8.0
-                                      : 28.0,
-                                  child: popupButton(
-                                    context: context,
-                                    popupItem: popupItem,
-                                    layout: _viewModel.viewLayout,
-                                    sort: _viewModel.sortBy,
-                                    lang: LocaleController.instance.language,
-                                  ),
-                                );
-                              }).toList();
-                            },
-                            padding: const EdgeInsets.only(right: 18.0),
-                          ),
-                        ],
-                ),
-          body: CustomScrollView(
-            controller: _scrollController,
-            slivers: <Widget>[
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(_sliverPadding + 6, _sliverPadding, _sliverPadding + 6, 0.0),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          AppText.tr('all_notes'),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 24.0,
-                            letterSpacing: -2.0,
-                          ),
-                        ),
-                      ),
-                      _viewModel.isInSelectionMode
-                      ? Flexible(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            _viewModel.selected.isEmpty
-                                ? AppText.tr('no_note_selected')
-                                : (_viewModel.selectedCount > 1
-                                ? (_viewModel.selectedCount ==
-                                _viewModel.notesCount
-                                ? AppText.tr(
-                              'all_notes_selected',
-                              <String, String>{
-                                'count':
-                                '${_viewModel.notesCount}',
-                              },
-                            )
-                                : AppText.tr('notes_selected', <
-                                String,
-                                String
-                            >{
-                              'count':
-                              '${_viewModel.selectedCount}',
-                              'total':
-                              '${_viewModel.notesCount}',
-                            }))
-                                : AppText.tr(
-                              'single_note_selected',
-                              <String, String>{
-                                'count':
-                                '${_viewModel.selectedCount}',
-                              },
-                            )),
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 12.0,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      : Text(
-                        '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+              : Text(
+                  '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(_sliverPadding),
-                sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
-              ),
-            ],
-          ),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(_sliverPadding),
+              sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
+            ),
+          ],
           floatingActionButtonLocation: const _FlushEndFabLocation(),
           floatingActionButton: HomeFab(
             isSearchMode: _isSearchMode,
@@ -606,9 +411,7 @@ class HomeState extends State<Home> {
             onReset: _clearSearch,
             onDelete: () async {
               if (!_viewModel.hasSelection) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppText.tr('no_note_selected'))),
-                );
+                // No action needed
               } else {
                 final bool? confirmDeletion = await getConfirmation(
                   context: context,
@@ -624,7 +427,6 @@ class HomeState extends State<Home> {
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),
-          bottomNavigationBar: null,
         );
       },
     );

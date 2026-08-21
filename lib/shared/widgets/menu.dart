@@ -40,82 +40,16 @@ Map<String, PopupItem> get menuItems {
       trailingIcon: true,
     ),
 
-    'sorting_separator': PopupItem(
+    'settings_separator': PopupItem(
       title: 'Separator',
       value: 'separator',
       icon: null,
     ),
-    'sorting_title': PopupItem(
-      title: AppText.tr('menu_sorting'),
-      value: 'header',
-      icon: null,
+    'settings': PopupItem(
+      title: AppText.tr('settings'),
+      value: 'settings',
+      icon: Icon(Icons.settings_outlined),
     ),
-    'date': PopupItem(
-      title: AppText.tr('menu_date'),
-      value: 'date',
-      icon: null,
-    ),
-    'alpha': PopupItem(
-      title: AppText.tr('menu_title'),
-      value: 'alpha',
-      icon: null,
-    ),
-    'important': PopupItem(
-      title: AppText.tr('menu_favorites'),
-      value: 'important',
-      icon: const Icon(Icons.bookmark, color: tanoAmber, size: 18.0),
-    ),
-    'category': PopupItem(
-      title: AppText.tr('menu_category'),
-      value: 'category',
-      icon: null,
-    ),
-
-    'theme_separator': PopupItem(
-      title: 'Separator',
-      value: 'separator',
-      icon: null,
-    ),
-    'theme_title': PopupItem(
-      title: AppText.tr('menu_theme'),
-      value: 'header',
-      icon: null,
-    ),
-    'theme_light': PopupItem(
-      title: AppText.tr('theme_light'),
-      value: 'theme_light',
-      icon: null,
-    ),
-    'theme_dark': PopupItem(
-      title: AppText.tr('theme_dark'),
-      value: 'theme_dark',
-      icon: null,
-    ),
-    'theme_system': PopupItem(
-      title: AppText.tr('theme_system'),
-      value: 'theme_system',
-      icon: null,
-    ),
-
-    'language_separator': PopupItem(
-      title: 'Separator',
-      value: 'separator',
-      icon: null,
-    ),
-    'language_title': PopupItem(
-      title: AppText.tr('menu_language'),
-      value: 'header',
-      icon: null,
-    ),
-    'en': PopupItem(title: AppText.tr('menu_english'), value: 'en', icon: null),
-    'fr': PopupItem(title: AppText.tr('menu_french'), value: 'fr', icon: null),
-
-    'info_separator': PopupItem(
-      title: 'Separator',
-      value: 'separator',
-      icon: null,
-    ),
-    'info': PopupItem(title: AppText.tr('about'), value: 'info', icon: null),
   };
 }
 
