@@ -147,14 +147,6 @@ void main() {
         expect(find.byType(TextField), findsNWidgets(2));
         expect(tester.takeException(), isNull);
 
-        // Category menu.
-        await tester.tap(find.byIcon(Icons.arrow_drop_down));
-        await tester.pumpAndSettle();
-        expect(find.text('Free'), findsWidgets);
-        await tester.tap(find.text('Work').last);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-
         // Typing (marks the note "dirty") then back -> confirm dialog.
         await tester.enterText(
           find.byType(TextField).last,

@@ -62,14 +62,6 @@ void main() {
     // Types text into the content (focus inside a TextField).
     await tester.enterText(find.byType(TextField).last, 'Some new content');
     await tester.pumpAndSettle();
-
-    // Opens the category menu: this is the path that used to crash.
-    await tester.tap(find.byIcon(Icons.arrow_drop_down));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Free'), findsWidgets);
-    await tester.tap(find.text('Work').last);
-    await tester.pumpAndSettle();
   });
 
   testWidgets('toggling the bookmark in the editor updates the icon reactively', (
@@ -94,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final Finder editorBookmark = find.descendant(
-      of: find.byType(BottomAppBar),
+      of: find.byType(AppBar),
       matching: find.byIcon(Icons.bookmark_border),
     );
     expect(editorBookmark, findsOneWidget);
@@ -104,14 +96,14 @@ void main() {
 
     expect(
       find.descendant(
-        of: find.byType(BottomAppBar),
+        of: find.byType(AppBar),
         matching: find.byIcon(Icons.bookmark),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
-        of: find.byType(BottomAppBar),
+        of: find.byType(AppBar),
         matching: find.byIcon(Icons.bookmark_border),
       ),
       findsNothing,

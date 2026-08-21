@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
-import 'package:tano/features/notes/widgets/search_fab.dart';
+import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -17,37 +17,6 @@ import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
-
-/// Places the floating action button flush against the bottom-right corner
-/// of the screen (no margin).
-class _FlushEndFabLocation extends StandardFabLocation {
-  static const padding = 24;
-  const _FlushEndFabLocation();
-
-  @override
-  double getOffsetX(
-    ScaffoldPrelayoutGeometry scaffoldGeometry,
-    double adjustment,
-  ) {
-    return scaffoldGeometry.scaffoldSize.width -
-        scaffoldGeometry.floatingActionButtonSize.width - padding;
-  }
-
-  @override
-  double getOffsetY(
-    ScaffoldPrelayoutGeometry scaffoldGeometry,
-    double adjustment,
-  ) {
-    double offset = scaffoldGeometry.contentBottom -
-        scaffoldGeometry.floatingActionButtonSize.height -
-        padding;
-    if (scaffoldGeometry.snackBarSize.height > 0.0) {
-      // Push the FAB up so it stays above the SnackBar.
-      offset -= (scaffoldGeometry.snackBarSize.height - 12.0);
-    }
-    return offset;
-  }
-}
 
 class Home extends StatefulWidget {
   const Home({super.key, required this.repository, this.initialNotes});
@@ -396,8 +365,8 @@ class HomeState extends State<Home> {
               sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
             ),
           ],
-          floatingActionButtonLocation: const _FlushEndFabLocation(),
-          floatingActionButton: HomeFab(
+          floatingActionButtonLocation: const FlushEndFabLocation(),
+          floatingActionButton: AppFab(
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
             controller: _searchController,
