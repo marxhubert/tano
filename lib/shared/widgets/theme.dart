@@ -63,6 +63,16 @@ Color getBorderColor(Color background, {bool isDark = false}) {
   return Color.lerp(background, isDark ? Colors.white : Colors.black, 0.12)!;
 }
 
+/// Helper to get an even more subtle version of the note color for the page background.
+Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) {
+  if (isDark) {
+    // Mix the deep hue with the dark background to dim it further
+    return Color.lerp(noteColor, darkBackground, 0.7)!;
+  }
+  // Mix the pastel hue with white to make it even lighter
+  return Color.lerp(noteColor, Colors.white, 0.7)!;
+}
+
 /// Dynamic surface color for bars and background.
 Color barColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
