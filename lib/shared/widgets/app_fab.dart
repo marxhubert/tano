@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-/// The unified FAB that morphs between 4 states:
+enum FabVerticalMenu { none, save, color, more }
+
+/// The unified FAB that morphs between 5 states:
 /// 1. Home Add (circle icon)
 /// 2. Home Search (expanded text field)
 /// 3. Home Selection (expanded action bar with 3 buttons)
-/// 4. Editor Mode (expanded by default, manual toggle when keyboard is open)
+/// 4. Editor Mode (expanded by default)
+/// 5. Vertical Menu (expanded upwards to show options like colors)
 class AppFab extends StatefulWidget {
   const AppFab({
     super.key,
@@ -25,6 +28,8 @@ class AppFab extends StatefulWidget {
     this.onSave,
     this.onColorLens,
     this.onMore,
+    this.onColorSelected,
+    this.currentCategory,
   });
 
   final bool isSearchMode;
@@ -42,14 +47,17 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onSave;
   final VoidCallback? onColorLens;
   final VoidCallback? onMore;
+  final ValueChanged<String>? onColorSelected;
+  final String? currentCategory;
 
   @override
-  State<AppFab> createState() => _AppFabState();
+  State<AppFab> createState() => AppFabState();
 }
 
-class _AppFabState extends State<AppFab> {
+class AppFabState extends State<AppFab> {
   bool? _isManuallyExpanded;
   bool _wasKeyboardClosed = true;
+  FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
 
   @override
   void initState() {
@@ -58,6 +66,23 @@ class _AppFabState extends State<AppFab> {
     if (widget.isEditorMode && widget.isAddMode) {
       _isManuallyExpanded = false;
     }
+  }
+
+  void closeVerticalMenu() {
+    if (_verticalMenu != FabVerticalMenu.none) {
+      setState(() {
+        _verticalMenu = FabVerticalMenu.none;
+      });
+    }
+  }
+
+  void _toggleVerticalMenu(FabVerticalMenu menu) {
+    setState(() {
+      _verticalMenu = (_verticalMenu == menu) ? FabVerticalMenu.none : menu;
+      if (_verticalMenu != FabVerticalMenu.none) {
+        _isManuallyExpanded = true;
+      }
+    });
   }
 
   @override
@@ -70,52 +95,59 @@ class _AppFabState extends State<AppFab> {
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
 
-    // Reset manual override when keyboard state changes to keep behavior intuitive
     if (isKeyboardClosed != _wasKeyboardClosed) {
       _isManuallyExpanded = null;
       _wasKeyboardClosed = isKeyboardClosed;
     }
 
-    // Home logic: expands in Search or Selection
     bool isExpanded = widget.isSearchMode || widget.isSelectionMode;
-
-    // Editor logic: manual choice takes priority, otherwise follows keyboard state
     if (widget.isEditorMode) {
       isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
     }
 
-    final double targetWidth =
-        isKeyboardClosed ? expandedWidth * 0.9 : expandedWidth;
+    // Rule: Any horizontal collapse must close the vertical menu
+    if (!isExpanded && _verticalMenu != FabVerticalMenu.none) {
+      _verticalMenu = FabVerticalMenu.none;
+    }
+
+    final double targetWidth = (isKeyboardClosed && _verticalMenu == FabVerticalMenu.none)
+        ? expandedWidth * 0.9
+        : expandedWidth * 0.95;
     final double currentWidth = isExpanded ? targetWidth : btnHeight;
 
-    // Position adjustment
+    // Vertical Expansion Height
+    double currentHeight = widget.isSearchMode ? expandedHeight : btnHeight;
+    const double verticalMenuHeight = 200.0;
+    if (_verticalMenu != FabVerticalMenu.none) {
+      currentHeight += verticalMenuHeight;
+    }
+
     final double tx =
         isExpanded ? ((currentWidth - screenWidth) / 2 + btnMargin) : 0.0;
 
-    // Vertical translation:
-    // - Search: slightly higher when keyboard is open for visibility.
-    // - Editor: slightly lower when keyboard is open to stay out of the way.
     double ty = 0.0;
     if (!isKeyboardClosed) {
       if (widget.isSearchMode) {
         ty = btnMargin - 8.0;
       } else if (widget.isEditorMode) {
-        ty = 12.0; // Lower it by 12px
+        ty = 12.0;
       }
     }
+
+    final double borderRadiusValue = _verticalMenu != FabVerticalMenu.none
+        ? 28.0
+        : (widget.isSearchMode ? expandedHeight : btnHeight) / 2;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
-      height: widget.isSearchMode ? expandedHeight : btnHeight,
+      height: currentHeight,
       width: currentWidth,
       clipBehavior: Clip.hardEdge,
-      alignment: Alignment.center,
       transform: Matrix4.translationValues(tx, ty, 0.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(
-            (widget.isSearchMode ? expandedHeight : btnHeight) / 2),
+        borderRadius: BorderRadius.circular(borderRadiusValue),
         border: Border.all(
           color: getBorderColor(
             Theme.of(context).colorScheme.primary,
@@ -132,7 +164,6 @@ class _AppFabState extends State<AppFab> {
         ],
       ),
       child: LayoutBuilder(builder: (context, constraints) {
-        // Only show content if we reached 75% of the expansion progress
         final double expansionProgress =
             (constraints.maxWidth - btnHeight) / (targetWidth - btnHeight);
         final bool showContent = !isExpanded || expansionProgress > 0.75;
@@ -140,15 +171,107 @@ class _AppFabState extends State<AppFab> {
         return AnimatedOpacity(
           opacity: showContent ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 100),
-          child: _buildContent(context, isExpanded, targetWidth),
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              if (_verticalMenu != FabVerticalMenu.none)
+                Positioned(
+                  bottom: widget.isSearchMode ? expandedHeight : btnHeight,
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: _buildVerticalMenuContent(context),
+                ),
+              SizedBox(
+                height: widget.isSearchMode ? expandedHeight : btnHeight,
+                child: _buildMainContent(context, isExpanded, targetWidth),
+              ),
+            ],
+          ),
         );
       }),
     );
   }
 
-  Widget _buildContent(
+  Widget _buildVerticalMenuContent(BuildContext context) {
+    if (_verticalMenu == FabVerticalMenu.color) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppText.tr('menu_theme'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14.0,
+              ),
+            ),
+            const SizedBox(height: 16.0),
+            Expanded(
+              child: GridView.builder(
+                padding: EdgeInsets.zero,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 16.0,
+                  crossAxisSpacing: 16.0,
+                  childAspectRatio: 1.8,
+                ),
+                itemCount: TanoPastels.all.length,
+                itemBuilder: (context, index) {
+                  final pair = TanoPastels.all[index];
+                  final bool isSelected =
+                      pair.name == (widget.currentCategory ?? 'nuage');
+
+                  return GestureDetector(
+                    onTap: () {
+                      widget.onColorSelected?.call(pair.name);
+                    },
+                    child: Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected ? tanoAmber : Colors.white30,
+                          width: isSelected ? 2.0 : 0.6,
+                        ),
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      child: Stack(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: Container(color: pair.light)),
+                              Expanded(child: Container(color: pair.dark)),
+                            ],
+                          ),
+                          if (isSelected)
+                            Container(
+                              color: Colors.black45,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.check_circle,
+                                  color: tanoAmber,
+                                  size: 20.0,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildMainContent(
       BuildContext context, bool isExpanded, double targetWidth) {
-    // --- Editor Mode ---
     if (widget.isEditorMode) {
       if (!isExpanded) {
         return IconButton(
@@ -167,21 +290,40 @@ class _AppFabState extends State<AppFab> {
             children: [
               IconButton(
                 icon: const Icon(Icons.add, color: Colors.white),
-                onPressed: widget.onSave,
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  widget.onSave?.call();
+                },
               ),
               IconButton(
-                icon:
-                    const Icon(Icons.color_lens_outlined, color: Colors.white),
-                onPressed: widget.onColorLens,
+                icon: Icon(
+                  Icons.color_lens_outlined,
+                  color: _verticalMenu == FabVerticalMenu.color
+                      ? tanoAmber
+                      : Colors.white,
+                ),
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  _toggleVerticalMenu(FabVerticalMenu.color);
+                  widget.onColorLens?.call();
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.more_vert, color: Colors.white),
-                onPressed: widget.onMore,
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  widget.onMore?.call();
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward_ios,
                     size: 18.0, color: Colors.white),
-                onPressed: () => setState(() => _isManuallyExpanded = false),
+                onPressed: () {
+                  setState(() {
+                    _verticalMenu = FabVerticalMenu.none;
+                    _isManuallyExpanded = false;
+                  });
+                },
               ),
             ],
           ),
@@ -189,7 +331,6 @@ class _AppFabState extends State<AppFab> {
       );
     }
 
-    // --- Home: Selection Mode ---
     if (widget.isSelectionMode) {
       final String deleteLabel = AppText.tr('delete');
       final String capitalizedDelete = deleteLabel.isNotEmpty
@@ -225,7 +366,6 @@ class _AppFabState extends State<AppFab> {
       );
     }
 
-    // --- Home: Search Mode ---
     if (widget.isSearchMode) {
       return Container(
         padding: const EdgeInsets.only(left: 12.0),
@@ -264,7 +404,6 @@ class _AppFabState extends State<AppFab> {
       );
     }
 
-    // --- Home: Default (Add) ---
     return IconButton(
       icon: const Icon(Icons.add, color: Colors.white),
       onPressed: widget.onAdd,

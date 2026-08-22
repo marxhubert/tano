@@ -90,6 +90,7 @@ class AppText {
     'home': 'Home',
     'about': 'About',
     'settings': 'Settings',
+    'colour': 'Colour',
     // Menu
     'menu_display': 'Display',
     'menu_list': 'List',
@@ -108,14 +109,6 @@ class AppText {
     'theme_dark': 'Dark',
     'theme_system': 'System',
     'legacy_version': 'v 0.1.0',
-    // Categories
-    'category_note': 'Note',
-    'category_work': 'Work',
-    'category_personal': 'Personal',
-    'category_travel': 'Travel',
-    'category_life': 'Life',
-    'category_project': 'Project',
-    'category_none': 'Free',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -164,6 +157,7 @@ class AppText {
     'home': 'Accueil',
     'about': 'À propos',
     'settings': 'Paramètres',
+    'colour': 'Couleur',
     // Menu
     'menu_display': 'Affichage',
     'menu_list': 'Liste',
@@ -182,14 +176,6 @@ class AppText {
     'theme_dark': 'Sombre',
     'theme_system': 'Système',
     'legacy_version': 'v 0.1.0',
-    // Categories
-    'category_note': 'Note',
-    'category_work': 'Travail',
-    'category_personal': 'Personnel',
-    'category_travel': 'Voyage',
-    'category_life': 'Vie',
-    'category_project': 'Projet',
-    'category_none': 'Libre',
   };
 
   /// Returns the string associated with [key] in the current language,

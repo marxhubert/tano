@@ -53,62 +53,6 @@ Map<String, PopupItem> get menuItems {
   };
 }
 
-/// Category list items, resolved according to the current language.
-Map<String, PopupItem> get categoryElements {
-  return <String, PopupItem>{
-    'neutral': PopupItem(
-      title: AppText.tr('category_none'),
-      icon: const Icon(Icons.bookmark_border, size: 18.0),
-      value: 'neutral',
-    ),
-    'action': PopupItem(
-      title: AppText.tr('category_work'),
-      icon: const Icon(Icons.bookmark, color: tanoTeal, size: 18.0),
-      value: 'action',
-    ),
-    'success': PopupItem(
-      title: AppText.tr('category_note'),
-      icon: const Icon(Icons.bookmark, color: Colors.green, size: 18.0),
-      value: 'success',
-    ),
-    'warning': PopupItem(
-      title: AppText.tr('category_personal'),
-      icon: const Icon(Icons.bookmark, color: Colors.orange, size: 18.0),
-      value: 'warning',
-    ),
-    'error': PopupItem(
-      title: AppText.tr('category_travel'),
-      icon: const Icon(Icons.bookmark, color: Colors.red, size: 18.0),
-      value: 'error',
-    ),
-    'purple': PopupItem(
-      title: AppText.tr('category_life'),
-      icon: const Icon(Icons.bookmark, color: Colors.purple, size: 18.0),
-      value: 'purple',
-    ),
-    'yellow': PopupItem(
-      title: AppText.tr('category_project'),
-      icon: const Icon(Icons.bookmark, color: Colors.yellow, size: 18.0),
-      value: 'yellow',
-    ),
-    'reference': PopupItem(
-      title: 'Reference',
-      icon: const Icon(Icons.bookmark, color: Colors.blue, size: 18.0),
-      value: 'reference',
-    ),
-    'subtle': PopupItem(
-      title: 'Subtle',
-      icon: const Icon(Icons.bookmark, color: Colors.blueGrey, size: 18.0),
-      value: 'subtle',
-    ),
-    'archive': PopupItem(
-      title: 'Archive',
-      icon: const Icon(Icons.bookmark, color: Colors.grey, size: 18.0),
-      value: 'archive',
-    ),
-  };
-}
-
 Widget popupButton({
   required BuildContext context,
   required PopupItem popupItem,

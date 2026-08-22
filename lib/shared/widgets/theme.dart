@@ -39,6 +39,19 @@ class TanoPastels {
   static const sauge = (light: Color(0xFFF1F8E9), dark: Color(0xFF1B5E20));
   static const bonbon = (light: Color(0xFFFCE4EC), dark: Color(0xFFAD1457));
   static const nuage = (light: Color(0xFFECEFF1), dark: Color(0xFF263238));
+
+  static List<({Color light, Color dark, String name})> get all => [
+        (light: menthe.light, dark: menthe.dark, name: 'menthe'),
+        (light: citron.light, dark: citron.dark, name: 'citron'),
+        (light: peche.light, dark: peche.dark, name: 'peche'),
+        (light: lavande.light, dark: lavande.dark, name: 'lavande'),
+        (light: rose.light, dark: rose.dark, name: 'rose'),
+        (light: azur.light, dark: azur.dark, name: 'azur'),
+        (light: sable.light, dark: sable.dark, name: 'sable'),
+        (light: sauge.light, dark: sauge.dark, name: 'sauge'),
+        (light: bonbon.light, dark: bonbon.dark, name: 'bonbon'),
+        (light: nuage.light, dark: nuage.dark, name: 'nuage'),
+      ];
 }
 
 /// Helper to get the correct text color based on background luminance.
@@ -109,10 +122,6 @@ Color chipFillColor(BuildContext context) {
 }
 
 /// Helper for category-based colors (States or Pastels).
-///
-/// TODO: This hardcoded mapping will be removed.
-/// Future evolution: Let the user pick a color directly from the TanoPastels/States 
-/// palette and associate their own labels/meaning to it in the settings.
 Color themeCategory(
   String value,
   bool withShade, {
@@ -122,33 +131,26 @@ Color themeCategory(
 
   if (!withShade) {
     // --- State colors (Strong colors for borders/status) ---
-    // TODO: Map this to user-defined categories in the future.
     switch (value) {
       case 'neutral':
-      case 'none':
+      case 'nuage':
         return isDark ? TanoStates.neutral.dark : TanoStates.neutral.light;
       case 'action':
-      case 'work':
       case 'menthe':
         return isDark ? TanoStates.action.dark : TanoStates.action.light;
       case 'success':
-      case 'note':
       case 'sauge':
         return isDark ? TanoStates.success.dark : TanoStates.success.light;
       case 'warning':
-      case 'personal':
       case 'peche':
         return isDark ? TanoStates.warning.dark : TanoStates.warning.light;
       case 'error':
-      case 'travel':
       case 'rose':
         return isDark ? TanoStates.error.dark : TanoStates.error.light;
       case 'purple':
-      case 'life':
       case 'lavande':
         return isDark ? TanoStates.purple.dark : TanoStates.purple.light;
       case 'yellow':
-      case 'project':
       case 'citron':
         return isDark ? TanoStates.yellow.dark : TanoStates.yellow.light;
       case 'reference':
@@ -158,7 +160,6 @@ Color themeCategory(
       case 'sable':
         return isDark ? TanoStates.subtle.dark : TanoStates.subtle.light;
       case 'archive':
-      case 'nuage':
         return isDark ? TanoStates.archive.dark : TanoStates.archive.light;
       default:
         return Colors.grey.shade600;
@@ -166,27 +167,20 @@ Color themeCategory(
   }
 
   // --- Pastel colors (Subtle backgrounds) ---
-  // If the value is a state name, map it to its logical pastel equivalent.
-  // TODO: This explicit mapping will be replaced by direct color selection.
   switch (value) {
     case 'action':
-    case 'work':
     case 'menthe':
       return isDark ? TanoPastels.menthe.dark : TanoPastels.menthe.light;
     case 'yellow':
-    case 'project':
     case 'citron':
       return isDark ? TanoPastels.citron.dark : TanoPastels.citron.light;
     case 'warning':
-    case 'personal':
     case 'peche':
       return isDark ? TanoPastels.peche.dark : TanoPastels.peche.light;
     case 'purple':
-    case 'life':
     case 'lavande':
       return isDark ? TanoPastels.lavande.dark : TanoPastels.lavande.light;
     case 'error':
-    case 'travel':
     case 'rose':
       return isDark ? TanoPastels.rose.dark : TanoPastels.rose.light;
     case 'reference':
@@ -196,17 +190,14 @@ Color themeCategory(
     case 'sable':
       return isDark ? TanoPastels.sable.dark : TanoPastels.sable.light;
     case 'success':
-    case 'note':
     case 'sauge':
       return isDark ? TanoPastels.sauge.dark : TanoPastels.sauge.light;
     case 'bonbon':
       return isDark ? TanoPastels.bonbon.dark : TanoPastels.bonbon.light;
     case 'neutral':
     case 'archive':
-    case 'none':
     case 'nuage':
-      return isDark ? TanoPastels.nuage.dark : TanoPastels.nuage.light;
     default:
-      return isDark ? Colors.grey.shade800 : Colors.white;
+      return isDark ? TanoPastels.nuage.dark : TanoPastels.nuage.light;
   }
 }
