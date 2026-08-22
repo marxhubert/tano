@@ -130,8 +130,18 @@ class _EditNoteState extends State<EditNote> {
       child: ListenableBuilder(
         listenable: _viewModel,
         builder: (BuildContext context, Widget? child) {
+          final bool isDark = Theme.of(context).brightness == Brightness.dark;
+          final Color noteColor = themeCategory(
+            _viewModel.category,
+            true,
+            brightness: Theme.of(context).brightness,
+          );
+          final Color immersiveBg =
+              getImmersiveBackgroundColor(noteColor, isDark: isDark);
+
           return PageScaffold(
             scaffoldKey: _scaffoldState,
+            backgroundColor: immersiveBg,
             title: widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
             titleController: _titleController,
             titleHint: AppText.tr('title_here'),
@@ -155,7 +165,7 @@ class _EditNoteState extends State<EditNote> {
             ],
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(12.0),
                 sliver: SliverToBoxAdapter(
                   child: TextField(
                     maxLines: null,

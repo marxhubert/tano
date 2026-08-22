@@ -52,6 +52,7 @@ class PageScaffold extends StatefulWidget {
     this.onPop,
     this.titleController,
     this.titleHint,
+    this.backgroundColor,
   });
 
   final String title;
@@ -65,6 +66,7 @@ class PageScaffold extends StatefulWidget {
   final VoidCallback? onPop;
   final TextEditingController? titleController;
   final String? titleHint;
+  final Color? backgroundColor;
 
   @override
   State<PageScaffold> createState() => _PageScaffoldState();
@@ -108,7 +110,10 @@ class _PageScaffoldState extends State<PageScaffold> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bgColor = barColor(context);
+    final Color barBgColor = barColor(context);
+    final Color scaffoldBgColor =
+        widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
+    final Color textColor = getTextColor(scaffoldBgColor);
 
     final String appBarTitle = widget.titleController != null &&
             widget.titleController!.text.isNotEmpty
@@ -117,8 +122,10 @@ class _PageScaffoldState extends State<PageScaffold> {
 
     return Scaffold(
       key: widget.scaffoldKey,
+      backgroundColor: scaffoldBgColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        backgroundColor: scaffoldBgColor,
         titleSpacing: widget.isHome ? _appBarPadding : 0.0,
         elevation: _showAppBarTitle ? 2.0 : 0.0,
         shadowColor: _showAppBarTitle
@@ -127,7 +134,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         shape: _showAppBarTitle
             ? Border(
                 bottom: BorderSide(
-                  color: getBorderColor(bgColor, isDark: isDark),
+                  color: getBorderColor(scaffoldBgColor, isDark: isDark),
                   width: 0.5,
                 ),
               )
@@ -136,7 +143,8 @@ class _PageScaffoldState extends State<PageScaffold> {
             ? Padding(
                 padding: const EdgeInsets.only(left: 6.0),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 20.0),
+                  icon: Icon(Icons.arrow_back_ios_new,
+                      size: 20.0, color: textColor),
                   onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
                 ),
               )
@@ -144,10 +152,11 @@ class _PageScaffoldState extends State<PageScaffold> {
         title: _showAppBarTitle
             ? Text(
                 appBarTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18.0,
                   letterSpacing: -1.0,
+                  color: textColor,
                 ),
                 overflow: TextOverflow.ellipsis,
               )
@@ -187,14 +196,16 @@ class _PageScaffoldState extends State<PageScaffold> {
                             maxLength: 100,
                             textInputAction: TextInputAction.next,
                             textCapitalization: TextCapitalization.sentences,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 24.0,
                               letterSpacing: -2.0,
+                              color: textColor,
                             ),
                             decoration: InputDecoration(
                               hintText: widget.titleHint,
-                              hintStyle: const TextStyle(color: Colors.grey),
+                              hintStyle: TextStyle(
+                                  color: textColor.withValues(alpha: 0.5)),
                               border: InputBorder.none,
                               counter: const Offstage(),
                               contentPadding: EdgeInsets.zero,
@@ -203,10 +214,11 @@ class _PageScaffoldState extends State<PageScaffold> {
                           )
                         : Text(
                             widget.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 24.0,
                               letterSpacing: -2.0,
+                              color: textColor,
                             ),
                           ),
                   ),
