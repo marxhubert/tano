@@ -73,7 +73,7 @@ class NoteGridView extends StatelessWidget {
                 Text(
                   formatNoteDate(note.date),
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     fontSize: 8.0,
                     color: textColor.withValues(alpha: 0.6),
                   ),

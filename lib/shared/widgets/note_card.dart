@@ -57,11 +57,11 @@ class NoteCard extends StatelessWidget {
           // The visual "Important" bookmark behind the content
           if (note.important)
             Positioned(
-              top: -6.0,
+              top: -4.0,
               right: 0.0,
               child: Icon(
                 Icons.bookmark,
-                size: 32.0,
+                size: 20.0,
                 color: tanoAmber.withValues(alpha: 0.8),
               ),
             ),
