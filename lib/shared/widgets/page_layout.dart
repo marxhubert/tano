@@ -4,7 +4,7 @@ import 'package:tano/shared/widgets/theme.dart';
 /// Places the floating action button flush against the bottom-right corner
 /// of the screen (no margin).
 class FlushEndFabLocation extends StandardFabLocation {
-  static const padding = 24;
+  static const padding = 24.0;
   const FlushEndFabLocation();
 
   @override
@@ -36,8 +36,8 @@ class FlushEndFabLocation extends StandardFabLocation {
 /// A shared scaffold that handles:
 /// 1. A dynamic AppBar that shows the title only when scrolling down.
 /// 2. A back button (arrow_back_ios_new) for non-home pages.
-/// 3. Unified 18px horizontal padding for AppBar and titles.
-/// 4. Unified 12px padding for the body content.
+/// 3. Unified horizontal padding for AppBar and titles.
+/// 4. Unified padding for the body content.
 class PageScaffold extends StatefulWidget {
   const PageScaffold({
     super.key,
@@ -76,9 +76,6 @@ class _PageScaffoldState extends State<PageScaffold> {
   final ScrollController _scrollController = ScrollController();
   bool _showAppBarTitle = false;
 
-  static const double _appBarPadding = 18.0;
-  static const double _bodyPadding = 12.0;
-
   @override
   void initState() {
     super.initState();
@@ -115,7 +112,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = getTextColor(scaffoldBgColor);
 
-    final String appBarTitle = widget.titleController != null &&
+    final String appBarTitleText = widget.titleController != null &&
             widget.titleController!.text.isNotEmpty
         ? widget.titleController!.text
         : widget.title;
@@ -126,7 +123,7 @@ class _PageScaffoldState extends State<PageScaffold> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: scaffoldBgColor,
-        titleSpacing: widget.isHome ? _appBarPadding : 0.0,
+        titleSpacing: widget.isHome ? appPaddingLarge : 0.0,
         elevation: _showAppBarTitle ? 2.0 : 0.0,
         shadowColor: _showAppBarTitle
             ? Colors.black.withValues(alpha: 0.05)
@@ -141,7 +138,7 @@ class _PageScaffoldState extends State<PageScaffold> {
             : null,
         leading: !widget.isHome
             ? Padding(
-                padding: const EdgeInsets.only(left: 6.0),
+                padding: const EdgeInsets.only(left: appPaddingSmall),
                 child: IconButton(
                   icon: Icon(Icons.arrow_back_ios_new,
                       size: 20.0, color: textColor),
@@ -151,7 +148,7 @@ class _PageScaffoldState extends State<PageScaffold> {
             : null,
         title: _showAppBarTitle
             ? Text(
-                appBarTitle,
+                appBarTitleText,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18.0,
@@ -165,7 +162,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         actions: widget.actions != null
             ? widget.actions!
                 .map((a) => Padding(
-                      padding: const EdgeInsets.only(right: 6.0),
+                      padding: const EdgeInsets.only(right: appPaddingSmall),
                       child: a,
                     ))
                 .toList()
@@ -177,9 +174,9 @@ class _PageScaffoldState extends State<PageScaffold> {
           // Big Title in the body
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
-              _appBarPadding,
-              _bodyPadding,
-              _appBarPadding,
+              appPaddingLarge,
+              appPaddingMedium,
+              appPaddingLarge,
               0.0,
             ),
             sliver: SliverToBoxAdapter(
@@ -188,39 +185,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                 textBaseline: TextBaseline.alphabetic,
                 children: <Widget>[
                   Expanded(
-                    child: widget.titleController != null
-                        ? TextField(
-                            controller: widget.titleController,
-                            maxLines: 3,
-                            minLines: 1,
-                            maxLength: 100,
-                            textInputAction: TextInputAction.next,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 24.0,
-                              letterSpacing: -2.0,
-                              color: textColor,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: widget.titleHint,
-                              hintStyle: TextStyle(
-                                  color: textColor.withValues(alpha: 0.5)),
-                              border: InputBorder.none,
-                              counter: const Offstage(),
-                              contentPadding: EdgeInsets.zero,
-                              isDense: true,
-                            ),
-                          )
-                        : Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 24.0,
-                              letterSpacing: -2.0,
-                              color: textColor,
-                            ),
-                          ),
+                    child: _buildTitleField(textColor),
                   ),
                   if (widget.headerTrailing != null) widget.headerTrailing!,
                 ],
@@ -233,6 +198,42 @@ class _PageScaffoldState extends State<PageScaffold> {
       ),
       floatingActionButton: widget.floatingActionButton,
       floatingActionButtonLocation: widget.floatingActionButtonLocation,
+    );
+  }
+
+  Widget _buildTitleField(Color textColor) {
+    if (widget.titleController != null) {
+      return TextField(
+        controller: widget.titleController,
+        maxLines: 3,
+        minLines: 1,
+        maxLength: 100,
+        textInputAction: TextInputAction.next,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 24.0,
+          letterSpacing: -2.0,
+          color: textColor,
+        ),
+        decoration: InputDecoration(
+          hintText: widget.titleHint,
+          hintStyle: TextStyle(color: textColor.withValues(alpha: 0.5)),
+          border: InputBorder.none,
+          counter: const Offstage(),
+          contentPadding: EdgeInsets.zero,
+          isDense: true,
+        ),
+      );
+    }
+    return Text(
+      widget.title,
+      style: TextStyle(
+        fontWeight: FontWeight.w800,
+        fontSize: 24.0,
+        letterSpacing: -2.0,
+        color: textColor,
+      ),
     );
   }
 }
