@@ -91,6 +91,10 @@ class AppText {
     'about': 'About',
     'settings': 'Settings',
     'colour': 'Colour',
+    'option_image': 'Choose image',
+    'option_checklist': 'Checklist',
+    'option_link': 'Link a note',
+    'option_attachment': 'Attachment',
     // Menu
     'menu_display': 'Display',
     'menu_list': 'List',
@@ -158,6 +162,10 @@ class AppText {
     'about': 'À propos',
     'settings': 'Paramètres',
     'colour': 'Couleur',
+    'option_image': 'Choisir image',
+    'option_checklist': 'Checklist',
+    'option_link': 'Lier une note',
+    'option_attachment': 'Pièce jointe',
     // Menu
     'menu_display': 'Affichage',
     'menu_list': 'Liste',
