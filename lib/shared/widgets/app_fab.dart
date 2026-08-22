@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 /// The unified FAB that morphs between 4 states:
 /// 1. Home Add (circle icon)
@@ -12,6 +13,7 @@ class AppFab extends StatefulWidget {
     this.isSearchMode = false,
     this.isSelectionMode = false,
     this.isEditorMode = false,
+    this.isAddMode = false,
     this.controller,
     this.focusNode,
     this.onAdd,
@@ -28,6 +30,7 @@ class AppFab extends StatefulWidget {
   final bool isSearchMode;
   final bool isSelectionMode;
   final bool isEditorMode;
+  final bool isAddMode;
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final VoidCallback? onAdd;
@@ -45,7 +48,17 @@ class AppFab extends StatefulWidget {
 }
 
 class _AppFabState extends State<AppFab> {
-  bool _isManuallyExpanded = false;
+  bool? _isManuallyExpanded;
+  bool _wasKeyboardClosed = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // In Editor mode, we start collapsed if it's a new note (add mode).
+    if (widget.isEditorMode && widget.isAddMode) {
+      _isManuallyExpanded = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,22 +67,42 @@ class _AppFabState extends State<AppFab> {
     final double btnHeight = 56.0;
     final double expandedHeight = 48.0;
     final double expandedWidth = screenWidth - btnMargin;
+
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
+
+    // Reset manual override when keyboard state changes to keep behavior intuitive
+    if (isKeyboardClosed != _wasKeyboardClosed) {
+      _isManuallyExpanded = null;
+      _wasKeyboardClosed = isKeyboardClosed;
+    }
 
     // Home logic: expands in Search or Selection
     bool isExpanded = widget.isSearchMode || widget.isSelectionMode;
 
-    // Editor logic: expanded by default if keyboard is closed, or manually toggled if keyboard is open
+    // Editor logic: manual choice takes priority, otherwise follows keyboard state
     if (widget.isEditorMode) {
-      isExpanded = isKeyboardClosed || _isManuallyExpanded;
+      isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
     }
 
-    final double targetWidth = isKeyboardClosed ? expandedWidth * 0.9 : expandedWidth;
+    final double targetWidth =
+        isKeyboardClosed ? expandedWidth * 0.9 : expandedWidth;
     final double currentWidth = isExpanded ? targetWidth : btnHeight;
 
     // Position adjustment
-    final double tx = isExpanded ? ((currentWidth - screenWidth) / 2 + btnMargin) : 0.0;
-    final double ty = (widget.isSearchMode && !isKeyboardClosed) ? btnMargin - 8.0 : 0.0;
+    final double tx =
+        isExpanded ? ((currentWidth - screenWidth) / 2 + btnMargin) : 0.0;
+
+    // Vertical translation:
+    // - Search: slightly higher when keyboard is open for visibility.
+    // - Editor: slightly lower when keyboard is open to stay out of the way.
+    double ty = 0.0;
+    if (!isKeyboardClosed) {
+      if (widget.isSearchMode) {
+        ty = btnMargin - 8.0;
+      } else if (widget.isEditorMode) {
+        ty = 12.0; // Lower it by 12px
+      }
+    }
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -81,22 +114,40 @@ class _AppFabState extends State<AppFab> {
       transform: Matrix4.translationValues(tx, ty, 0.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular((widget.isSearchMode ? expandedHeight : btnHeight) / 2),
-        boxShadow: isExpanded
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
+        borderRadius: BorderRadius.circular(
+            (widget.isSearchMode ? expandedHeight : btnHeight) / 2),
+        border: Border.all(
+          color: getBorderColor(
+            Theme.of(context).colorScheme.primary,
+            isDark: Theme.of(context).brightness == Brightness.dark,
+          ),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: _buildContent(context, isExpanded),
+      child: LayoutBuilder(builder: (context, constraints) {
+        // Only show content if we reached 75% of the expansion progress
+        final double expansionProgress =
+            (constraints.maxWidth - btnHeight) / (targetWidth - btnHeight);
+        final bool showContent = !isExpanded || expansionProgress > 0.75;
+
+        return AnimatedOpacity(
+          opacity: showContent ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 100),
+          child: _buildContent(context, isExpanded, targetWidth),
+        );
+      }),
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isExpanded) {
+  Widget _buildContent(
+      BuildContext context, bool isExpanded, double targetWidth) {
     // --- Editor Mode ---
     if (widget.isEditorMode) {
       if (!isExpanded) {
@@ -106,28 +157,35 @@ class _AppFabState extends State<AppFab> {
         );
       }
 
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: widget.onSave,
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: targetWidth,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add, color: Colors.white),
+                onPressed: widget.onSave,
+              ),
+              IconButton(
+                icon:
+                    const Icon(Icons.color_lens_outlined, color: Colors.white),
+                onPressed: widget.onColorLens,
+              ),
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onPressed: widget.onMore,
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward_ios,
+                    size: 18.0, color: Colors.white),
+                onPressed: () => setState(() => _isManuallyExpanded = false),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.color_lens_outlined, color: Colors.white),
-            onPressed: widget.onColorLens,
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: widget.onMore,
-          ),
-          // Collapser shown only when keyboard is open
-          if (MediaQuery.of(context).viewInsets.bottom > 0)
-            IconButton(
-              icon: const Icon(Icons.chevron_right, color: Colors.white),
-              onPressed: () => setState(() => _isManuallyExpanded = false),
-            ),
-        ],
+        ),
       );
     }
 
@@ -138,25 +196,32 @@ class _AppFabState extends State<AppFab> {
           ? deleteLabel[0].toUpperCase() + deleteLabel.substring(1)
           : deleteLabel;
 
-      return Row(
-        children: <Widget>[
-          _SelectionFabButton(
-            icon: Icons.delete,
-            label: capitalizedDelete,
-            color: const Color(0xFFFF8A80),
-            onPressed: widget.onDelete ?? () {},
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: targetWidth,
+          child: Row(
+            children: <Widget>[
+              _SelectionFabButton(
+                icon: Icons.delete,
+                label: capitalizedDelete,
+                color: const Color(0xFFFF8A80),
+                onPressed: widget.onDelete ?? () {},
+              ),
+              _SelectionFabButton(
+                icon: Icons.check_box_outline_blank,
+                label: AppText.tr('select_none'),
+                onPressed: widget.onClearSelection ?? () {},
+              ),
+              _SelectionFabButton(
+                icon: Icons.select_all,
+                label: AppText.tr('select_all'),
+                onPressed: widget.onSelectAll ?? () {},
+              ),
+            ],
           ),
-          _SelectionFabButton(
-            icon: Icons.check_box_outline_blank,
-            label: AppText.tr('select_none'),
-            onPressed: widget.onClearSelection ?? () {},
-          ),
-          _SelectionFabButton(
-            icon: Icons.select_all,
-            label: AppText.tr('select_all'),
-            onPressed: widget.onSelectAll ?? () {},
-          ),
-        ],
+        ),
       );
     }
 

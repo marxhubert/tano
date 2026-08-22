@@ -139,62 +139,69 @@ class _EditNoteState extends State<EditNote> {
           final Color immersiveBg =
               getImmersiveBackgroundColor(noteColor, isDark: isDark);
 
-          return PageScaffold(
-            scaffoldKey: _scaffoldState,
-            backgroundColor: immersiveBg,
-            title: widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
-            titleController: _titleController,
-            titleHint: AppText.tr('title_here'),
-            onPop: () async {
-              final bool willPop = await _onWillPopCallback();
-              if (willPop && context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/home',
-                  (Route<dynamic> route) => false,
-                );
-              }
-            },
-            actions: [
-              IconButton(
-                icon: Icon(
-                  _viewModel.important ? Icons.bookmark : Icons.bookmark_border,
-                  color: _viewModel.important ? tanoAmber : null,
+          return GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: PageScaffold(
+              scaffoldKey: _scaffoldState,
+              backgroundColor: immersiveBg,
+              title:
+                  widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
+              titleController: _titleController,
+              titleHint: AppText.tr('title_here'),
+              onPop: () async {
+                final bool willPop = await _onWillPopCallback();
+                if (willPop && context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/home',
+                    (Route<dynamic> route) => false,
+                  );
+                }
+              },
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _viewModel.important
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                    color: _viewModel.important ? tanoAmber : null,
+                  ),
+                  onPressed: _viewModel.toggleImportant,
                 ),
-                onPressed: _viewModel.toggleImportant,
-              ),
-            ],
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.all(12.0),
-                sliver: SliverToBoxAdapter(
-                  child: TextField(
-                    maxLines: null,
-                    minLines: 10,
-                    showCursor: true,
-                    autofocus: widget.add,
-                    focusNode: _contentFocus,
-                    controller: _contentController,
-                    textInputAction: TextInputAction.newline,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: const TextStyle(fontSize: 14.4, height: 1.8),
-                    decoration: InputDecoration(
-                      hintText: AppText.tr('add_note'),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
+              ],
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 100.0),
+                  sliver: SliverToBoxAdapter(
+                    child: TextField(
+                      maxLines: null,
+                      minLines: 10,
+                      showCursor: true,
+                      autofocus: widget.add,
+                      focusNode: _contentFocus,
+                      controller: _contentController,
+                      textInputAction: TextInputAction.newline,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: const TextStyle(fontSize: 14.4, height: 1.8),
+                      decoration: InputDecoration(
+                        hintText: AppText.tr('add_note'),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (String content) {
+                        _getNoteContentLength(content);
+                      },
                     ),
-                    onChanged: (String content) {
-                      _getNoteContentLength(content);
-                    },
                   ),
                 ),
+              ],
+              floatingActionButtonLocation: const FlushEndFabLocation(),
+              floatingActionButton: AppFab(
+                isEditorMode: true,
+                isAddMode: widget.add,
+                onSave: () => _saveNote(noteAction: _noteAction),
+                onColorLens: () {}, // Placeholder
+                onMore: () {}, // Placeholder
               ),
-            ],
-            floatingActionButtonLocation: const FlushEndFabLocation(),
-            floatingActionButton: AppFab(
-              isEditorMode: true,
-              onSave: () => _saveNote(noteAction: _noteAction),
-              onColorLens: () {}, // Placeholder
-              onMore: () {}, // Placeholder
             ),
           );
         },
