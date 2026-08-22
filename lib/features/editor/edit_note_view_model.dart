@@ -94,10 +94,15 @@ class EditNoteViewModel extends ChangeNotifier {
     _initialNote = note;
   }
 
-  /// Special save for theme changes: persists the current state (with the new theme)
-  /// and updates the baseline so that further text changes don't trigger the alert
-  /// immediately unless modified again.
-  Future<void> autoSaveTheme({required String title, required String content}) async {
+  /// Special save for theme or bookmark changes: persists the current state
+  /// only if the note is valid (has at least some content).
+  /// Updates the baseline so that further text changes don't trigger the alert immediately.
+  Future<void> autoSaveThemeOrBookmark({
+    required String title,
+    required String content,
+  }) async {
+    if (!isValid(title: title, content: content)) return;
+
     final Note note = buildNote(title: title, content: content);
     await persistSavedNote(note);
   }

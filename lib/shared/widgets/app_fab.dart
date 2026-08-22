@@ -419,7 +419,7 @@ class AppFabState extends State<AppFab> {
         },
       ),
       IconButton(
-        icon: const Icon(Icons.arrow_forward_ios, size: 18.0, color: Colors.white),
+        icon: const Icon(Icons.arrow_forward_ios, size: 20.0, color: Colors.white),
         onPressed: () => setState(() {
           _verticalMenu = FabVerticalMenu.none;
           _isManuallyExpanded = false;
@@ -455,33 +455,37 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 12.0),
-      child: Row(
-        spacing: 8.0,
-        children: <Widget>[
-          const Icon(Icons.search, color: Colors.white, size: 24.0),
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              focusNode: widget.focusNode,
-              style: const TextStyle(color: Colors.white, fontSize: 16.0),
-              decoration: InputDecoration(
-                hintText: AppText.tr('search'),
-                hintStyle: const TextStyle(color: Colors.white70),
-                border: InputBorder.none,
-                isDense: true,
+    return TapRegion(
+      onTapOutside: (_) => widget.focusNode?.unfocus(),
+      child: Container(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: Row(
+          spacing: 8.0,
+          children: <Widget>[
+            const Icon(Icons.search, color: Colors.white, size: 24.0),
+            Expanded(
+              child: TextField(
+                controller: widget.controller,
+                focusNode: widget.focusNode,
+                style: const TextStyle(color: Colors.white, fontSize: 16.0),
+                decoration: InputDecoration(
+                  hintText: AppText.tr('search'),
+                  hintStyle: const TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+                onChanged: widget.onSearchChanged,
               ),
-              onChanged: widget.onSearchChanged,
-              onTapOutside: (_) => widget.focusNode?.unfocus(),
             ),
-          ),
-          if (widget.controller?.text.isNotEmpty ?? false)
-            IconButton(
-              icon: const Icon(Icons.clear, color: Colors.white),
-              onPressed: widget.onReset,
-            ),
-        ],
+            if (widget.controller?.text.isNotEmpty ?? false)
+              IconButton(
+                icon: const Icon(Icons.clear, color: Colors.white),
+                onPressed: () {
+                  widget.onReset?.call();
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -590,9 +594,10 @@ class _SelectionFabButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                  fontSize: 9.0,
-                  color: effectiveColor,
-                  fontWeight: FontWeight.bold),
+                fontSize: 10.0,
+                color: effectiveColor,
+                fontWeight: FontWeight.bold,  
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ],

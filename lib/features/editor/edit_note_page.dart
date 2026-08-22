@@ -97,6 +97,13 @@ class _EditNoteState extends State<EditNote> {
   Future<bool> _onWillPopCallback() async {
     final String title = _titleController.text;
     final String content = _contentController.text;
+
+    // If the note is empty, we don't care about theme/bookmark changes,
+    // we just let the user leave without any prompt.
+    if (!_viewModel.isValid(title: title, content: content)) {
+      return true;
+    }
+
     if (_viewModel.isDirty(title: title, content: content)) {
       final bool? confirm = await getConfirmation(
         context: context,
@@ -105,14 +112,6 @@ class _EditNoteState extends State<EditNote> {
       );
       if (confirm == true) {
         final Note note = _viewModel.buildNote(title: title, content: content);
-        if (!_viewModel.isValid(title: title, content: content)) {
-          if (!mounted) {
-            return false;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppText.tr('content_empty'))));
-          return false;
-        }
         await _viewModel.persistSavedNote(note);
       }
     }
@@ -174,7 +173,13 @@ class _EditNoteState extends State<EditNote> {
                         : Icons.bookmark_border,
                     color: _viewModel.important ? tanoAmber : null,
                   ),
-                  onPressed: _viewModel.toggleImportant,
+                  onPressed: () async {
+                    _viewModel.toggleImportant();
+                    await _viewModel.autoSaveThemeOrBookmark(
+                      title: _titleController.text,
+                      content: _contentController.text,
+                    );
+                  },
                 ),
               ],
               slivers: [
@@ -213,8 +218,8 @@ class _EditNoteState extends State<EditNote> {
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
                   _viewModel.setCategory(colorName);
-                  // Automatic immediate save of the theme change
-                  await _viewModel.autoSaveTheme(
+                  // Automatic immediate save of the theme change if valid
+                  await _viewModel.autoSaveThemeOrBookmark(
                     title: _titleController.text,
                     content: _contentController.text,
                   );
