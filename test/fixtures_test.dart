@@ -13,16 +13,16 @@ void main() {
       expect(
         categories,
         containsAll(<String?>[
-          'neutral',
-          'action',
-          'success',
-          'warning',
-          'error',
-          'purple',
-          'yellow',
-          'reference',
-          'subtle',
-          'archive',
+          'menthe',
+          'citron',
+          'peche',
+          'lavande',
+          'rose',
+          'azur',
+          'sable',
+          'sauge',
+          'bonbon',
+          'nuage',
         ]),
       );
     });

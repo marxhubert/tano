@@ -36,12 +36,12 @@ List<Note> _demoNotes() => List<Note>.generate(
         '10:00:00.000',
     important: i.isEven,
     category: <String>[
-      'neutral',
-      'action',
-      'success',
-      'warning',
-      'error',
-      'purple',
+      'menthe',
+      'citron',
+      'peche',
+      'lavande',
+      'rose',
+      'azur',
     ][i % 6],
   ),
 );

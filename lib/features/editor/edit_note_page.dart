@@ -37,6 +37,7 @@ class _EditNoteState extends State<EditNote> {
   final FocusNode _contentFocus = FocusNode();
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
+  final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
 
   @override
   void initState() {
@@ -140,7 +141,10 @@ class _EditNoteState extends State<EditNote> {
               getImmersiveBackgroundColor(noteColor, isDark: isDark);
 
           return GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              _fabKey.currentState?.closeVerticalMenu();
+            },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
               backgroundColor: immersiveBg,
@@ -196,10 +200,20 @@ class _EditNoteState extends State<EditNote> {
               ],
               floatingActionButtonLocation: const FlushEndFabLocation(),
               floatingActionButton: AppFab(
+                key: _fabKey,
                 isEditorMode: true,
                 isAddMode: widget.add,
+                currentCategory: _viewModel.category,
                 onSave: () => _saveNote(noteAction: _noteAction),
-                onColorLens: () {}, // Placeholder
+                onColorLens: () {}, // Placeholder for animation triggering if needed
+                onColorSelected: (String colorName) async {
+                  _viewModel.setCategory(colorName);
+                  // Automatic immediate save of the theme change
+                  await _viewModel.autoSaveTheme(
+                    title: _titleController.text,
+                    content: _contentController.text,
+                  );
+                },
                 onMore: () {}, // Placeholder
               ),
             ),

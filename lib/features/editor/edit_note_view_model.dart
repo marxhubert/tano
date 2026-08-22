@@ -33,7 +33,7 @@ class EditNoteViewModel extends ChangeNotifier {
   late final DateTime selectedDate;
   late bool important;
   late String category;
-  late final Note _initialNote;
+  late Note _initialNote;
 
   void toggleImportant() {
     important = !important;
@@ -66,16 +66,18 @@ class EditNoteViewModel extends ChangeNotifier {
       important: important,
       category: category,
     );
-  }    /// Whether the current form differs from the note as it was opened.
-    bool isDirty({required String title, required String content}) {
-        final Note current = buildNote(title: title, content: content);
-        return current.toJson().toString() != _initialNote.toJson().toString();
-    }
+  }
 
-    /// Business rule: a note is savable when at least its title or its content is not blank.
-    bool isValid({required String title, required String content}) {
-        return title.trim().isNotEmpty || content.trim().isNotEmpty;
-    }
+  /// Whether the current form differs from the note as it was opened.
+  bool isDirty({required String title, required String content}) {
+    final Note current = buildNote(title: title, content: content);
+    return current.toJson().toString() != _initialNote.toJson().toString();
+  }
+
+  /// Business rule: a note is savable when at least its title or its content is not blank.
+  bool isValid({required String title, required String content}) {
+    return title.trim().isNotEmpty || content.trim().isNotEmpty;
+  }
 
   /// Persists a saved note: adds it or replaces the note with the same id,
   /// then saves the whole list.
@@ -88,6 +90,16 @@ class EditNoteViewModel extends ChangeNotifier {
       notes[index] = note;
     }
     await repository.saveNotes(notes);
+    // Update the baseline after saving so it's no longer "dirty"
+    _initialNote = note;
+  }
+
+  /// Special save for theme changes: persists the current state (with the new theme)
+  /// and updates the baseline so that further text changes don't trigger the alert
+  /// immediately unless modified again.
+  Future<void> autoSaveTheme({required String title, required String content}) async {
+    final Note note = buildNote(title: title, content: content);
+    await persistSavedNote(note);
   }
 
   Note _buildInitialNote({required String title, required String content}) {
