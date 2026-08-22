@@ -83,6 +83,11 @@ class _EditNoteState extends State<EditNote> {
     }
   }
 
+  void _deleteNote(NoteAction noteAction) {
+    noteAction.kind = NoteActionKind.delete;
+    Navigator.pop(context, noteAction);
+  }
+
   void _getNoteContentLength(String content) {
     setState(() {
       _noteContentLength = content.length;
@@ -214,7 +219,27 @@ class _EditNoteState extends State<EditNote> {
                     content: _contentController.text,
                   );
                 },
-                onMore: () {}, // Placeholder
+                onMore: () {}, // Placeholder for animation triggering if needed
+                onImageSelected: () {}, // TODO: Implement image selection
+                onChecklistSelected: () {}, // TODO: Implement checklist
+                onLinkSelected: () {}, // TODO: Implement note linking
+                onAttachmentSelected: () {}, // TODO: Implement attachment selection
+                onPinSelected: () {}, // TODO: Implement Pin
+                onFindSelected: () {}, // TODO: Implement Find in note
+                onMoveSelected: () {}, // TODO: Implement Move to
+                onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
+                onShareSelected: () {}, // TODO: Implement Share
+                onLockSelected: () {}, // TODO: Implement Lock
+                onDeleteSelected: () async {
+                  final bool? confirmDeletion = await getConfirmation(
+                    context: context,
+                    actionTitle: AppText.tr('delete_note'),
+                    action: AppText.tr('delete'),
+                  );
+                  if (confirmDeletion == true) {
+                    _deleteNote(_noteAction);
+                  }
+                },
               ),
             ),
           );

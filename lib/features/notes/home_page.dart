@@ -380,7 +380,7 @@ class HomeState extends State<Home> {
             onReset: _clearSearch,
             onDelete: () async {
               if (!_viewModel.hasSelection) {
-                // No action needed
+                // TODO: No action needed for now, maybe show a hint?
               } else {
                 final bool? confirmDeletion = await getConfirmation(
                   context: context,

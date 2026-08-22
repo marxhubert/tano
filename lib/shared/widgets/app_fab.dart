@@ -34,6 +34,13 @@ class AppFab extends StatefulWidget {
     this.onChecklistSelected,
     this.onLinkSelected,
     this.onAttachmentSelected,
+    this.onPinSelected,
+    this.onFindSelected,
+    this.onMoveSelected,
+    this.onLockSelected,
+    this.onDeleteSelected,
+    this.onCollaboratorsSelected,
+    this.onShareSelected,
   });
 
   final bool isSearchMode;
@@ -57,6 +64,13 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onChecklistSelected;
   final VoidCallback? onLinkSelected;
   final VoidCallback? onAttachmentSelected;
+  final VoidCallback? onPinSelected;
+  final VoidCallback? onFindSelected;
+  final VoidCallback? onMoveSelected;
+  final VoidCallback? onLockSelected;
+  final VoidCallback? onDeleteSelected;
+  final VoidCallback? onCollaboratorsSelected;
+  final VoidCallback? onShareSelected;
 
   @override
   State<AppFab> createState() => AppFabState();
@@ -118,14 +132,23 @@ class AppFabState extends State<AppFab> {
       _verticalMenu = FabVerticalMenu.none;
     }
 
-    final double targetWidth = (isKeyboardClosed && _verticalMenu == FabVerticalMenu.none)
-        ? expandedWidth * 0.9
-        : expandedWidth * 0.95;
+    final double targetWidth =
+        (isKeyboardClosed && _verticalMenu == FabVerticalMenu.none)
+            ? expandedWidth * 0.9
+            : expandedWidth * 0.95;
     final double currentWidth = isExpanded ? targetWidth : btnHeight;
 
-    // Vertical Expansion Height
+    // Dynamic Vertical Expansion Height based on menu type
+    double verticalMenuHeight = 0;
+    if (_verticalMenu == FabVerticalMenu.color) {
+      verticalMenuHeight = 210.0;
+    } else if (_verticalMenu == FabVerticalMenu.add) {
+      verticalMenuHeight = 180.0;
+    } else if (_verticalMenu == FabVerticalMenu.more) {
+      verticalMenuHeight = 310.0; // Comfortably fits 7 items
+    }
+
     double currentHeight = widget.isSearchMode ? expandedHeight : btnHeight;
-    const double verticalMenuHeight = 200.0;
     if (_verticalMenu != FabVerticalMenu.none) {
       currentHeight += verticalMenuHeight;
     }
@@ -309,6 +332,60 @@ class AppFabState extends State<AppFab> {
         ),
       );
     }
+
+    if (_verticalMenu == FabVerticalMenu.more) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _VerticalMenuItem(
+                icon: Icons.push_pin_outlined,
+                label: AppText.tr('option_pin'),
+                onTap: widget.onPinSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.search,
+                label: AppText.tr('option_find'),
+                onTap: widget.onFindSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.drive_file_move_outlined,
+                label: AppText.tr('option_move'),
+                onTap: widget.onMoveSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.person_add_alt,
+                label: AppText.tr('option_collaborators'),
+                onTap: widget.onCollaboratorsSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.share,
+                label: AppText.tr('option_share'),
+                onTap: widget.onShareSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.lock_outline,
+                label: AppText.tr('option_lock'),
+                onTap: widget.onLockSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.delete_outline,
+                label: AppText.tr('delete').isNotEmpty
+                    ? AppText.tr('delete')[0].toUpperCase() +
+                        AppText.tr('delete').substring(1)
+                    : '',
+                iconColor: const Color(0xFFFF8A80),
+                textColor: const Color(0xFFFF8A80),
+                onTap: widget.onDeleteSelected,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return const SizedBox.shrink();
   }
 
@@ -356,9 +433,15 @@ class AppFabState extends State<AppFab> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: _verticalMenu == FabVerticalMenu.more
+                      ? tanoAmber
+                      : Colors.white,
+                ),
                 onPressed: () {
                   FocusScope.of(context).unfocus();
+                  _toggleVerticalMenu(FabVerticalMenu.more);
                   widget.onMore?.call();
                 },
               ),
@@ -463,11 +546,15 @@ class _VerticalMenuItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.onTap,
+    this.iconColor,
+    this.textColor,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
+  final Color? iconColor;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -477,13 +564,13 @@ class _VerticalMenuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 24.0),
-            const SizedBox(width: 12.0),
+            Icon(icon, color: iconColor ?? Colors.white70, size: 24.0),
+            const SizedBox(width: 14.0),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16.0,
+              style: TextStyle(
+                color: textColor ?? Colors.white,
+                fontSize: 15.0,
               ),
             ),
           ],
