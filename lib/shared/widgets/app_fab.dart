@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-enum FabVerticalMenu { none, save, color, more }
+enum FabVerticalMenu { none, add, color, more }
 
 /// The unified FAB that morphs between 5 states:
 /// 1. Home Add (circle icon)
@@ -30,6 +30,10 @@ class AppFab extends StatefulWidget {
     this.onMore,
     this.onColorSelected,
     this.currentCategory,
+    this.onImageSelected,
+    this.onChecklistSelected,
+    this.onLinkSelected,
+    this.onAttachmentSelected,
   });
 
   final bool isSearchMode;
@@ -49,6 +53,10 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onMore;
   final ValueChanged<String>? onColorSelected;
   final String? currentCategory;
+  final VoidCallback? onImageSelected;
+  final VoidCallback? onChecklistSelected;
+  final VoidCallback? onLinkSelected;
+  final VoidCallback? onAttachmentSelected;
 
   @override
   State<AppFab> createState() => AppFabState();
@@ -267,6 +275,40 @@ class AppFabState extends State<AppFab> {
         ),
       );
     }
+
+    if (_verticalMenu == FabVerticalMenu.add) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _VerticalMenuItem(
+                icon: Icons.crop_original,
+                label: AppText.tr('option_image'),
+                onTap: widget.onImageSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.checklist,
+                label: AppText.tr('option_checklist'),
+                onTap: widget.onChecklistSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.link,
+                label: AppText.tr('option_link'),
+                onTap: widget.onLinkSelected,
+              ),
+              _VerticalMenuItem(
+                icon: Icons.attachment,
+                label: AppText.tr('option_attachment'),
+                onTap: widget.onAttachmentSelected,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return const SizedBox.shrink();
   }
 
@@ -289,10 +331,15 @@ class AppFabState extends State<AppFab> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               IconButton(
-                icon: const Icon(Icons.add, color: Colors.white),
+                icon: Icon(
+                  Icons.add,
+                  color: _verticalMenu == FabVerticalMenu.add
+                      ? tanoAmber
+                      : Colors.white,
+                ),
                 onPressed: () {
                   FocusScope.of(context).unfocus();
-                  widget.onSave?.call();
+                  _toggleVerticalMenu(FabVerticalMenu.add);
                 },
               ),
               IconButton(
@@ -407,6 +454,41 @@ class AppFabState extends State<AppFab> {
     return IconButton(
       icon: const Icon(Icons.add, color: Colors.white),
       onPressed: widget.onAdd,
+    );
+  }
+}
+
+class _VerticalMenuItem extends StatelessWidget {
+  const _VerticalMenuItem({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 24.0),
+            const SizedBox(width: 12.0),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16.0,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
