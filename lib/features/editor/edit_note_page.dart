@@ -8,6 +8,7 @@ import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
+import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class EditNote extends StatefulWidget {
@@ -166,6 +167,7 @@ class _EditNoteState extends State<EditNote> {
                 }
               },
               actions: [
+                const ThemeToggleButton(),
                 IconButton(
                   icon: Icon(
                     _viewModel.important

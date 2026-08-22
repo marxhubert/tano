@@ -16,6 +16,7 @@ import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
+import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class Home extends StatefulWidget {
@@ -269,6 +270,7 @@ class HomeState extends State<Home> {
         icon: const Icon(Icons.search),
         onPressed: _enterSearchMode,
       ),
+      const ThemeToggleButton(),
       PopupMenuButton<PopupItem>(
         icon: const Icon(Icons.more_vert),
         onSelected: ((valueSelected) {
