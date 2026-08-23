@@ -22,33 +22,24 @@ class PopupItem {
 /// Main menu items, resolved according to the current language.
 Map<String, PopupItem> get menuItems {
   return <String, PopupItem>{
-    'layout_title': PopupItem(
-      title: AppText.tr('menu_display'),
-      value: 'header',
-      icon: null,
-    ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
-      icon: Icon(Icons.view_stream),
+      icon: const Icon(Icons.view_stream, size: 24.0),
       value: 'list',
       trailingIcon: true,
     ),
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
-      icon: Icon(Icons.view_module),
+      icon: const Icon(Icons.view_module, size: 24.0),
       value: 'gridlist',
       trailingIcon: true,
     ),
 
-    'settings_separator': PopupItem(
-      title: 'Separator',
-      value: 'separator',
-      icon: null,
-    ),
     'settings': PopupItem(
       title: AppText.tr('settings'),
       value: 'settings',
-      icon: Icon(Icons.settings_outlined),
+      icon: const Icon(Icons.settings_outlined, size: 24.0),
+      trailingIcon: true,
     ),
   };
 }
@@ -97,30 +88,29 @@ Widget popupButton({
             : icon)
       : null;
 
-  // Only wrap the label in Expanded when a trailing icon must be pushed to
-  // the right edge. popupButton is also embedded in unbounded-width rows
-  // (e.g. the edit page title bar), where a flex child would throw.
-  final Widget label = popupItem.trailingIcon
-      ? Expanded(
-          child: Text(
-            popupItem.title,
-            style: selectedColor != null
-                ? TextStyle(color: selectedColor)
-                : null,
-            overflow: TextOverflow.ellipsis,
-          ),
-        )
-      : Text(
-          popupItem.title,
-          style: selectedColor != null ? TextStyle(color: selectedColor) : null,
-          overflow: TextOverflow.ellipsis,
-        );
+  final Widget label = Expanded(
+    child: Text(
+      popupItem.title,
+      style: TextStyle(
+        color: selectedColor ?? primaryTextColor(context),
+        fontSize: 14.0,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      overflow: TextOverflow.ellipsis,
+    ),
+  );
 
   return Row(
     children: <Widget>[
-      if (leadingIcon != null) ...<Widget>[leadingIcon, SizedBox(width: 4.5)],
       label,
-      if (trailingIcon != null) ...<Widget>[SizedBox(width: 4.5), trailingIcon],
+      if (icon != null) ...<Widget>[
+        const SizedBox(width: 12.0),
+        Icon(
+          icon.icon,
+          color: selectedColor ?? Colors.grey.shade600,
+          size: 22.0,
+        ),
+      ],
     ],
   );
 }

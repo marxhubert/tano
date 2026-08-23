@@ -273,6 +273,11 @@ class HomeState extends State<Home> {
       const ThemeToggleButton(),
       PopupMenuButton<PopupItem>(
         icon: const Icon(Icons.more_vert),
+        offset: const Offset(0, 56),
+        elevation: 4.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(appBorderRadius),
+        ),
         onSelected: ((valueSelected) {
           switch (valueSelected.value.toLowerCase()) {
             case "list":
@@ -294,7 +299,7 @@ class HomeState extends State<Home> {
           return popupItems.map((PopupItem popupItem) {
             return PopupMenuItem<PopupItem>(
               value: popupItem,
-              height: popupItem.value == 'separator' ? 8.0 : 28.0,
+              height: 40.0,
               child: popupButton(
                 context: context,
                 popupItem: popupItem,
@@ -304,7 +309,6 @@ class HomeState extends State<Home> {
             );
           }).toList();
         },
-        padding: const EdgeInsets.only(right: 12.0),
       ),
     ];
   }

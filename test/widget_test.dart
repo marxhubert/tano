@@ -91,7 +91,6 @@ void main() {
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
 
-      expect(find.text('Display'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
 
       // The display icons are correctly rendered to the right of the items.
