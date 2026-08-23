@@ -19,7 +19,7 @@ Future<bool?> getConfirmation({
         actions: <Widget>[
           TextButton(
             child: Text(
-              isSave ? AppText.tr('quit') : AppText.tr('cancel'),
+              (isSave ? AppText.tr('quit') : AppText.tr('cancel')).toUpperCase(),
               style: TextStyle(color: isSave ? Colors.red : Colors.blue),
             ),
             onPressed: () {
