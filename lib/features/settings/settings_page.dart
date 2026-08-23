@@ -57,41 +57,35 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _SettingsSection(title: AppText.tr('menu_language')),
-                  _SettingsTile(
-                    title: AppText.tr('menu_english'),
-                    selected: LocaleController.instance.language == 'en',
-                    onTap: () => LocaleController.instance.setLanguage('en'),
-                  ),
-                  _SettingsTile(
-                    title: AppText.tr('menu_french'),
-                    selected: LocaleController.instance.language == 'fr',
-                    onTap: () => LocaleController.instance.setLanguage('fr'),
-                  ),
-                  const _SettingsDivider(),
+                  // --- THEME ---
                   _SettingsSection(title: AppText.tr('menu_theme')),
-                  _SettingsTile(
-                    title: AppText.tr('theme_light'),
-                    selected: ThemeController.instance.themeMode == ThemeMode.light,
-                    onTap: () => ThemeController.instance.setThemeMode(ThemeMode.light),
+                  _SettingsCard(
+                    children: [
+                      _SettingsTile(
+                        title: AppText.tr('theme_light'),
+                        selected: ThemeController.instance.themeMode == ThemeMode.light,
+                        onTap: () => ThemeController.instance.setThemeMode(ThemeMode.light),
+                      ),
+                      _SettingsTile(
+                        title: AppText.tr('theme_dark'),
+                        selected: ThemeController.instance.themeMode == ThemeMode.dark,
+                        onTap: () => ThemeController.instance.setThemeMode(ThemeMode.dark),
+                      ),
+                      _SettingsTile(
+                        title: AppText.tr('theme_system'),
+                        selected: ThemeController.instance.themeMode == ThemeMode.system,
+                        onTap: () => ThemeController.instance.setThemeMode(ThemeMode.system),
+                      ),
+                    ],
                   ),
-                  _SettingsTile(
-                    title: AppText.tr('theme_dark'),
-                    selected: ThemeController.instance.themeMode == ThemeMode.dark,
-                    onTap: () => ThemeController.instance.setThemeMode(ThemeMode.dark),
-                  ),
-                  _SettingsTile(
-                    title: AppText.tr('theme_system'),
-                    selected: ThemeController.instance.themeMode == ThemeMode.system,
-                    onTap: () => ThemeController.instance.setThemeMode(ThemeMode.system),
-                  ),
-                  const _SettingsDivider(),
+
+                  // --- SORTING ---
                   _SettingsSection(title: AppText.tr('menu_sorting')),
                   FutureBuilder<String>(
                     future: _getSorting(),
                     builder: (context, snapshot) {
                       final currentSort = snapshot.data ?? 'date';
-                      return Column(
+                      return _SettingsCard(
                         children: [
                           _SettingsTile(
                             title: AppText.tr('menu_date'),
@@ -117,29 +111,50 @@ class _SettingsPageState extends State<SettingsPage> {
                       );
                     },
                   ),
-                  const _SettingsDivider(),
-                  _SettingsSection(title: AppText.tr('about')),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 6.0),
-                    title: Text(
-                      AppText.tr('about'),
-                      style: TextStyle(
-                        color: primaryTextColor(context),
-                        fontSize: 14.0,
+
+                  // --- LANGUAGE ---
+                  _SettingsSection(title: AppText.tr('menu_language')),
+                  _SettingsCard(
+                    children: [
+                      _SettingsTile(
+                        title: AppText.tr('menu_english'),
+                        selected: LocaleController.instance.language == 'en',
+                        onTap: () => LocaleController.instance.setLanguage('en'),
                       ),
-                    ),
-                    trailing: const Icon(Icons.info_outline, size: 20.0),
-                    onTap: () {
-                      if (_packageInfo != null) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => aboutInfo(
-                            context: context,
-                            packageInfo: _packageInfo!,
+                      _SettingsTile(
+                        title: AppText.tr('menu_french'),
+                        selected: LocaleController.instance.language == 'fr',
+                        onTap: () => LocaleController.instance.setLanguage('fr'),
+                      ),
+                    ],
+                  ),
+
+                  // --- ABOUT ---
+                  _SettingsSection(title: AppText.tr('about')),
+                  _SettingsCard(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        title: Text(
+                          AppText.tr('about'),
+                          style: TextStyle(
+                            color: primaryTextColor(context),
+                            fontSize: 14.0,
                           ),
-                        );
-                      }
-                    },
+                        ),
+                        onTap: () {
+                          if (_packageInfo != null) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => aboutInfo(
+                                context: context,
+                                packageInfo: _packageInfo!,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 40.0),
                 ]),
@@ -159,7 +174,7 @@ class _SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6.0, 16.0, 6.0, 8.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 2.0),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
@@ -169,6 +184,41 @@ class _SettingsSection extends StatelessWidget {
           letterSpacing: 1.2,
         ),
       ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> dividedChildren = [];
+    for (int i = 0; i < children.length; i++) {
+      dividedChildren.add(children[i]);
+      if (i < children.length - 1) {
+        dividedChildren.add(
+          Divider(
+            height: 1.0,
+            thickness: 0.5,
+            indent: 16.0, // Aligned with the text
+            endIndent: 0.0, // Goes all the way to the right
+            color: primaryTextColor(context).withValues(alpha: 0.08),
+          ),
+        );
+      }
+    }
+
+    return Card(
+      elevation: 0.0,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withValues(alpha: 0.04)
+          : Colors.black.withValues(alpha: 0.03),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24.0),
+      ),
+      child: Column(children: dividedChildren),
     );
   }
 }
@@ -187,7 +237,7 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 6.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
       dense: true,
       title: Text(
         title,
@@ -201,21 +251,6 @@ class _SettingsTile extends StatelessWidget {
           ? const Icon(Icons.check, color: tanoTeal, size: 20.0)
           : null,
       onTap: onTap,
-    );
-  }
-}
-
-class _SettingsDivider extends StatelessWidget {
-  const _SettingsDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 32.0,
-      thickness: 0.5,
-      color: primaryTextColor(context).withValues(alpha: 0.1),
-      indent: 6.0,
-      endIndent: 6.0,
     );
   }
 }
