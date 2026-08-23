@@ -6,6 +6,7 @@ import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 void main() async {
@@ -13,6 +14,7 @@ void main() async {
   await Future.wait([
     LocaleController.instance.init(),
     ThemeController.instance.init(),
+    LanguageReferencesController.instance.init(),
   ]);
   runApp(Tano(repository: FileNotesRepository()));
 }

@@ -53,3 +53,6 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/config/malagasy_refs.json
