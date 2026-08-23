@@ -158,7 +158,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                 overflow: TextOverflow.ellipsis,
               )
             : null,
-        centerTitle: true,
+        centerTitle: !widget.isHome,
         actions: widget.actions != null
             ? widget.actions!
                 .map((a) => Padding(

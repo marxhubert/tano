@@ -115,7 +115,7 @@ void main() {
         // Main menu expanded then closed.
         await tester.tap(find.byIcon(Icons.more_vert).first);
         await tester.pumpAndSettle();
-        expect(find.text('Display'), findsOneWidget);
+        expect(find.text('Settings'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tapAt(const Offset(4, 4));
         await tester.pumpAndSettle();
