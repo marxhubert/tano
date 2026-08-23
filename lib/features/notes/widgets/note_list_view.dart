@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
-import 'package:tano/shared/widgets/menu.dart';
+import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// List of note rows with swipe-to-favorite and swipe-to-delete.
@@ -27,169 +26,108 @@ class NoteListView extends StatelessWidget {
     return SliverList.separated(
       itemCount: notes.length,
       itemBuilder: (BuildContext context, int index) {
-        final bool alreadySelected = viewModel.selected.contains(
-          notes[index].id,
-        );
-        final String title = notes[index].title;
-        final String date = formatNoteDate(notes[index].date);
-        final bool important = notes[index].important;
+        final Note note = notes[index];
+        final bool isSelected = viewModel.selected.contains(note.id);
+
         return Dismissible(
-          key: Key(notes[index].id),
-          background: Container(
+          key: Key(note.id),
+          background: _DismissibleBackground(
+            color: tanoAmber,
             alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 21.0),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
-            ),
-            child: Icon(
-              important ? Icons.star_border : Icons.star,
-              color: Colors.white,
-              size: 27.0,
-            ),
+            icon: note.important ? Icons.bookmark_border : Icons.bookmark,
           ),
-          secondaryBackground: Container(
+          secondaryBackground: const _DismissibleBackground(
+            color: Colors.red,
             alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 21.0),
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
-            ),
-            child: Icon(
-              Icons.delete_forever,
-              color: Colors.blueGrey.shade50,
-              size: 27.0,
-            ),
-          ),
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: themeCategory(
-                notes[index].category,
-                false,
-                brightness: Theme.of(context).brightness,
-              ),
-              borderRadius: BorderRadius.circular(12.0),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 2.0,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: <Widget>[
-                InkWell(
-                  onTap: () {
-                    if (viewModel.isInSelectionMode) {
-                      viewModel.toggleSelection(notes[index].id);
-                    } else {
-                      onOpenNote(notes[index]);
-                    }
-                  },
-                  onLongPress: () {
-                    viewModel.enterSelectionMode(notes[index].id);
-                  },
-                  child: Container(
-                    color: themeCategory(
-                      notes[index].category,
-                      true,
-                      brightness: Theme.of(context).brightness,
-                    ),
-                    child: ListTile(
-                      title: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: 9.0),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 9.0,
-                              color: mutedTextColor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        notes[index].content,
-                        maxLines: 3,
-                        overflow: TextOverflow.clip,
-                        style: TextStyle(fontSize: 12.0),
-                      ),
-                    ),
-                  ),
-                ),
-                if (viewModel.isInSelectionMode)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () {
-                        viewModel.toggleSelection(notes[index].id);
-                      },
-                      child: Container(
-                        color: alreadySelected ? Colors.black38 : Colors.black12,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: alreadySelected
-                                ? Stack(
-                                    alignment: Alignment.center,
-                                    children: <Widget>[
-                                      SizedBox(
-                                        width: 18.0,
-                                        height: 18.0,
-                                        child: CircleAvatar(
-                                          backgroundColor: Colors.white,
-                                          radius: 100.0,
-                                          child: null,
-                                        ),
-                                      ),
-                                      const Icon(
-                                        Icons.check_circle,
-                                        size: 24.0,
-                                        color: Colors.blue,
-                                      ),
-                                    ],
-                                  )
-                                : const Icon(
-                                    Icons.panorama_fish_eye,
-                                    size: 24.0,
-                                    color: Colors.black54,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            icon: Icons.delete_forever,
           ),
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.startToEnd) {
-              viewModel.toggleFavorite(notes[index].id);
+              viewModel.toggleFavorite(note.id);
               return false;
             }
             return await confirmDelete();
           },
           onDismissed: (direction) {
-            viewModel.removeNote(notes[index].id);
+            viewModel.removeNote(note.id);
             onShowUndoSnackBar();
           },
+          child: NoteCard(
+            note: note,
+            isSelected: isSelected,
+            isInSelectionMode: viewModel.isInSelectionMode,
+            onTap: () {
+              if (viewModel.isInSelectionMode) {
+                viewModel.toggleSelection(note.id);
+              } else {
+                onOpenNote(note);
+              }
+            },
+            onLongPress: () => viewModel.enterSelectionMode(note.id),
+            onSelectionToggle: () => viewModel.toggleSelection(note.id),
+            builder: (context, textColor) => ListTile(
+              title: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      note.title,
+                      style: TextStyle(
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 9.0),
+                  Text(
+                    formatNoteDate(note.date),
+                    style: TextStyle(
+                      fontSize: 9.0,
+                      color: textColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+              subtitle: Text(
+                note.content,
+                maxLines: 3,
+                overflow: TextOverflow.clip,
+                style: TextStyle(
+                  fontSize: 12.0,
+                  color: textColor.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          ),
         );
       },
-      separatorBuilder: (BuildContext context, int index) {
-        return SizedBox(height: 12.0);
-      },
+      separatorBuilder: (context, index) => const SizedBox(height: 12.0),
+    );
+  }
+}
+
+class _DismissibleBackground extends StatelessWidget {
+  const _DismissibleBackground({
+    required this.color,
+    required this.alignment,
+    required this.icon,
+  });
+
+  final Color color;
+  final Alignment alignment;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 21.0),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(appBorderRadius),
+      ),
+      child: Icon(icon, color: Colors.white, size: 27.0),
     );
   }
 }

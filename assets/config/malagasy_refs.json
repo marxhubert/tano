@@ -1,0 +1,140 @@
+{
+  "home": {
+    "expression": "Fandraisana",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "notes": {
+    "expression": "Naoty",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "search": {
+    "expression": "Karohy",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "sorted_by": {
+    "expression": "Voalamina",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "notes_selected": {
+    "expression": "Voafantina",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "delete": {
+    "expression": "Fafao",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "undo": {
+    "expression": "Avereno",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "save": {
+    "expression": "Tehirizo",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "title": {
+    "expression": "Lohateny",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "content": {
+    "expression": "Votoatiny",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "important": {
+    "expression": "Zava-dehibe",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "settings": {
+    "expression": "Fikirana",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "colour": {
+    "expression": "Loko",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "menu_list": {
+    "expression": "Lisitra",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "option_attachment": {
+    "expression": "Rakitra",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "option_collaborators": {
+    "expression": "Mpiara-miasa",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "option_share": {
+    "expression": "Hizara",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "option_lock": {
+    "expression": "Hahidy",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "menu_theme": {
+    "expression": "Endrika",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "menu_sorting": {
+    "expression": "Filaminana",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "menu_language": {
+    "expression": "Fiteny",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "fiteny": {
+    "expression": "Fiteny",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  },
+  "voambolana": {
+    "expression": "Voambolana",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+    "hasWebsiteRef": true,
+    "shouldDisplay": true
+  }
+}

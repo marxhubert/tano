@@ -39,7 +39,7 @@ Note _note(
 
 void main() {
   group('HomeViewModel', () {
-    test('sorts the notes by date (newest first)', () {
+    test('sorts the notes by date (newest first by default)', () {
       final vm = HomeViewModel(
         repository: _InMemoryNotesRepository(),
         initialNotes: <Note>[
@@ -50,6 +50,20 @@ void main() {
 
       expect(vm.notes.first.id, '2');
       expect(vm.notesCount, 2);
+    });
+
+    test('sorts the notes by date (oldest first when descending)', () {
+      final vm = HomeViewModel(
+        repository: _InMemoryNotesRepository(),
+        initialNotes: <Note>[
+          _note('1', date: '2026-08-01 10:00:00.000'),
+          _note('2', date: '2026-09-01 10:00:00.000'),
+        ],
+      );
+
+      vm.setSortAscending(false);
+
+      expect(vm.notes.first.id, '1');
     });
 
     test('load() reloads the notes from the repository', () async {

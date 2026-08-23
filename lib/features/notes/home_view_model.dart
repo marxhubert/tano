@@ -4,13 +4,9 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
 
 /// Owns the state and the actions of the home screen.
-///
-/// Pure Dart: no BuildContext, no widgets, no platform channels. The view
-/// listens to this model and renders; persistence goes through
-/// [NotesRepository].
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({required this.repository, List<Note>? initialNotes})
-    : _notes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[] {
+      : _notes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[] {
     _sortNotes();
   }
 
@@ -19,6 +15,8 @@ class HomeViewModel extends ChangeNotifier {
   List<Note> _notes;
   String _searchQuery = '';
   String _sortBy = 'date';
+  String _secondarySortBy = 'date';
+  bool _sortAscending = true;
   String _viewLayout = 'list';
   bool _isInSelectionMode = false;
   final Set<String> _selected = <String>{};
@@ -29,6 +27,8 @@ class HomeViewModel extends ChangeNotifier {
   List<Note> get notes => List<Note>.unmodifiable(_filteredNotes());
   int get notesCount => _filteredNotes().length;
   String get sortBy => _sortBy;
+  String get secondarySortBy => _secondarySortBy;
+  bool get sortAscending => _sortAscending;
   String get viewLayout => _viewLayout;
   bool get isInSelectionMode => _isInSelectionMode;
   String get actionButtons => _actionButtons;
@@ -37,55 +37,59 @@ class HomeViewModel extends ChangeNotifier {
   Set<String> get selected => _selected;
   bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
-  /// Loads the notes from the repository. Used when no initial notes are
-  /// provided (e.g. navigation flows that do not come from the splash).
+  /// Loads the notes from the repository.
   Future<void> load() async {
     _notes = await repository.loadNotes();
     _sortNotes();
     notifyListeners();
   }
 
-  /// Updates the search query; the displayed [notes] are re-filtered.
   void setSearchQuery(String query) {
-    if (_searchQuery == query) {
-      return;
-    }
+    if (_searchQuery == query) return;
     _searchQuery = query;
     notifyListeners();
   }
 
   void setViewLayout(String viewLayout) {
-    if (viewLayout != 'list' && viewLayout != 'gridlist') {
-      return;
-    }
-    if (_viewLayout == viewLayout) {
-      return;
-    }
+    if (viewLayout != 'list' && viewLayout != 'gridlist') return;
+    if (_viewLayout == viewLayout) return;
     _viewLayout = viewLayout;
     notifyListeners();
   }
 
   void setSortBy(String sortBy) {
-    if (_sortBy == sortBy) {
-      return;
-    }
+    if (_sortBy == sortBy) return;
     _sortBy = sortBy;
+    if (sortBy == 'alpha' || sortBy == 'date') {
+      _secondarySortBy = sortBy;
+    }
+    _sortNotes();
+    notifyListeners();
+  }
+
+  void setSecondarySortBy(String sortBy) {
+    if (_secondarySortBy == sortBy) return;
+    _secondarySortBy = sortBy;
+    _sortNotes();
+    notifyListeners();
+  }
+
+  void setSortAscending(bool ascending) {
+    if (_sortAscending == ascending) return;
+    _sortAscending = ascending;
     _sortNotes();
     notifyListeners();
   }
 
   void toggleFavorite(String id) {
     final int index = _notes.indexWhere((Note note) => note.id == id);
-    if (index == -1) {
-      return;
-    }
+    if (index == -1) return;
     final Note note = _notes[index];
     _notes[index] = note.copyWith(important: !note.important);
     _persist();
     notifyListeners();
   }
 
-  /// Long press: start the multi-selection mode with [id] selected.
   void enterSelectionMode(String id) {
     _selected.add(id);
     _isInSelectionMode = true;
@@ -119,7 +123,6 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Deletes every selected note, leaves the selection mode and persists.
   Future<void> deleteSelected() async {
     final List<Note> removed = <Note>[];
     final List<int> indexes = <int>[];
@@ -138,24 +141,18 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Removes a single note (e.g. swipe-to-delete) and persists.
   Future<void> removeNote(String id) async {
     final int index = _notes.indexWhere((Note note) => note.id == id);
-    if (index == -1) {
-      return;
-    }
+    if (index == -1) return;
     final Note removed = _notes.removeAt(index);
     _lastDeleted = (<Note>[removed], <int>[index]);
     await _persist();
     notifyListeners();
   }
 
-  /// Restores the most recently deleted note(s) at their original positions.
   Future<void> undoLastDelete() async {
     final (List<Note>, List<int>)? record = _lastDeleted;
-    if (record == null) {
-      return;
-    }
+    if (record == null) return;
     final List<Note> notes = record.$1;
     final List<int> indexes = record.$2;
     for (int i = 0; i < indexes.length; i++) {
@@ -167,7 +164,6 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Applies the result of the edit screen (add / update / delete).
   Future<void> applyNoteAction({
     required bool add,
     required String originalId,
@@ -198,9 +194,7 @@ class HomeViewModel extends ChangeNotifier {
 
   List<Note> _filteredNotes() {
     final String keyword = _searchQuery.trim();
-    if (keyword.isEmpty) {
-      return _notes;
-    }
+    if (keyword.isEmpty) return _notes;
     return _notes.where((Note note) {
       return note.title.contains(RegExp(keyword, caseSensitive: false)) ||
           note.content.contains(RegExp(keyword, caseSensitive: false));
@@ -208,23 +202,55 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void _sortNotes() {
-    switch (_sortBy) {
-      case 'date':
-        _notes.sort((note1, note2) => note2.date.compareTo(note1.date));
-        break;
+    _notes.sort((note1, note2) {
+      int comparison = _compare(note1, note2, _sortBy);
+
+      if (comparison == 0 && (_sortBy == 'important' || _sortBy == 'theme')) {
+        // Compose with the last chosen "Title" or "Date" if primary sort is equal
+        comparison = _compare(note1, note2, _secondarySortBy);
+      }
+
+      if (comparison == 0 && _sortBy != 'date' && _secondarySortBy != 'date') {
+        // Absolute fallback to date (newest first)
+        comparison = _compare(note1, note2, 'date');
+      }
+
+      return _sortAscending ? comparison : -comparison;
+    });
+  }
+
+  int _compare(Note note1, Note note2, String criteria) {
+    switch (criteria) {
       case 'alpha':
-        _notes.sort((note1, note2) => note1.title.compareTo(note2.title));
-        break;
+        return note1.title.toLowerCase().compareTo(note2.title.toLowerCase());
+      case 'date':
+        return note2.date.compareTo(note1.date);
       case 'important':
-        _notes.sort((note1, note2) {
-          final int a = note1.important ? 1 : 0;
-          final int b = note2.important ? 1 : 0;
-          return b.compareTo(a);
-        });
-        break;
+        final int a = note1.important ? 1 : 0;
+        final int b = note2.important ? 1 : 0;
+        return b.compareTo(a);
+      case 'theme':
       case 'category':
-        _notes.sort((note1, note2) => note1.category.compareTo(note2.category));
-        break;
+        return _themeWeight(note1.category)
+            .compareTo(_themeWeight(note2.category));
+      default:
+        return 0;
+    }
+  }
+
+  int _themeWeight(String theme) {
+    switch (theme) {
+      case 'menthe': return 0;
+      case 'citron': return 1;
+      case 'peche': return 2;
+      case 'lavande': return 3;
+      case 'rose': return 4;
+      case 'azur': return 5;
+      case 'sable': return 6;
+      case 'sauge': return 7;
+      case 'bonbon': return 8;
+      case 'nuage':
+      default: return 9;
     }
   }
 
