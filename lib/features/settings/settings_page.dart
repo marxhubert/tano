@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,7 @@ import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/info.dart';
+import 'package:tano/features/settings/language_references_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -176,8 +178,70 @@ class _SettingsPageState extends State<SettingsPage> {
                         selected: LocaleController.instance.language == 'fr',
                         onTap: () => LocaleController.instance.setLanguage('fr'),
                       ),
+                      _SettingsTile(
+                        title: AppText.tr('menu_malagasy'),
+                        selected: LocaleController.instance.language == 'mg',
+                        onTap: () => LocaleController.instance.setLanguage('mg'),
+                      ),
                     ],
                   ),
+                  if (LocaleController.instance.language == 'mg')
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
+                      child: Text.rich(
+                        TextSpan(
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: mutedTextColor(context),
+                            height: 1.5,
+                          ),
+                          children: [
+                            const TextSpan(
+                                text: 'Misy '),
+                            TextSpan(
+                              text: 'fiteny',
+                              style: const TextStyle(
+                                color: tanoAmber,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LanguageReferencesPage(),
+                                    ),
+                                  );
+                                },
+                            ),
+                            const TextSpan(text: ' na '),
+                            TextSpan(
+                              text: 'voambolana',
+                              style: const TextStyle(
+                                color: tanoAmber,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LanguageReferencesPage(),
+                                    ),
+                                  );
+                                },
+                            ),
+                            const TextSpan(
+                                text:
+                                    ' sasany notsongaina manokana noho izy ireo fohy kokoa no sady feno ara-kevitra.'),
+                          ],
+                        ),
+                      ),
+                    ),
 
                   // --- ABOUT ---
                   _SettingsSection(title: AppText.tr('about')),
