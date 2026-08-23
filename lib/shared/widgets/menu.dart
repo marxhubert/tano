@@ -88,29 +88,27 @@ Widget popupButton({
             : icon)
       : null;
 
-  final Widget label = Expanded(
-    child: Text(
-      popupItem.title,
-      style: TextStyle(
-        color: selectedColor ?? primaryTextColor(context),
-        fontSize: 14.0,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      overflow: TextOverflow.ellipsis,
+  final Widget label = Text(
+    popupItem.title,
+    style: TextStyle(
+      color: selectedColor ?? primaryTextColor(context),
+      fontSize: 14.0,
+      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
     ),
+    overflow: TextOverflow.ellipsis,
   );
 
-  return Row(
-    children: <Widget>[
-      label,
-      if (icon != null) ...<Widget>[
-        const SizedBox(width: 12.0),
-        Icon(
-          icon.icon,
-          color: selectedColor ?? Colors.grey.shade600,
-          size: 22.0,
-        ),
-      ],
-    ],
+  return ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+    visualDensity: const VisualDensity(vertical: -4.0),
+    dense: true,
+    title: label,
+    trailing: icon != null
+        ? Icon(
+            icon.icon,
+            color: selectedColor ?? mutedTextColor(context),
+            size: 20.0,
+          )
+        : null,
   );
 }

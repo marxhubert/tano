@@ -594,7 +594,7 @@ class _SelectionFabButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 10.0,
+                fontSize: 12.0,
                 color: effectiveColor,
                 fontWeight: FontWeight.bold,  
               ),

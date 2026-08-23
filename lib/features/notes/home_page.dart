@@ -285,6 +285,7 @@ class HomeState extends State<Home> {
         icon: const Icon(Icons.more_vert),
         offset: const Offset(0, 56),
         elevation: 4.0,
+        constraints: const BoxConstraints(minWidth: 160.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(appBorderRadius),
         ),
@@ -310,7 +311,8 @@ class HomeState extends State<Home> {
           return popupItems.map((PopupItem popupItem) {
             return PopupMenuItem<PopupItem>(
               value: popupItem,
-              height: 40.0,
+              height: 38.0,
+              padding: EdgeInsets.zero,
               child: popupButton(
                 context: context,
                 popupItem: popupItem,
@@ -378,7 +380,7 @@ class HomeState extends State<Home> {
                 ),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(_sliverPadding),
+              padding: const EdgeInsets.all(appPaddingMedium),
               sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
             ),
           ],

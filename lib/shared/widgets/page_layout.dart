@@ -53,6 +53,7 @@ class PageScaffold extends StatefulWidget {
     this.titleController,
     this.titleHint,
     this.backgroundColor,
+    this.titlePaddingLeft,
   });
 
   final String title;
@@ -67,6 +68,7 @@ class PageScaffold extends StatefulWidget {
   final TextEditingController? titleController;
   final String? titleHint;
   final Color? backgroundColor;
+  final double? titlePaddingLeft;
 
   @override
   State<PageScaffold> createState() => _PageScaffoldState();
@@ -173,8 +175,8 @@ class _PageScaffoldState extends State<PageScaffold> {
         slivers: <Widget>[
           // Big Title in the body
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              appPaddingLarge,
+            padding: EdgeInsets.fromLTRB(
+              widget.titlePaddingLeft ?? appPaddingLarge,
               appPaddingMedium,
               appPaddingLarge,
               0.0,
