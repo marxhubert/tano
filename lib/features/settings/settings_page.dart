@@ -40,7 +40,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: AppText.tr('settings'),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: appPaddingMedium),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // --- APPEARANCE (THEME) ---
@@ -373,9 +373,9 @@ class _SettingsCard extends StatelessWidget {
       elevation: 0.0,
       color: Theme.of(context).brightness == Brightness.dark
           ? Colors.white.withValues(alpha: 0.04)
-          : Colors.black.withValues(alpha: 0.05),
+          : Colors.black.withValues(alpha: 0.06),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(18.0),
       ),
       child: Column(children: dividedChildren),
     );
@@ -397,8 +397,10 @@ class _ThemePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color screenBg = isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final Color screenBg =
+        isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
+    // 9 Colors for the mock grid (Light/Dark pairs from TanoPastels)
     final List<Color> mockColors = isDark
         ? [
             const Color(0xFF004D40),
@@ -434,7 +436,8 @@ class _ThemePreview extends StatelessWidget {
               color: screenBg,
               borderRadius: BorderRadius.circular(isSelected ? 13.0 : 12.0),
               border: Border.all(
-                color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
+                color:
+                    isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
                 width: isSelected ? 2.0 : 1.0,
               ),
             ),
@@ -450,7 +453,8 @@ class _ThemePreview extends StatelessWidget {
                   child: Container(
                     decoration: const BoxDecoration(
                       color: tanoTeal,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(11.0)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(11.0)),
                     ),
                     alignment: Alignment.bottomLeft,
                     padding: const EdgeInsets.only(left: 8, bottom: 6),
@@ -462,18 +466,24 @@ class _ThemePreview extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 4),
                     width: 16,
                     height: 5,
-                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(5)),
+                    decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(5)),
                   ),
                 ),
                 Positioned.fill(
                   top: 20,
                   child: Padding(
-                    padding: isSelected ? const EdgeInsets.all(3.0) : const EdgeInsets.all(4.0),
+                    padding: isSelected
+                        ? const EdgeInsets.all(3.0)
+                        : const EdgeInsets.all(4.0),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 4,
                       runSpacing: 4,
-                      children: mockColors.map((color) => _MockNoteCard(color: color)).toList(),
+                      children: mockColors
+                          .map((color) => _MockNoteCard(color: color))
+                          .toList(),
                     ),
                   ),
                 ),
@@ -483,7 +493,8 @@ class _ThemePreview extends StatelessWidget {
                   child: Container(
                     width: 14,
                     height: 14,
-                    decoration: const BoxDecoration(color: tanoTeal, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: tanoTeal, shape: BoxShape.circle),
                     child: const Icon(Icons.add, size: 8, color: Colors.white),
                   ),
                 ),
@@ -494,7 +505,7 @@ class _ThemePreview extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-                fontSize: 13.0,
+                fontSize: 12.0,
                 color: primaryTextColor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
           ),
@@ -523,7 +534,10 @@ class _MockNoteCard extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(2.0),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 1, offset: const Offset(0, 1)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 1,
+              offset: const Offset(0, 1)),
         ],
       ),
     );
@@ -531,7 +545,8 @@ class _MockNoteCard extends StatelessWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({required this.title, required this.selected, required this.onTap});
+  const _SettingsTile(
+      {required this.title, required this.selected, required this.onTap});
   final String title;
   final bool selected;
   final VoidCallback onTap;
@@ -550,14 +565,17 @@ class _SettingsTile extends StatelessWidget {
           fontSize: 14.0,
         ),
       ),
-      trailing: selected ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0) : null,
+      trailing: selected
+          ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0)
+          : null,
       onTap: onTap,
     );
   }
 }
 
 class _SettingsSwitchTile extends StatelessWidget {
-  const _SettingsSwitchTile({required this.title, required this.value, required this.onChanged});
+  const _SettingsSwitchTile(
+      {required this.title, required this.value, required this.onChanged});
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -568,10 +586,12 @@ class _SettingsSwitchTile extends StatelessWidget {
       visualDensity: const VisualDensity(vertical: -4.0),
       contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
       dense: true,
-      title: Text(title, style: TextStyle(color: primaryTextColor(context), fontSize: 14.0)),
+      title: Text(title,
+          style: TextStyle(color: primaryTextColor(context), fontSize: 14.0)),
       trailing: Transform.scale(
         scale: 0.8,
-        child: Switch.adaptive(value: value, onChanged: onChanged, activeColor: tanoTeal),
+        child: Switch.adaptive(
+            value: value, onChanged: onChanged, activeColor: tanoTeal),
       ),
     );
   }

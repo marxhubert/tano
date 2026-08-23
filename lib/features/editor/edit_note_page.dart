@@ -153,6 +153,7 @@ class _EditNoteState extends State<EditNote> {
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
               backgroundColor: immersiveBg,
+              titlePaddingLeft: 12.0,
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,

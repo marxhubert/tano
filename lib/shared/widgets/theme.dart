@@ -59,6 +59,7 @@ const double appPaddingLarge = 18.0;
 const double appPaddingMedium = 12.0;
 const double appPaddingSmall = 6.0;
 const double appBorderRadius = 12.0;
+const double sectionBorderRadius = 24.0;
 
 /// Helper to get the correct text color based on background luminance.
 Color getTextColor(Color background) {
