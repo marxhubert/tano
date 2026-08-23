@@ -34,12 +34,26 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _setSorting(String sortBy) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('sortBy', sortBy);
+    if (sortBy == 'alpha' || sortBy == 'date') {
+      await prefs.setString('secondarySortBy', sortBy);
+    }
     if (mounted) setState(() {});
   }
 
   Future<String> _getSorting() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('sortBy') ?? 'date';
+  }
+
+  Future<void> _setSortAscending(bool ascending) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sortAscending', ascending);
+    if (mounted) setState(() {});
+  }
+
+  Future<bool> _getSortAscending() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('sortAscending') ?? true;
   }
 
   @override
@@ -72,14 +86,18 @@ class _SettingsPageState extends State<SettingsPage> {
                             _ThemePreview(
                               title: AppText.tr('theme_light'),
                               isDark: false,
-                              isSelected: !isAutomatic && currentMode == ThemeMode.light,
-                              onTap: () => ThemeController.instance.setThemeMode(ThemeMode.light),
+                              isSelected:
+                                  !isAutomatic && currentMode == ThemeMode.light,
+                              onTap: () => ThemeController.instance
+                                  .setThemeMode(ThemeMode.light),
                             ),
                             _ThemePreview(
                               title: AppText.tr('theme_dark'),
                               isDark: true,
-                              isSelected: !isAutomatic && currentMode == ThemeMode.dark,
-                              onTap: () => ThemeController.instance.setThemeMode(ThemeMode.dark),
+                              isSelected:
+                                  !isAutomatic && currentMode == ThemeMode.dark,
+                              onTap: () => ThemeController.instance
+                                  .setThemeMode(ThemeMode.dark),
                             ),
                           ],
                         ),
@@ -89,7 +107,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         value: isAutomatic,
                         onChanged: (val) {
                           ThemeController.instance.setThemeMode(
-                            val ? ThemeMode.system : (Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light),
+                            val
+                                ? ThemeMode.system
+                                : (Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? ThemeMode.dark
+                                    : ThemeMode.light),
                           );
                         },
                       ),
@@ -98,21 +121,26 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   // --- SORTING ---
                   _SettingsSection(title: AppText.tr('menu_sorting')),
-                  FutureBuilder<String>(
-                    future: _getSorting(),
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: Future.wait([
+                      _getSorting(),
+                      _getSortAscending(),
+                    ]).then((res) => {'sortBy': res[0], 'ascending': res[1]}),
                     builder: (context, snapshot) {
-                      final currentSort = snapshot.data ?? 'date';
+                      final currentSort = snapshot.data?['sortBy'] ?? 'date';
+                      final currentAsc = snapshot.data?['ascending'] ?? true;
+
                       return _SettingsCard(
                         children: [
-                          _SettingsTile(
-                            title: AppText.tr('menu_date'),
-                            selected: currentSort == 'date',
-                            onTap: () => _setSorting('date'),
-                          ),
                           _SettingsTile(
                             title: AppText.tr('menu_title'),
                             selected: currentSort == 'alpha',
                             onTap: () => _setSorting('alpha'),
+                          ),
+                          _SettingsTile(
+                            title: AppText.tr('menu_date'),
+                            selected: currentSort == 'date',
+                            onTap: () => _setSorting('date'),
                           ),
                           _SettingsTile(
                             title: AppText.tr('menu_favorites'),
@@ -120,9 +148,14 @@ class _SettingsPageState extends State<SettingsPage> {
                             onTap: () => _setSorting('important'),
                           ),
                           _SettingsTile(
-                            title: AppText.tr('menu_category'),
-                            selected: currentSort == 'category',
-                            onTap: () => _setSorting('category'),
+                            title: AppText.tr('menu_theme_sort'),
+                            selected: currentSort == 'theme' || currentSort == 'category',
+                            onTap: () => _setSorting('theme'),
+                          ),
+                          _SettingsSwitchTile(
+                            title: AppText.tr('menu_descending'),
+                            value: !currentAsc,
+                            onChanged: (val) => _setSortAscending(!val),
                           ),
                         ],
                       );
@@ -151,7 +184,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   _SettingsCard(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('about'),
                           style: TextStyle(
@@ -233,7 +267,7 @@ class _SettingsCard extends StatelessWidget {
           ? Colors.white.withValues(alpha: 0.04)
           : Colors.black.withValues(alpha: 0.03),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24.0),
+        borderRadius: BorderRadius.circular(28.0),
       ),
       child: Column(children: dividedChildren),
     );
@@ -255,8 +289,9 @@ class _ThemePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color screenBg = isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-    
+    final Color screenBg =
+        isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+
     // 9 Colors for the mock grid (Light/Dark pairs from TanoPastels)
     final List<Color> mockColors = isDark
         ? [
@@ -294,7 +329,8 @@ class _ThemePreview extends StatelessWidget {
               color: screenBg,
               borderRadius: BorderRadius.circular(isSelected ? 13.0 : 12.0),
               border: Border.all(
-                color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
+                color:
+                    isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
                 width: isSelected ? 2.0 : 1.0,
               ),
             ),
@@ -336,12 +372,16 @@ class _ThemePreview extends StatelessWidget {
                 Positioned.fill(
                   top: 20,
                   child: Padding(
-                    padding: isSelected ? const EdgeInsets.all(3.0) : const EdgeInsets.all(4.0),
+                    padding: isSelected
+                        ? const EdgeInsets.all(3.0)
+                        : const EdgeInsets.all(4.0),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 4,
                       runSpacing: 4,
-                      children: mockColors.map((color) => _MockNoteCard(color: color)).toList(),
+                      children: mockColors
+                          .map((color) => _MockNoteCard(color: color))
+                          .toList(),
                     ),
                   ),
                 ),

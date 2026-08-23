@@ -96,6 +96,16 @@ class HomeState extends State<Home> {
       await prefs.setString('sortBy', 'date');
     }
     _viewModel.setSortBy(prefs.getString('sortBy') ?? 'date');
+
+    if (!prefs.containsKey('secondarySortBy')) {
+      await prefs.setString('secondarySortBy', 'date');
+    }
+    _viewModel.setSecondarySortBy(prefs.getString('secondarySortBy') ?? 'date');
+
+    if (!prefs.containsKey('sortAscending')) {
+      await prefs.setBool('sortAscending', true);
+    }
+    _viewModel.setSortAscending(prefs.getBool('sortAscending') ?? true);
   }
 
   Future<void> _saveViewLayoutPref(String viewLayout) async {
@@ -278,7 +288,7 @@ class HomeState extends State<Home> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(appBorderRadius),
         ),
-        onSelected: ((valueSelected) {
+        onSelected: ((valueSelected) async {
           switch (valueSelected.value.toLowerCase()) {
             case "list":
               _changeLayout('list');
@@ -287,7 +297,8 @@ class HomeState extends State<Home> {
               _changeLayout('gridlist');
               break;
             case "settings":
-              Navigator.of(context).pushNamed('/settings');
+              await Navigator.of(context).pushNamed('/settings');
+              _loadPreferences();
               break;
           }
         }),
