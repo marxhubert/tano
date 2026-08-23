@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,12 +20,42 @@ class LocaleController extends ChangeNotifier {
 
   String get language => _language;
 
-  /// Loads the saved language, or falls back to the default language
-  /// if no preference exists.
+  /// Loads the saved language, or detects it automatically on first launch
+  /// based on the user's country and system language.
   Future<void> init() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? saved = prefs.getString(_prefKey);
-    _language = supportedLanguages.contains(saved) ? saved! : defaultLanguage;
+
+    if (saved != null && supportedLanguages.contains(saved)) {
+      _language = saved;
+    } else {
+      // Automatic detection for first launch
+      final Locale systemLocale = PlatformDispatcher.instance.locale;
+      final String? countryCode = systemLocale.countryCode?.toUpperCase();
+      final String languageCode = systemLocale.languageCode.toLowerCase();
+
+      if (countryCode == 'MG') {
+        _language = 'mg';
+      } else if (_isFrancophone(countryCode, languageCode)) {
+        _language = 'fr';
+      } else {
+        _language = 'en';
+      }
+    }
+  }
+
+  bool _isFrancophone(String? countryCode, String languageCode) {
+    // If the phone is already in French, it's a safe bet.
+    if (languageCode == 'fr') return true;
+
+    // List of major francophone countries (ISO codes)
+    const Set<String> francophoneCountries = {
+      'FR', 'BE', 'CH', 'CA', 'LU', 'MC', 'SN', 'CI', 'CM', 'CD',
+      'CG', 'GA', 'GN', 'NE', 'TG', 'BJ', 'BF', 'BI', 'RW', 'KM',
+      'DJ', 'HT', 'VU', 'SC', 'TD', 'ML', 'MA', 'DZ', 'TN'
+    };
+
+    return countryCode != null && francophoneCountries.contains(countryCode);
   }
 
   /// Saves and applies the new language, then notifies listeners so the
