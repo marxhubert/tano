@@ -18,6 +18,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   PackageInfo? _packageInfo;
+  bool _bugReportEnabled = false;
 
   @override
   void initState() {
@@ -269,7 +270,105 @@ class _SettingsPageState extends State<SettingsPage> {
                           }
                         },
                       ),
+                      ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        title: Text(
+                          AppText.tr('option_check_update'),
+                          style: TextStyle(
+                            color: primaryTextColor(context),
+                            fontSize: 14.0,
+                          ),
+                        ),
+                        onTap: () {}, // TODO: Implement check for update
+                      ),
+                      ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        title: Text(
+                          AppText.tr('option_feedback'),
+                          style: TextStyle(
+                            color: primaryTextColor(context),
+                            fontSize: 14.0,
+                          ),
+                        ),
+                        onTap: () {}, // TODO: Implement feedback
+                      ),
+                      _SettingsSwitchTile(
+                        title: AppText.tr('option_bug_report'),
+                        value: _bugReportEnabled,
+                        onChanged: (val) =>
+                            setState(() => _bugReportEnabled = val),
+                      ),
                     ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
+                    child: Text(
+                      AppText.tr('desc_bug_report'),
+                      style: TextStyle(
+                        fontSize: 12.0,
+                        color: mutedTextColor(context),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24.0),
+
+                  // --- DATA MANAGEMENT (NO TITLE) ---
+                  _SettingsCard(
+                    children: [
+                      ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        title: Text(
+                          AppText.tr('option_recycle_bin'),
+                          style: TextStyle(
+                            color: primaryTextColor(context),
+                            fontSize: 14.0,
+                          ),
+                        ),
+                        onTap: () {}, // TODO: Implement recycle bin
+                      ),
+                      ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        title: Text(
+                          AppText.tr('option_reset_data'),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14.0,
+                          ),
+                        ),
+                        onTap: () {}, // TODO: Implement data reset
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppText.tr('desc_recycle_bin'),
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: mutedTextColor(context),
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 12.0),
+                        Text(
+                          AppText.tr('desc_reset_data'),
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: mutedTextColor(context),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 40.0),
                 ]),
