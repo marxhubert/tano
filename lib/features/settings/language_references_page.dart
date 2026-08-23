@@ -73,12 +73,24 @@ class LanguageReferencesPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            "${index + 1}. ${ref.word}",
-                            style: TextStyle(
-                              color: primaryTextColor(context),
-                              fontSize: 15.0,
-                              fontWeight: FontWeight.bold,
+                          child: Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                color: mutedTextColor(context),
+                                fontSize: 13.0,
+                                fontWeight: FontWeight.normal,
+                              ),
+                              children: [
+                                TextSpan(text: "${index + 1}. "),
+                                TextSpan(
+                                  text: ref.word,
+                                  style: TextStyle(
+                                    color: primaryTextColor(context),
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
