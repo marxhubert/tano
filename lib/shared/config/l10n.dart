@@ -13,7 +13,7 @@ class LocaleController extends ChangeNotifier {
 
   static const String _prefKey = 'language';
   static const String defaultLanguage = 'en';
-  static const List<String> supportedLanguages = <String>['en', 'fr'];
+  static const List<String> supportedLanguages = <String>['en', 'fr', 'mg'];
 
   String _language = defaultLanguage;
 
@@ -116,11 +116,13 @@ class AppText {
     'menu_language': 'Language',
     'menu_english': 'English',
     'menu_french': 'French',
+    'menu_malagasy': 'Malagasy',
     'menu_view': 'View',
     'theme_light': 'Light',
     'theme_dark': 'Dark',
     'theme_system': 'System',
     'legacy_version': 'v 0.1.0',
+    'language_references': 'Language References',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -195,18 +197,105 @@ class AppText {
     'menu_language': 'Langue',
     'menu_english': 'Anglais',
     'menu_french': 'Français',
+    'menu_malagasy': 'Malagasy',
     'menu_view': 'Vue',
     'theme_light': 'Clair',
     'theme_dark': 'Sombre',
     'theme_system': 'Système',
     'legacy_version': 'v 0.1.0',
+    'language_references': 'Références Linguistiques',
+  };
+
+  static const Map<String, String> _mg = <String, String>{
+    // Home
+    'all_notes': 'Naoty rehetra',
+    'note': 'naoty',
+    'notes': 'naoty',
+    'search': 'Karohy',
+    'sorted_by': 'Voalamina araka ny {sort}',
+    'no_note_selected': 'Tsy misy naoty voafantina',
+    'all_notes_selected': 'Voafantina daholo ny naoty {count}',
+    'notes_selected': 'Naoty {count}/{total} voafantina',
+    'single_note_selected': 'Naoty {count} voafantina',
+    'delete_note': 'Hamafa ny naoty',
+    'delete_notes': 'Hamafa naoty {count}',
+    'delete_all_notes': 'Hamafa ny naoty rehetra',
+    'delete': 'fafao',
+    'select_all': 'Rehetra',
+    'select_none': 'Tsy misy',
+    'note_deleted': 'Voafafa ny naoty',
+    'undo': 'AVERENO',
+    'save_before_leave': 'Tehirizina alohan\'ny hiala',
+    'save': 'tehirizo',
+    'title_here': 'Lohateny eto',
+    'content_here': 'Votoatiny eto',
+    'content_empty': 'Tsy mahazo miala maina ny votoatiny',
+    'type_to_search': 'Soraty izay karohina',
+    'no_item_found': 'Tsy nisy zavatra hita',
+    'no_note_found': 'Tsy nisy naoty hita',
+    'single_result': 'Valiny {count} hita',
+    'results': 'Valiny {count} hita',
+    'confirm_question': 'Tena te hanohy ve ianao?',
+    'quit': 'HIALA',
+    'cancel': 'ATSAHARO',
+    'no_data': 'Tsy misy angona',
+    'edit_note': 'Hanova naoty',
+    'add_note': 'Hanampy naoty',
+    'notes_section': 'Naoty',
+    'title': 'Lohateny',
+    'content': 'Votoatiny',
+    'important': 'Zava-dehibe',
+    'save_changes': 'Tehirizo',
+    'about_description':
+        'Ny tanjona lehibe amin\'ny Tano dia ny hanolotra fitaovana tsotra ahafahanao manoratra naoty hitahirizana ny hevitrao, hamoronana lisitra tokony hatao ary handaminana ny tetikasanao amin\'ny toerana iray ihany.',
+    'close_button': 'HIDIO',
+    'home': 'Fandraisana',
+    'about': 'Momba ny',
+    'settings': 'Fikirana',
+    'colour': 'Loko',
+    'option_image': 'Hifidy sary',
+    'option_checklist': 'Lisitra',
+    'option_link': 'Hampifandray naoty',
+    'option_attachment': 'Rakitra ampiana',
+    'option_collaborators': 'Mpiara-miasa',
+    'option_share': 'Hizara',
+    'option_pin': 'Hatao eo ambony',
+    'option_find': 'Karohy ao anaty naoty',
+    'option_move': 'Hafindra any amin\'ny',
+    'option_lock': 'Hahidy',
+    // Menu
+    'menu_display': 'Fampisehoana',
+    'menu_list': 'Lisitra',
+    'menu_grid': 'Efajoro',
+    'menu_sorting': 'Filaminana',
+    'menu_theme': 'Endrika',
+    'theme_automatic': 'Ho azy',
+    'menu_date': 'Daty',
+    'menu_title': 'Lohateny',
+    'menu_favorites': 'Zava-dehibe',
+    'menu_theme_sort': 'Loko',
+    'menu_descending': 'Mifanohitra',
+    'menu_language': 'Fiteny',
+    'menu_english': 'Anglisy',
+    'menu_french': 'Frantsay',
+    'menu_malagasy': 'Malagasy',
+    'menu_view': 'Sary',
+    'theme_light': 'Mazava',
+    'theme_dark': 'Maizina',
+    'theme_system': 'Rafi-pifandraisana',
+    'legacy_version': 'v 0.1.0',
+    'language_references': 'Rakiteny tsotra',
   };
 
   /// Returns the string associated with [key] in the current language,
   /// replacing the `{name}` parameters provided in [params].
   static String tr(String key, [Map<String, String>? params]) {
     final String lang = LocaleController.instance.language;
-    final Map<String, String> table = lang == 'fr' ? _fr : _en;
+    final Map<String, String> table = switch (lang) {
+      'fr' => _fr,
+      'mg' => _mg,
+      _ => _en,
+    };
     String text = table[key] ?? _en[key] ?? key;
     if (params != null) {
       params.forEach((String name, String value) {
