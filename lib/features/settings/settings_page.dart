@@ -1,13 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/features/settings/language_references_page.dart';
+import 'package:tano/features/settings/settings_view_model.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -17,52 +16,19 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  PackageInfo? _packageInfo;
-  bool _bugReportEnabled = false;
+  final SettingsViewModel _viewModel = SettingsViewModel();
 
   @override
   void initState() {
     super.initState();
-    _initPackageInfo();
-  }
-
-  Future<void> _initPackageInfo() async {
-    final PackageInfo info = await PackageInfo.fromPlatform();
-    if (!mounted) return;
-    setState(() {
-      _packageInfo = info;
-    });
-  }
-
-  Future<void> _setSorting(String sortBy) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('sortBy', sortBy);
-    if (sortBy == 'alpha' || sortBy == 'date') {
-      await prefs.setString('secondarySortBy', sortBy);
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<String> _getSorting() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('sortBy') ?? 'date';
-  }
-
-  Future<void> _setSortAscending(bool ascending) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('sortAscending', ascending);
-    if (mounted) setState(() {});
-  }
-
-  Future<bool> _getSortAscending() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('sortAscending') ?? true;
+    _viewModel.init();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([
+        _viewModel,
         ThemeController.instance,
         LocaleController.instance,
       ]),
@@ -89,18 +55,14 @@ class _SettingsPageState extends State<SettingsPage> {
                             _ThemePreview(
                               title: AppText.tr('theme_light'),
                               isDark: false,
-                              isSelected:
-                                  !isAutomatic && currentMode == ThemeMode.light,
-                              onTap: () => ThemeController.instance
-                                  .setThemeMode(ThemeMode.light),
+                              isSelected: !isAutomatic && currentMode == ThemeMode.light,
+                              onTap: () => ThemeController.instance.setThemeMode(ThemeMode.light),
                             ),
                             _ThemePreview(
                               title: AppText.tr('theme_dark'),
                               isDark: true,
-                              isSelected:
-                                  !isAutomatic && currentMode == ThemeMode.dark,
-                              onTap: () => ThemeController.instance
-                                  .setThemeMode(ThemeMode.dark),
+                              isSelected: !isAutomatic && currentMode == ThemeMode.dark,
+                              onTap: () => ThemeController.instance.setThemeMode(ThemeMode.dark),
                             ),
                           ],
                         ),
@@ -110,12 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         value: isAutomatic,
                         onChanged: (val) {
                           ThemeController.instance.setThemeMode(
-                            val
-                                ? ThemeMode.system
-                                : (Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? ThemeMode.dark
-                                    : ThemeMode.light),
+                            val ? ThemeMode.system : (Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light),
                           );
                         },
                       ),
@@ -126,8 +83,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   _SettingsSection(title: AppText.tr('menu_sorting')),
                   FutureBuilder<Map<String, dynamic>>(
                     future: Future.wait([
-                      _getSorting(),
-                      _getSortAscending(),
+                      _viewModel.getSorting(),
+                      _viewModel.getSortAscending(),
                     ]).then((res) => {'sortBy': res[0], 'ascending': res[1]}),
                     builder: (context, snapshot) {
                       final currentSort = snapshot.data?['sortBy'] ?? 'date';
@@ -138,27 +95,42 @@ class _SettingsPageState extends State<SettingsPage> {
                           _SettingsTile(
                             title: AppText.tr('menu_title'),
                             selected: currentSort == 'alpha',
-                            onTap: () => _setSorting('alpha'),
+                            onTap: () async {
+                              await _viewModel.setSorting('alpha');
+                              setState(() {});
+                            },
                           ),
                           _SettingsTile(
                             title: AppText.tr('menu_date'),
                             selected: currentSort == 'date',
-                            onTap: () => _setSorting('date'),
+                            onTap: () async {
+                              await _viewModel.setSorting('date');
+                              setState(() {});
+                            },
                           ),
                           _SettingsTile(
                             title: AppText.tr('menu_favorites'),
                             selected: currentSort == 'important',
-                            onTap: () => _setSorting('important'),
+                            onTap: () async {
+                              await _viewModel.setSorting('important');
+                              setState(() {});
+                            },
                           ),
                           _SettingsTile(
                             title: AppText.tr('menu_theme_sort'),
                             selected: currentSort == 'theme' || currentSort == 'category',
-                            onTap: () => _setSorting('theme'),
+                            onTap: () async {
+                              await _viewModel.setSorting('theme');
+                              setState(() {});
+                            },
                           ),
                           _SettingsSwitchTile(
                             title: AppText.tr('menu_descending'),
                             value: !currentAsc,
-                            onChanged: (val) => _setSortAscending(!val),
+                            onChanged: (val) async {
+                              await _viewModel.setSortAscending(!val);
+                              setState(() {});
+                            },
                           ),
                         ],
                       );
@@ -197,8 +169,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             height: 1.5,
                           ),
                           children: [
-                            const TextSpan(
-                                text: 'Misy '),
+                            const TextSpan(text: 'Misy '),
                             TextSpan(
                               text: 'fiteny',
                               style: const TextStyle(
@@ -211,8 +182,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LanguageReferencesPage(),
+                                      builder: (context) => const LanguageReferencesPage(),
                                     ),
                                   );
                                 },
@@ -230,15 +200,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LanguageReferencesPage(),
+                                      builder: (context) => const LanguageReferencesPage(),
                                     ),
                                   );
                                 },
                             ),
                             const TextSpan(
-                                text:
-                                    ' sasany notsongaina manokana noho izy ireo fohy kokoa no sady feno ara-kevitra.'),
+                                text: ' sasany notsongaina manokana noho izy ireo fohy kokoa no sady feno ara-kevitra.'),
                           ],
                         ),
                       ),
@@ -249,56 +217,49 @@ class _SettingsPageState extends State<SettingsPage> {
                   _SettingsCard(
                     children: [
                       ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('about'),
-                          style: TextStyle(
-                            color: primaryTextColor(context),
-                            fontSize: 14.0,
-                          ),
+                          style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
                         ),
                         onTap: () {
-                          if (_packageInfo != null) {
+                          if (_viewModel.packageInfo != null) {
                             showDialog(
                               context: context,
                               builder: (context) => aboutInfo(
                                 context: context,
-                                packageInfo: _packageInfo!,
+                                packageInfo: _viewModel.packageInfo!,
                               ),
                             );
                           }
                         },
                       ),
                       ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('option_check_update'),
-                          style: TextStyle(
-                            color: primaryTextColor(context),
-                            fontSize: 14.0,
-                          ),
+                          style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
                         ),
                         onTap: () {}, // TODO: Implement check for update
                       ),
                       ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('option_feedback'),
-                          style: TextStyle(
-                            color: primaryTextColor(context),
-                            fontSize: 14.0,
-                          ),
+                          style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
                         ),
                         onTap: () {}, // TODO: Implement feedback
                       ),
                       _SettingsSwitchTile(
                         title: AppText.tr('option_bug_report'),
-                        value: _bugReportEnabled,
-                        onChanged: (val) =>
-                            setState(() => _bugReportEnabled = val),
+                        value: _viewModel.bugReportEnabled,
+                        onChanged: (val) => _viewModel.setBugReportEnabled(val),
                       ),
                     ],
                   ),
@@ -306,40 +267,32 @@ class _SettingsPageState extends State<SettingsPage> {
                     padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
                     child: Text(
                       AppText.tr('desc_bug_report'),
-                      style: TextStyle(
-                        fontSize: 12.0,
-                        color: mutedTextColor(context),
-                        height: 1.4,
-                      ),
+                      style: TextStyle(fontSize: 12.0, color: mutedTextColor(context), height: 1.4),
                     ),
                   ),
 
                   const SizedBox(height: 24.0),
 
-                  // --- DATA MANAGEMENT (NO TITLE) ---
+                  // --- DATA MANAGEMENT ---
                   _SettingsCard(
                     children: [
                       ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('option_recycle_bin'),
-                          style: TextStyle(
-                            color: primaryTextColor(context),
-                            fontSize: 14.0,
-                          ),
+                          style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
                         ),
                         onTap: () {}, // TODO: Implement recycle bin
                       ),
                       ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('option_reset_data'),
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 14.0,
-                          ),
+                          style: const TextStyle(color: Colors.red, fontSize: 14.0),
                         ),
                         onTap: () {}, // TODO: Implement data reset
                       ),
@@ -352,20 +305,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         Text(
                           AppText.tr('desc_recycle_bin'),
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            color: mutedTextColor(context),
-                            height: 1.4,
-                          ),
+                          style: TextStyle(fontSize: 12.0, color: mutedTextColor(context), height: 1.4),
                         ),
                         const SizedBox(height: 12.0),
                         Text(
                           AppText.tr('desc_reset_data'),
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            color: mutedTextColor(context),
-                            height: 1.4,
-                          ),
+                          style: TextStyle(fontSize: 12.0, color: mutedTextColor(context), height: 1.4),
                         ),
                       ],
                     ),
@@ -428,9 +373,9 @@ class _SettingsCard extends StatelessWidget {
       elevation: 0.0,
       color: Theme.of(context).brightness == Brightness.dark
           ? Colors.white.withValues(alpha: 0.04)
-          : Colors.black.withValues(alpha: 0.03),
+          : Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28.0),
+        borderRadius: BorderRadius.circular(12.0),
       ),
       child: Column(children: dividedChildren),
     );
@@ -452,39 +397,36 @@ class _ThemePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color screenBg =
-        isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final Color screenBg = isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    // 9 Colors for the mock grid (Light/Dark pairs from TanoPastels)
     final List<Color> mockColors = isDark
         ? [
-            const Color(0xFF004D40), // menthe
-            const Color(0xFF827717), // citron
-            const Color(0xFFBF360C), // peche
-            const Color(0xFF4A148C), // lavande
-            const Color(0xFF880E4F), // rose
-            const Color(0xFF01579B), // azur
-            const Color(0xFF3E2723), // sable
-            const Color(0xFF1B5E20), // sauge
-            const Color(0xFFAD1457), // bonbon
+            const Color(0xFF004D40),
+            const Color(0xFF827717),
+            const Color(0xFFBF360C),
+            const Color(0xFF4A148C),
+            const Color(0xFF880E4F),
+            const Color(0xFF01579B),
+            const Color(0xFF3E2723),
+            const Color(0xFF1B5E20),
+            const Color(0xFFAD1457),
           ]
         : [
-            const Color(0xFFE0F2F1), // menthe
-            const Color(0xFFFFF9C4), // citron
-            const Color(0xFFFFE0B2), // peche
-            const Color(0xFFF3E5F5), // lavande
-            const Color(0xFFFFEBEE), // rose
-            const Color(0xFFE1F5FE), // azur
-            const Color(0xFFF5F5DC), // sable
-            const Color(0xFFF1F8E9), // sauge
-            const Color(0xFFFCE4EC), // bonbon
+            const Color(0xFFE0F2F1),
+            const Color(0xFFFFF9C4),
+            const Color(0xFFFFE0B2),
+            const Color(0xFFF3E5F5),
+            const Color(0xFFFFEBEE),
+            const Color(0xFFE1F5FE),
+            const Color(0xFFF5F5DC),
+            const Color(0xFFF1F8E9),
+            const Color(0xFFFCE4EC),
           ];
 
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          // The "Phone Screen" Mockup
           Container(
             width: 60,
             height: 120,
@@ -492,8 +434,7 @@ class _ThemePreview extends StatelessWidget {
               color: screenBg,
               borderRadius: BorderRadius.circular(isSelected ? 13.0 : 12.0),
               border: Border.all(
-                color:
-                    isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
+                color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.3),
                 width: isSelected ? 2.0 : 1.0,
               ),
             ),
@@ -501,7 +442,6 @@ class _ThemePreview extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // AppBar Simulation
                 Positioned(
                   top: 0,
                   left: 0,
@@ -510,55 +450,40 @@ class _ThemePreview extends StatelessWidget {
                   child: Container(
                     decoration: const BoxDecoration(
                       color: tanoTeal,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(11.0),
-                      ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(11.0)),
                     ),
                     alignment: Alignment.bottomLeft,
                     padding: const EdgeInsets.only(left: 8, bottom: 6),
                   ),
                 ),
-                // Dynamic Island Simulation
                 Align(
                   alignment: Alignment.topCenter,
                   child: Container(
                     margin: const EdgeInsets.only(top: 4),
                     width: 16,
                     height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
+                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(5)),
                   ),
                 ),
-                // Grid of Note Cards Simulation
                 Positioned.fill(
                   top: 20,
                   child: Padding(
-                    padding: isSelected
-                        ? const EdgeInsets.all(3.0)
-                        : const EdgeInsets.all(4.0),
+                    padding: isSelected ? const EdgeInsets.all(3.0) : const EdgeInsets.all(4.0),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 4,
                       runSpacing: 4,
-                      children: mockColors
-                          .map((color) => _MockNoteCard(color: color))
-                          .toList(),
+                      children: mockColors.map((color) => _MockNoteCard(color: color)).toList(),
                     ),
                   ),
                 ),
-                // FAB Simulation
                 Positioned(
                   bottom: 4,
                   right: 4,
                   child: Container(
                     width: 14,
                     height: 14,
-                    decoration: const BoxDecoration(
-                      color: tanoTeal,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: tanoTeal, shape: BoxShape.circle),
                     child: const Icon(Icons.add, size: 8, color: Colors.white),
                   ),
                 ),
@@ -569,10 +494,9 @@ class _ThemePreview extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 13.0,
-              color: primaryTextColor(context),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+                fontSize: 13.0,
+                color: primaryTextColor(context),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
           ),
           const SizedBox(height: 6),
           Icon(
@@ -599,11 +523,7 @@ class _MockNoteCard extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(2.0),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 1, offset: const Offset(0, 1)),
         ],
       ),
     );
@@ -611,12 +531,7 @@ class _MockNoteCard extends StatelessWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.title,
-    required this.selected,
-    required this.onTap,
-  });
-
+  const _SettingsTile({required this.title, required this.selected, required this.onTap});
   final String title;
   final bool selected;
   final VoidCallback onTap;
@@ -624,6 +539,7 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      visualDensity: const VisualDensity(vertical: -4.0),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
       dense: true,
       title: Text(
@@ -634,21 +550,14 @@ class _SettingsTile extends StatelessWidget {
           fontSize: 14.0,
         ),
       ),
-      trailing: selected
-          ? const Icon(Icons.check, color: tanoTeal, size: 20.0)
-          : null,
+      trailing: selected ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0) : null,
       onTap: onTap,
     );
   }
 }
 
 class _SettingsSwitchTile extends StatelessWidget {
-  const _SettingsSwitchTile({
-    required this.title,
-    required this.value,
-    required this.onChanged,
-  });
-
+  const _SettingsSwitchTile({required this.title, required this.value, required this.onChanged});
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -656,19 +565,13 @@ class _SettingsSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      visualDensity: const VisualDensity(vertical: -4.0),
+      contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
       dense: true,
-      title: Text(
-        title,
-        style: TextStyle(
-          color: primaryTextColor(context),
-          fontSize: 14.0,
-        ),
-      ),
-      trailing: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-        activeColor: tanoTeal,
+      title: Text(title, style: TextStyle(color: primaryTextColor(context), fontSize: 14.0)),
+      trailing: Transform.scale(
+        scale: 0.8,
+        child: Switch.adaptive(value: value, onChanged: onChanged, activeColor: tanoTeal),
       ),
     );
   }
