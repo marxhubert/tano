@@ -91,20 +91,17 @@ void main() {
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
 
-      expect(find.text('Display'), findsOneWidget);
-      expect(find.text('Sorting'), findsOneWidget);
-      expect(find.text('Language'), findsOneWidget);
-      expect(find.text('About'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
 
       // The display icons are correctly rendered to the right of the items.
       expect(find.byIcon(Icons.view_stream), findsOneWidget);
 
-      // The active item (default date sorting) is colored with the theme
-      // color, replacing the old chevron.
+      // The active item (default list layout) is colored with the theme
+      // color.
       final Color primary = Theme.of(
-        tester.element(find.text('Date')),
+        tester.element(find.text('List')),
       ).colorScheme.primary;
-      expect(tester.widget<Text>(find.text('Date')).style?.color, primary);
+      expect(tester.widget<Text>(find.text('List')).style?.color, primary);
 
       // The sorting items have no icon: only the icon of the Display group
       // (view_list/view_stream/view_module) is present.

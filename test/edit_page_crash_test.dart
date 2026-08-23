@@ -62,17 +62,9 @@ void main() {
     // Types text into the content (focus inside a TextField).
     await tester.enterText(find.byType(TextField).last, 'Some new content');
     await tester.pumpAndSettle();
-
-    // Opens the category menu: this is the path that used to crash.
-    await tester.tap(find.byIcon(Icons.arrow_drop_down));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Note'), findsWidgets);
-    await tester.tap(find.text('Work').last);
-    await tester.pumpAndSettle();
   });
 
-  testWidgets('toggling the star in the editor updates the icon reactively', (
+  testWidgets('toggling the bookmark in the editor updates the icon reactively', (
     tester,
   ) async {
     final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
@@ -82,7 +74,7 @@ void main() {
         content: 'World',
         date: '2026-08-12 10:00:00.000',
         important: false,
-        category: 'note',
+        category: 'neutral',
       ),
     ]);
 
@@ -93,26 +85,26 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    final Finder editorStar = find.descendant(
-      of: find.byType(EditNote),
-      matching: find.byIcon(Icons.star_border),
+    final Finder editorBookmark = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byIcon(Icons.bookmark_border),
     );
-    expect(editorStar, findsOneWidget);
+    expect(editorBookmark, findsOneWidget);
 
-    await tester.tap(editorStar);
+    await tester.tap(editorBookmark);
     await tester.pumpAndSettle();
 
     expect(
       find.descendant(
-        of: find.byType(EditNote),
-        matching: find.byIcon(Icons.star),
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.bookmark),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
-        of: find.byType(EditNote),
-        matching: find.byIcon(Icons.star_border),
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.bookmark_border),
       ),
       findsNothing,
     );

@@ -3,14 +3,18 @@ import 'package:tano/core/repositories/file_notes_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
+import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/config/language_references_controller.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([
     LocaleController.instance.init(),
     ThemeController.instance.init(),
+    LanguageReferencesController.instance.init(),
   ]);
   runApp(Tano(repository: FileNotesRepository()));
 }
@@ -41,23 +45,41 @@ class Tano extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'TanoNote',
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: tanoTeal,
+              primary: tanoTeal,
+              secondary: tanoAmber,
+              surface: lightBackground,
+            ),
             useMaterial3: true,
-            canvasColor: Colors.blueGrey.shade50,
+            scaffoldBackgroundColor: lightBackground,
+            canvasColor: lightBackground,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: lightBackground,
+              elevation: 0,
+            ),
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blueGrey,
+              seedColor: tanoTeal,
               brightness: Brightness.dark,
+              primary: tanoTeal,
+              secondary: tanoAmberDark,
+              surface: darkBackground,
             ),
             useMaterial3: true,
-            canvasColor: Colors.blueGrey.shade900,
-            scaffoldBackgroundColor: Colors.blueGrey.shade900,
+            scaffoldBackgroundColor: darkBackground,
+            canvasColor: darkBackground,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: darkBackground,
+              elevation: 0,
+            ),
           ),
           themeMode: themeMode ?? ThemeController.instance.themeMode,
           home: SplashScreen(repository: repository),
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => Home(repository: repository),
+            '/settings': (BuildContext context) => const SettingsPage(),
           },
         );
       },

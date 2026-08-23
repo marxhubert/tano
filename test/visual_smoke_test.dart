@@ -36,12 +36,12 @@ List<Note> _demoNotes() => List<Note>.generate(
         '10:00:00.000',
     important: i.isEven,
     category: <String>[
-      'note',
-      'work',
-      'personal',
-      'travel',
-      'life',
-      'project',
+      'menthe',
+      'citron',
+      'peche',
+      'lavande',
+      'rose',
+      'azur',
     ][i % 6],
   ),
 );
@@ -115,7 +115,7 @@ void main() {
         // Main menu expanded then closed.
         await tester.tap(find.byIcon(Icons.more_vert).first);
         await tester.pumpAndSettle();
-        expect(find.text('Display'), findsOneWidget);
+        expect(find.text('Settings'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tapAt(const Offset(4, 4));
         await tester.pumpAndSettle();
@@ -147,21 +147,13 @@ void main() {
         expect(find.byType(TextField), findsNWidgets(2));
         expect(tester.takeException(), isNull);
 
-        // Category menu.
-        await tester.tap(find.byIcon(Icons.arrow_drop_down));
-        await tester.pumpAndSettle();
-        expect(find.text('Note'), findsWidgets);
-        await tester.tap(find.text('Work').last);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-
         // Typing (marks the note "dirty") then back -> confirm dialog.
         await tester.enterText(
           find.byType(TextField).last,
           'Freshly typed content',
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.arrow_back).first);
+        await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
         await tester.pumpAndSettle();
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
