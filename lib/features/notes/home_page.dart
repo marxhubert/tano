@@ -89,9 +89,9 @@ class HomeState extends State<Home> {
   Future<void> _loadPreferences() async {
     final SharedPreferences prefs = await _getPrefs();
     if (!prefs.containsKey('viewLayout')) {
-      await prefs.setString('viewLayout', 'list');
+      await prefs.setString('viewLayout', 'gridlist');
     }
-    _viewModel.setViewLayout(prefs.getString('viewLayout') ?? 'list');
+    _viewModel.setViewLayout(prefs.getString('viewLayout') ?? 'gridlist');
     if (!prefs.containsKey('sortBy')) {
       await prefs.setString('sortBy', 'date');
     }
@@ -251,7 +251,7 @@ class HomeState extends State<Home> {
               AppText.tr('cancel'),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 12.0,
+                fontSize: 14.0,
               ),
             ),
           ),
@@ -268,7 +268,7 @@ class HomeState extends State<Home> {
               AppText.tr('cancel'),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 12.0,
+                fontSize: 14.0,
               ),
             ),
           ),
@@ -309,6 +309,9 @@ class HomeState extends State<Home> {
             popupItems.add(popupItem);
           });
           return popupItems.map((PopupItem popupItem) {
+            if (popupItem.value == 'separator') {
+              return const PopupMenuDivider(height: 1.0) as PopupMenuEntry<PopupItem>;
+            }
             return PopupMenuItem<PopupItem>(
               value: popupItem,
               height: 38.0,

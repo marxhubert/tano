@@ -67,6 +67,7 @@ class NoteListView extends StatelessWidget {
             onSelectionToggle: () => viewModel.toggleSelection(note.id),
             builder: (context, textColor) => ListTile(
               title: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Expanded(
                     child: Text(
@@ -76,6 +77,7 @@ class NoteListView extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

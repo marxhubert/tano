@@ -24,6 +24,7 @@ class NoteGridView extends StatelessWidget {
       crossAxisCount: 3,
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
+      childAspectRatio: 0.9,
       children: List.generate(notes.length, (index) {
         final Note note = notes[index];
         final bool isSelected = viewModel.selected.contains(note.id);
@@ -49,17 +50,26 @@ class NoteGridView extends StatelessWidget {
               spacing: 4.0,
               children: <Widget>[
                 Text(
+                  formatNoteDate(note.date),
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    fontSize: 8.0,
+                    color: textColor.withValues(alpha: 0.6),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
                   note.title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 11.0,
                     color: textColor,
                   ),
-                  maxLines: 1,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Expanded(
-                  flex: 1,
+                Flexible(
                   child: Text(
                     note.content,
                     style: TextStyle(
@@ -67,18 +77,7 @@ class NoteGridView extends StatelessWidget {
                       color: textColor.withValues(alpha: 0.8),
                     ),
                     overflow: TextOverflow.clip,
-                    maxLines: null,
                   ),
-                ),
-                Text(
-                  formatNoteDate(note.date),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 8.0,
-                    color: textColor.withValues(alpha: 0.6),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
