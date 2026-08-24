@@ -292,7 +292,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                         title: Text(
                           AppText.tr('option_reset_data'),
-                          style: const TextStyle(color: Colors.red, fontSize: 14.0),
+                          style: const TextStyle(color: Color(0xFFFF8A80), fontSize: 14.0, fontWeight: FontWeight.bold),
                         ),
                         onTap: () {}, // TODO: Implement data reset
                       ),
@@ -372,7 +372,7 @@ class _SettingsCard extends StatelessWidget {
     return Card(
       elevation: 0.0,
       color: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.04)
+          ? Colors.white.withValues(alpha: 0.06)
           : Colors.black.withValues(alpha: 0.06),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18.0),

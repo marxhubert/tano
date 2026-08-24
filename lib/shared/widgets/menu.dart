@@ -22,19 +22,23 @@ class PopupItem {
 /// Main menu items, resolved according to the current language.
 Map<String, PopupItem> get menuItems {
   return <String, PopupItem>{
-    'list': PopupItem(
-      title: AppText.tr('menu_list'),
-      icon: const Icon(Icons.view_stream, size: 24.0),
-      value: 'list',
-      trailingIcon: true,
-    ),
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
       icon: const Icon(Icons.view_module, size: 24.0),
       value: 'gridlist',
       trailingIcon: true,
     ),
-
+    'list': PopupItem(
+      title: AppText.tr('menu_list'),
+      icon: const Icon(Icons.view_stream, size: 24.0),
+      value: 'list',
+      trailingIcon: true,
+    ),
+    'separator': PopupItem(
+      title: '',
+      value: 'separator',
+      icon: null,
+    ),
     'settings': PopupItem(
       title: AppText.tr('settings'),
       value: 'settings',

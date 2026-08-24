@@ -96,12 +96,12 @@ void main() {
       // The display icons are correctly rendered to the right of the items.
       expect(find.byIcon(Icons.view_stream), findsOneWidget);
 
-      // The active item (default list layout) is colored with the theme
+      // The active item (default grid layout) is colored with the theme
       // color.
       final Color primary = Theme.of(
-        tester.element(find.text('List')),
+        tester.element(find.text('Grid')),
       ).colorScheme.primary;
-      expect(tester.widget<Text>(find.text('List')).style?.color, primary);
+      expect(tester.widget<Text>(find.text('Grid')).style?.color, primary);
 
       // The sorting items have no icon: only the icon of the Display group
       // (view_list/view_stream/view_module) is present.

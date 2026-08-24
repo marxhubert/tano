@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -187,7 +188,46 @@ class _EditNoteState extends State<EditNote> {
               ],
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 100.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  sliver: SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Wrap(
+                        alignment: WrapAlignment.start,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8.0,
+                        runSpacing: 4.0,
+                        children: [
+                          Text(
+                            formatNoteDate(
+                                _viewModel.selectedDate.toString()),
+                            style: TextStyle(
+                              color: mutedTextColor(context),
+                              fontSize: 11.0,
+                            ),
+                          ),
+                          Text(
+                            '|',
+                            style: TextStyle(
+                              color:
+                                  mutedTextColor(context).withValues(alpha: 0.3),
+                              fontSize: 11.0,
+                            ),
+                          ),
+                          Text(
+                            '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                            style: TextStyle(
+                              color: mutedTextColor(context),
+                              fontSize: 11.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
                   sliver: SliverToBoxAdapter(
                     child: TextField(
                       maxLines: null,
