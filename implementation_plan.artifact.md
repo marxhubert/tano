@@ -1,60 +1,54 @@
-# Phase 2 Implementation Plan: Model Extension (Trash, Pinning, Locking)
+# Phase 3 Implementation Plan: Trash & Pinning Features
 
-This phase focuses on extending the `Note` model and the SQLite database to support new organizational and security features.
+This phase focuses on exposing the infrastructure built in Phase 2 to the user, specifically the Recycle Bin and Note Pinning functionalities.
 
 ## Goals
-- Add `isDeleted`, `isPinned`, and `isLocked` fields to the `Note` model.
-- Update the SQLite database schema to store these new fields.
-- Implement "Soft Delete" logic (moving to trash).
-- Implement Pinning and Locking business logic in the repository.
-
-## User Review Required
-
-> [!IMPORTANT]
-> The database schema will be updated. SQLite migration from version 1 to 2 will be handled automatically without data loss.
+- Implement visual indicators and controls for **Note Pinning**. [DONE]
+- Create a dedicated **Recycle Bin** page for managing soft-deleted notes. [DONE]
+- Allow **Restoring** or **Permanently Deleting** notes from the trash. [DONE]
+- Integrate these features into the existing UI (Edit page, Settings, Home). [DONE]
 
 ## Proposed Changes
 
-### 1. Model Upgrade
-Add the new functional fields to the `Note` class.
+### 1. Note Pinning (Visibility & Controls) [DONE]
+📍 *Make pinned notes stay at the top and clearly visible.*
 
-#### [MODIFY] [note.dart](file:///Users/marx/Devhub/tano/lib/core/models/note.dart)
-- Add `isDeleted` (bool), `isPinned` (bool), `isLocked` (bool).
-- Update `fromJson` and `toJson` to handle these fields (stored as INTEGER 0/1 in SQLite).
-- Update `copyWith`.
+#### [MODIFY] [note_card.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/note_card.dart)
+- Display a small pin icon if `note.isPinned` is true.
 
-### 2. Database Schema Migration
-Update the SQLite repository to handle the new columns.
+#### [MODIFY] [app_fab.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/app_fab.dart)
+- Wire up the `onPinSelected` callback in the "More" menu.
+- Display `push_pin` (filled) when pinned, `push_pin_outlined` otherwise.
 
-#### [MODIFY] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
-- Increment database version to `2`.
-- Add `onUpgrade` logic to `openDatabase` to add the new columns (`isDeleted`, `isPinned`, `isLocked`) to existing installations.
-- Update the `onCreate` schema.
+#### [MODIFY] [edit_note_page.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_page.dart)
+- Implement `onPinSelected` logic to toggle pin status via `EditNoteViewModel`.
 
-### 3. Repository Logic Extension
-Add methods to handle the new states.
+### 2. Recycle Bin (Management) [DONE]
+🗑️ *A safe place for deleted notes.*
+
+#### [NEW] [trash_page.dart](file:///Users/marx/Devhub/tano/lib/features/trash/trash_page.dart)
+- Displays only notes where `isDeleted == true`.
+- Provides "Restore" and "Delete Forever" actions on each note.
+- "Empty Trash" action in the AppBar.
+
+#### [NEW] [trash_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/trash/trash_view_model.dart)
+- Handle loading deleted notes and the restore/purge logic.
+
+#### [MODIFY] [settings_page.dart](file:///Users/marx/Devhub/tano/lib/features/settings/settings_page.dart)
+- Link the "Recycle bin" option to the new `TrashPage`.
 
 #### [MODIFY] [notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/notes_repository.dart)
-- Add `Future<void> trashNote(String id)` (soft delete).
-- Add `Future<void> restoreNote(String id)`.
-- Add `Future<void> togglePin(String id)`.
-- Add `Future<void> toggleLock(String id, String? password)`.
+- Added `deleteNotePermanently`.
 
-### 4. View Model Integration
-Prepare the ViewModels to use these new properties.
-
-#### [MODIFY] [home_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/notes/home_view_model.dart)
-- Filter out notes where `isDeleted == true` from the main list.
-- Implement sorting that puts `isPinned` notes at the top.
+#### [MODIFY] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
+- Implemented `deleteNotePermanently`.
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `flutter test` to ensure existing features still work.
-- Add unit tests for database schema migration (v1 to v2).
-- Add unit tests for soft delete and pinning logic.
+- [x] Run `flutter test` (All 45 tests passing).
+- [x] Updated in-memory test repositories to support the new interface.
 
 ### Manual Verification
-- Verify that "Deleted" notes no longer appear in the main list.
-- Verify that pinned notes stay at the top of the grid/list.
-- Verify that toggling favorite/pin/lock state is persisted after app restart.
+- **Pinning**: Verify pinned notes stay at the top.
+- **Trash Flow**: Verify deleting from home, seeing in trash, and restoring/purging.

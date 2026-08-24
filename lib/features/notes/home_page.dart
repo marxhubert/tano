@@ -298,6 +298,7 @@ class HomeState extends State<Home> {
             case "settings":
               await Navigator.of(context).pushNamed('/settings');
               _loadPreferences();
+              await _viewModel.load();
               break;
           }
         }),
