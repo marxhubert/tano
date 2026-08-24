@@ -18,6 +18,30 @@ class _InMemoryNotesRepository implements NotesRepository {
       ..clear()
       ..addAll(notes);
   }
+
+  @override
+  Future<void> trashNote(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: true);
+  }
+
+  @override
+  Future<void> restoreNote(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: false);
+  }
+
+  @override
+  Future<void> togglePin(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
+  }
+
+  @override
+  Future<void> toggleLock(String id, {String? password}) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
+  }
 }
 
 Note _note(
@@ -114,10 +138,11 @@ void main() {
     test(
       'multiple selection deletes all the selected notes',
       () async {
-        final repository = _InMemoryNotesRepository();
+        final initialNotes = <Note>[_note('1'), _note('2'), _note('3')];
+        final repository = _InMemoryNotesRepository(List.from(initialNotes));
         final vm = HomeViewModel(
           repository: repository,
-          initialNotes: <Note>[_note('1'), _note('2'), _note('3')],
+          initialNotes: initialNotes,
         );
 
         vm.enterSelectionMode('1');
@@ -132,7 +157,9 @@ void main() {
         expect(vm.notes.first.id, '2');
         expect(vm.isInSelectionMode, isFalse);
         expect(vm.actionButtons, 'add');
-        expect(repository.notes, hasLength(1));
+        
+        // In Phase 2, notes are not removed from repository but marked as deleted
+        expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));
       },
     );
 
@@ -192,17 +219,19 @@ void main() {
     });
 
     test('removeNote removes a note (swipe-to-delete)', () async {
-      final repository = _InMemoryNotesRepository();
+      final initialNotes = <Note>[_note('1'), _note('2')];
+      final repository = _InMemoryNotesRepository(List.from(initialNotes));
       final vm = HomeViewModel(
         repository: repository,
-        initialNotes: <Note>[_note('1'), _note('2')],
+        initialNotes: initialNotes,
       );
 
       await vm.removeNote('2');
 
       expect(vm.notesCount, 1);
       expect(vm.notes.first.id, '1');
-      expect(repository.notes, hasLength(1));
+      // In Phase 2, notes are not removed from repository but marked as deleted
+      expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));
     });
 
     test('exitSelectionMode clears the selection', () {
