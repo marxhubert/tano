@@ -130,37 +130,49 @@ class HomeViewModel extends ChangeNotifier {
       if (_selected.contains(_notes[i].id)) {
         removed.add(_notes[i]);
         indexes.add(i);
+        await repository.trashNote(_notes[i].id);
+        _notes[i] = _notes[i].copyWith(isDeleted: true);
       }
     }
-    _notes.removeWhere((Note note) => _selected.contains(note.id));
     _lastDeleted = (removed, indexes);
     _selected.clear();
     _isInSelectionMode = false;
     _actionButtons = 'add';
-    await _persist();
     notifyListeners();
   }
 
   Future<void> removeNote(String id) async {
     final int index = _notes.indexWhere((Note note) => note.id == id);
     if (index == -1) return;
-    final Note removed = _notes.removeAt(index);
-    _lastDeleted = (<Note>[removed], <int>[index]);
-    await _persist();
+    final Note note = _notes[index];
+    await repository.trashNote(id);
+    _notes[index] = note.copyWith(isDeleted: true);
+    _lastDeleted = (<Note>[note], <int>[index]);
     notifyListeners();
   }
 
   Future<void> undoLastDelete() async {
     final (List<Note>, List<int>)? record = _lastDeleted;
     if (record == null) return;
-    final List<Note> notes = record.$1;
-    final List<int> indexes = record.$2;
-    for (int i = 0; i < indexes.length; i++) {
-      final int index = indexes[i] > _notes.length ? _notes.length : indexes[i];
-      _notes.insert(index, notes[i]);
+    final List<Note> notesToRestore = record.$1;
+    for (final note in notesToRestore) {
+      await repository.restoreNote(note.id);
+      final index = _notes.indexWhere((n) => n.id == note.id);
+      if (index != -1) {
+        _notes[index] = _notes[index].copyWith(isDeleted: false);
+      }
     }
     _lastDeleted = null;
-    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> togglePin(String id) async {
+    final int index = _notes.indexWhere((Note note) => note.id == id);
+    if (index == -1) return;
+    await repository.togglePin(id);
+    final Note note = _notes[index];
+    _notes[index] = note.copyWith(isPinned: !note.isPinned);
+    _sortNotes();
     notifyListeners();
   }
 
@@ -193,9 +205,10 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   List<Note> _filteredNotes() {
+    final List<Note> activeNotes = _notes.where((n) => !n.isDeleted).toList();
     final String keyword = _searchQuery.trim();
-    if (keyword.isEmpty) return _notes;
-    return _notes.where((Note note) {
+    if (keyword.isEmpty) return activeNotes;
+    return activeNotes.where((Note note) {
       return note.title.contains(RegExp(keyword, caseSensitive: false)) ||
           note.content.contains(RegExp(keyword, caseSensitive: false));
     }).toList();
@@ -203,6 +216,11 @@ class HomeViewModel extends ChangeNotifier {
 
   void _sortNotes() {
     _notes.sort((note1, note2) {
+      // 1. Priority to Pinned notes
+      if (note1.isPinned && !note2.isPinned) return -1;
+      if (!note1.isPinned && note2.isPinned) return 1;
+
+      // 2. Then follow the user criteria
       int comparison = _compare(note1, note2, _sortBy);
 
       if (comparison == 0 && (_sortBy == 'important' || _sortBy == 'theme')) {
