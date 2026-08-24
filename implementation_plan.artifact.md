@@ -1,57 +1,60 @@
-# Phase 1 Implementation Plan: Infrastructure Migration (SQLite)
+# Phase 2 Implementation Plan: Model Extension (Trash, Pinning, Locking)
 
-This phase focuses on upgrading the core infrastructure of TanoNote to support future features and ensure long-term stability using a relational database.
+This phase focuses on extending the `Note` model and the SQLite database to support new organizational and security features.
 
 ## Goals
-- Migrate from simple JSON file storage to a structured database (**SQLite**). [DONE]
-- Implement a Service Locator (**GetIt**) for cleaner dependency management. [DONE]
-- Improve error handling for data persistence. [IN PROGRESS]
+- Add `isDeleted`, `isPinned`, and `isLocked` fields to the `Note` model.
+- Update the SQLite database schema to store these new fields.
+- Implement "Soft Delete" logic (moving to trash).
+- Implement Pinning and Locking business logic in the repository.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This change modifies the internal data storage format. A migration path from the old JSON file to the new SQLite database will be implemented to ensure users don't lose their existing notes.
+> The database schema will be updated. SQLite migration from version 1 to 2 will be handled automatically without data loss.
 
 ## Proposed Changes
 
-### 1. Dependencies & Configuration [DONE]
-Add the necessary packages for SQLite and dependency injection.
+### 1. Model Upgrade
+Add the new functional fields to the `Note` class.
 
-#### [MODIFY] [pubspec.yaml](file:///Users/marx/Devhub/tano/pubspec.yaml)
-- Add `sqflite`, `path`, `get_it`.
+#### [MODIFY] [note.dart](file:///Users/marx/Devhub/tano/lib/core/models/note.dart)
+- Add `isDeleted` (bool), `isPinned` (bool), `isLocked` (bool).
+- Update `fromJson` and `toJson` to handle these fields (stored as INTEGER 0/1 in SQLite).
+- Update `copyWith`.
 
-### 2. Service Locator Setup [DONE]
-Centralize dependency management.
+### 2. Database Schema Migration
+Update the SQLite repository to handle the new columns.
 
-#### [NEW] [service_locator.dart](file:///Users/marx/Devhub/tano/lib/shared/config/service_locator.dart)
-- Initialize `GetIt`.
-- Register the `NotesRepository` (switching to the SQLite implementation).
+#### [MODIFY] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
+- Increment database version to `2`.
+- Add `onUpgrade` logic to `openDatabase` to add the new columns (`isDeleted`, `isPinned`, `isLocked`) to existing installations.
+- Update the `onCreate` schema.
 
-### 3. Database Persistence [DONE]
-Implement the new SQLite-based repository.
+### 3. Repository Logic Extension
+Add methods to handle the new states.
 
-#### [NEW] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
-- Implement `NotesRepository` interface using `sqflite`.
-- Define the `notes` table schema.
-- Handle data migration from the old `local_persistence.json` file on first run.
+#### [MODIFY] [notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/notes_repository.dart)
+- Add `Future<void> trashNote(String id)` (soft delete).
+- Add `Future<void> restoreNote(String id)`.
+- Add `Future<void> togglePin(String id)`.
+- Add `Future<void> toggleLock(String id, String? password)`.
 
-### 4. Application Lifecycle [DONE]
-Wiring everything together in `main.dart`.
+### 4. View Model Integration
+Prepare the ViewModels to use these new properties.
 
-#### [MODIFY] [main.dart](file:///Users/marx/Devhub/tano/lib/main.dart)
-- Initialize the Service Locator before `runApp`.
-- Ensure Flutter bindings are initialized for SQLite.
-- Cleaned up manual injection in `Home`, `EditNote`, and `SplashScreen`.
+#### [MODIFY] [home_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/notes/home_view_model.dart)
+- Filter out notes where `isDeleted == true` from the main list.
+- Implement sorting that puts `isPinned` notes at the top.
 
 ## Verification Plan
 
 ### Automated Tests
-- [x] Run `flutter test` to ensure business logic remains intact.
-- [ ] Add specific unit tests for `SQLiteNotesRepository` (needs mock sqflite).
-- [x] Fix legacy tests broken by model renaming.
+- Run `flutter test` to ensure existing features still work.
+- Add unit tests for database schema migration (v1 to v2).
+- Add unit tests for soft delete and pinning logic.
 
 ### Manual Verification
-- [ ] Launch the app and verify that demo notes are still seeded.
-- [ ] Create, edit, and delete notes to ensure database operations work as expected.
-- [ ] Verify that theme and favorite toggles are correctly persisted.
-- [ ] **Test the migration logic** by ensuring notes from an old JSON file are imported into SQLite.
+- Verify that "Deleted" notes no longer appear in the main list.
+- Verify that pinned notes stay at the top of the grid/list.
+- Verify that toggling favorite/pin/lock state is persisted after app restart.
