@@ -49,15 +49,20 @@ class NoteGridView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 4.0,
               children: <Widget>[
-                Text(
-                  formatNoteDate(note.date),
-                  style: TextStyle(
-                    fontWeight: FontWeight.normal,
-                    fontSize: 8.0,
-                    color: textColor.withValues(alpha: 0.6),
+                Padding(
+                  padding: note.isPinned 
+                    ? const EdgeInsets.only(left: 8.0)
+                    : const EdgeInsets.only(left: 0.0),
+                  child: Text(
+                    formatNoteDate(note.date),
+                    style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                      fontSize: 8.0,
+                      color: textColor.withValues(alpha: 0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   note.title,

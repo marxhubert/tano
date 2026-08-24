@@ -68,10 +68,12 @@ class SQLiteNotesRepository implements NotesRepository {
   Future<void> saveNotes(List<Note> notes) async {
     final db = await _database;
     await db.transaction((txn) async {
-      // Current interface replaces everything (legacy File behaviour)
-      await txn.delete('notes');
       for (final note in notes) {
-        await txn.insert('notes', note.toJson());
+        await txn.insert(
+          'notes',
+          note.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -129,6 +131,16 @@ class SQLiteNotesRepository implements NotesRepository {
         whereArgs: [id],
       );
     }
+  }
+
+  @override
+  Future<void> deleteNotePermanently(String id) async {
+    final db = await _database;
+    await db.delete(
+      'notes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// Migrates data from the old JSON file if it exists.

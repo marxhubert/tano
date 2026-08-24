@@ -54,14 +54,26 @@ class NoteCard extends StatelessWidget {
       ),
       child: Stack(
         children: <Widget>[
+          // Pinned indicator
+          if (note.isPinned)
+            Positioned(
+              top: 2.0,
+              left: 2.0,
+              child: Icon(
+                Icons.push_pin,
+                size: 14.0,
+                color: textColor.withValues(alpha: 0.5),
+              ),
+            ),
+
           // The visual "Important" bookmark behind the content
           if (note.important)
             Positioned(
               top: -4.0,
-              right: 0.0,
+              right: 4.0,
               child: Icon(
                 Icons.bookmark,
-                size: 20.0,
+                size: 16.0,
                 color: tanoAmber.withValues(alpha: 0.8),
               ),
             ),
