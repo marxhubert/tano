@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
 
@@ -55,10 +56,15 @@ Future<void> _pumpApp(
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
+  if (getIt.isRegistered<NotesRepository>()) {
+    await getIt.unregister<NotesRepository>();
+  }
   final _InMemoryNotesRepository repository = _InMemoryNotesRepository(
     _demoNotes(),
   );
-  await tester.pumpWidget(Tano(repository: repository, themeMode: themeMode));
+  getIt.registerSingleton<NotesRepository>(repository);
+
+  await tester.pumpWidget(Tano(themeMode: themeMode));
   await tester.pump(const Duration(seconds: 3));
   await tester.pumpAndSettle();
 }

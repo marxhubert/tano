@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
@@ -39,6 +40,9 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
+    if (getIt.isRegistered<NotesRepository>()) {
+      await getIt.unregister<NotesRepository>();
+    }
   });
 
   testWidgets('the splash shows the logo then navigates to the home screen', (
@@ -54,8 +58,9 @@ void main() {
         category: 'note',
       ),
     ]);
+    getIt.registerSingleton<NotesRepository>(repository);
 
-    await tester.pumpWidget(Tano(repository: repository));
+    await tester.pumpWidget(const Tano());
 
     expect(find.byType(SplashScreen), findsOneWidget);
 
@@ -79,8 +84,9 @@ void main() {
               category: 'note',
             ),
           ]);
+      getIt.registerSingleton<NotesRepository>(repository);
 
-      await tester.pumpWidget(Tano(repository: repository));
+      await tester.pumpWidget(const Tano());
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
@@ -110,3 +116,4 @@ void main() {
     },
   );
 }
+

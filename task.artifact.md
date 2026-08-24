@@ -1,0 +1,10 @@
+- [x] Add SQLite and GetIt dependencies to pubspec.yaml
+- [x] Create Service Locator config
+- [x] Implement SQLiteNotesRepository with migration logic
+- [x] Update Note model/Database model naming to avoid conflicts
+- [x] Update main.dart to initialize GetIt
+- [x] Remove manual repository injection from all pages (Home, EditNote, Splash)
+- [x] Fix and update all existing tests to use GetIt and the new models
+- [ ] Implement specific tests for SQLite migration logic
+- [ ] Fix RenderFlex overflows in NoteGridView and EditNote (discovered during tests)
+- [ ] Final verification and cleanup
