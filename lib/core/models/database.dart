@@ -2,25 +2,25 @@ import 'dart:convert';
 
 import 'package:tano/core/models/note.dart';
 
-/// Parses a JSON document into a [Database].
-Database dbFromJson(String str) {
+/// Parses a JSON document into a [NotesJsonData].
+NotesJsonData dbFromJson(String str) {
   final Map<String, dynamic> dataFromJson = json.decode(str);
-  return Database.fromJson(dataFromJson);
+  return NotesJsonData.fromJson(dataFromJson);
 }
 
-/// Serializes a [Database] to a JSON document.
-String dbToJson(Database data) {
+/// Serializes a [NotesJsonData] to a JSON document.
+String dbToJson(NotesJsonData data) {
   final Map<String, dynamic> dataToJson = data.toJson();
   return json.encode(dataToJson);
 }
 
-/// In-memory container for the whole note list.
-class Database {
+/// In-memory container for the whole note list (Legacy JSON format).
+class NotesJsonData {
   List<Note> note;
 
-  Database({List<Note>? note}) : note = note ?? [];
+  NotesJsonData({List<Note>? note}) : note = note ?? [];
 
-  factory Database.fromJson(Map<String, dynamic> json) => Database(
+  factory NotesJsonData.fromJson(Map<String, dynamic> json) => NotesJsonData(
     note: json['notes'] == null
         ? <Note>[]
         : List<Note>.from(

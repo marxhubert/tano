@@ -10,20 +10,19 @@ import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
   final int index;
   final NoteAction noteAction;
-  final NotesRepository repository;
 
   const EditNote({
     super.key,
     required this.add,
     required this.index,
     required this.noteAction,
-    required this.repository,
   });
 
   @override
@@ -45,7 +44,7 @@ class _EditNoteState extends State<EditNote> {
   void initState() {
     super.initState();
     _viewModel = EditNoteViewModel(
-      repository: widget.repository,
+      repository: getIt<NotesRepository>(),
       add: widget.add,
       initialNote: widget.noteAction.note,
     );
