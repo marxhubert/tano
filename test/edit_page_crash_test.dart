@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
@@ -34,6 +35,9 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
+    if (getIt.isRegistered<NotesRepository>()) {
+      getIt.unregister<NotesRepository>();
+    }
   });
 
   testWidgets('the edit page does not crash when opening the category menu', (
@@ -49,8 +53,9 @@ void main() {
         category: 'note',
       ),
     ]);
+    getIt.registerSingleton<NotesRepository>(repository);
 
-    await tester.pumpWidget(Tano(repository: repository));
+    await tester.pumpWidget(const Tano());
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
@@ -77,8 +82,9 @@ void main() {
         category: 'neutral',
       ),
     ]);
+    getIt.registerSingleton<NotesRepository>(repository);
 
-    await tester.pumpWidget(Tano(repository: repository));
+    await tester.pumpWidget(const Tano());
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 

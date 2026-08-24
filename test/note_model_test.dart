@@ -39,9 +39,9 @@ void main() {
     });
   });
 
-  group('Database', () {
+  group('NotesJsonData', () {
     test('encodes and decodes the JSON', () {
-      final db = Database(
+      final db = NotesJsonData(
         note: [
           Note(id: '1', title: 'a', content: 'x', important: true),
           Note(id: '2', title: 'b', content: 'y', important: false),
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('empty note list by default', () {
-      expect(Database().note, isEmpty);
+      expect(NotesJsonData().note, isEmpty);
       expect(dbFromJson('{"notes": []}').note, isEmpty);
     });
 
