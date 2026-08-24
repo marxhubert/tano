@@ -284,7 +284,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           AppText.tr('option_recycle_bin'),
                           style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
                         ),
-                        onTap: () {}, // TODO: Implement recycle bin
+                        onTap: () {
+                          Navigator.of(context).pushNamed('/trash');
+                        },
                       ),
                       ListTile(
                         visualDensity: const VisualDensity(vertical: -4.0),
@@ -513,7 +515,7 @@ class _ThemePreview extends StatelessWidget {
           Icon(
             isSelected ? Icons.check_circle : Icons.panorama_fish_eye,
             color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.5),
-            size: 20,
+            size: 16,
           ),
         ],
       ),
@@ -566,7 +568,7 @@ class _SettingsTile extends StatelessWidget {
         ),
       ),
       trailing: selected
-          ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0)
+          ? const Icon(Icons.check_circle, color: tanoTeal, size: 16.0)
           : null,
       onTap: onTap,
     );

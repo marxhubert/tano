@@ -255,6 +255,7 @@ class _EditNoteState extends State<EditNote> {
                 key: _fabKey,
                 isEditorMode: true,
                 isAddMode: widget.add,
+                isPinned: _viewModel.isPinned,
                 currentCategory: _viewModel.category,
                 onSave: () => _saveNote(noteAction: _noteAction),
                 onColorLens: () {}, // Placeholder for animation triggering if needed
@@ -271,7 +272,13 @@ class _EditNoteState extends State<EditNote> {
                 onChecklistSelected: () {}, // TODO: Implement checklist
                 onLinkSelected: () {}, // TODO: Implement note linking
                 onAttachmentSelected: () {}, // TODO: Implement attachment selection
-                onPinSelected: () {}, // TODO: Implement Pin
+                onPinSelected: () async {
+                  _viewModel.togglePin();
+                  await _viewModel.autoSaveThemeOrBookmark(
+                    title: _titleController.text,
+                    content: _contentController.text,
+                  );
+                },
                 onFindSelected: () {}, // TODO: Implement Find in note
                 onMoveSelected: () {}, // TODO: Implement Move to
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
