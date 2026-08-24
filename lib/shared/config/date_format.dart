@@ -11,7 +11,7 @@ String formatNoteDate(String isoDate) {
     return isoDate;
   }
 
-  final bool french = LocaleController.instance.language == 'fr';
+  final String lang = LocaleController.instance.language;
   const List<String> enMonths = <String>[
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -20,9 +20,16 @@ String formatNoteDate(String isoDate) {
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
   ];
+  const List<String> mgMonths = <String>[
+    'jan.', 'febr.', 'mar.', 'apr.', 'mey', 'jona',
+    'jol.', 'aog.', 'sept.', 'okt.', 'nov.', 'des.',
+  ];
 
-  final String month = french
-      ? frMonths[parsed.month - 1]
-      : enMonths[parsed.month - 1];
+  final String month = switch (lang) {
+    'fr' => frMonths[parsed.month - 1],
+    'mg' => mgMonths[parsed.month - 1],
+    _ => enMonths[parsed.month - 1],
+  };
+
   return '${parsed.day} $month ${parsed.year}';
 }

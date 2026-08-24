@@ -17,7 +17,7 @@ class HomeViewModel extends ChangeNotifier {
   String _sortBy = 'date';
   String _secondarySortBy = 'date';
   bool _sortAscending = true;
-  String _viewLayout = 'list';
+  String _viewLayout = 'gridlist';
   bool _isInSelectionMode = false;
   final Set<String> _selected = <String>{};
   String _actionButtons = 'add';
