@@ -48,7 +48,7 @@ void main() {
 
     test('the generated JSON is readable by the model', () {
       final notes = buildNotesFixtures();
-      final restored = dbFromJson(dbToJson(Database(note: notes)));
+      final restored = dbFromJson(dbToJson(NotesJsonData(note: notes)));
       expect(restored.note, hasLength(24));
       expect(restored.note.first.title, notes.first.title);
       expect(restored.note.first.important, notes.first.important);
