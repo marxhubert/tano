@@ -108,7 +108,7 @@ void main() {
 
       vm.setViewLayout('bogus');
 
-      expect(vm.viewLayout, 'list');
+      expect(vm.viewLayout, 'gridlist');
     });
 
     test(

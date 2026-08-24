@@ -4,7 +4,8 @@ import 'package:tano/shared/widgets/theme.dart';
 /// Places the floating action button flush against the bottom-right corner
 /// of the screen (no margin).
 class FlushEndFabLocation extends StandardFabLocation {
-  static const padding = 24.0;
+  static const paddingX = 24.0;
+  static const paddingY = 20.0;
   const FlushEndFabLocation();
 
   @override
@@ -14,7 +15,7 @@ class FlushEndFabLocation extends StandardFabLocation {
   ) {
     return scaffoldGeometry.scaffoldSize.width -
         scaffoldGeometry.floatingActionButtonSize.width -
-        padding;
+        paddingX;
   }
 
   @override
@@ -24,7 +25,7 @@ class FlushEndFabLocation extends StandardFabLocation {
   ) {
     double offset = scaffoldGeometry.contentBottom -
         scaffoldGeometry.floatingActionButtonSize.height -
-        padding;
+        paddingY;
     if (scaffoldGeometry.snackBarSize.height > 0.0) {
       // Push the FAB up so it stays above the SnackBar.
       offset -= (scaffoldGeometry.snackBarSize.height - 12.0);

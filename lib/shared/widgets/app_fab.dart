@@ -76,12 +76,32 @@ class AppFabState extends State<AppFab> {
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
 
+  // Measurement keys for dynamic height calculation
+  final GlobalKey _colorMenuKey = GlobalKey();
+  final GlobalKey _addMenuKey = GlobalKey();
+  final GlobalKey _moreMenuKey = GlobalKey();
+
+  double _colorMenuHeight = 0;
+  double _addMenuHeight = 0;
+  double _moreMenuHeight = 0;
+
   @override
   void initState() {
     super.initState();
     if (widget.isEditorMode && widget.isAddMode) {
       _isManuallyExpanded = false;
     }
+    // Measure heights after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
+  }
+
+  void _measureMenuHeights() {
+    if (!mounted) return;
+    setState(() {
+      _colorMenuHeight = _colorMenuKey.currentContext?.size?.height ?? 0;
+      _addMenuHeight = _addMenuKey.currentContext?.size?.height ?? 0;
+      _moreMenuHeight = _moreMenuKey.currentContext?.size?.height ?? 0;
+    });
   }
 
   void closeVerticalMenu() {
@@ -102,12 +122,11 @@ class AppFabState extends State<AppFab> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    const double btnMargin = 24.0;
-    const double btnHeight = 56.0;
-    const double expandedHeight = 48.0;
-    final double expandedWidth = screenWidth - btnMargin;
+    const double btnHeight = 64.0;
+    const double borderRadiusValue = 55.0;
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
+    final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
 
     if (isKeyboardClosed != _wasKeyboardClosed) {
       _isManuallyExpanded = null;
@@ -119,56 +138,62 @@ class AppFabState extends State<AppFab> {
       isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
     }
 
-    if (!isExpanded && _verticalMenu != FabVerticalMenu.none) {
+    if (!isExpanded && isMenuOpen) {
       _verticalMenu = FabVerticalMenu.none;
     }
 
-    final double targetWidth =
-        (isKeyboardClosed && _verticalMenu == FabVerticalMenu.none)
-            ? expandedWidth * 0.9
-            : expandedWidth * 0.95;
-    final double currentWidth = isExpanded ? targetWidth : btnHeight;
+    // Target width based on state
+    final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
+        ? screenWidth - 24.0
+        : screenWidth - 48.0;
 
-    double verticalMenuHeight = 0;
-    if (_verticalMenu == FabVerticalMenu.color) {
-      verticalMenuHeight = 210.0;
-    } else if (_verticalMenu == FabVerticalMenu.add) {
-      verticalMenuHeight = 180.0;
-    } else if (_verticalMenu == FabVerticalMenu.more) {
-      verticalMenuHeight = 310.0;
+    double currentWidth = btnHeight;
+    if (isExpanded || isMenuOpen) {
+      currentWidth = targetExpandedWidth;
     }
 
-    double currentHeight = widget.isSearchMode ? expandedHeight : btnHeight;
-    if (_verticalMenu != FabVerticalMenu.none) {
-      currentHeight += verticalMenuHeight;
+    // Translation calculation
+    double tx = 0.0;
+    if ((isExpanded || isMenuOpen) && (isMenuOpen || !isKeyboardClosed)) {
+      tx = 12.0; 
     }
-
-    final double tx =
-        isExpanded ? ((currentWidth - screenWidth) / 2 + btnMargin) : 0.0;
 
     double ty = 0.0;
-    if (!isKeyboardClosed) {
-      if (widget.isSearchMode) {
-        ty = btnMargin - 8.0;
-      } else if (widget.isEditorMode) {
-        ty = 12.0;
-      }
+    if (isMenuOpen) {
+      ty = 8.0; 
+    } else if (!isKeyboardClosed) {
+      ty = 12.0; 
     }
 
-    final double borderRadiusValue = _verticalMenu != FabVerticalMenu.none
-        ? 28.0
-        : (widget.isSearchMode ? expandedHeight : btnHeight) / 2;
+    // Dynamic Vertical Menu Heights
+    double verticalMenuHeight = 0;
+    if (_verticalMenu == FabVerticalMenu.color) {
+      verticalMenuHeight = _colorMenuHeight > 0 ? _colorMenuHeight : 250.0;
+    } else if (_verticalMenu == FabVerticalMenu.add) {
+      verticalMenuHeight = _addMenuHeight > 0 ? _addMenuHeight : 190.0;
+    } else if (_verticalMenu == FabVerticalMenu.more) {
+      verticalMenuHeight = _moreMenuHeight > 0 ? _moreMenuHeight : 310.0;
+    }
+
+    double currentHeight = btnHeight;
+    if (isMenuOpen) {
+      currentHeight += verticalMenuHeight;
+    }
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       height: currentHeight,
       width: currentWidth,
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.antiAlias,
       transform: Matrix4.translationValues(tx, ty, 0.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(borderRadiusValue),
+        borderRadius: isMenuOpen 
+          ? BorderRadius.vertical(
+              top: Radius.circular(24.0), 
+              bottom: Radius.circular(borderRadiusValue))
+          : BorderRadius.circular(borderRadiusValue),
         border: Border.all(
           color: getBorderColor(
             Theme.of(context).colorScheme.primary,
@@ -185,105 +210,143 @@ class AppFabState extends State<AppFab> {
         ],
       ),
       child: LayoutBuilder(builder: (context, constraints) {
-        final double expansionProgress =
-            (constraints.maxWidth - btnHeight) / (targetWidth - btnHeight);
-        final bool showContent = !isExpanded || expansionProgress > 0.75;
+        final double expansionProgress = isExpanded || isMenuOpen
+            ? (constraints.maxWidth - btnHeight) /
+                (targetExpandedWidth - btnHeight)
+            : 0.0;
+        
+        final bool showContent = !isExpanded || isMenuOpen || expansionProgress > 0.8;
 
-        return AnimatedOpacity(
-          opacity: showContent ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 100),
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              if (_verticalMenu != FabVerticalMenu.none)
-                Positioned(
-                  bottom: widget.isSearchMode ? expandedHeight : btnHeight,
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: _buildVerticalMenuContent(context),
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            // Measurement zone
+            Offstage(
+              child: SizedBox(
+                width: targetExpandedWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(key: _colorMenuKey, child: _buildColorMenu(context)),
+                    Container(key: _addMenuKey, child: _buildAddMenu(context)),
+                    Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
+                  ],
                 ),
-              SizedBox(
-                height: widget.isSearchMode ? expandedHeight : btnHeight,
-                child: _buildMainContent(context, isExpanded, targetWidth),
               ),
-            ],
-          ),
+            ),
+            
+            if (isMenuOpen)
+              Positioned(
+                bottom: btnHeight,
+                left: 0,
+                right: 0,
+                top: 0,
+                child: AnimatedOpacity(
+                  opacity: showContent ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: _buildVerticalMenuContent(context),
+                  ),
+                ),
+              ),
+            
+            SizedBox(
+              height: btnHeight,
+              child: AnimatedOpacity(
+                opacity: showContent ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 150),
+                child: _buildMainContent(context, isExpanded, targetExpandedWidth),
+              ),
+            ),
+          ],
         );
       }),
     );
   }
 
   Widget _buildVerticalMenuContent(BuildContext context) {
+    Widget content;
     switch (_verticalMenu) {
       case FabVerticalMenu.color:
-        return _buildColorMenu(context);
+        content = _buildColorMenu(context);
+        break;
       case FabVerticalMenu.add:
-        return _buildAddMenu(context);
+        content = _buildAddMenu(context);
+        break;
       case FabVerticalMenu.more:
-        return _buildMoreMenu(context);
+        content = _buildMoreMenu(context);
+        break;
       default:
-        return const SizedBox.shrink();
+        content = const SizedBox.shrink();
     }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.15),
+      ),
+      child: content,
+    );
   }
 
   Widget _buildColorMenu(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 36.0),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppText.tr('menu_theme'),
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                color: Colors.white, fontSize: 15),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 16.0,
-                crossAxisSpacing: 16.0,
-                childAspectRatio: 1.8,
-              ),
-              itemCount: TanoPastels.all.length,
-              itemBuilder: (context, index) {
-                final pair = TanoPastels.all[index];
-                final bool isSelected =
-                    pair.name == (widget.currentCategory ?? 'nuage');
-
-                return GestureDetector(
-                  onTap: () => widget.onColorSelected?.call(pair.name),
-                  child: Container(
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? tanoAmber : Colors.white30,
-                        width: isSelected ? 2.0 : 0.6,
-                      ),
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    child: Stack(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(child: Container(color: pair.light)),
-                            Expanded(child: Container(color: pair.dark)),
-                          ],
-                        ),
-                        if (isSelected)
-                          const Center(
-                            child: Icon(Icons.check_circle,
-                                color: tanoAmber, size: 20.0),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+          GridView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 16.0,
+              crossAxisSpacing: 16.0,
+              childAspectRatio: 1.8,
             ),
+            itemCount: TanoPastels.all.length,
+            itemBuilder: (context, index) {
+              final pair = TanoPastels.all[index];
+              final bool isSelected =
+                  pair.name == (widget.currentCategory ?? 'nuage');
+
+              return GestureDetector(
+                onTap: () => widget.onColorSelected?.call(pair.name),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isSelected ? tanoAmber : Colors.white30,
+                      width: isSelected ? 2.0 : 0.6,
+                    ),
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Container(color: pair.light)),
+                          Expanded(child: Container(color: pair.dark)),
+                        ],
+                      ),
+                      if (isSelected)
+                        const Center(
+                          child: Icon(Icons.check_circle,
+                              color: tanoAmber, size: 20.0),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -364,13 +427,11 @@ class AppFabState extends State<AppFab> {
 
   Widget _buildVerticalList(List<Widget> children) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
       ),
     );
   }
@@ -590,7 +651,7 @@ class _SelectionFabButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(icon, size: 20.0, color: effectiveColor),
+            Icon(icon, size: 24.0, color: effectiveColor),
             Text(
               label,
               style: TextStyle(
