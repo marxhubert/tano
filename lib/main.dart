@@ -3,6 +3,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
+import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -77,6 +78,7 @@ class Tano extends StatelessWidget {
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => const Home(),
             '/settings': (BuildContext context) => const SettingsPage(),
+            '/trash': (BuildContext context) => const TrashPage(),
           },
         );
       },
