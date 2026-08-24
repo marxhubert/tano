@@ -22,7 +22,7 @@ class SQLiteNotesRepository implements NotesRepository {
     final String path = join(await getDatabasesPath(), 'tano_notes.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notes (
@@ -31,9 +31,22 @@ class SQLiteNotesRepository implements NotesRepository {
             content TEXT,
             date TEXT,
             important INTEGER,
-            category TEXT
+            category TEXT,
+            isDeleted INTEGER DEFAULT 0,
+            isPinned INTEGER DEFAULT 0,
+            isLocked INTEGER DEFAULT 0
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+              'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0');
+          await db.execute(
+              'ALTER TABLE notes ADD COLUMN isPinned INTEGER DEFAULT 0');
+          await db.execute(
+              'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
+        }
       },
     );
   }
@@ -63,6 +76,61 @@ class SQLiteNotesRepository implements NotesRepository {
     });
   }
 
+  @override
+  Future<void> trashNote(String id) async {
+    final db = await _database;
+    await db.update(
+      'notes',
+      {'isDeleted': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
+  Future<void> restoreNote(String id) async {
+    final db = await _database;
+    await db.update(
+      'notes',
+      {'isDeleted': 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
+  Future<void> togglePin(String id) async {
+    final db = await _database;
+    final List<Map<String, dynamic>> result =
+        await db.query('notes', columns: ['isPinned'], where: 'id = ?', whereArgs: [id]);
+    if (result.isNotEmpty) {
+      final int currentPin = result.first['isPinned'] as int;
+      await db.update(
+        'notes',
+        {'isPinned': currentPin == 1 ? 0 : 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+  }
+
+  @override
+  Future<void> toggleLock(String id, {String? password}) async {
+    // Basic toggle for now. Password logic will be added in Phase 3.
+    final db = await _database;
+    final List<Map<String, dynamic>> result =
+        await db.query('notes', columns: ['isLocked'], where: 'id = ?', whereArgs: [id]);
+    if (result.isNotEmpty) {
+      final int currentLock = result.first['isLocked'] as int;
+      await db.update(
+        'notes',
+        {'isLocked': currentLock == 1 ? 0 : 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+  }
+
   /// Migrates data from the old JSON file if it exists.
   Future<List<Note>> _handleMigration(Database db) async {
     try {
@@ -73,7 +141,7 @@ class SQLiteNotesRepository implements NotesRepository {
         debugPrint('SQLite: Migrating from legacy JSON file...');
         final String contents = await legacyFile.readAsString();
         final List<Note> legacyNotes = dbFromJson(contents).note;
-        
+
         if (legacyNotes.isNotEmpty) {
           await db.transaction((txn) async {
             for (final note in legacyNotes) {

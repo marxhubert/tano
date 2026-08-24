@@ -26,6 +26,30 @@ class _InMemoryNotesRepository implements NotesRepository {
       ..clear()
       ..addAll(notes);
   }
+
+  @override
+  Future<void> trashNote(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: true);
+  }
+
+  @override
+  Future<void> restoreNote(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: false);
+  }
+
+  @override
+  Future<void> togglePin(String id) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
+  }
+
+  @override
+  Future<void> toggleLock(String id, {String? password}) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index != -1) notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
+  }
 }
 
 void main() {
