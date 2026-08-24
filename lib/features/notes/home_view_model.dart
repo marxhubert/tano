@@ -195,7 +195,13 @@ class HomeViewModel extends ChangeNotifier {
         }
         break;
       case NoteActionKind.delete:
-        _notes.removeWhere((Note note) => note.id == originalId);
+        final int index = _notes.indexWhere(
+          (Note note) => note.id == originalId,
+        );
+        if (index != -1) {
+          await repository.trashNote(originalId);
+          _notes[index] = _notes[index].copyWith(isDeleted: true);
+        }
         break;
       case NoteActionKind.cancel:
         break;

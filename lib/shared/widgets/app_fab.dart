@@ -25,6 +25,7 @@ class AppFab extends StatefulWidget {
     this.onMore,
     this.onColorSelected,
     this.currentCategory,
+    this.isPinned = false,
     this.onImageSelected,
     this.onChecklistSelected,
     this.onLinkSelected,
@@ -42,6 +43,7 @@ class AppFab extends StatefulWidget {
   final bool isSelectionMode;
   final bool isEditorMode;
   final bool isAddMode;
+  final bool isPinned;
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final VoidCallback? onAdd;
@@ -386,8 +388,9 @@ class AppFabState extends State<AppFab> {
 
     return _buildVerticalList([
       _VerticalMenuItem(
-        icon: Icons.push_pin_outlined,
+        icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
         label: AppText.tr('option_pin'),
+        iconColor: widget.isPinned ? tanoAmber : null,
         onTap: widget.onPinSelected,
       ),
       _VerticalMenuItem(
