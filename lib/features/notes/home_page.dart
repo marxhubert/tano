@@ -17,12 +17,11 @@ import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key, required this.repository, this.initialNotes});
-
-  final NotesRepository repository;
+  const Home({super.key, this.initialNotes});
 
   /// Notes already loaded by the splash screen. When null (legacy
   /// navigation flows), the view model falls back to loading them.
@@ -47,7 +46,7 @@ class HomeState extends State<Home> {
   void initState() {
     super.initState();
     _viewModel = HomeViewModel(
-      repository: widget.repository,
+      repository: getIt<NotesRepository>(),
       initialNotes: widget.initialNotes,
     );
     _wasInSelectionMode = _viewModel.isInSelectionMode;
@@ -124,7 +123,6 @@ class HomeState extends State<Home> {
           add: add,
           index: -1,
           noteAction: NoteAction(note: note),
-          repository: widget.repository,
         ),
         fullscreenDialog: true,
       ),

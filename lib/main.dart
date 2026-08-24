@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tano/core/repositories/file_notes_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
@@ -7,27 +6,25 @@ import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupServiceLocator();
   await Future.wait([
     LocaleController.instance.init(),
     ThemeController.instance.init(),
     LanguageReferencesController.instance.init(),
   ]);
-  runApp(Tano(repository: FileNotesRepository()));
+  runApp(const Tano());
 }
 
 class Tano extends StatelessWidget {
   const Tano({
     super.key,
-    required this.repository,
     this.themeMode,
   });
-
-  /// Composition root: the concrete [NotesRepository] used by the whole app.
-  final NotesRepository repository;
 
   /// How the light/dark themes are selected. Exposed so tests can pin a
   /// brightness instead of relying on the host platform.
@@ -76,9 +73,9 @@ class Tano extends StatelessWidget {
             ),
           ),
           themeMode: themeMode ?? ThemeController.instance.themeMode,
-          home: SplashScreen(repository: repository),
+          home: const SplashScreen(),
           routes: <String, WidgetBuilder>{
-            '/home': (BuildContext context) => Home(repository: repository),
+            '/home': (BuildContext context) => const Home(),
             '/settings': (BuildContext context) => const SettingsPage(),
           },
         );
