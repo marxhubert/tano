@@ -5,20 +5,20 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 
 /// Owns the form state and the note-building logic of the edit screen.
-///
-/// Pure Dart: the widget keeps the text controllers, this model knows how to
-/// turn their content into a [Note] and how to persist it.
 class EditNoteViewModel extends ChangeNotifier {
   EditNoteViewModel({
     required this.repository,
     required this.add,
     this.initialNote,
-  }) : id = add ? Random().nextInt(999999).toString() : (initialNote?.id ?? ''),
-       selectedDate = add
-           ? DateTime.now()
-           : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
+  })  : id = add ? Random().nextInt(999999).toString() : (initialNote?.id ?? ''),
+        selectedDate = add
+            ? DateTime.now()
+            : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
     important = initialNote?.important ?? false;
     category = initialNote?.category ?? 'neutral';
+    isDeleted = initialNote?.isDeleted ?? false;
+    isPinned = initialNote?.isPinned ?? false;
+    isLocked = initialNote?.isLocked ?? false;
     _initialNote = _buildInitialNote(
       title: initialNote?.title ?? '',
       content: initialNote?.content ?? '',
@@ -33,10 +33,18 @@ class EditNoteViewModel extends ChangeNotifier {
   late final DateTime selectedDate;
   late bool important;
   late String category;
+  late bool isDeleted;
+  late bool isPinned;
+  late bool isLocked;
   late Note _initialNote;
 
   void toggleImportant() {
     important = !important;
+    notifyListeners();
+  }
+
+  void togglePin() {
+    isPinned = !isPinned;
     notifyListeners();
   }
 
@@ -48,8 +56,7 @@ class EditNoteViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Builds the [Note] from the current form values. The title falls back
-  /// to the first characters of the content when left empty.
+  /// Builds the [Note] from the current form values.
   Note buildNote({required String title, required String content}) {
     final String trimmedContent = content.trim();
     final String trimmedTitle = title.trim();
@@ -65,13 +72,22 @@ class EditNoteViewModel extends ChangeNotifier {
       content: trimmedContent,
       important: important,
       category: category,
+      isDeleted: isDeleted,
+      isPinned: isPinned,
+      isLocked: isLocked,
     );
   }
 
   /// Whether the current form differs from the note as it was opened.
   bool isDirty({required String title, required String content}) {
     final Note current = buildNote(title: title, content: content);
-    return current.toJson().toString() != _initialNote.toJson().toString();
+    // Compare essential business fields, excluding internal SQLite metadata if any
+    return current.title != _initialNote.title ||
+           current.content != _initialNote.content ||
+           current.important != _initialNote.important ||
+           current.category != _initialNote.category ||
+           current.isPinned != _initialNote.isPinned ||
+           current.isLocked != _initialNote.isLocked;
   }
 
   /// Business rule: a note is savable when at least its title or its content is not blank.
@@ -79,8 +95,7 @@ class EditNoteViewModel extends ChangeNotifier {
     return title.trim().isNotEmpty || content.trim().isNotEmpty;
   }
 
-  /// Persists a saved note: adds it or replaces the note with the same id,
-  /// then saves the whole list.
+  /// Persists a saved note.
   Future<void> persistSavedNote(Note note) async {
     final List<Note> notes = await repository.loadNotes();
     final int index = notes.indexWhere((Note n) => n.id == note.id);
@@ -90,13 +105,10 @@ class EditNoteViewModel extends ChangeNotifier {
       notes[index] = note;
     }
     await repository.saveNotes(notes);
-    // Update the baseline after saving so it's no longer "dirty"
     _initialNote = note;
   }
 
-  /// Special save for theme or bookmark changes: persists the current state
-  /// only if the note is valid (has at least some content).
-  /// Updates the baseline so that further text changes don't trigger the alert immediately.
+  /// Special save for theme or bookmark changes.
   Future<void> autoSaveThemeOrBookmark({
     required String title,
     required String content,
@@ -115,6 +127,9 @@ class EditNoteViewModel extends ChangeNotifier {
       content: content,
       important: important,
       category: category,
+      isDeleted: isDeleted,
+      isPinned: isPinned,
+      isLocked: isLocked,
     );
   }
 }
