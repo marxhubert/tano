@@ -14,25 +14,41 @@ class _InMemoryNotesRepository implements NotesRepository {
   final List<Note> notes;
 
   @override
-  Future<List<Note>> loadNotes() async => List<Note>.of(notes);
+  Future<List<Note>> loadNotes() async => notes.where((n) => !n.isDeleted).toList();
 
   @override
-  Future<void> saveNotes(List<Note> notes) async {
-    this.notes
-      ..clear()
-      ..addAll(notes);
+  Future<List<Note>> loadTrashNotes() async => notes.where((n) => n.isDeleted).toList();
+
+  @override
+  Future<void> upsertNote(Note note) async {
+    final index = notes.indexWhere((n) => n.id == note.id);
+    if (index == -1) {
+      notes.add(note);
+    } else {
+      notes[index] = note;
+    }
   }
 
   @override
   Future<void> trashNote(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: true);
+    if (index != -1) {
+      notes[index] = notes[index].copyWith(
+        isDeleted: true,
+        deletedAt: DateTime.now().toString(),
+      );
+    }
   }
 
   @override
   Future<void> restoreNote(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) notes[index] = notes[index].copyWith(isDeleted: false);
+    if (index != -1) {
+      notes[index] = notes[index].copyWith(
+        isDeleted: false,
+        deletedAt: null,
+      );
+    }
   }
 
   @override
@@ -50,6 +66,16 @@ class _InMemoryNotesRepository implements NotesRepository {
   @override
   Future<void> deleteNotePermanently(String id) async {
     notes.removeWhere((n) => n.id == id);
+  }
+
+  @override
+  Future<List<Note>> searchNotes(String query) async {
+    return notes
+        .where((n) =>
+            !n.isDeleted &&
+            (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                n.content.toLowerCase().contains(query.toLowerCase())))
+        .toList();
   }
 }
 
