@@ -12,10 +12,14 @@ class TrashViewModel extends ChangeNotifier {
   bool get isEmpty => _deletedNotes.isEmpty;
 
   Future<void> load() async {
-    final all = await repository.loadNotes();
-    _deletedNotes = all.where((n) => n.isDeleted).toList();
-    // Sort by date (newest deleted first)
-    _deletedNotes.sort((a, b) => b.date.compareTo(a.date));
+    _deletedNotes = await repository.loadTrashNotes();
+    // Sort by deletedAt (newest deleted first)
+    _deletedNotes.sort((a, b) {
+      if (a.deletedAt == null && b.deletedAt == null) return 0;
+      if (a.deletedAt == null) return 1;
+      if (b.deletedAt == null) return -1;
+      return b.deletedAt!.compareTo(a.deletedAt!);
+    });
     notifyListeners();
   }
 

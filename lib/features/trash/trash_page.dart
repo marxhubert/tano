@@ -78,7 +78,33 @@ class _TrashPageState extends State<TrashPage> {
             else if (_viewModel.isEmpty)
               SliverFillRemaining(
                 child: Center(
-                  child: Text(AppText.tr('no_note_found')),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(AppText.tr('no_note_found')),
+                      const SizedBox(height: 16),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            '/home',
+                            (route) => false,
+                          );
+                        },
+                        icon: const Icon(Icons.home, size: 20),
+                        label: Text(AppText.tr('home')),
+                        style: TextButton.styleFrom(
+                          foregroundColor: primaryTextColor(context),
+                          backgroundColor: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.05),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
@@ -88,6 +114,7 @@ class _TrashPageState extends State<TrashPage> {
                   crossAxisCount: 3,
                   crossAxisSpacing: 12.0,
                   mainAxisSpacing: 12.0,
+                  childAspectRatio: 1.0,
                   children: List.generate(_viewModel.deletedNotes.length, (index) {
                     final note = _viewModel.deletedNotes[index];
                     return NoteCard(

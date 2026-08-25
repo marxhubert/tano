@@ -12,6 +12,7 @@ class Note {
     this.isDeleted = false,
     this.isPinned = false,
     this.isLocked = false,
+    this.deletedAt,
   });
 
   final String id;
@@ -23,6 +24,7 @@ class Note {
   final bool isDeleted;
   final bool isPinned;
   final bool isLocked;
+  final String? deletedAt;
 
   factory Note.fromJson(Map<String, dynamic> json) => Note(
         id: json['id'] as String? ?? '',
@@ -34,6 +36,7 @@ class Note {
         isDeleted: json['isDeleted'] == 1,
         isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
+        deletedAt: json['deletedAt'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +49,7 @@ class Note {
         'isDeleted': isDeleted ? 1 : 0,
         'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
+        'deletedAt': deletedAt,
       };
 
   /// Returns a copy of this note with the given fields replaced.
@@ -59,6 +63,7 @@ class Note {
     bool? isDeleted,
     bool? isPinned,
     bool? isLocked,
+    String? deletedAt,
   }) {
     return Note(
       id: id ?? this.id,
@@ -70,6 +75,7 @@ class Note {
       isDeleted: isDeleted ?? this.isDeleted,
       isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

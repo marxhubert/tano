@@ -1,54 +1,53 @@
-# Phase 3 Implementation Plan: Trash & Pinning Features
+# Phase 4 Implementation Plan: CRUD Optimization & Performance
 
-This phase focuses on exposing the infrastructure built in Phase 2 to the user, specifically the Recycle Bin and Note Pinning functionalities.
+This phase focuses on transitioning from a "full-save" approach to a fine-grained CRUD (Create, Read, Update, Delete) model. This will significantly improve performance and data integrity by only modifying specific rows in the SQLite database.
 
 ## Goals
-- Implement visual indicators and controls for **Note Pinning**. [DONE]
-- Create a dedicated **Recycle Bin** page for managing soft-deleted notes. [DONE]
-- Allow **Restoring** or **Permanently Deleting** notes from the trash. [DONE]
-- Integrate these features into the existing UI (Edit page, Settings, Home). [DONE]
+- Transition the `NotesRepository` from `saveNotes(List<Note>)` to individual entity management.
+- Implement efficient `upsertNote` (Insert or Update) logic.
+- Optimize the `HomeViewModel` and `EditNoteViewModel` to perform targeted updates.
+- Improve search performance by moving from in-memory filtering to SQL-based queries.
 
 ## Proposed Changes
 
-### 1. Note Pinning (Visibility & Controls) [DONE]
-📍 *Make pinned notes stay at the top and clearly visible.*
-
-#### [MODIFY] [note_card.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/note_card.dart)
-- Display a small pin icon if `note.isPinned` is true.
-
-#### [MODIFY] [app_fab.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/app_fab.dart)
-- Wire up the `onPinSelected` callback in the "More" menu.
-- Display `push_pin` (filled) when pinned, `push_pin_outlined` otherwise.
-
-#### [MODIFY] [edit_note_page.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_page.dart)
-- Implement `onPinSelected` logic to toggle pin status via `EditNoteViewModel`.
-
-### 2. Recycle Bin (Management) [DONE]
-🗑️ *A safe place for deleted notes.*
-
-#### [NEW] [trash_page.dart](file:///Users/marx/Devhub/tano/lib/features/trash/trash_page.dart)
-- Displays only notes where `isDeleted == true`.
-- Provides "Restore" and "Delete Forever" actions on each note.
-- "Empty Trash" action in the AppBar.
-
-#### [NEW] [trash_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/trash/trash_view_model.dart)
-- Handle loading deleted notes and the restore/purge logic.
-
-#### [MODIFY] [settings_page.dart](file:///Users/marx/Devhub/tano/lib/features/settings/settings_page.dart)
-- Link the "Recycle bin" option to the new `TrashPage`.
+### 1. Repository Interface Refactor
+Update the interface to reflect modern data access patterns.
 
 #### [MODIFY] [notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/notes_repository.dart)
-- Added `deleteNotePermanently`.
+- [DELETE] `Future<void> saveNotes(List<Note> notes)`.
+- [NEW] `Future<void> upsertNote(Note note)`.
+- [NEW] `Future<List<Note>> searchNotes(String query)`.
+
+### 2. SQLite Implementation Optimization
+Leverage SQL capabilities for targeted operations.
 
 #### [MODIFY] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
-- Implemented `deleteNotePermanently`.
+- Implement `upsertNote` using `ConflictAlgorithm.replace`.
+- Implement `searchNotes` using a `WHERE title LIKE ? OR content LIKE ?` SQL query.
+
+### 3. ViewModel Logic Update
+Switch from entire list persistence to single note persistence.
+
+#### [MODIFY] [edit_note_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_view_model.dart)
+- Use `repository.upsertNote(note)` instead of loading and saving the whole list.
+
+#### [MODIFY] [home_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/notes/home_view_model.dart)
+- Update `applyNoteAction` to use individual CRUD methods.
+- (Optimization) Update `setSearchQuery` to trigger a repository-side search if needed.
+
+### 4. Tests Adjustment
+Ensure test mocks match the new interface.
+
+#### [MODIFY] All `_InMemoryNotesRepository` in test files.
+- Replace `saveNotes` implementation with `upsertNote`.
 
 ## Verification Plan
 
 ### Automated Tests
-- [x] Run `flutter test` (All 45 tests passing).
-- [x] Updated in-memory test repositories to support the new interface.
+- Run `flutter test` to ensure that targeted updates correctly reflect in the final state.
+- Verify that search results from SQL match the previous in-memory filtering logic.
 
 ### Manual Verification
-- **Pinning**: Verify pinned notes stay at the top.
-- **Trash Flow**: Verify deleting from home, seeing in trash, and restoring/purging.
+- Verify that editing a note saves it correctly without affecting other notes.
+- Test the search bar with various keywords to ensure reactivity and accuracy.
+- Check that "Restore" and "Trash" actions still work perfectly.
