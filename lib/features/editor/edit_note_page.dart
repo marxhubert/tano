@@ -8,6 +8,7 @@ import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -17,12 +18,14 @@ class EditNote extends StatefulWidget {
   final bool add;
   final int index;
   final NoteAction noteAction;
+  final Note? sourceNote;
 
   const EditNote({
     super.key,
     required this.add,
     required this.index,
     required this.noteAction,
+    this.sourceNote,
   });
 
   @override
@@ -33,7 +36,7 @@ class _EditNoteState extends State<EditNote> {
   late final EditNoteViewModel _viewModel;
   late NoteAction _noteAction;
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  late final LinkTextEditingController _contentController;
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _contentFocus = FocusNode();
   int _noteContentLength = 0;
@@ -52,7 +55,12 @@ class _EditNoteState extends State<EditNote> {
         NoteAction(kind: NoteActionKind.cancel, note: widget.noteAction.note);
     _titleController.text =
         widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
-    _contentController.text = widget.noteAction.note?.content ?? '';
+    
+    _contentController = LinkTextEditingController(
+      text: widget.noteAction.note?.content ?? '',
+      linkColor: tanoAmber,
+    );
+    
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
   }
 
@@ -93,6 +101,51 @@ class _EditNoteState extends State<EditNote> {
     setState(() {
       _noteContentLength = content.length;
     });
+  }
+
+  Future<void> _handleLinkTap() async {
+    final offset = _contentController.selection.baseOffset;
+    if (offset < 0) return;
+
+    final String? noteId = _contentController.getLinkIdAt(offset);
+    if (noteId != null && context.mounted) {
+      final repository = getIt<NotesRepository>();
+      final notes = await repository.loadNotes();
+      final targetNote = notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
+      
+      if (targetNote.id.isNotEmpty && context.mounted) {
+        // Save current note changes if any before navigating
+        final currentNote = _viewModel.buildNote(
+          title: _titleController.text, 
+          content: _contentController.text
+        );
+        
+        if (_viewModel.isDirty(title: _titleController.text, content: _contentController.text)) {
+           await _viewModel.persistSavedNote(currentNote);
+        }
+
+        if (context.mounted) {
+          // Standard push to allow "Back" button to return naturally
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditNote(
+                add: false,
+                index: -1,
+                noteAction: NoteAction(note: targetNote),
+              ),
+              fullscreenDialog: true,
+            ),
+          );
+          
+          // Refresh state when returning in case the target note was changed
+          if (context.mounted) {
+            await _viewModel.load();
+            _getNoteContentLength(_contentController.text);
+          }
+        }
+      }
+    }
   }
 
   Future<bool> _onWillPopCallback() async {
@@ -161,10 +214,14 @@ class _EditNoteState extends State<EditNote> {
               onPop: () async {
                 final bool willPop = await _onWillPopCallback();
                 if (willPop && context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/home',
-                    (Route<dynamic> route) => false,
-                  );
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/home',
+                      (Route<dynamic> route) => false,
+                    );
+                  }
                 }
               },
               actions: [
@@ -191,35 +248,57 @@ class _EditNoteState extends State<EditNote> {
                   sliver: SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Wrap(
-                        alignment: WrapAlignment.start,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 8.0,
-                        runSpacing: 4.0,
+                      child: Row(
                         children: [
-                          Text(
-                            formatNoteDate(
-                                _viewModel.selectedDate.toString()),
-                            style: TextStyle(
-                              color: mutedTextColor(context),
-                              fontSize: 11.0,
+                          Expanded(
+                            child: Wrap(
+                              alignment: WrapAlignment.start,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: [
+                                Text(
+                                  formatNoteDate(_viewModel.selectedDate.toString()),
+                                  style: TextStyle(
+                                    color: mutedTextColor(context),
+                                    fontSize: 11.0,
+                                  ),
+                                ),
+                                Text(
+                                  '|',
+                                  style: TextStyle(
+                                    color: mutedTextColor(context).withValues(alpha: 0.3),
+                                    fontSize: 11.0,
+                                  ),
+                                ),
+                                Text(
+                                  '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                                  style: TextStyle(
+                                    color: mutedTextColor(context),
+                                    fontSize: 11.0,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            '|',
-                            style: TextStyle(
-                              color:
-                                  mutedTextColor(context).withValues(alpha: 0.3),
-                              fontSize: 11.0,
+                          if (_contentController.linkCount > 0)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.sticky_note_2,
+                                  size: 12.0,
+                                  color: mutedTextColor(context),
+                                ),
+                                Text(
+                                  'x${_contentController.linkCount}',
+                                  style: TextStyle(
+                                    color: mutedTextColor(context),
+                                    fontSize: 11.0,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          Text(
-                            '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
-                            style: TextStyle(
-                              color: mutedTextColor(context),
-                              fontSize: 11.0,
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -246,6 +325,7 @@ class _EditNoteState extends State<EditNote> {
                       onChanged: (String content) {
                         _getNoteContentLength(content);
                       },
+                      onTap: _handleLinkTap,
                     ),
                   ),
                 ),
@@ -257,6 +337,7 @@ class _EditNoteState extends State<EditNote> {
                 isAddMode: widget.add,
                 isPinned: _viewModel.isPinned,
                 currentCategory: _viewModel.category,
+                currentNoteId: _viewModel.id,
                 onSave: () => _saveNote(noteAction: _noteAction),
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
@@ -270,7 +351,34 @@ class _EditNoteState extends State<EditNote> {
                 onMore: () {}, // Placeholder for animation triggering if needed
                 onImageSelected: () {}, // TODO: Implement image selection
                 onChecklistSelected: () {}, // TODO: Implement checklist
-                onLinkSelected: () {}, // TODO: Implement note linking
+                onLinkSelected: () {
+                   _fabKey.currentState?.closeVerticalMenu();
+                },
+                onNoteLinkSelected: (Note selectedNote) {
+                  final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
+                  final int cursorPosition = _contentController.selection.baseOffset;
+                  final String currentText = _contentController.text;
+                  
+                  String newText;
+                  int newCursorPosition;
+                  
+                  // If no cursor (keyboard closed), insert at the beginning
+                  if (cursorPosition <= 0) {
+                    newText = linkPlaceholder + " " + (currentText.isEmpty ? "" : "\n") + currentText;
+                    newCursorPosition = linkPlaceholder.length + 1;
+                  } else {
+                    newText = currentText.substring(0, cursorPosition) + 
+                              linkPlaceholder + " " + 
+                              currentText.substring(cursorPosition);
+                    newCursorPosition = cursorPosition + linkPlaceholder.length + 1;
+                  }
+                  
+                  _contentController.value = TextEditingValue(
+                    text: newText,
+                    selection: TextSelection.collapsed(offset: newCursorPosition),
+                  );
+                  _getNoteContentLength(newText);
+                },
                 onAttachmentSelected: () {}, // TODO: Implement attachment selection
                 onPinSelected: () async {
                   _viewModel.togglePin();

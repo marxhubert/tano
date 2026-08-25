@@ -3,6 +3,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// List of note rows with swipe-to-favorite and swipe-to-delete.
@@ -91,13 +92,17 @@ class NoteListView extends StatelessWidget {
                   ),
                 ],
               ),
-              subtitle: Text(
-                note.content,
+              subtitle: RichText(
                 maxLines: 3,
                 overflow: TextOverflow.clip,
-                style: TextStyle(
-                  fontSize: 12.0,
-                  color: textColor.withValues(alpha: 0.8),
+                text: LinkTextEditingController.buildLinkTextSpan(
+                  note.content,
+                  TextStyle(
+                    fontSize: 12.0,
+                    color: textColor.withValues(alpha: 0.8),
+                    height: 1.4,
+                  ),
+                  tanoAmber,
                 ),
               ),
             ),
