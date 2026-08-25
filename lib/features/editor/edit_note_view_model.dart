@@ -97,14 +97,7 @@ class EditNoteViewModel extends ChangeNotifier {
 
   /// Persists a saved note.
   Future<void> persistSavedNote(Note note) async {
-    final List<Note> notes = await repository.loadNotes();
-    final int index = notes.indexWhere((Note n) => n.id == note.id);
-    if (index == -1) {
-      notes.add(note);
-    } else {
-      notes[index] = note;
-    }
-    await repository.saveNotes(notes);
+    await repository.upsertNote(note);
     _initialNote = note;
   }
 
