@@ -22,7 +22,7 @@ class SQLiteNotesRepository implements NotesRepository {
     final String path = join(await getDatabasesPath(), 'tano_notes.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notes (
@@ -34,7 +34,8 @@ class SQLiteNotesRepository implements NotesRepository {
             category TEXT,
             isDeleted INTEGER DEFAULT 0,
             isPinned INTEGER DEFAULT 0,
-            isLocked INTEGER DEFAULT 0
+            isLocked INTEGER DEFAULT 0,
+            deletedAt TEXT
           )
         ''');
       },
@@ -47,6 +48,9 @@ class SQLiteNotesRepository implements NotesRepository {
           await db.execute(
               'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
         }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
+        }
       },
     );
   }
@@ -58,24 +62,35 @@ class SQLiteNotesRepository implements NotesRepository {
     // 1. Check if database is empty to handle first-run/migration
     final List<Map<String, dynamic>> existing = await db.query('notes');
     if (existing.isEmpty) {
-      return await _handleMigration(db);
+      final List<Note> migrated = await _handleMigration(db);
+      return migrated.where((n) => !n.isDeleted).toList();
     }
 
-    return existing.map((json) => Note.fromJson(json)).toList();
+    final List<Map<String, dynamic>> active = await db.query(
+      'notes',
+      where: 'isDeleted = 0',
+    );
+    return active.map((json) => Note.fromJson(json)).toList();
   }
 
   @override
-  Future<void> saveNotes(List<Note> notes) async {
+  Future<List<Note>> loadTrashNotes() async {
     final db = await _database;
-    await db.transaction((txn) async {
-      for (final note in notes) {
-        await txn.insert(
-          'notes',
-          note.toJson(),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-    });
+    final List<Map<String, dynamic>> results = await db.query(
+      'notes',
+      where: 'isDeleted = 1',
+    );
+    return results.map((json) => Note.fromJson(json)).toList();
+  }
+
+  @override
+  Future<void> upsertNote(Note note) async {
+    final db = await _database;
+    await db.insert(
+      'notes',
+      note.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   @override
@@ -83,7 +98,10 @@ class SQLiteNotesRepository implements NotesRepository {
     final db = await _database;
     await db.update(
       'notes',
-      {'isDeleted': 1},
+      {
+        'isDeleted': 1,
+        'deletedAt': DateTime.now().toString(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -94,7 +112,10 @@ class SQLiteNotesRepository implements NotesRepository {
     final db = await _database;
     await db.update(
       'notes',
-      {'isDeleted': 0},
+      {
+        'isDeleted': 0,
+        'deletedAt': null,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -141,6 +162,17 @@ class SQLiteNotesRepository implements NotesRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  @override
+  Future<List<Note>> searchNotes(String query) async {
+    final db = await _database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'notes',
+      where: '(title LIKE ? OR content LIKE ?) AND isDeleted = 0',
+      whereArgs: ['%$query%', '%$query%'],
+    );
+    return results.map((json) => Note.fromJson(json)).toList();
   }
 
   /// Migrates data from the old JSON file if it exists.

@@ -7,13 +7,13 @@ import 'package:tano/core/models/note.dart';
 /// in-memory for tests).
 abstract class NotesRepository {
   /// Loads every note from the underlying storage.
-  ///
-  /// On first launch the repository seeds the app with demo notes so the
-  /// first screen is never empty.
   Future<List<Note>> loadNotes();
 
-  /// Replaces the whole stored note list.
-  Future<void> saveNotes(List<Note> notes);
+  /// Loads only notes that are in the trash.
+  Future<List<Note>> loadTrashNotes();
+
+  /// Inserts or updates a single note.
+  Future<void> upsertNote(Note note);
 
   /// Moves a note to the trash.
   Future<void> trashNote(String id);
@@ -29,4 +29,7 @@ abstract class NotesRepository {
 
   /// Permanently deletes a note from storage.
   Future<void> deleteNotePermanently(String id);
+
+  /// Searches for notes matching the query in title or content.
+  Future<List<Note>> searchNotes(String query);
 }

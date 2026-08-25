@@ -40,13 +40,22 @@ class HomeViewModel extends ChangeNotifier {
   /// Loads the notes from the repository.
   Future<void> load() async {
     _notes = await repository.loadNotes();
+    if (hasSearchQuery) {
+      _notes = await repository.searchNotes(_searchQuery);
+    }
     _sortNotes();
     notifyListeners();
   }
 
-  void setSearchQuery(String query) {
+  Future<void> setSearchQuery(String query) async {
     if (_searchQuery == query) return;
     _searchQuery = query;
+    if (hasSearchQuery) {
+      _notes = await repository.searchNotes(_searchQuery);
+    } else {
+      _notes = await repository.loadNotes();
+    }
+    _sortNotes();
     notifyListeners();
   }
 
@@ -86,7 +95,7 @@ class HomeViewModel extends ChangeNotifier {
     if (index == -1) return;
     final Note note = _notes[index];
     _notes[index] = note.copyWith(important: !note.important);
-    _persist();
+    repository.upsertNote(_notes[index]);
     notifyListeners();
   }
 
@@ -131,9 +140,9 @@ class HomeViewModel extends ChangeNotifier {
         removed.add(_notes[i]);
         indexes.add(i);
         await repository.trashNote(_notes[i].id);
-        _notes[i] = _notes[i].copyWith(isDeleted: true);
       }
     }
+    _notes.removeWhere((Note note) => _selected.contains(note.id));
     _lastDeleted = (removed, indexes);
     _selected.clear();
     _isInSelectionMode = false;
@@ -146,7 +155,7 @@ class HomeViewModel extends ChangeNotifier {
     if (index == -1) return;
     final Note note = _notes[index];
     await repository.trashNote(id);
-    _notes[index] = note.copyWith(isDeleted: true);
+    _notes.removeAt(index);
     _lastDeleted = (<Note>[note], <int>[index]);
     notifyListeners();
   }
@@ -155,12 +164,12 @@ class HomeViewModel extends ChangeNotifier {
     final (List<Note>, List<int>)? record = _lastDeleted;
     if (record == null) return;
     final List<Note> notesToRestore = record.$1;
-    for (final note in notesToRestore) {
+    final List<int> originalIndexes = record.$2;
+    for (int i = 0; i < notesToRestore.length; i++) {
+      final note = notesToRestore[i];
       await repository.restoreNote(note.id);
-      final index = _notes.indexWhere((n) => n.id == note.id);
-      if (index != -1) {
-        _notes[index] = _notes[index].copyWith(isDeleted: false);
-      }
+      final index = originalIndexes[i] > _notes.length ? _notes.length : originalIndexes[i];
+      _notes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
     }
     _lastDeleted = null;
     notifyListeners();
@@ -193,31 +202,26 @@ class HomeViewModel extends ChangeNotifier {
             _notes[index] = action.note!;
           }
         }
+        await repository.upsertNote(action.note!);
         break;
       case NoteActionKind.delete:
         final int index = _notes.indexWhere(
           (Note note) => note.id == originalId,
         );
         if (index != -1) {
+          final Note removed = _notes.removeAt(index);
           await repository.trashNote(originalId);
-          _notes[index] = _notes[index].copyWith(isDeleted: true);
+          _lastDeleted = (<Note>[removed], <int>[index]);
         }
         break;
       case NoteActionKind.cancel:
         break;
     }
-    await _persist();
     notifyListeners();
   }
 
   List<Note> _filteredNotes() {
-    final List<Note> activeNotes = _notes.where((n) => !n.isDeleted).toList();
-    final String keyword = _searchQuery.trim();
-    if (keyword.isEmpty) return activeNotes;
-    return activeNotes.where((Note note) {
-      return note.title.contains(RegExp(keyword, caseSensitive: false)) ||
-          note.content.contains(RegExp(keyword, caseSensitive: false));
-    }).toList();
+    return _notes;
   }
 
   void _sortNotes() {
@@ -277,6 +281,4 @@ class HomeViewModel extends ChangeNotifier {
       default: return 9;
     }
   }
-
-  Future<void> _persist() => repository.saveNotes(_notes);
 }
