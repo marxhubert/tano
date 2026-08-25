@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:tano/core/models/note.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-enum FabVerticalMenu { none, add, color, more }
+enum FabVerticalMenu { none, add, color, more, link }
 
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
@@ -12,6 +15,7 @@ class AppFab extends StatefulWidget {
     this.isSelectionMode = false,
     this.isEditorMode = false,
     this.isAddMode = false,
+    this.isPinned = false,
     this.controller,
     this.focusNode,
     this.onAdd,
@@ -25,10 +29,11 @@ class AppFab extends StatefulWidget {
     this.onMore,
     this.onColorSelected,
     this.currentCategory,
-    this.isPinned = false,
+    this.currentNoteId,
     this.onImageSelected,
     this.onChecklistSelected,
     this.onLinkSelected,
+    this.onNoteLinkSelected,
     this.onAttachmentSelected,
     this.onPinSelected,
     this.onFindSelected,
@@ -44,6 +49,7 @@ class AppFab extends StatefulWidget {
   final bool isEditorMode;
   final bool isAddMode;
   final bool isPinned;
+  final String? currentNoteId;
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final VoidCallback? onAdd;
@@ -60,6 +66,7 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onImageSelected;
   final VoidCallback? onChecklistSelected;
   final VoidCallback? onLinkSelected;
+  final ValueChanged<Note>? onNoteLinkSelected;
   final VoidCallback? onAttachmentSelected;
   final VoidCallback? onPinSelected;
   final VoidCallback? onFindSelected;
@@ -77,15 +84,18 @@ class AppFabState extends State<AppFab> {
   bool? _isManuallyExpanded;
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
+  List<Note> _availableNotes = [];
 
   // Measurement keys for dynamic height calculation
   final GlobalKey _colorMenuKey = GlobalKey();
   final GlobalKey _addMenuKey = GlobalKey();
   final GlobalKey _moreMenuKey = GlobalKey();
+  final GlobalKey _linkMenuKey = GlobalKey();
 
   double _colorMenuHeight = 0;
   double _addMenuHeight = 0;
   double _moreMenuHeight = 0;
+  double _linkMenuHeight = 0;
 
   @override
   void initState() {
@@ -103,6 +113,7 @@ class AppFabState extends State<AppFab> {
       _colorMenuHeight = _colorMenuKey.currentContext?.size?.height ?? 0;
       _addMenuHeight = _addMenuKey.currentContext?.size?.height ?? 0;
       _moreMenuHeight = _moreMenuKey.currentContext?.size?.height ?? 0;
+      _linkMenuHeight = _linkMenuKey.currentContext?.size?.height ?? 0;
     });
   }
 
@@ -112,17 +123,28 @@ class AppFabState extends State<AppFab> {
     }
   }
 
-  void _toggleVerticalMenu(FabVerticalMenu menu) {
+  Future<void> _toggleVerticalMenu(FabVerticalMenu menu) async {
+    if (menu == FabVerticalMenu.link) {
+      final repository = getIt<NotesRepository>();
+      final notes = await repository.loadNotes();
+      setState(() {
+        _availableNotes = notes.where((n) => n.id != widget.currentNoteId).toList();
+      });
+    }
+
     setState(() {
       _verticalMenu = (_verticalMenu == menu) ? FabVerticalMenu.none : menu;
       if (_verticalMenu != FabVerticalMenu.none) {
         _isManuallyExpanded = true;
       }
     });
+    // Re-measure after state change to ensure accuracy
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
   }
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
     const double btnHeight = 64.0;
     const double borderRadiusValue = 55.0;
@@ -175,6 +197,12 @@ class AppFabState extends State<AppFab> {
       verticalMenuHeight = _addMenuHeight > 0 ? _addMenuHeight : 190.0;
     } else if (_verticalMenu == FabVerticalMenu.more) {
       verticalMenuHeight = _moreMenuHeight > 0 ? _moreMenuHeight : 310.0;
+    } else if (_verticalMenu == FabVerticalMenu.link) {
+      final double maxMenuHeight = screenHeight * (2 / 3);
+      verticalMenuHeight = _linkMenuHeight > 0 ? _linkMenuHeight : 300.0;
+      if (verticalMenuHeight > maxMenuHeight) {
+        verticalMenuHeight = maxMenuHeight;
+      }
     }
 
     double currentHeight = btnHeight;
@@ -232,6 +260,7 @@ class AppFabState extends State<AppFab> {
                     Container(key: _colorMenuKey, child: _buildColorMenu(context)),
                     Container(key: _addMenuKey, child: _buildAddMenu(context)),
                     Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
+                    Container(key: _linkMenuKey, child: _buildLinkMenuContent(context)),
                   ],
                 ),
               ),
@@ -247,7 +276,9 @@ class AppFabState extends State<AppFab> {
                   opacity: showContent ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 150),
                   child: SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: _verticalMenu == FabVerticalMenu.link 
+                        ? const AlwaysScrollableScrollPhysics() 
+                        : const NeverScrollableScrollPhysics(),
                     child: _buildVerticalMenuContent(context),
                   ),
                 ),
@@ -279,6 +310,9 @@ class AppFabState extends State<AppFab> {
       case FabVerticalMenu.more:
         content = _buildMoreMenu(context);
         break;
+      case FabVerticalMenu.link:
+        content = _buildLinkMenuContent(context);
+        break;
       default:
         content = const SizedBox.shrink();
     }
@@ -288,6 +322,53 @@ class AppFabState extends State<AppFab> {
         color: Colors.black.withValues(alpha: 0.15),
       ),
       child: content,
+    );
+  }
+
+  Widget _buildLinkMenuContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
+          child: TextButton.icon(
+            onPressed: () => setState(() => _verticalMenu = FabVerticalMenu.add),
+            icon: const Icon(Icons.arrow_back_ios, size: 14, color: Colors.white70),
+            label: Text(
+              AppText.tr('back'),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(_availableNotes.length, (index) {
+                final note = _availableNotes[index];
+                return _VerticalMenuItem(
+                  icon: Icons.sticky_note_2,
+                  iconSize: 18.0,
+                  fontSize: 13.0,
+                  maxLines: 2,
+                  label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
+                  onTap: () {
+                    widget.onNoteLinkSelected?.call(note);
+                    setState(() => _verticalMenu = FabVerticalMenu.none);
+                  },
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -370,7 +451,10 @@ class AppFabState extends State<AppFab> {
       _VerticalMenuItem(
         icon: Icons.link,
         label: AppText.tr('option_link'),
-        onTap: widget.onLinkSelected,
+        onTap: () {
+          _toggleVerticalMenu(FabVerticalMenu.link);
+          widget.onLinkSelected?.call();
+        },
       ),
       _VerticalMenuItem(
         icon: Icons.attachment,
@@ -603,6 +687,9 @@ class _VerticalMenuItem extends StatelessWidget {
     this.onTap,
     this.iconColor,
     this.textColor,
+    this.iconSize = 20.0,
+    this.fontSize = 14.0,
+    this.maxLines,
   });
 
   final IconData icon;
@@ -610,6 +697,9 @@ class _VerticalMenuItem extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? iconColor;
   final Color? textColor;
+  final double iconSize;
+  final double fontSize;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -618,12 +708,17 @@ class _VerticalMenuItem extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
+          crossAxisAlignment: maxLines != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.white70, size: 24.0),
-            const SizedBox(width: 14.0),
-            Text(
-              label,
-              style: TextStyle(color: textColor ?? Colors.white, fontSize: 15.0),
+            Icon(icon, color: iconColor ?? Colors.white70, size: iconSize),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(color: textColor ?? Colors.white, fontSize: fontSize),
+                maxLines: maxLines,
+                overflow: maxLines != null ? TextOverflow.ellipsis : null,
+              ),
             ),
           ],
         ),
