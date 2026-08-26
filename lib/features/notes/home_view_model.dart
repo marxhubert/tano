@@ -37,6 +37,9 @@ class HomeViewModel extends ChangeNotifier {
   Set<String> get selected => _selected;
   bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
+  /// IDs of all active (not deleted) notes.
+  Set<String> get activeNoteIds => _notes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
+
   /// Loads the notes from the repository.
   Future<void> load() async {
     _notes = await repository.loadNotes();
