@@ -81,17 +81,6 @@ Widget popupButton({
       ? Theme.of(context).colorScheme.primary
       : null;
 
-  final Widget? leadingIcon = icon != null && !popupItem.trailingIcon
-      ? (isSelected
-            ? Icon(icon.icon, color: selectedColor, size: icon.size)
-            : icon)
-      : null;
-  final Widget? trailingIcon = icon != null && popupItem.trailingIcon
-      ? (isSelected
-            ? Icon(icon.icon, color: selectedColor, size: icon.size)
-            : icon)
-      : null;
-
   final Widget label = Text(
     popupItem.title,
     style: TextStyle(
