@@ -85,6 +85,7 @@ class NoteGridView extends StatelessWidget {
                         height: 1.4,
                       ),
                       tanoAmber,
+                      viewModel.activeNoteIds,
                     ),
                     overflow: TextOverflow.clip,
                   ),
