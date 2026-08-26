@@ -14,6 +14,7 @@ class ThemeToggleButton extends StatelessWidget {
         final bool isDark = Theme.of(context).brightness == Brightness.dark;
         
         return IconButton(
+          visualDensity: VisualDensity.compact,
           icon: Icon(
             isDark ? Icons.sunny : Icons.dark_mode,
             color: color,

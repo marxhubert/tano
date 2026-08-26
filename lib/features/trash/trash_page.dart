@@ -111,7 +111,7 @@ class _TrashPageState extends State<TrashPage> {
               SliverPadding(
                 padding: const EdgeInsets.all(appPaddingMedium),
                 sliver: SliverGrid.count(
-                  crossAxisCount: 3,
+                  crossAxisCount: gridCrossAxisCount(context),
                   crossAxisSpacing: 12.0,
                   mainAxisSpacing: 12.0,
                   childAspectRatio: 1.0,
