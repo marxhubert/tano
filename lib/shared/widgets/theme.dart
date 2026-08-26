@@ -61,6 +61,13 @@ const double appPaddingSmall = 6.0;
 const double appBorderRadius = 12.0;
 const double sectionBorderRadius = 24.0;
 
+/// Number of columns for the note grids (home and trash).
+///
+/// Keeps three columns on regular phones and drops to two on narrow screens
+/// so cards stay tall enough to render a 3-line title without overflowing.
+int gridCrossAxisCount(BuildContext context) =>
+    MediaQuery.sizeOf(context).width < 320 ? 2 : 3;
+
 /// Helper to get the correct text color based on background luminance.
 Color getTextColor(Color background) {
   return ThemeData.estimateBrightnessForColor(background) == Brightness.light

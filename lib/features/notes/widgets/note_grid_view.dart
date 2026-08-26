@@ -22,7 +22,7 @@ class NoteGridView extends StatelessWidget {
     final List<Note> notes = viewModel.notes;
 
     return SliverGrid.count(
-      crossAxisCount: 3,
+      crossAxisCount: gridCrossAxisCount(context),
       crossAxisSpacing: 12.0,
       mainAxisSpacing: 12.0,
       childAspectRatio: 0.9,
