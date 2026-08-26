@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
@@ -10,10 +9,8 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/core/models/action.dart';
-import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -40,7 +37,6 @@ class HomeState extends State<Home> {
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
   bool _wasInSelectionMode = false;
-  static const _sliverPadding = 12.0;
 
   @override
   void initState() {
@@ -127,14 +123,18 @@ class HomeState extends State<Home> {
         fullscreenDialog: true,
       ),
     );
-    if (result == null) {
-      return;
+    if (result != null) {
+      await _viewModel.applyNoteAction(
+        add: add,
+        originalId: note.id,
+        action: result,
+      );
     }
-    await _viewModel.applyNoteAction(
-      add: add,
-      originalId: note.id,
-      action: result,
-    );
+    // The editor may persist changes directly (auto-save on bookmark/category/
+    // pin, or the back-navigation "save" action) without returning a
+    // NoteAction. Refresh the list so it always reflects the latest persisted
+    // state.
+    await _viewModel.load();
   }
 
   void _changeLayout(String viewLayout) {
@@ -419,43 +419,6 @@ class HomeState extends State<Home> {
           ),
         );
       },
-    );
-  }
-}
-
-class _SelectionActionButton extends StatelessWidget {
-  const _SelectionActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onPressed,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(icon, size: 24.0, color: color),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.0,
-                color: color,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -14,29 +14,82 @@ class LinkTextEditingController extends TextEditingController {
 
   int get linkCount => linkRegExp.allMatches(text).length;
 
+  /// Returns [position] snapped to the end of the link that contains it, so a
+  /// new link inserted there lands next to the existing link instead of inside
+  /// it (which would corrupt both into one malformed link).
+  int snapPositionOutOfLink(int position) {
+    int snapped = position;
+    for (final match in linkRegExp.allMatches(text)) {
+      if (position > match.start && position < match.end) {
+        snapped = match.end;
+      }
+    }
+    return snapped;
+  }
+
   @override
   set value(TextEditingValue newValue) {
-    // Atomic deletion logic: delete entire link match if one char is removed
-    if (newValue.text.length < value.text.length) {
-      final int oldSelectionBase = value.selection.baseOffset;
-      final int newSelectionBase = newValue.selection.baseOffset;
+    final String oldText = value.text;
+    final String newText = newValue.text;
 
-      // Only handle single character deletion (backspace)
-      if (oldSelectionBase - newSelectionBase == 1 && oldSelectionBase > 0) {
-        for (final match in linkRegExp.allMatches(value.text)) {
-          // If the deleted character was inside a link pattern
-          if (oldSelectionBase > match.start && oldSelectionBase <= match.end) {
-            final String newText = value.text.replaceRange(match.start, match.end, '');
-            super.value = TextEditingValue(
-              text: newText,
-              selection: TextSelection.collapsed(offset: match.start),
-            );
+    // Only single-character deletions can trigger the atomic link removal.
+    if (newText.length == oldText.length - 1) {
+      final int deletedIndex =
+          _deletionIndex(oldText, newText, value.selection.baseOffset);
+      if (deletedIndex >= 0) {
+        for (final match in linkRegExp.allMatches(oldText)) {
+          // Deleting any character inside a link removes the whole link.
+          if (deletedIndex >= match.start && deletedIndex < match.end) {
+            _removeRange(match.start, match.end);
+            return;
+          }
+          // Deleting the space that directly follows a link removes the link
+          // together with that space (the whole insertion in one backspace).
+          if (deletedIndex == match.end &&
+              deletedIndex < oldText.length &&
+              oldText[deletedIndex] == ' ') {
+            _removeRange(match.start, match.end + 1);
             return;
           }
         }
       }
     }
+
     super.value = newValue;
+  }
+
+  /// Finds the index of the single character removed between [oldText] and
+  /// [newText], using the cursor [oldBase] to disambiguate backspace from
+  /// forward-delete. Returns -1 when the change cannot be mapped to a single
+  /// character (e.g. a selection replace).
+  int _deletionIndex(String oldText, String newText, int oldBase) {
+    // Backspace: the character just before the cursor was removed.
+    if (oldBase > 0 && oldBase <= oldText.length) {
+      if (oldText.substring(0, oldBase - 1) + oldText.substring(oldBase) ==
+          newText) {
+        return oldBase - 1;
+      }
+    }
+    // Forward delete: the character just after the cursor was removed.
+    if (oldBase >= 0 && oldBase < oldText.length) {
+      if (oldText.substring(0, oldBase) + oldText.substring(oldBase + 1) ==
+          newText) {
+        return oldBase;
+      }
+    }
+    // Fallback: first differing character.
+    int index = 0;
+    while (index < newText.length && oldText[index] == newText[index]) {
+      index++;
+    }
+    return index;
+  }
+
+  void _removeRange(int start, int end) {
+    super.value = TextEditingValue(
+      text: value.text.replaceRange(start, end, ''),
+      selection: TextSelection.collapsed(offset: start),
+    );
   }
 
   @override

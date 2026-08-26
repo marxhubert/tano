@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
-import 'package:tano/core/models/database.dart';
+import 'package:tano/core/models/notes_json_codec.dart';
 
 void main() {
   group('buildNotesFixtures', () {
@@ -48,10 +48,10 @@ void main() {
 
     test('the generated JSON is readable by the model', () {
       final notes = buildNotesFixtures();
-      final restored = dbFromJson(dbToJson(NotesJsonData(note: notes)));
-      expect(restored.note, hasLength(24));
-      expect(restored.note.first.title, notes.first.title);
-      expect(restored.note.first.important, notes.first.important);
+      final restored = decodeNotes(encodeNotes(notes));
+      expect(restored, hasLength(24));
+      expect(restored.first.title, notes.first.title);
+      expect(restored.first.important, notes.first.important);
     });
   });
 }
