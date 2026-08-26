@@ -3,6 +3,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid of note cards, one card per note.
@@ -75,11 +76,16 @@ class NoteGridView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Flexible(
-                  child: Text(
-                    note.content,
-                    style: TextStyle(
-                      fontSize: 10.0,
-                      color: textColor.withValues(alpha: 0.8),
+                  child: RichText(
+                    text: LinkTextEditingController.buildLinkTextSpan(
+                      note.content,
+                      TextStyle(
+                        fontSize: 10.0,
+                        color: textColor.withValues(alpha: 0.8),
+                        height: 1.4,
+                      ),
+                      tanoAmber,
+                      viewModel.activeNoteIds,
                     ),
                     overflow: TextOverflow.clip,
                   ),
