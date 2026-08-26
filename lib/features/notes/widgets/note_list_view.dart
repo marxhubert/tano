@@ -103,6 +103,7 @@ class NoteListView extends StatelessWidget {
                     height: 1.4,
                   ),
                   tanoAmber,
+                  viewModel.activeNoteIds,
                 ),
               ),
             ),

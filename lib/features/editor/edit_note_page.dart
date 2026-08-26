@@ -61,7 +61,18 @@ class _EditNoteState extends State<EditNote> {
       linkColor: tanoAmber,
     );
     
+    _loadActiveNoteIds();
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
+  }
+
+  Future<void> _loadActiveNoteIds() async {
+    final repository = getIt<NotesRepository>();
+    final notes = await repository.loadNotes();
+    if (mounted) {
+      setState(() {
+        _contentController.activeNoteIds = notes.map((n) => n.id).toSet();
+      });
+    }
   }
 
   @override
