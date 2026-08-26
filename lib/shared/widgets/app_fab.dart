@@ -18,6 +18,7 @@ class AppFab extends StatefulWidget {
     this.isEditorMode = false,
     this.isAddMode = false,
     this.isPinned = false,
+    this.isImportant = false,
     this.controller,
     this.focusNode,
     this.onAdd,
@@ -38,6 +39,7 @@ class AppFab extends StatefulWidget {
     this.onNoteLinkSelected,
     this.onAttachmentSelected,
     this.onPinSelected,
+    this.onImportantSelected,
     this.onFindSelected,
     this.onMoveSelected,
     this.onLockSelected,
@@ -51,6 +53,7 @@ class AppFab extends StatefulWidget {
   final bool isEditorMode;
   final bool isAddMode;
   final bool isPinned;
+  final bool isImportant;
   final String? currentNoteId;
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -71,6 +74,7 @@ class AppFab extends StatefulWidget {
   final ValueChanged<Note>? onNoteLinkSelected;
   final VoidCallback? onAttachmentSelected;
   final VoidCallback? onPinSelected;
+  final VoidCallback? onImportantSelected;
   final VoidCallback? onFindSelected;
   final VoidCallback? onMoveSelected;
   final VoidCallback? onLockSelected;
@@ -213,7 +217,12 @@ class AppFabState extends State<AppFab> {
       }
     }
 
-    double currentHeight = btnHeight;
+    // In search mode the bar is more compact (48) than the default (64),
+    // and only when the keyboard is open (the "high" position).
+    final double barHeight =
+        (widget.isSearchMode && !isKeyboardClosed) ? 48.0 : btnHeight;
+
+    double currentHeight = barHeight;
     if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
     }
@@ -260,21 +269,23 @@ class AppFabState extends State<AppFab> {
           children: [
             // Measurement zone - Unconstrained height to avoid race conditions during animation
             Offstage(
-              child: SizedBox(
-                width: targetExpandedWidth,
-                child: OverflowBox(
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(key: _colorMenuKey, child: _buildColorMenu(context)),
-                      Container(key: _addMenuKey, child: _buildAddMenu(context)),
-                      Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
-                      Container(key: _linkMenuKey, child: _buildLinkMenu(context, isMeasurement: true)),
-                    ],
-                  ),
+              child: OverflowBox(
+                // Measure at a fixed open-menu width so the heights stay
+                // stable no matter the current FAB width (the closed FAB is
+                // only 64px wide and would otherwise under-measure).
+                minWidth: 0,
+                maxWidth: screenWidth - 24.0,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(key: _colorMenuKey, child: _buildColorMenu(context)),
+                    Container(key: _addMenuKey, child: _buildAddMenu(context)),
+                    Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
+                    Container(key: _linkMenuKey, child: _buildLinkMenu(context, isMeasurement: true)),
+                  ],
                 ),
               ),
             ),
@@ -296,7 +307,7 @@ class AppFabState extends State<AppFab> {
               ),
             
             SizedBox(
-              height: btnHeight,
+              height: barHeight,
               child: AnimatedOpacity(
                 opacity: showContent ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 150),
@@ -430,7 +441,7 @@ class AppFabState extends State<AppFab> {
 
   Widget _buildColorMenu(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 36.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,6 +542,12 @@ class AppFabState extends State<AppFab> {
         label: AppText.tr('option_pin'),
         iconColor: widget.isPinned ? tanoAmber : null,
         onTap: widget.onPinSelected,
+      ),
+      _VerticalMenuItem(
+        icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+        label: AppText.tr('important'),
+        iconColor: widget.isImportant ? tanoAmber : null,
+        onTap: widget.onImportantSelected,
       ),
       _VerticalMenuItem(
         icon: Icons.search,

@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 
@@ -10,7 +9,7 @@ class EditNoteViewModel extends ChangeNotifier {
     required this.repository,
     required this.add,
     this.initialNote,
-  })  : id = add ? Random().nextInt(999999).toString() : (initialNote?.id ?? ''),
+  })  : id = add ? const Uuid().v4() : (initialNote?.id ?? ''),
         selectedDate = add
             ? DateTime.now()
             : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
