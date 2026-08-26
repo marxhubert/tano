@@ -1,15 +1,36 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
-import 'package:tano/core/models/database.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
 
 /// SQLite-backed [NotesRepository] implementation.
 class SQLiteNotesRepository implements NotesRepository {
+  SQLiteNotesRepository({
+    DatabaseFactory? databaseFactoryOverride,
+    String? databasePath,
+    Future<Directory> Function()? documentsDirectory,
+  })  : _databaseFactory = databaseFactoryOverride ?? databaseFactory,
+        _databasePath = databasePath,
+        _documentsDirectory =
+            documentsDirectory ?? getApplicationDocumentsDirectory;
+
+  /// Injectable for tests (e.g. `databaseFactoryFfi`); defaults to the
+  /// platform implementation.
+  final DatabaseFactory _databaseFactory;
+
+  /// Full path to the SQLite file. When null, the platform default database
+  /// directory is used.
+  final String? _databasePath;
+
+  /// Location of the legacy JSON file migrated on first launch.
+  final Future<Directory> Function() _documentsDirectory;
+
   Database? _db;
 
   Future<Database> get _database async {
@@ -19,11 +40,13 @@ class SQLiteNotesRepository implements NotesRepository {
   }
 
   Future<Database> _initDb() async {
-    final String path = join(await getDatabasesPath(), 'tano_notes.db');
-    return await openDatabase(
+    final String path = _databasePath ??
+        join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
+    return await _databaseFactory.openDatabase(
       path,
-      version: 3,
-      onCreate: (db, version) async {
+      options: OpenDatabaseOptions(
+        version: 3,
+        onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notes (
             id TEXT PRIMARY KEY,
@@ -52,6 +75,7 @@ class SQLiteNotesRepository implements NotesRepository {
           await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
         }
       },
+      ),
     );
   }
 
@@ -124,8 +148,12 @@ class SQLiteNotesRepository implements NotesRepository {
   @override
   Future<void> togglePin(String id) async {
     final db = await _database;
-    final List<Map<String, dynamic>> result =
-        await db.query('notes', columns: ['isPinned'], where: 'id = ?', whereArgs: [id]);
+    final List<Map<String, dynamic>> result = await db.query(
+      'notes',
+      columns: ['isPinned'],
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     if (result.isNotEmpty) {
       final int currentPin = result.first['isPinned'] as int;
       await db.update(
@@ -141,8 +169,12 @@ class SQLiteNotesRepository implements NotesRepository {
   Future<void> toggleLock(String id, {String? password}) async {
     // Basic toggle for now. Password logic will be added in Phase 3.
     final db = await _database;
-    final List<Map<String, dynamic>> result =
-        await db.query('notes', columns: ['isLocked'], where: 'id = ?', whereArgs: [id]);
+    final List<Map<String, dynamic>> result = await db.query(
+      'notes',
+      columns: ['isLocked'],
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     if (result.isNotEmpty) {
       final int currentLock = result.first['isLocked'] as int;
       await db.update(
@@ -167,10 +199,12 @@ class SQLiteNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> searchNotes(String query) async {
     final db = await _database;
+    final String escaped = escapeLikePattern(query);
     final List<Map<String, dynamic>> results = await db.query(
       'notes',
-      where: '(title LIKE ? OR content LIKE ?) AND isDeleted = 0',
-      whereArgs: ['%$query%', '%$query%'],
+      where:
+          "(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
+      whereArgs: ['%$escaped%', '%$escaped%'],
     );
     return results.map((json) => Note.fromJson(json)).toList();
   }
@@ -178,13 +212,13 @@ class SQLiteNotesRepository implements NotesRepository {
   /// Migrates data from the old JSON file if it exists.
   Future<List<Note>> _handleMigration(Database db) async {
     try {
-      final Directory directory = await getApplicationDocumentsDirectory();
+      final Directory directory = await _documentsDirectory();
       final File legacyFile = File('${directory.path}/local_persistence.json');
 
       if (legacyFile.existsSync()) {
         debugPrint('SQLite: Migrating from legacy JSON file...');
         final String contents = await legacyFile.readAsString();
-        final List<Note> legacyNotes = dbFromJson(contents).note;
+        final List<Note> legacyNotes = decodeNotes(contents);
 
         if (legacyNotes.isNotEmpty) {
           await db.transaction((txn) async {
@@ -212,4 +246,13 @@ class SQLiteNotesRepository implements NotesRepository {
     });
     return seed;
   }
+}
+
+/// Escapes `%`, `_` and `\` so a user query is matched literally by a
+/// `LIKE ... ESCAPE '\'` clause instead of being interpreted as wildcards.
+String escapeLikePattern(String value) {
+  return value
+      .replaceAll('\\', '\\\\')
+      .replaceAll('%', '\\%')
+      .replaceAll('_', '\\_');
 }

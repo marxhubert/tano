@@ -260,21 +260,23 @@ class AppFabState extends State<AppFab> {
           children: [
             // Measurement zone - Unconstrained height to avoid race conditions during animation
             Offstage(
-              child: SizedBox(
-                width: targetExpandedWidth,
-                child: OverflowBox(
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(key: _colorMenuKey, child: _buildColorMenu(context)),
-                      Container(key: _addMenuKey, child: _buildAddMenu(context)),
-                      Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
-                      Container(key: _linkMenuKey, child: _buildLinkMenu(context, isMeasurement: true)),
-                    ],
-                  ),
+              child: OverflowBox(
+                // Measure at a fixed open-menu width so the heights stay
+                // stable no matter the current FAB width (the closed FAB is
+                // only 64px wide and would otherwise under-measure).
+                minWidth: 0,
+                maxWidth: screenWidth - 24.0,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(key: _colorMenuKey, child: _buildColorMenu(context)),
+                    Container(key: _addMenuKey, child: _buildAddMenu(context)),
+                    Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
+                    Container(key: _linkMenuKey, child: _buildLinkMenu(context, isMeasurement: true)),
+                  ],
                 ),
               ),
             ),
@@ -430,7 +432,7 @@ class AppFabState extends State<AppFab> {
 
   Widget _buildColorMenu(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 36.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
