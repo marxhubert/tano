@@ -5,7 +5,6 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
-import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
@@ -43,6 +42,10 @@ class _EditNoteState extends State<EditNote> {
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
 
+  // Undo/redo history of (title, content) snapshots.
+  final List<({String title, String content})> _history = [];
+  int _historyIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +66,9 @@ class _EditNoteState extends State<EditNote> {
     
     _loadActiveNoteIds();
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
+    _history.add(
+      (title: _titleController.text, content: _contentController.text),
+    );
   }
 
   Future<void> _loadActiveNoteIds() async {
@@ -114,49 +120,151 @@ class _EditNoteState extends State<EditNote> {
     });
   }
 
+  bool get _canUndo => _historyIndex > 0;
+  bool get _canRedo => _historyIndex < _history.length - 1;
+
+  /// True once the user has made at least one edit since opening the note.
+  /// The undo/redo/save actions stay visible after an in-place save so the
+  /// user can still revert to the pre-save state.
+  bool get _hasEdits => _history.length > 1;
+
+  /// Records the current text state after a user edit, truncating any redo
+  /// entries that may have accumulated after the current position. Consecutive
+  /// single-character insertions that continue the same "word"/"space" run are
+  /// coalesced into a single undo step.
+  void _recordEdit() {
+    final current = (
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    final last = _history[_historyIndex];
+    if (last.title == current.title && last.content == current.content) {
+      return; // no actual change
+    }
+    if (_historyIndex + 1 < _history.length) {
+      _history.removeRange(_historyIndex + 1, _history.length);
+    }
+    final bool coalesce = _historyIndex > 0 && _shouldCoalesce(last, current);
+    if (coalesce) {
+      _history[_historyIndex] = current;
+    } else {
+      _history.add(current);
+      _historyIndex = _history.length - 1;
+    }
+    setState(() {});
+  }
+
+  /// Whether [current] continues the same "word"/"space" typing run as [old].
+  bool _shouldCoalesce(
+    ({String title, String content}) old,
+    ({String title, String content}) current,
+  ) {
+    final bool titleChanged = old.title != current.title;
+    final bool contentChanged = old.content != current.content;
+    if (titleChanged && contentChanged) return false;
+    if (titleChanged) {
+      return _coalescesSingleCharInsertion(old.title, current.title);
+    }
+    if (contentChanged) {
+      return _coalescesSingleCharInsertion(old.content, current.content);
+    }
+    return false;
+  }
+
+  /// True when [newText] is [oldText] plus a single trailing character of the
+  /// same class (space vs non-space) as the previous trailing character.
+  bool _coalescesSingleCharInsertion(String oldText, String newText) {
+    if (newText.length != oldText.length + 1) return false;
+    if (!newText.startsWith(oldText)) return false;
+    final String inserted = newText.substring(oldText.length);
+    final String lastOld = oldText.isEmpty ? '' : oldText[oldText.length - 1];
+    return (inserted == ' ') == (lastOld == ' ');
+  }
+
+  void _undo() {
+    if (!_canUndo) return;
+    _historyIndex--;
+    _restoreHistory();
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+    _historyIndex++;
+    _restoreHistory();
+  }
+
+  void _restoreHistory() {
+    final snapshot = _history[_historyIndex];
+    _titleController.text = snapshot.title;
+    _contentController.text = snapshot.content;
+    _getNoteContentLength(snapshot.content);
+    setState(() {});
+  }
+
+  Future<void> _save() async {
+    if (!_viewModel.isValid(
+      title: _titleController.text,
+      content: _contentController.text,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppText.tr('content_empty'))));
+      return;
+    }
+    final note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    await _viewModel.persistSavedNote(note);
+    // Keep the undo/redo history so the user can still revert to the
+    // pre-save state after saving in place. Rebuild to gray the save button.
+    if (mounted) setState(() {});
+  }
+
   Future<void> _handleLinkTap() async {
     final offset = _contentController.selection.baseOffset;
     if (offset < 0) return;
 
     final String? noteId = _contentController.getLinkIdAt(offset);
-    if (noteId != null && context.mounted) {
-      final repository = getIt<NotesRepository>();
-      final notes = await repository.loadNotes();
-      final targetNote = notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
-      
-      if (targetNote.id.isNotEmpty && context.mounted) {
-        // Save current note changes if any before navigating
-        final currentNote = _viewModel.buildNote(
-          title: _titleController.text, 
-          content: _contentController.text
-        );
-        
-        if (_viewModel.isDirty(title: _titleController.text, content: _contentController.text)) {
-           await _viewModel.persistSavedNote(currentNote);
-        }
+    if (noteId == null || !mounted) return;
 
-        if (context.mounted) {
-          // Standard push to allow "Back" button to return naturally
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditNote(
-                add: false,
-                index: -1,
-                noteAction: NoteAction(note: targetNote),
-              ),
-              fullscreenDialog: true,
-            ),
-          );
-          
-          // Refresh state when returning in case the target note was changed
-          if (context.mounted) {
-            await _viewModel.load();
-            _getNoteContentLength(_contentController.text);
-          }
-        }
-      }
+    final repository = getIt<NotesRepository>();
+    final notes = await repository.loadNotes();
+    if (!mounted) return;
+
+    final targetNote =
+        notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
+    if (targetNote.id.isEmpty || !mounted) return;
+
+    // Save current note changes (if any) before navigating.
+    final currentNote = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (_viewModel.isDirty(
+      title: _titleController.text,
+      content: _contentController.text,
+    )) {
+      await _viewModel.persistSavedNote(currentNote);
     }
+    if (!mounted) return;
+
+    // Standard push to allow "Back" button to return naturally.
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditNote(
+          add: false,
+          index: -1,
+          noteAction: NoteAction(note: targetNote),
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    if (!mounted) return;
+
+    // Refresh state when returning in case the target note was changed.
+    await _viewModel.load();
+    _getNoteContentLength(_contentController.text);
   }
 
   Future<bool> _onWillPopCallback() async {
@@ -209,6 +317,11 @@ class _EditNoteState extends State<EditNote> {
           final Color immersiveBg =
               getImmersiveBackgroundColor(noteColor, isDark: isDark);
 
+          final bool isDirty = _viewModel.isDirty(
+            title: _titleController.text,
+            content: _contentController.text,
+          );
+
           return GestureDetector(
             onTap: () {
               FocusScope.of(context).unfocus();
@@ -222,6 +335,7 @@ class _EditNoteState extends State<EditNote> {
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,
               titleHint: AppText.tr('title_here'),
+              titleOnChanged: (String _) => _recordEdit(),
               onPop: () async {
                 final bool willPop = await _onWillPopCallback();
                 if (willPop && context.mounted) {
@@ -236,22 +350,24 @@ class _EditNoteState extends State<EditNote> {
                 }
               },
               actions: [
-                const ThemeToggleButton(),
-                IconButton(
-                  icon: Icon(
-                    _viewModel.important
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                    color: _viewModel.important ? tanoAmber : null,
+                if (_hasEdits) ...[
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.undo),
+                    onPressed: _canUndo ? _undo : null,
                   ),
-                  onPressed: () async {
-                    _viewModel.toggleImportant();
-                    await _viewModel.autoSaveThemeOrBookmark(
-                      title: _titleController.text,
-                      content: _contentController.text,
-                    );
-                  },
-                ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.redo),
+                    onPressed: _canRedo ? _redo : null,
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.save, size: 21.0),
+                    onPressed: isDirty ? _save : null,
+                  ),
+                ],
+                const ThemeToggleButton(),
               ],
               slivers: [
                 SliverPadding(
@@ -335,6 +451,7 @@ class _EditNoteState extends State<EditNote> {
                       ),
                       onChanged: (String content) {
                         _getNoteContentLength(content);
+                        _recordEdit();
                       },
                       onTap: _handleLinkTap,
                     ),
@@ -347,6 +464,7 @@ class _EditNoteState extends State<EditNote> {
                 isEditorMode: true,
                 isAddMode: widget.add,
                 isPinned: _viewModel.isPinned,
+                isImportant: _viewModel.important,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
                 onSave: () => _saveNote(noteAction: _noteAction),
@@ -367,7 +485,7 @@ class _EditNoteState extends State<EditNote> {
                 },
                 onNoteLinkSelected: (Note selectedNote) {
                   final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
-                  final int cursorPosition = _contentController.selection.baseOffset;
+                  final int cursorPosition = _contentController.snapPositionOutOfLink(_contentController.selection.baseOffset);
                   final String currentText = _contentController.text;
                   
                   String newText;
@@ -375,12 +493,13 @@ class _EditNoteState extends State<EditNote> {
                   
                   // If no cursor (keyboard closed), insert at the beginning
                   if (cursorPosition <= 0) {
-                    newText = linkPlaceholder + " " + (currentText.isEmpty ? "" : "\n") + currentText;
+                    final String separator = currentText.isEmpty ? '' : '\n';
+                    newText = '$linkPlaceholder $separator$currentText';
                     newCursorPosition = linkPlaceholder.length + 1;
                   } else {
-                    newText = currentText.substring(0, cursorPosition) + 
-                              linkPlaceholder + " " + 
-                              currentText.substring(cursorPosition);
+                    final String before = currentText.substring(0, cursorPosition);
+                    final String after = currentText.substring(cursorPosition);
+                    newText = '$before$linkPlaceholder $after';
                     newCursorPosition = cursorPosition + linkPlaceholder.length + 1;
                   }
                   
@@ -393,6 +512,13 @@ class _EditNoteState extends State<EditNote> {
                 onAttachmentSelected: () {}, // TODO: Implement attachment selection
                 onPinSelected: () async {
                   _viewModel.togglePin();
+                  await _viewModel.autoSaveThemeOrBookmark(
+                    title: _titleController.text,
+                    content: _contentController.text,
+                  );
+                },
+                onImportantSelected: () async {
+                  _viewModel.toggleImportant();
                   await _viewModel.autoSaveThemeOrBookmark(
                     title: _titleController.text,
                     content: _contentController.text,

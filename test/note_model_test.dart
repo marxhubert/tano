@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tano/core/models/database.dart';
+import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/models/note.dart';
 
 void main() {
@@ -39,31 +39,28 @@ void main() {
     });
   });
 
-  group('NotesJsonData', () {
+  group('notes JSON codec', () {
     test('encodes and decodes the JSON', () {
-      final db = NotesJsonData(
-        note: [
-          Note(id: '1', title: 'a', content: 'x', important: true),
-          Note(id: '2', title: 'b', content: 'y', important: false),
-        ],
-      );
+      final notes = <Note>[
+        Note(id: '1', title: 'a', content: 'x', important: true),
+        Note(id: '2', title: 'b', content: 'y', important: false),
+      ];
 
-      final restored = dbFromJson(dbToJson(db));
+      final restored = decodeNotes(encodeNotes(notes));
 
-      expect(restored.note, hasLength(2));
-      expect(restored.note[0].title, 'a');
-      expect(restored.note[0].important, true);
-      expect(restored.note[1].title, 'b');
-      expect(restored.note[1].important, false);
+      expect(restored, hasLength(2));
+      expect(restored[0].title, 'a');
+      expect(restored[0].important, true);
+      expect(restored[1].title, 'b');
+      expect(restored[1].important, false);
     });
 
-    test('empty note list by default', () {
-      expect(NotesJsonData().note, isEmpty);
-      expect(dbFromJson('{"notes": []}').note, isEmpty);
+    test('decodes an empty note list', () {
+      expect(decodeNotes('{"notes": []}'), isEmpty);
     });
 
     test('handles a JSON without the notes key', () {
-      expect(dbFromJson('{}').note, isEmpty);
+      expect(decodeNotes('{}'), isEmpty);
     });
   });
 }

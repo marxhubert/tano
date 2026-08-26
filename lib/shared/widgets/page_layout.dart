@@ -53,6 +53,7 @@ class PageScaffold extends StatefulWidget {
     this.onPop,
     this.titleController,
     this.titleHint,
+    this.titleOnChanged,
     this.backgroundColor,
     this.titlePaddingLeft,
   });
@@ -68,6 +69,7 @@ class PageScaffold extends StatefulWidget {
   final VoidCallback? onPop;
   final TextEditingController? titleController;
   final String? titleHint;
+  final ValueChanged<String>? titleOnChanged;
   final Color? backgroundColor;
   final double? titlePaddingLeft;
 
@@ -110,15 +112,14 @@ class _PageScaffoldState extends State<PageScaffold> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color barBgColor = barColor(context);
     final Color scaffoldBgColor =
         widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = getTextColor(scaffoldBgColor);
 
-    final String appBarTitleText = widget.titleController != null &&
-            widget.titleController!.text.isNotEmpty
-        ? widget.titleController!.text
-        : widget.title;
+    final String appBarTitleText =
+        (widget.titleController?.text ?? '').isNotEmpty
+            ? widget.titleController!.text
+            : widget.title;
 
     return Scaffold(
       key: widget.scaffoldKey,
@@ -162,14 +163,12 @@ class _PageScaffoldState extends State<PageScaffold> {
               )
             : null,
         centerTitle: !widget.isHome,
-        actions: widget.actions != null
-            ? widget.actions!
-                .map((a) => Padding(
-                      padding: const EdgeInsets.only(right: appPaddingSmall),
-                      child: a,
-                    ))
-                .toList()
-            : null,
+        actions: widget.actions
+            ?.map((a) => Padding(
+                  padding: const EdgeInsets.only(right: appPaddingSmall),
+                  child: a,
+                ))
+            .toList(),
       ),
       body: CustomScrollView(
         controller: _scrollController,
@@ -213,6 +212,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         maxLength: 100,
         textInputAction: TextInputAction.next,
         textCapitalization: TextCapitalization.sentences,
+        onChanged: widget.titleOnChanged,
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 24.0,
