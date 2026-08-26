@@ -1,53 +1,44 @@
-# Phase 4 Implementation Plan: CRUD Optimization & Performance
+# Feature Plan: Link a Note
 
-This phase focuses on transitioning from a "full-save" approach to a fine-grained CRUD (Create, Read, Update, Delete) model. This will significantly improve performance and data integrity by only modifying specific rows in the SQLite database.
+This feature allows users to insert clickable links to other notes within the editor.
 
 ## Goals
-- Transition the `NotesRepository` from `saveNotes(List<Note>)` to individual entity management.
-- Implement efficient `upsertNote` (Insert or Update) logic.
-- Optimize the `HomeViewModel` and `EditNoteViewModel` to perform targeted updates.
-- Improve search performance by moving from in-memory filtering to SQL-based queries.
+- Allow users to select a note from a list within the FAB.
+- Insert a styled link (icon + title, bold, underlined, colored) at the cursor position.
+- Make the link clickable to navigate to the referenced note.
 
 ## Proposed Changes
 
-### 1. Repository Interface Refactor
-Update the interface to reflect modern data access patterns.
+### 1. FAB (Note Selection Menu)
+#### [MODIFY] [app_fab.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/app_fab.dart)
+- Add a new menu state `FabVerticalMenu.link`.
+- Implement `_buildLinkMenu(context)` to list all notes.
+- Ensure the menu has a max height of 1/3 of the screen and is scrollable.
+- Add a "Back" button at the top left of this menu to return to the "Add" menu.
+- Each item will display the `sticky_note_2` icon and the note title.
 
+### 2. Editor Logic (Rich Text & Linking)
+#### [NEW] `lib/shared/widgets/link_text_controller.dart`
+- Create a custom `TextEditingController` that detects a specific pattern (e.g., `[[noteId:title]]`).
+- Render this pattern using a `TextSpan` with:
+    - The `sticky_note_2` icon.
+    - The title in bold, underlined, and colored.
+
+#### [MODIFY] [edit_note_page.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_page.dart)
+- Replace the standard `TextEditingController` with the new `LinkTextEditingController`.
+- Implement tap detection on the link spans to navigate to the target note.
+- Implement the `onLinkSelected` callback to insert the link placeholder at the current cursor position.
+
+### 3. Repository
 #### [MODIFY] [notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/notes_repository.dart)
-- [DELETE] `Future<void> saveNotes(List<Note> notes)`.
-- [NEW] `Future<void> upsertNote(Note note)`.
-- [NEW] `Future<List<Note>> searchNotes(String query)`.
+- Ensure we can fetch notes efficiently for the selection list.
 
-### 2. SQLite Implementation Optimization
-Leverage SQL capabilities for targeted operations.
-
-#### [MODIFY] [sqlite_notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/sqlite_notes_repository.dart)
-- Implement `upsertNote` using `ConflictAlgorithm.replace`.
-- Implement `searchNotes` using a `WHERE title LIKE ? OR content LIKE ?` SQL query.
-
-### 3. ViewModel Logic Update
-Switch from entire list persistence to single note persistence.
-
-#### [MODIFY] [edit_note_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_view_model.dart)
-- Use `repository.upsertNote(note)` instead of loading and saving the whole list.
-
-#### [MODIFY] [home_view_model.dart](file:///Users/marx/Devhub/tano/lib/features/notes/home_view_model.dart)
-- Update `applyNoteAction` to use individual CRUD methods.
-- (Optimization) Update `setSearchQuery` to trigger a repository-side search if needed.
-
-### 4. Tests Adjustment
-Ensure test mocks match the new interface.
-
-#### [MODIFY] All `_InMemoryNotesRepository` in test files.
-- Replace `saveNotes` implementation with `upsertNote`.
+### 4. Localization
+#### [MODIFY] [l10n.dart](file:///Users/marx/Devhub/tano/lib/shared/config/l10n.dart)
+- Add translations for "Back" if not already present.
 
 ## Verification Plan
-
-### Automated Tests
-- Run `flutter test` to ensure that targeted updates correctly reflect in the final state.
-- Verify that search results from SQL match the previous in-memory filtering logic.
-
-### Manual Verification
-- Verify that editing a note saves it correctly without affecting other notes.
-- Test the search bar with various keywords to ensure reactivity and accuracy.
-- Check that "Restore" and "Trash" actions still work perfectly.
+- **Selection**: Open the "Plus" menu, click "Link a note", and verify the list of notes appears with a back button.
+- **Insertion**: Select a note and verify that a styled link is inserted at the cursor position.
+- **Navigation**: Tap the inserted link and verify it opens the correct note.
+- **Persistence**: Save the note, reopen it, and verify the link is still there and functional.

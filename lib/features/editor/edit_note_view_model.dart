@@ -38,6 +38,19 @@ class EditNoteViewModel extends ChangeNotifier {
   late bool isLocked;
   late Note _initialNote;
 
+  /// Loads the note data from the repository (refresh).
+  Future<void> load() async {
+    final notes = await repository.loadNotes();
+    final note = notes.firstWhere((n) => n.id == id, orElse: () => _initialNote);
+    _initialNote = note;
+    category = note.category;
+    important = note.important;
+    isPinned = note.isPinned;
+    isLocked = note.isLocked;
+    selectedDate = DateTime.tryParse(note.date) ?? DateTime.now();
+    notifyListeners();
+  }
+
   void toggleImportant() {
     important = !important;
     notifyListeners();
