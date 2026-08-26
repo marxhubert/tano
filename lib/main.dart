@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';

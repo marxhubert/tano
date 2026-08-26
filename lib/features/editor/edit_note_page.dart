@@ -5,7 +5,6 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
-import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
@@ -119,44 +118,46 @@ class _EditNoteState extends State<EditNote> {
     if (offset < 0) return;
 
     final String? noteId = _contentController.getLinkIdAt(offset);
-    if (noteId != null && context.mounted) {
-      final repository = getIt<NotesRepository>();
-      final notes = await repository.loadNotes();
-      final targetNote = notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
-      
-      if (targetNote.id.isNotEmpty && context.mounted) {
-        // Save current note changes if any before navigating
-        final currentNote = _viewModel.buildNote(
-          title: _titleController.text, 
-          content: _contentController.text
-        );
-        
-        if (_viewModel.isDirty(title: _titleController.text, content: _contentController.text)) {
-           await _viewModel.persistSavedNote(currentNote);
-        }
+    if (noteId == null || !mounted) return;
 
-        if (context.mounted) {
-          // Standard push to allow "Back" button to return naturally
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditNote(
-                add: false,
-                index: -1,
-                noteAction: NoteAction(note: targetNote),
-              ),
-              fullscreenDialog: true,
-            ),
-          );
-          
-          // Refresh state when returning in case the target note was changed
-          if (context.mounted) {
-            await _viewModel.load();
-            _getNoteContentLength(_contentController.text);
-          }
-        }
-      }
+    final repository = getIt<NotesRepository>();
+    final notes = await repository.loadNotes();
+    if (!mounted) return;
+
+    final targetNote =
+        notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
+    if (targetNote.id.isEmpty || !mounted) return;
+
+    // Save current note changes (if any) before navigating.
+    final currentNote = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (_viewModel.isDirty(
+      title: _titleController.text,
+      content: _contentController.text,
+    )) {
+      await _viewModel.persistSavedNote(currentNote);
     }
+    if (!mounted) return;
+
+    // Standard push to allow "Back" button to return naturally.
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditNote(
+          add: false,
+          index: -1,
+          noteAction: NoteAction(note: targetNote),
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    if (!mounted) return;
+
+    // Refresh state when returning in case the target note was changed.
+    await _viewModel.load();
+    _getNoteContentLength(_contentController.text);
   }
 
   Future<bool> _onWillPopCallback() async {
@@ -367,7 +368,7 @@ class _EditNoteState extends State<EditNote> {
                 },
                 onNoteLinkSelected: (Note selectedNote) {
                   final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
-                  final int cursorPosition = _contentController.selection.baseOffset;
+                  final int cursorPosition = _contentController.snapPositionOutOfLink(_contentController.selection.baseOffset);
                   final String currentText = _contentController.text;
                   
                   String newText;
@@ -375,12 +376,13 @@ class _EditNoteState extends State<EditNote> {
                   
                   // If no cursor (keyboard closed), insert at the beginning
                   if (cursorPosition <= 0) {
-                    newText = linkPlaceholder + " " + (currentText.isEmpty ? "" : "\n") + currentText;
+                    final String separator = currentText.isEmpty ? '' : '\n';
+                    newText = '$linkPlaceholder $separator$currentText';
                     newCursorPosition = linkPlaceholder.length + 1;
                   } else {
-                    newText = currentText.substring(0, cursorPosition) + 
-                              linkPlaceholder + " " + 
-                              currentText.substring(cursorPosition);
+                    final String before = currentText.substring(0, cursorPosition);
+                    final String after = currentText.substring(cursorPosition);
+                    newText = '$before$linkPlaceholder $after';
                     newCursorPosition = cursorPosition + linkPlaceholder.length + 1;
                   }
                   

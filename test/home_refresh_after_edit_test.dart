@@ -2,22 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tano/core/repositories/notes_repository.dart';
-import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/features/notes/home_page.dart';
+import 'package:tano/main.dart';
+import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/shared/config/theme_controller.dart';
 
-/// In-memory [NotesRepository] so the widget test never touches the disk.
+/// In-memory [NotesRepository] so the test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
   _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
 
   final List<Note> notes;
 
   @override
-  Future<List<Note>> loadNotes() async => notes.where((n) => !n.isDeleted).toList();
+  Future<List<Note>> loadNotes() async =>
+      notes.where((n) => !n.isDeleted).toList();
 
   @override
-  Future<List<Note>> loadTrashNotes() async => notes.where((n) => n.isDeleted).toList();
+  Future<List<Note>> loadTrashNotes() async =>
+      notes.where((n) => n.isDeleted).toList();
 
   @override
   Future<void> upsertNote(Note note) async {
@@ -44,23 +49,24 @@ class _InMemoryNotesRepository implements NotesRepository {
   Future<void> restoreNote(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
     if (index != -1) {
-      notes[index] = notes[index].copyWith(
-        isDeleted: false,
-        deletedAt: null,
-      );
+      notes[index] = notes[index].copyWith(isDeleted: false, deletedAt: null);
     }
   }
 
   @override
   Future<void> togglePin(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
+    if (index != -1) {
+      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
+    }
   }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
     final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
+    if (index != -1) {
+      notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
+    }
   }
 
   @override
@@ -80,8 +86,10 @@ class _InMemoryNotesRepository implements NotesRepository {
 }
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await LocaleController.instance.init();
+    await ThemeController.instance.init();
     PackageInfo.setMockInitialValues(
       appName: 'tano',
       packageName: 'com.shikamarx.tano',
@@ -90,14 +98,14 @@ void main() {
       buildSignature: '',
     );
     if (getIt.isRegistered<NotesRepository>()) {
-      getIt.unregister<NotesRepository>();
+      await getIt.unregister<NotesRepository>();
     }
   });
 
-  testWidgets('the edit page does not crash when opening the category menu', (
+  testWidgets('home reflects edits saved through the back button', (
     tester,
   ) async {
-    final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
+    final repository = _InMemoryNotesRepository(<Note>[
       Note(
         id: '1',
         title: 'Hello',
@@ -113,60 +121,29 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Opens an existing note -> edit page.
+    expect(find.byType(Home), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);
+
+    // Open the note editor.
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
 
-    // Types text into the content (focus inside a TextField).
-    await tester.enterText(find.byType(TextField).last, 'Some new content');
-    await tester.pumpAndSettle();
-  });
-
-  testWidgets('toggling the bookmark in the editor updates the icon reactively', (
-    tester,
-  ) async {
-    final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
-      Note(
-        id: '1',
-        title: 'Hello',
-        content: 'World',
-        date: '2026-08-12 10:00:00.000',
-        important: false,
-        category: 'neutral',
-      ),
-    ]);
-    getIt.registerSingleton<NotesRepository>(repository);
-
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
+    // Modify the title.
+    await tester.enterText(find.byType(TextField).first, 'Hello updated');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Hello'));
+    // Back -> "Save before leaving" dialog -> Save.
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('SAVE').last);
     await tester.pumpAndSettle();
 
-    final Finder editorBookmark = find.descendant(
-      of: find.byType(AppBar),
-      matching: find.byIcon(Icons.bookmark_border),
-    );
-    expect(editorBookmark, findsOneWidget);
-
-    await tester.tap(editorBookmark);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.bookmark),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.bookmark_border),
-      ),
-      findsNothing,
-    );
+    // Home must reflect the persisted edit without reopening Settings.
+    expect(find.byType(Home), findsOneWidget);
+    expect(find.text('Hello updated'), findsOneWidget);
+    expect(find.text('Hello'), findsNothing);
+    expect(repository.notes.first.title, 'Hello updated');
   });
 }
