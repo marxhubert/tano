@@ -8,9 +8,9 @@ enum NoteActionKind { save, delete, cancel }
 /// The previous version used magic strings (`'Save'`, `'Delete'`, `'Cancel'`)
 /// which were error-prone; [kind] is now a typed enum.
 class NoteAction {
-  NoteAction({this.kind = NoteActionKind.cancel, this.note});
+  const NoteAction({required this.kind, this.note});
 
-  NoteActionKind kind;
-  Note? note;
+  final NoteActionKind kind;
+  final Note? note;
 }
 

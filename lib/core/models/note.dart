@@ -8,7 +8,7 @@ class Note {
     this.content = '',
     this.date = '',
     this.important = false,
-    this.category = 'none',
+    this.category = 'nuage',
     this.isDeleted = false,
     this.isPinned = false,
     this.isLocked = false,
@@ -32,7 +32,7 @@ class Note {
         content: json['content'] as String? ?? '',
         date: json['date'] as String? ?? '',
         important: json['important'] == 1,
-        category: json['category'] as String? ?? 'none',
+        category: _normalizeCategory(json['category'] as String?),
         isDeleted: json['isDeleted'] == 1,
         isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
@@ -51,6 +51,18 @@ class Note {
         'isLocked': isLocked ? 1 : 0,
         'deletedAt': deletedAt,
       };
+
+  /// Canonical category name for uncategorized notes ('nuage' pastel).
+  static const String defaultCategory = 'nuage';
+
+  /// Normalizes legacy category values ('none', 'neutral', empty) to the
+  /// canonical [defaultCategory].
+  static String _normalizeCategory(String? value) {
+    if (value == null || value.isEmpty || value == 'none' || value == 'neutral') {
+      return defaultCategory;
+    }
+    return value;
+  }
 
   /// Returns a copy of this note with the given fields replaced.
   Note copyWith({
