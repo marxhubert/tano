@@ -33,7 +33,6 @@ class EditNote extends StatefulWidget {
 
 class _EditNoteState extends State<EditNote> {
   late final EditNoteViewModel _viewModel;
-  late NoteAction _noteAction;
   final TextEditingController _titleController = TextEditingController();
   late final LinkTextEditingController _contentController;
   final FocusNode _titleFocus = FocusNode();
@@ -41,6 +40,10 @@ class _EditNoteState extends State<EditNote> {
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
+
+  // Undo/redo history of (title, content) snapshots.
+  final List<({String title, String content})> _history = [];
+  int _historyIndex = 0;
 
   @override
   void initState() {
@@ -50,8 +53,6 @@ class _EditNoteState extends State<EditNote> {
       add: widget.add,
       initialNote: widget.noteAction.note,
     );
-    _noteAction =
-        NoteAction(kind: NoteActionKind.cancel, note: widget.noteAction.note);
     _titleController.text =
         widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
     
@@ -62,6 +63,9 @@ class _EditNoteState extends State<EditNote> {
     
     _loadActiveNoteIds();
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
+    _history.add(
+      (title: _titleController.text, content: _contentController.text),
+    );
   }
 
   Future<void> _loadActiveNoteIds() async {
@@ -84,7 +88,7 @@ class _EditNoteState extends State<EditNote> {
     super.dispose();
   }
 
-  void _saveNote({required NoteAction noteAction}) {
+  void _saveNote() {
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
@@ -96,21 +100,133 @@ class _EditNoteState extends State<EditNote> {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppText.tr('content_empty'))));
     } else {
-      noteAction.note = note;
-      noteAction.kind = NoteActionKind.save;
-      Navigator.pop(context, noteAction);
+      Navigator.pop(
+        context,
+        NoteAction(kind: NoteActionKind.save, note: note),
+      );
     }
   }
 
-  void _deleteNote(NoteAction noteAction) {
-    noteAction.kind = NoteActionKind.delete;
-    Navigator.pop(context, noteAction);
+  void _deleteNote() {
+    Navigator.pop(
+      context,
+      NoteAction(kind: NoteActionKind.delete, note: widget.noteAction.note),
+    );
   }
 
   void _getNoteContentLength(String content) {
     setState(() {
       _noteContentLength = content.length;
     });
+  }
+
+  bool get _canUndo => _historyIndex > 0;
+  bool get _canRedo => _historyIndex < _history.length - 1;
+
+  /// True once the user has made at least one edit since opening the note.
+  /// The undo/redo/save actions stay visible after an in-place save so the
+  /// user can still revert to the pre-save state.
+  bool get _hasEdits => _history.length > 1;
+
+  /// Records the current text state after a user edit, truncating any redo
+  /// entries that may have accumulated after the current position. Consecutive
+  /// single-character insertions that continue the same "word"/"space" run are
+  /// coalesced into a single undo step.
+  void _recordEdit() {
+    final current = (
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    final last = _history[_historyIndex];
+    if (last.title == current.title && last.content == current.content) {
+      return; // no actual change
+    }
+    if (_historyIndex + 1 < _history.length) {
+      _history.removeRange(_historyIndex + 1, _history.length);
+    }
+    final bool coalesce = _historyIndex > 0 && _shouldCoalesce(last, current);
+    if (coalesce) {
+      _history[_historyIndex] = current;
+    } else {
+      _history.add(current);
+      _historyIndex = _history.length - 1;
+    }
+    setState(() {});
+  }
+
+  /// Whether [current] continues the same "word"/"space"/"newline" typing run
+  /// as [old].
+  bool _shouldCoalesce(
+    ({String title, String content}) old,
+    ({String title, String content}) current,
+  ) {
+    final bool titleChanged = old.title != current.title;
+    final bool contentChanged = old.content != current.content;
+    if (titleChanged && contentChanged) return false;
+    if (titleChanged) {
+      return _coalescesSingleCharInsertion(old.title, current.title);
+    }
+    if (contentChanged) {
+      return _coalescesSingleCharInsertion(old.content, current.content);
+    }
+    return false;
+  }
+
+  /// True when [newText] is [oldText] plus a single trailing character of the
+  /// same class (word, space or newline) as the previous trailing character.
+  bool _coalescesSingleCharInsertion(String oldText, String newText) {
+    if (newText.length != oldText.length + 1) return false;
+    if (!newText.startsWith(oldText)) return false;
+    if (oldText.isEmpty) return false;
+    final String inserted = newText.substring(oldText.length);
+    final String lastOld = oldText[oldText.length - 1];
+    return _charKind(inserted) == _charKind(lastOld);
+  }
+
+  /// Word characters, spaces and newlines are distinct undo boundaries.
+  int _charKind(String char) {
+    if (char == '\n') return 2;
+    if (char == ' ') return 1;
+    return 0;
+  }
+
+  void _undo() {
+    if (!_canUndo) return;
+    _historyIndex--;
+    _restoreHistory();
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+    _historyIndex++;
+    _restoreHistory();
+  }
+
+  void _restoreHistory() {
+    final snapshot = _history[_historyIndex];
+    _titleController.text = snapshot.title;
+    _contentController.setTextForRestore(snapshot.content);
+    _getNoteContentLength(snapshot.content);
+    setState(() {});
+  }
+
+  Future<void> _save() async {
+    if (!_viewModel.isValid(
+      title: _titleController.text,
+      content: _contentController.text,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppText.tr('content_empty'))));
+      return;
+    }
+    final note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    await _viewModel.persistSavedNote(note);
+    // Keep the undo/redo history so the user can still revert to the
+    // pre-save state after saving in place. Rebuild to gray the save button.
+    if (mounted) setState(() {});
   }
 
   Future<void> _handleLinkTap() async {
@@ -148,7 +264,7 @@ class _EditNoteState extends State<EditNote> {
         builder: (context) => EditNote(
           add: false,
           index: -1,
-          noteAction: NoteAction(note: targetNote),
+          noteAction: NoteAction(kind: NoteActionKind.cancel, note: targetNote),
         ),
         fullscreenDialog: true,
       ),
@@ -210,6 +326,11 @@ class _EditNoteState extends State<EditNote> {
           final Color immersiveBg =
               getImmersiveBackgroundColor(noteColor, isDark: isDark);
 
+          final bool isDirty = _viewModel.isDirty(
+            title: _titleController.text,
+            content: _contentController.text,
+          );
+
           return GestureDetector(
             onTap: () {
               FocusScope.of(context).unfocus();
@@ -222,7 +343,9 @@ class _EditNoteState extends State<EditNote> {
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,
+              titleFocusNode: _titleFocus,
               titleHint: AppText.tr('title_here'),
+              titleOnChanged: (String _) => _recordEdit(),
               onPop: () async {
                 final bool willPop = await _onWillPopCallback();
                 if (willPop && context.mounted) {
@@ -237,22 +360,24 @@ class _EditNoteState extends State<EditNote> {
                 }
               },
               actions: [
-                const ThemeToggleButton(),
-                IconButton(
-                  icon: Icon(
-                    _viewModel.important
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                    color: _viewModel.important ? tanoAmber : null,
+                if (_hasEdits) ...[
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.undo),
+                    onPressed: _canUndo ? _undo : null,
                   ),
-                  onPressed: () async {
-                    _viewModel.toggleImportant();
-                    await _viewModel.autoSaveThemeOrBookmark(
-                      title: _titleController.text,
-                      content: _contentController.text,
-                    );
-                  },
-                ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.redo),
+                    onPressed: _canRedo ? _redo : null,
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.save, size: 21.0),
+                    onPressed: isDirty ? _save : null,
+                  ),
+                ],
+                const ThemeToggleButton(),
               ],
               slivers: [
                 SliverPadding(
@@ -336,6 +461,7 @@ class _EditNoteState extends State<EditNote> {
                       ),
                       onChanged: (String content) {
                         _getNoteContentLength(content);
+                        _recordEdit();
                       },
                       onTap: _handleLinkTap,
                     ),
@@ -348,9 +474,10 @@ class _EditNoteState extends State<EditNote> {
                 isEditorMode: true,
                 isAddMode: widget.add,
                 isPinned: _viewModel.isPinned,
+                isImportant: _viewModel.important,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
-                onSave: () => _saveNote(noteAction: _noteAction),
+                onSave: _saveNote,
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
                   _viewModel.setCategory(colorName);
@@ -364,7 +491,7 @@ class _EditNoteState extends State<EditNote> {
                 onImageSelected: () {}, // TODO: Implement image selection
                 onChecklistSelected: () {}, // TODO: Implement checklist
                 onLinkSelected: () {
-                   _fabKey.currentState?.closeVerticalMenu();
+                  _fabKey.currentState?.closeVerticalMenu();
                 },
                 onNoteLinkSelected: (Note selectedNote) {
                   final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
@@ -400,6 +527,13 @@ class _EditNoteState extends State<EditNote> {
                     content: _contentController.text,
                   );
                 },
+                onImportantSelected: () async {
+                  _viewModel.toggleImportant();
+                  await _viewModel.autoSaveThemeOrBookmark(
+                    title: _titleController.text,
+                    content: _contentController.text,
+                  );
+                },
                 onFindSelected: () {}, // TODO: Implement Find in note
                 onMoveSelected: () {}, // TODO: Implement Move to
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
@@ -412,7 +546,7 @@ class _EditNoteState extends State<EditNote> {
                     action: AppText.tr('delete'),
                   );
                   if (confirmDeletion == true) {
-                    _deleteNote(_noteAction);
+                    _deleteNote();
                   }
                 },
               ),

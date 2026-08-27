@@ -6,6 +6,7 @@ import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
+import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -73,6 +74,7 @@ class Tano extends StatelessWidget {
             ),
           ),
           themeMode: themeMode ?? ThemeController.instance.themeMode,
+          navigatorObservers: <NavigatorObserver>[routeObserver],
           home: const SplashScreen(),
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => const Home(),

@@ -593,7 +593,7 @@ class _SettingsSwitchTile extends StatelessWidget {
       trailing: Transform.scale(
         scale: 0.8,
         child: Switch.adaptive(
-            value: value, onChanged: onChanged, activeColor: tanoTeal),
+            value: value, onChanged: onChanged, activeThumbColor: tanoTeal),
       ),
     );
   }
