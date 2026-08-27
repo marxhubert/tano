@@ -36,6 +36,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Xcode build artifacts (DerivedData produced by flutter run / Xcode)
+/ios/build/
+
 # Symbolication related
 app.*.symbols
 
