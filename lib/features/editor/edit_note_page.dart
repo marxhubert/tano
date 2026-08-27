@@ -33,7 +33,6 @@ class EditNote extends StatefulWidget {
 
 class _EditNoteState extends State<EditNote> {
   late final EditNoteViewModel _viewModel;
-  late NoteAction _noteAction;
   final TextEditingController _titleController = TextEditingController();
   late final LinkTextEditingController _contentController;
   final FocusNode _titleFocus = FocusNode();
@@ -54,8 +53,6 @@ class _EditNoteState extends State<EditNote> {
       add: widget.add,
       initialNote: widget.noteAction.note,
     );
-    _noteAction =
-        NoteAction(kind: NoteActionKind.cancel, note: widget.noteAction.note);
     _titleController.text =
         widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
     
@@ -91,7 +88,7 @@ class _EditNoteState extends State<EditNote> {
     super.dispose();
   }
 
-  void _saveNote({required NoteAction noteAction}) {
+  void _saveNote() {
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
@@ -103,15 +100,18 @@ class _EditNoteState extends State<EditNote> {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppText.tr('content_empty'))));
     } else {
-      noteAction.note = note;
-      noteAction.kind = NoteActionKind.save;
-      Navigator.pop(context, noteAction);
+      Navigator.pop(
+        context,
+        NoteAction(kind: NoteActionKind.save, note: note),
+      );
     }
   }
 
-  void _deleteNote(NoteAction noteAction) {
-    noteAction.kind = NoteActionKind.delete;
-    Navigator.pop(context, noteAction);
+  void _deleteNote() {
+    Navigator.pop(
+      context,
+      NoteAction(kind: NoteActionKind.delete, note: widget.noteAction.note),
+    );
   }
 
   void _getNoteContentLength(String content) {
@@ -264,7 +264,7 @@ class _EditNoteState extends State<EditNote> {
         builder: (context) => EditNote(
           add: false,
           index: -1,
-          noteAction: NoteAction(note: targetNote),
+          noteAction: NoteAction(kind: NoteActionKind.cancel, note: targetNote),
         ),
         fullscreenDialog: true,
       ),
@@ -477,7 +477,7 @@ class _EditNoteState extends State<EditNote> {
                 isImportant: _viewModel.important,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
-                onSave: () => _saveNote(noteAction: _noteAction),
+                onSave: _saveNote,
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
                   _viewModel.setCategory(colorName);
@@ -491,7 +491,7 @@ class _EditNoteState extends State<EditNote> {
                 onImageSelected: () {}, // TODO: Implement image selection
                 onChecklistSelected: () {}, // TODO: Implement checklist
                 onLinkSelected: () {
-                   _fabKey.currentState?.closeVerticalMenu();
+                  _fabKey.currentState?.closeVerticalMenu();
                 },
                 onNoteLinkSelected: (Note selectedNote) {
                   final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
@@ -546,7 +546,7 @@ class _EditNoteState extends State<EditNote> {
                     action: AppText.tr('delete'),
                   );
                   if (confirmDeletion == true) {
-                    _deleteNote(_noteAction);
+                    _deleteNote();
                   }
                 },
               ),
