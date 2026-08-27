@@ -154,7 +154,8 @@ class _EditNoteState extends State<EditNote> {
     setState(() {});
   }
 
-  /// Whether [current] continues the same "word"/"space" typing run as [old].
+  /// Whether [current] continues the same "word"/"space"/"newline" typing run
+  /// as [old].
   bool _shouldCoalesce(
     ({String title, String content}) old,
     ({String title, String content}) current,
@@ -172,13 +173,21 @@ class _EditNoteState extends State<EditNote> {
   }
 
   /// True when [newText] is [oldText] plus a single trailing character of the
-  /// same class (space vs non-space) as the previous trailing character.
+  /// same class (word, space or newline) as the previous trailing character.
   bool _coalescesSingleCharInsertion(String oldText, String newText) {
     if (newText.length != oldText.length + 1) return false;
     if (!newText.startsWith(oldText)) return false;
+    if (oldText.isEmpty) return false;
     final String inserted = newText.substring(oldText.length);
-    final String lastOld = oldText.isEmpty ? '' : oldText[oldText.length - 1];
-    return (inserted == ' ') == (lastOld == ' ');
+    final String lastOld = oldText[oldText.length - 1];
+    return _charKind(inserted) == _charKind(lastOld);
+  }
+
+  /// Word characters, spaces and newlines are distinct undo boundaries.
+  int _charKind(String char) {
+    if (char == '\n') return 2;
+    if (char == ' ') return 1;
+    return 0;
   }
 
   void _undo() {
@@ -196,7 +205,7 @@ class _EditNoteState extends State<EditNote> {
   void _restoreHistory() {
     final snapshot = _history[_historyIndex];
     _titleController.text = snapshot.title;
-    _contentController.text = snapshot.content;
+    _contentController.setTextForRestore(snapshot.content);
     _getNoteContentLength(snapshot.content);
     setState(() {});
   }
@@ -334,6 +343,7 @@ class _EditNoteState extends State<EditNote> {
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,
+              titleFocusNode: _titleFocus,
               titleHint: AppText.tr('title_here'),
               titleOnChanged: (String _) => _recordEdit(),
               onPop: () async {

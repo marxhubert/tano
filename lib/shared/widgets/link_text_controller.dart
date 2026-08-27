@@ -10,6 +10,20 @@ class LinkTextEditingController extends TextEditingController {
   final Color linkColor;
   Set<String> activeNoteIds;
 
+  bool _suppressAtomicDeletion = false;
+
+  /// Sets [text] without triggering atomic link deletion. Used when restoring
+  /// a previous state (undo/redo) so a one-character difference inside a link
+  /// is not misinterpreted as a link deletion.
+  void setTextForRestore(String text) {
+    _suppressAtomicDeletion = true;
+    try {
+      this.text = text;
+    } finally {
+      _suppressAtomicDeletion = false;
+    }
+  }
+
   static final RegExp linkRegExp = RegExp(r'\[\[([^:]+):([^\]]+)\]\]');
 
   int get linkCount => linkRegExp.allMatches(text).length;
@@ -29,6 +43,10 @@ class LinkTextEditingController extends TextEditingController {
 
   @override
   set value(TextEditingValue newValue) {
+    if (_suppressAtomicDeletion) {
+      super.value = newValue;
+      return;
+    }
     final String oldText = value.text;
     final String newText = newValue.text;
 
