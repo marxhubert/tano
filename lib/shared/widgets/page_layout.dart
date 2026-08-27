@@ -52,7 +52,9 @@ class PageScaffold extends StatefulWidget {
     this.scaffoldKey,
     this.onPop,
     this.titleController,
+    this.titleFocusNode,
     this.titleHint,
+    this.titleOnChanged,
     this.backgroundColor,
     this.titlePaddingLeft,
   });
@@ -67,7 +69,9 @@ class PageScaffold extends StatefulWidget {
   final GlobalKey<ScaffoldState>? scaffoldKey;
   final VoidCallback? onPop;
   final TextEditingController? titleController;
+  final FocusNode? titleFocusNode;
   final String? titleHint;
+  final ValueChanged<String>? titleOnChanged;
   final Color? backgroundColor;
   final double? titlePaddingLeft;
 
@@ -205,11 +209,13 @@ class _PageScaffoldState extends State<PageScaffold> {
     if (widget.titleController != null) {
       return TextField(
         controller: widget.titleController,
+        focusNode: widget.titleFocusNode,
         maxLines: 3,
         minLines: 1,
         maxLength: 100,
         textInputAction: TextInputAction.next,
         textCapitalization: TextCapitalization.sentences,
+        onChanged: widget.titleOnChanged,
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 24.0,

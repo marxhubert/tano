@@ -14,6 +14,7 @@ import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
+import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -30,7 +31,7 @@ class Home extends StatefulWidget {
   }
 }
 
-class HomeState extends State<Home> {
+class HomeState extends State<Home> with RouteAware {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
@@ -56,12 +57,30 @@ class HomeState extends State<Home> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<void>? route = ModalRoute.of<void>(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  /// Called when another route (editor, settings, ...) is pushed on top of
+  /// Home. Dismiss the undo snack bar immediately so it does not linger if
+  /// the user comes back before its timeout.
+  @override
+  void didPushNext() {
+    ScaffoldMessenger.of(context).clearSnackBars();
   }
 
   void _onViewModelChanged() {
@@ -118,7 +137,7 @@ class HomeState extends State<Home> {
         builder: (context) => EditNote(
           add: add,
           index: -1,
-          noteAction: NoteAction(note: note),
+          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
         ),
         fullscreenDialog: true,
       ),
@@ -177,17 +196,24 @@ class HomeState extends State<Home> {
   }
 
   void _showUndoSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppText.tr('note_deleted')),
-        action: SnackBarAction(
-          label: AppText.tr('undo'),
-          onPressed: () {
-            _viewModel.undoLastDelete();
-          },
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(AppText.tr('note_deleted')),
+          duration: const Duration(seconds: 3),
+          // A SnackBar with an action defaults to persist: true, which makes
+          // the timeout a no-op. Opt back into the timed auto-dismiss.
+          persist: false,
+          action: SnackBarAction(
+            label: AppText.tr('undo'),
+            onPressed: () {
+              _viewModel.undoLastDelete();
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _layoutChanger(List<Note> notes, String viewLayout) {

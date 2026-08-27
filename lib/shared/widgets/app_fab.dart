@@ -18,6 +18,7 @@ class AppFab extends StatefulWidget {
     this.isEditorMode = false,
     this.isAddMode = false,
     this.isPinned = false,
+    this.isImportant = false,
     this.controller,
     this.focusNode,
     this.onAdd,
@@ -38,6 +39,7 @@ class AppFab extends StatefulWidget {
     this.onNoteLinkSelected,
     this.onAttachmentSelected,
     this.onPinSelected,
+    this.onImportantSelected,
     this.onFindSelected,
     this.onMoveSelected,
     this.onLockSelected,
@@ -51,6 +53,7 @@ class AppFab extends StatefulWidget {
   final bool isEditorMode;
   final bool isAddMode;
   final bool isPinned;
+  final bool isImportant;
   final String? currentNoteId;
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -71,6 +74,7 @@ class AppFab extends StatefulWidget {
   final ValueChanged<Note>? onNoteLinkSelected;
   final VoidCallback? onAttachmentSelected;
   final VoidCallback? onPinSelected;
+  final VoidCallback? onImportantSelected;
   final VoidCallback? onFindSelected;
   final VoidCallback? onMoveSelected;
   final VoidCallback? onLockSelected;
@@ -213,7 +217,12 @@ class AppFabState extends State<AppFab> {
       }
     }
 
-    double currentHeight = btnHeight;
+    // In search mode the bar is more compact (48) than the default (64),
+    // and only when the keyboard is open (the "high" position).
+    final double barHeight =
+        (widget.isSearchMode && !isKeyboardClosed) ? 48.0 : btnHeight;
+
+    double currentHeight = barHeight;
     if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
     }
@@ -298,7 +307,7 @@ class AppFabState extends State<AppFab> {
               ),
             
             SizedBox(
-              height: btnHeight,
+              height: barHeight,
               child: AnimatedOpacity(
                 opacity: showContent ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 150),
@@ -533,6 +542,12 @@ class AppFabState extends State<AppFab> {
         label: AppText.tr('option_pin'),
         iconColor: widget.isPinned ? tanoAmber : null,
         onTap: widget.onPinSelected,
+      ),
+      _VerticalMenuItem(
+        icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+        label: AppText.tr('important'),
+        iconColor: widget.isImportant ? tanoAmber : null,
+        onTap: widget.onImportantSelected,
       ),
       _VerticalMenuItem(
         icon: Icons.search,

@@ -145,28 +145,16 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    final Finder editorBookmark = find.descendant(
-      of: find.byType(AppBar),
-      matching: find.byIcon(Icons.bookmark_border),
-    );
-    expect(editorBookmark, findsOneWidget);
-
-    await tester.tap(editorBookmark);
+    // Bookmark now lives in the FAB's "more" menu, not the app bar.
+    await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
 
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.bookmark),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.bookmark_border),
-      ),
-      findsNothing,
-    );
+    expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.bookmark_border));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_border), findsNothing);
   });
 }

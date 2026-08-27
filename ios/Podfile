@@ -39,6 +39,13 @@ post_install do |installer|
     target.build_configurations.each do |config|
       # Xcode 27 requires a minimum deployment target of 15.0
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      # Xcode 15+ treats double-quoted includes in framework headers as errors.
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      # Fix swift_getObjectType crash in Release/Profile (path_provider_foundation):
+      # Swift optimization strips type metadata, causing a null-pointer crash at
+      # plugin registration. Disable optimization + dead code stripping for pods.
+      config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'
+      config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
     end
   end
 end
