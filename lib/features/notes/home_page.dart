@@ -137,7 +137,7 @@ class HomeState extends State<Home> with RouteAware {
         builder: (context) => EditNote(
           add: add,
           index: -1,
-          noteAction: NoteAction(note: note),
+          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
         ),
         fullscreenDialog: true,
       ),

@@ -14,7 +14,7 @@ class EditNoteViewModel extends ChangeNotifier {
             ? DateTime.now()
             : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
     important = initialNote?.important ?? false;
-    category = initialNote?.category ?? 'neutral';
+    category = initialNote?.category ?? Note.defaultCategory;
     isDeleted = initialNote?.isDeleted ?? false;
     isPinned = initialNote?.isPinned ?? false;
     isLocked = initialNote?.isLocked ?? false;
@@ -95,11 +95,11 @@ class EditNoteViewModel extends ChangeNotifier {
     final Note current = buildNote(title: title, content: content);
     // Compare essential business fields, excluding internal SQLite metadata if any
     return current.title != _initialNote.title ||
-           current.content != _initialNote.content ||
-           current.important != _initialNote.important ||
-           current.category != _initialNote.category ||
-           current.isPinned != _initialNote.isPinned ||
-           current.isLocked != _initialNote.isLocked;
+          current.content != _initialNote.content ||
+          current.important != _initialNote.important ||
+          current.category != _initialNote.category ||
+          current.isPinned != _initialNote.isPinned ||
+          current.isLocked != _initialNote.isLocked;
   }
 
   /// Business rule: a note is savable when at least its title or its content is not blank.

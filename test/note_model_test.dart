@@ -25,6 +25,13 @@ void main() {
       expect(restored.category, 'work');
     });
 
+    test('legacy category values normalize to the canonical default', () {
+      expect(Note.fromJson({'category': 'none'}).category, 'nuage');
+      expect(Note.fromJson({'category': 'neutral'}).category, 'nuage');
+      expect(Note.fromJson({'category': ''}).category, 'nuage');
+      expect(Note.fromJson({'category': 'menthe'}).category, 'menthe');
+    });
+
     test('important is preserved when false', () {
       final note = Note(id: '1', title: 'a', important: false);
       final restored = Note.fromJson(note.toJson());
@@ -35,7 +42,7 @@ void main() {
       final restored = Note.fromJson(<String, dynamic>{});
       expect(restored.id, '');
       expect(restored.important, false);
-      expect(restored.category, 'none');
+      expect(restored.category, 'nuage');
     });
   });
 
