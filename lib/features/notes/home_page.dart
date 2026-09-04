@@ -402,8 +402,10 @@ class HomeState extends State<Home> with RouteAware {
                 )
               : Text(
                   '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: mutedTextColor(context),
                     fontWeight: FontWeight.w400,
+                    fontSize: 13.0,
                   ),
                 ),
           slivers: [

@@ -39,6 +39,10 @@ int checklistCount(String text) {
   return count;
 }
 
+/// Number of note links in [text] (the [[id:title]] pattern).
+int linkCountIn(String text) =>
+    LinkTextEditingController.linkRegExp.allMatches(text).length;
+
 /// Toggles the checkbox of the task line under [offset] (which must fall in
 /// the 6-character marker region) and returns the new full text, or null
 /// when [offset] is not on a task checkbox.

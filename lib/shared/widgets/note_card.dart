@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 typedef NoteCardContentBuilder = Widget Function(
@@ -131,6 +132,43 @@ class NoteCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Small muted row showing how many checklists and note links a note
+/// contains (done_all / sticky_note_2 + xN), as on the editor info line.
+class NoteCounts extends StatelessWidget {
+  const NoteCounts({
+    super.key,
+    required this.content,
+    required this.color,
+  });
+
+  final String content;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final int checklists = checklistCount(content);
+    final int links = linkCountIn(content);
+    if (checklists == 0 && links == 0) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (checklists > 0) ...<Widget>[
+          Icon(Icons.done_all, size: 11.0, color: color),
+          const SizedBox(width: 2.0),
+          Text('x$checklists',
+              style: TextStyle(fontSize: 9.0, color: color)),
+        ],
+        if (checklists > 0 && links > 0) const SizedBox(width: 8.0),
+        if (links > 0) ...<Widget>[
+          Icon(Icons.sticky_note_2, size: 11.0, color: color),
+          const SizedBox(width: 2.0),
+          Text('x$links', style: TextStyle(fontSize: 9.0, color: color)),
+        ],
+      ],
     );
   }
 }
