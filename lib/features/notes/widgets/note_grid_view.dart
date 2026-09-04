@@ -23,8 +23,8 @@ class NoteGridView extends StatelessWidget {
 
     return SliverGrid.count(
       crossAxisCount: gridCrossAxisCount(context),
-      crossAxisSpacing: 12.0,
-      mainAxisSpacing: 12.0,
+      crossAxisSpacing: 8.0,
+      mainAxisSpacing: 8.0,
       childAspectRatio: 0.9,
       children: List.generate(notes.length, (index) {
         final Note note = notes[index];
@@ -44,7 +44,7 @@ class NoteGridView extends StatelessWidget {
           onLongPress: () => viewModel.enterSelectionMode(note.id),
           onSelectionToggle: () => viewModel.toggleSelection(note.id),
           builder: (context, textColor) => Container(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +77,7 @@ class NoteGridView extends StatelessWidget {
                 ),
                 Flexible(
                   child: RichText(
-                    text: LinkTextEditingController.buildLinkTextSpan(
+                    text: LinkTextEditingController.buildMarkdownTextSpan(
                       note.content,
                       TextStyle(
                         fontSize: 10.0,
@@ -89,6 +89,10 @@ class NoteGridView extends StatelessWidget {
                     ),
                     overflow: TextOverflow.clip,
                   ),
+                ),
+                NoteCounts(
+                  content: note.content,
+                  color: textColor.withValues(alpha: 0.6),
                 ),
               ],
             ),
