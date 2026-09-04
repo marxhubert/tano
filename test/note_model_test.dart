@@ -32,6 +32,20 @@ void main() {
       expect(Note.fromJson({'category': 'menthe'}).category, 'menthe');
     });
 
+    test('serializes and deserializes attachments', () {
+      final note = Note(
+        id: '1',
+        title: 'a',
+        attachments: <String>['x.txt', 'y.pdf'],
+      );
+      final restored = Note.fromJson(note.toJson());
+      expect(restored.attachments, <String>['x.txt', 'y.pdf']);
+    });
+
+    test('missing attachments default to an empty list', () {
+      expect(Note.fromJson(<String, dynamic>{}).attachments, isEmpty);
+    });
+
     test('important is preserved when false', () {
       final note = Note(id: '1', title: 'a', important: false);
       final restored = Note.fromJson(note.toJson());

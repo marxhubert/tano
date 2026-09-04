@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// A note, stored locally and (when shared) synchronized peer-to-peer.
 ///
 /// All fields are non-nullable with safe defaults.
@@ -13,6 +15,7 @@ class Note {
     this.isPinned = false,
     this.isLocked = false,
     this.deletedAt,
+    this.attachments = const <String>[],
   });
 
   final String id;
@@ -26,6 +29,10 @@ class Note {
   final bool isLocked;
   final String? deletedAt;
 
+  /// File names (stored under the attachments directory) attached to the
+  /// note. Kept as opaque names; the system opens them on demand.
+  final List<String> attachments;
+
   factory Note.fromJson(Map<String, dynamic> json) => Note(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
@@ -37,6 +44,7 @@ class Note {
         isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
         deletedAt: json['deletedAt'] as String?,
+        attachments: _decodeAttachments(json['attachments']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -50,10 +58,26 @@ class Note {
         'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
         'deletedAt': deletedAt,
+        'attachments': jsonEncode(attachments),
       };
 
   /// Canonical category name for uncategorized notes ('nuage' pastel).
   static const String defaultCategory = 'nuage';
+
+  /// Decodes the JSON-encoded attachments column into a list of names.
+  static List<String> _decodeAttachments(Object? value) {
+    if (value is String && value.isNotEmpty) {
+      try {
+        final Object? decoded = jsonDecode(value);
+        if (decoded is List) {
+          return decoded.whereType<String>().toList();
+        }
+      } on FormatException {
+        // Ignore malformed legacy values and fall back to no attachments.
+      }
+    }
+    return const <String>[];
+  }
 
   /// Normalizes legacy category values ('none', 'neutral', empty) to the
   /// canonical [defaultCategory].
@@ -76,6 +100,7 @@ class Note {
     bool? isPinned,
     bool? isLocked,
     String? deletedAt,
+    List<String>? attachments,
   }) {
     return Note(
       id: id ?? this.id,
@@ -88,6 +113,7 @@ class Note {
       isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
       deletedAt: deletedAt ?? this.deletedAt,
+      attachments: attachments ?? this.attachments,
     );
   }
 }

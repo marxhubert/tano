@@ -1,5 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -34,6 +37,7 @@ class EditNote extends StatefulWidget {
 
 class _EditNoteState extends State<EditNote> {
   late final EditNoteViewModel _viewModel;
+  final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _titleController = TextEditingController();
   late final LinkTextEditingController _contentController;
   final FocusNode _titleFocus = FocusNode();
@@ -357,6 +361,44 @@ class _EditNoteState extends State<EditNote> {
     _contentFocus.requestFocus();
   }
 
+  /// Picks a file, copies it into the attachments store and persists the note.
+  Future<void> _addAttachment() async {
+    final FilePickerResult? result = await FilePicker.pickFiles();
+    if (result == null || result.files.isEmpty) return;
+    final PlatformFile file = result.files.single;
+    final String? sourcePath = file.path;
+    if (sourcePath == null) return;
+
+    final String name = await _attachmentsStore.import(sourcePath, file.name);
+    final List<String> updated = List<String>.of(_viewModel.attachments)..add(name);
+    _viewModel.setAttachments(updated);
+    await _persistAttachments();
+  }
+
+  /// Deletes an attached file and persists the updated note.
+  Future<void> _removeAttachment(String name) async {
+    await _attachmentsStore.remove(name);
+    final List<String> updated = List<String>.of(_viewModel.attachments)..remove(name);
+    _viewModel.setAttachments(updated);
+    await _persistAttachments();
+  }
+
+  /// Opens an attached file with the system's default app.
+  Future<void> _openAttachment(String name) async {
+    final String path = await _attachmentsStore.pathOf(name);
+    await OpenFilex.open(path);
+  }
+
+  /// Persists the current note (including its attachments) immediately, so
+  /// attachment changes are never lost.
+  Future<void> _persistAttachments() async {
+    final Note note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    await _viewModel.persistSavedNote(note);
+  }
+
   /// Runs when the content field loses focus: removes checklists left empty.
   void _onContentFocusChanged() {
     final bool hasFocus = _contentFocus.hasFocus;
@@ -529,7 +571,7 @@ class _EditNoteState extends State<EditNote> {
                           ),
                           if (contentChecklistCount > 0)
                             Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
+                              padding: const EdgeInsets.only(left: 8.0),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -549,22 +591,46 @@ class _EditNoteState extends State<EditNote> {
                               ),
                             ),
                           if (_contentController.linkCount > 0)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.sticky_note_2,
-                                  size: 12.0,
-                                  color: mutedTextColor(context),
-                                ),
-                                Text(
-                                  'x${_contentController.linkCount}',
-                                  style: TextStyle(
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.sticky_note_2,
+                                    size: 12.0,
                                     color: mutedTextColor(context),
-                                    fontSize: 11.0,
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    'x${_contentController.linkCount}',
+                                    style: TextStyle(
+                                      color: mutedTextColor(context),
+                                      fontSize: 11.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (_viewModel.attachments.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.attachment,
+                                    size: 12.0,
+                                    color: mutedTextColor(context),
+                                  ),
+                                  Text(
+                                    'x${_viewModel.attachments.length}',
+                                    style: TextStyle(
+                                      color: mutedTextColor(context),
+                                      fontSize: 11.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                         ],
                       ),
@@ -572,7 +638,12 @@ class _EditNoteState extends State<EditNote> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
+                  padding: EdgeInsets.fromLTRB(
+                    12.0,
+                    0.0,
+                    12.0,
+                    _viewModel.attachments.isEmpty ? 100.0 : 12.0,
+                  ),
                   sliver: SliverToBoxAdapter(
                     child: Listener(
                       onPointerDown: (_) {
@@ -606,6 +677,46 @@ class _EditNoteState extends State<EditNote> {
                     ),
                   ),
                 ),
+                if (_viewModel.attachments.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Divider(height: 1.0),
+                          const SizedBox(height: 14.0),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.attachment,
+                                size: 18.0,
+                                color: mutedTextColor(context),
+                              ),
+                              const SizedBox(width: 8.0),
+                              Text(
+                                AppText.tr(_viewModel.attachments.length > 1
+                                    ? 'attachments'
+                                    : 'attachment'),
+                                style: TextStyle(
+                                  fontSize: 14.4,
+                                  fontWeight: FontWeight.w600,
+                                  color: primaryTextColor(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10.0),
+                          for (final String name in _viewModel.attachments)
+                            _AttachmentRow(
+                              name: name,
+                              onOpen: () => _openAttachment(name),
+                              onRemove: () => _removeAttachment(name),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
               floatingActionButtonLocation: const FlushEndFabLocation(),
               floatingActionButton: AppFab(
@@ -661,8 +772,13 @@ class _EditNoteState extends State<EditNote> {
                     selection: TextSelection.collapsed(offset: newCursorPosition),
                   );
                   _getNoteContentLength(newText);
+                  // A note-link insertion is a real edit: mark the note dirty.
+                  _recordEdit();
                 },
-                onAttachmentSelected: () {}, // TODO: Implement attachment selection
+                onAttachmentSelected: () {
+                  _fabKey.currentState?.closeVerticalMenu();
+                  _addAttachment();
+                },
                 onPinSelected: () async {
                   _viewModel.togglePin();
                   await _viewModel.autoSaveThemeOrBookmark(
@@ -696,6 +812,60 @@ class _EditNoteState extends State<EditNote> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// One attachment row: an icon and the file name; tapping opens the file
+/// with the system, and the trailing button removes the attachment.
+class _AttachmentRow extends StatelessWidget {
+  const _AttachmentRow({
+    required this.name,
+    required this.onOpen,
+    required this.onRemove,
+  });
+
+  final String name;
+  final VoidCallback onOpen;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            Icons.insert_drive_file,
+            size: 16.0,
+            color: mutedTextColor(context),
+          ),
+          const SizedBox(width: 4.0),
+          Expanded(
+            child: GestureDetector(
+              onTap: onOpen,
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14.0,
+                  color: primaryTextColor(context),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              Icons.close,
+              size: 16.0,
+              color: mutedTextColor(context),
+            ),
+            onPressed: onRemove,
+          ),
+        ],
       ),
     );
   }
