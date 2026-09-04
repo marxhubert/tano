@@ -136,39 +136,55 @@ class NoteCard extends StatelessWidget {
   }
 }
 
-/// Small muted row showing how many checklists and note links a note
-/// contains (done_all / sticky_note_2 + xN), as on the editor info line.
+/// Small muted row showing how many checklists, note links and attachments
+/// a note contains (done_all / sticky_note_2 / attachment + xN), as on the
+/// editor info line.
 class NoteCounts extends StatelessWidget {
   const NoteCounts({
     super.key,
     required this.content,
     required this.color,
+    this.attachmentCount = 0,
   });
 
   final String content;
   final Color color;
+  final int attachmentCount;
 
   @override
   Widget build(BuildContext context) {
     final int checklists = checklistCount(content);
     final int links = linkCountIn(content);
-    if (checklists == 0 && links == 0) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (checklists > 0) ...<Widget>[
-          Icon(Icons.done_all, size: 11.0, color: color),
-          const SizedBox(width: 2.0),
-          Text('x$checklists',
-              style: TextStyle(fontSize: 9.0, color: color)),
+    if (checklists == 0 && links == 0 && attachmentCount == 0) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 0.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (checklists > 0) ...<Widget>[
+            Icon(Icons.done_all, size: 11.0, color: color),
+            const SizedBox(width: 1.0),
+            Text('x$checklists',
+                style: TextStyle(fontSize: 9.0, color: color)),
+          ],
+          if (checklists > 0 && links > 0) const SizedBox(width: 4.0),
+          if (links > 0) ...<Widget>[
+            Icon(Icons.sticky_note_2, size: 11.0, color: color),
+            const SizedBox(width: 1.0),
+            Text('x$links', style: TextStyle(fontSize: 9.0, color: color)),
+          ],
+          if ((checklists > 0 || links > 0) && attachmentCount > 0)
+            const SizedBox(width: 4.0),
+          if (attachmentCount > 0) ...<Widget>[
+            Icon(Icons.attachment, size: 11.0, color: color),
+            const SizedBox(width: 1.0),
+            Text('x$attachmentCount',
+                style: TextStyle(fontSize: 9.0, color: color)),
+          ],
         ],
-        if (checklists > 0 && links > 0) const SizedBox(width: 8.0),
-        if (links > 0) ...<Widget>[
-          Icon(Icons.sticky_note_2, size: 11.0, color: color),
-          const SizedBox(width: 2.0),
-          Text('x$links', style: TextStyle(fontSize: 9.0, color: color)),
-        ],
-      ],
+      ),
     );
   }
 }

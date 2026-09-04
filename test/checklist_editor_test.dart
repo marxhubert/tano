@@ -342,4 +342,37 @@ void main() {
 
     expect(_contentText(tester), '## Mon titre\n- [ ] ');
   });
+
+  testWidgets('shows the attachments zone and counters for attached files',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+        attachments: <String>['doc.pdf', 'fichier.txt'],
+      ),
+    ]));
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Hello'));
+    await tester.pumpAndSettle();
+
+    // The attachments zone title and rows.
+    expect(find.text('Attachments'), findsOneWidget);
+    expect(find.text('doc.pdf'), findsOneWidget);
+    expect(find.text('fichier.txt'), findsOneWidget);
+    expect(find.byIcon(Icons.insert_drive_file), findsNWidgets(2));
+
+    // The info-line counter shows the attachment count (last position).
+    expect(find.text('x2'), findsOneWidget);
+  });
 }

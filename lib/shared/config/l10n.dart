@@ -165,6 +165,8 @@ class AppText {
     'theme_system': 'System',
     'legacy_version': 'v 0.1.0',
     'language_references': 'Language References',
+    'attachment': 'Attachment',
+    'attachments': 'Attachments',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -257,6 +259,8 @@ class AppText {
     'theme_system': 'Système',
     'legacy_version': 'v 0.1.0',
     'language_references': 'Références Linguistiques',
+    'attachment': 'Pièce jointe',
+    'attachments': 'Pièces jointes',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -349,6 +353,8 @@ class AppText {
     'theme_system': 'Rafi-pifandraisana',
     'legacy_version': 'v 0.1.0',
     'language_references': 'Rakiteny tsotra',
+    'attachment': 'Rakitra ampiana',
+    'attachments': 'Rakitra ampiana',
   };
 
   /// Returns the string associated with [key] in the current language,
