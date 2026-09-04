@@ -171,7 +171,10 @@ class HomeState extends State<Home> with RouteAware {
       _isSearchMode = true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      // Only focus if the user is still in search mode: the frame may run
+      // after a quick enter-then-cancel, which must not leave an orphaned
+      // focused node (and an open keyboard) on the home screen.
+      if (mounted && _isSearchMode) {
         _searchFocusNode.requestFocus();
       }
     });
@@ -179,6 +182,8 @@ class HomeState extends State<Home> with RouteAware {
 
   void _exitSearchMode() {
     _clearSearch();
+    // Release the search focus so the keyboard closes immediately.
+    _searchFocusNode.unfocus();
     setState(() {
       _isSearchMode = false;
     });
