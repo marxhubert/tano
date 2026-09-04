@@ -616,7 +616,7 @@ class AppFabState extends State<AppFab> {
         icon: Icons.add,
         isActive: _verticalMenu == FabVerticalMenu.add,
         onTap: () {
-          FocusScope.of(context).unfocus();
+          // Keep focus so checklist insertion can use the current caret.
           _toggleVerticalMenu(FabVerticalMenu.add);
         },
       ),
@@ -624,7 +624,6 @@ class AppFabState extends State<AppFab> {
         icon: Icons.color_lens_outlined,
         isActive: _verticalMenu == FabVerticalMenu.color,
         onTap: () {
-          FocusScope.of(context).unfocus();
           _toggleVerticalMenu(FabVerticalMenu.color);
           widget.onColorLens?.call();
         },
@@ -633,7 +632,6 @@ class AppFabState extends State<AppFab> {
         icon: Icons.more_vert,
         isActive: _verticalMenu == FabVerticalMenu.more,
         onTap: () {
-          FocusScope.of(context).unfocus();
           _toggleVerticalMenu(FabVerticalMenu.more);
           widget.onMore?.call();
         },

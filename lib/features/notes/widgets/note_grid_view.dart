@@ -77,7 +77,7 @@ class NoteGridView extends StatelessWidget {
                 ),
                 Flexible(
                   child: RichText(
-                    text: LinkTextEditingController.buildLinkTextSpan(
+                    text: LinkTextEditingController.buildMarkdownTextSpan(
                       note.content,
                       TextStyle(
                         fontSize: 10.0,

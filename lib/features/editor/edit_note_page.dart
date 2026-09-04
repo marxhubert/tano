@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -37,6 +38,15 @@ class _EditNoteState extends State<EditNote> {
   late final LinkTextEditingController _contentController;
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _contentFocus = FocusNode();
+  bool _contentFocusHadFocus = false;
+
+  /// Whether the content field was focused when the current pointer went
+  /// down, used to restore the focus state after a checkbox tap.
+  bool _contentWasFocusedOnPointerDown = true;
+
+  /// Set while the toggle handler intentionally unfocuses the field, so the
+  /// focus-loss cleanup does not run for that spurious focus change.
+  bool _suppressFocusLossCleanup = false;
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
@@ -62,6 +72,8 @@ class _EditNoteState extends State<EditNote> {
     );
     
     _loadActiveNoteIds();
+    _contentFocus.addListener(_onContentFocusChanged);
+    _contentFocusHadFocus = _contentFocus.hasFocus;
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
     _history.add(
       (title: _titleController.text, content: _contentController.text),
@@ -80,6 +92,7 @@ class _EditNoteState extends State<EditNote> {
 
   @override
   void dispose() {
+    _contentFocus.removeListener(_onContentFocusChanged);
     _titleController.dispose();
     _contentController.dispose();
     _titleFocus.dispose();
@@ -89,6 +102,7 @@ class _EditNoteState extends State<EditNote> {
   }
 
   void _saveNote() {
+    _cleanupEmptyChecklists();
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
@@ -211,6 +225,7 @@ class _EditNoteState extends State<EditNote> {
   }
 
   Future<void> _save() async {
+    _cleanupEmptyChecklists();
     if (!_viewModel.isValid(
       title: _titleController.text,
       content: _contentController.text,
@@ -276,7 +291,97 @@ class _EditNoteState extends State<EditNote> {
     _getNoteContentLength(_contentController.text);
   }
 
+  /// Handles a tap inside the content: on a checklist title handle it places
+  /// the caret into the title text (typed inline, right next to the icon),
+  /// on a task item it toggles the checkbox, otherwise it delegates to link
+  /// navigation.
+  void _handleContentTap() {
+    final int offset = _contentController.selection.baseOffset;
+    if (offset < 0) return;
+    final title = checklistTitleAt(_contentController.text, offset);
+    if (title != null) {
+      // The title is edited inline: put the caret at the end of the title
+      // text so typing lands right next to the drag handle.
+      _contentController.selection =
+          TextSelection.collapsed(offset: title.lineEnd);
+      return;
+    }
+    final String? toggled = toggleTaskItemAt(_contentController.text, offset);
+    if (toggled != null) {
+      _contentController.value = TextEditingValue(
+        text: toggled,
+        selection: TextSelection.collapsed(offset: offset.clamp(0, toggled.length)),
+      );
+      _getNoteContentLength(toggled);
+      _recordEdit();
+      // Toggling a checkbox must not activate focus (and open the keyboard):
+      // restore the focus state from before the tap. The framework may
+      // request focus again while the tap gesture settles, so re-check after
+      // the frame as well.
+      if (!_contentWasFocusedOnPointerDown) {
+        void restoreFocus() {
+          if (mounted &&
+              !_contentWasFocusedOnPointerDown &&
+              _contentFocus.hasFocus) {
+            _suppressFocusLossCleanup = true;
+            _contentFocus.unfocus();
+            _suppressFocusLossCleanup = false;
+          }
+        }
+
+        restoreFocus();
+        WidgetsBinding.instance.addPostFrameCallback((_) => restoreFocus());
+      }
+      return;
+    }
+    _handleLinkTap();
+  }
+
+  /// Inserts a checklist block (title line + one empty item) at the current
+  /// caret, or at the end of the note when there is no focus.
+  void _insertChecklist() {
+    final int caret = _contentController.selection.isValid
+        ? _contentController.selection.baseOffset
+        : -1;
+    final result = insertChecklistBlock(
+      _contentController.text,
+      hasFocus: _contentFocus.hasFocus,
+      caret: caret,
+    );
+    _contentController.value = TextEditingValue(
+      text: result.text,
+      selection: TextSelection.collapsed(offset: result.caret),
+    );
+    _getNoteContentLength(result.text);
+    _recordEdit();
+    _contentFocus.requestFocus();
+  }
+
+  /// Runs when the content field loses focus: removes checklists left empty.
+  void _onContentFocusChanged() {
+    final bool hasFocus = _contentFocus.hasFocus;
+    if (_contentFocusHadFocus && !hasFocus && !_suppressFocusLossCleanup) {
+      _cleanupEmptyChecklists();
+    }
+    _contentFocusHadFocus = hasFocus;
+  }
+
+  /// Removes checklists that have no item text (and their optional title
+  /// heading). Called before saves and when focus leaves the content field.
+  void _cleanupEmptyChecklists() {
+    final String before = _contentController.text;
+    final String cleaned = cleanEmptyChecklists(before);
+    if (cleaned == before) return;
+    final int caret =
+        _contentController.selection.baseOffset.clamp(0, cleaned.length);
+    _contentController.setTextForRestore(cleaned);
+    _contentController.selection = TextSelection.collapsed(offset: caret);
+    _getNoteContentLength(cleaned);
+    _recordEdit();
+  }
+
   Future<bool> _onWillPopCallback() async {
+    _cleanupEmptyChecklists();
     final String title = _titleController.text;
     final String content = _contentController.text;
 
@@ -330,6 +435,7 @@ class _EditNoteState extends State<EditNote> {
             title: _titleController.text,
             content: _contentController.text,
           );
+          final int contentChecklistCount = checklistCount(_contentController.text);
 
           return GestureDetector(
             onTap: () {
@@ -339,6 +445,9 @@ class _EditNoteState extends State<EditNote> {
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
               backgroundColor: immersiveBg,
+              // Once the note is scrolled, show its title in the app bar and
+              // slide it to the left while the undo/redo/save actions appear.
+              alignAppBarTitleLeft: _hasEdits,
               titlePaddingLeft: 12.0,
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
@@ -418,6 +527,27 @@ class _EditNoteState extends State<EditNote> {
                               ],
                             ),
                           ),
+                          if (contentChecklistCount > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.done_all,
+                                    size: 12.0,
+                                    color: mutedTextColor(context),
+                                  ),
+                                  Text(
+                                    'x$contentChecklistCount',
+                                    style: TextStyle(
+                                      color: mutedTextColor(context),
+                                      fontSize: 11.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           if (_contentController.linkCount > 0)
                             Row(
                               mainAxisSize: MainAxisSize.min,
@@ -444,26 +574,35 @@ class _EditNoteState extends State<EditNote> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
                   sliver: SliverToBoxAdapter(
-                    child: TextField(
-                      maxLines: null,
-                      minLines: 10,
-                      showCursor: true,
-                      autofocus: widget.add,
-                      focusNode: _contentFocus,
-                      controller: _contentController,
-                      textInputAction: TextInputAction.newline,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: const TextStyle(fontSize: 14.4, height: 1.8),
-                      decoration: InputDecoration(
-                        hintText: AppText.tr('add_note'),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (String content) {
-                        _getNoteContentLength(content);
-                        _recordEdit();
+                    child: Listener(
+                      onPointerDown: (_) {
+                        _contentWasFocusedOnPointerDown =
+                            _contentFocus.hasFocus;
                       },
-                      onTap: _handleLinkTap,
+                      child: TextField(
+                        maxLines: null,
+                        minLines: 10,
+                        showCursor: true,
+                        autofocus: widget.add,
+                        focusNode: _contentFocus,
+                        controller: _contentController,
+                        textInputAction: TextInputAction.newline,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: const TextStyle(fontSize: 14.4, height: 1.8),
+                        decoration: InputDecoration(
+                          hintText: AppText.tr('add_note'),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        inputFormatters: <TextInputFormatter>[
+                          AutoTaskItemFormatter(),
+                        ],
+                        onChanged: (String content) {
+                          _getNoteContentLength(content);
+                          _recordEdit();
+                        },
+                        onTap: _handleContentTap,
+                      ),
                     ),
                   ),
                 ),
@@ -480,6 +619,7 @@ class _EditNoteState extends State<EditNote> {
                 onSave: _saveNote,
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
+                  _cleanupEmptyChecklists();
                   _viewModel.setCategory(colorName);
                   // Automatic immediate save of the theme change if valid
                   await _viewModel.autoSaveThemeOrBookmark(
@@ -489,7 +629,10 @@ class _EditNoteState extends State<EditNote> {
                 },
                 onMore: () {}, // Placeholder for animation triggering if needed
                 onImageSelected: () {}, // TODO: Implement image selection
-                onChecklistSelected: () {}, // TODO: Implement checklist
+                onChecklistSelected: () {
+                  _insertChecklist();
+                  _fabKey.currentState?.closeVerticalMenu();
+                },
                 onLinkSelected: () {
                   _fabKey.currentState?.closeVerticalMenu();
                 },
