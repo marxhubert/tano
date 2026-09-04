@@ -92,25 +92,35 @@ class NoteListView extends StatelessWidget {
                   ),
                 ],
               ),
-              subtitle: RichText(
-                maxLines: 3,
-                overflow: TextOverflow.clip,
-                text: LinkTextEditingController.buildLinkTextSpan(
-                  note.content,
-                  TextStyle(
-                    fontSize: 12.0,
-                    color: textColor.withValues(alpha: 0.8),
-                    height: 1.4,
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  RichText(
+                    maxLines: 3,
+                    overflow: TextOverflow.clip,
+                    text: LinkTextEditingController.buildMarkdownTextSpan(
+                      note.content,
+                      TextStyle(
+                        fontSize: 12.0,
+                        color: textColor.withValues(alpha: 0.8),
+                        height: 1.4,
+                      ),
+                      tanoAmber,
+                      viewModel.activeNoteIds,
+                    ),
                   ),
-                  tanoAmber,
-                  viewModel.activeNoteIds,
-                ),
+                  NoteCounts(
+                    content: note.content,
+                    color: textColor.withValues(alpha: 0.6),
+                  ),
+                ],
               ),
             ),
           ),
         );
       },
-      separatorBuilder: (context, index) => const SizedBox(height: 12.0),
+      separatorBuilder: (context, index) => const SizedBox(height: 8.0),
     );
   }
 }
