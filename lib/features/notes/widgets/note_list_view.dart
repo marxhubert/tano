@@ -113,6 +113,7 @@ class NoteListView extends StatelessWidget {
                   NoteCounts(
                     content: note.content,
                     color: textColor.withValues(alpha: 0.6),
+                    attachmentCount: note.attachments.length,
                   ),
                 ],
               ),

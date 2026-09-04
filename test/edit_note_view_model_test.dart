@@ -130,6 +130,25 @@ void main() {
       expect(vm.isDirty(title: 'Title', content: 'Content'), isFalse);
     });
 
+    test('isDirty ignores leading/trailing whitespace in the content', () {
+      final note = Note(
+        id: '1',
+        title: 'Documentation',
+        content: 'Contenu avec une ligne\n',
+        date: '2026-08-01 10:00:00.000',
+      );
+      final vm = EditNoteViewModel(
+        repository: _InMemoryNotesRepository(),
+        add: false,
+        initialNote: note,
+      );
+
+      expect(
+        vm.isDirty(title: 'Documentation', content: 'Contenu avec une ligne\n'),
+        isFalse,
+      );
+    });
+
     test('isDirty is true when the content changes', () {
       final note = Note(
         id: '1',

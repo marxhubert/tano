@@ -45,7 +45,7 @@ class SQLiteNotesRepository implements NotesRepository {
     return await _databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 3,
+        version: 4,
         onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notes (
@@ -58,7 +58,8 @@ class SQLiteNotesRepository implements NotesRepository {
             isDeleted INTEGER DEFAULT 0,
             isPinned INTEGER DEFAULT 0,
             isLocked INTEGER DEFAULT 0,
-            deletedAt TEXT
+            deletedAt TEXT,
+            attachments TEXT
           )
         ''');
       },
@@ -73,6 +74,9 @@ class SQLiteNotesRepository implements NotesRepository {
         }
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
+        }
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE notes ADD COLUMN attachments TEXT');
         }
       },
       ),
