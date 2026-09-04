@@ -95,7 +95,7 @@ class NoteListView extends StatelessWidget {
               subtitle: RichText(
                 maxLines: 3,
                 overflow: TextOverflow.clip,
-                text: LinkTextEditingController.buildLinkTextSpan(
+                text: LinkTextEditingController.buildMarkdownTextSpan(
                   note.content,
                   TextStyle(
                     fontSize: 12.0,

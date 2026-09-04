@@ -46,6 +46,7 @@ class PageScaffold extends StatefulWidget {
     required this.slivers,
     this.actions,
     this.isHome = false,
+    this.alignAppBarTitleLeft = false,
     this.headerTrailing,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
@@ -63,6 +64,11 @@ class PageScaffold extends StatefulWidget {
   final List<Widget> slivers;
   final List<Widget>? actions;
   final bool isHome;
+
+  /// When true (and the app bar title is shown after scrolling), the title
+  /// slides to the left, right after the back button, instead of staying
+  /// centered. Used by the editor while the undo/redo/save actions appear.
+  final bool alignAppBarTitleLeft;
   final Widget? headerTrailing;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
@@ -122,6 +128,12 @@ class _PageScaffoldState extends State<PageScaffold> {
         (widget.titleController?.text ?? '').isNotEmpty
             ? widget.titleController!.text
             : widget.title;
+    // The app bar title appears only once the user scrolls down. When the
+    // note is also being edited (undo/redo/save actions visible) the title
+    // slides to the left instead of staying centered.
+    final bool showAppBarTitle = _showAppBarTitle;
+    final bool appBarTitleOnLeft =
+        showAppBarTitle && widget.alignAppBarTitleLeft;
 
     return Scaffold(
       key: widget.scaffoldKey,
@@ -129,12 +141,16 @@ class _PageScaffoldState extends State<PageScaffold> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: scaffoldBgColor,
-        titleSpacing: widget.isHome ? appPaddingLarge : 0.0,
-        elevation: _showAppBarTitle ? 2.0 : 0.0,
-        shadowColor: _showAppBarTitle
+        // When the title slides left (undo/redo/save actions visible), keep a
+        // visible gap between the back button and the title.
+        titleSpacing: widget.isHome
+            ? appPaddingLarge
+            : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+        elevation: showAppBarTitle ? 2.0 : 0.0,
+        shadowColor: showAppBarTitle
             ? Colors.black.withValues(alpha: 0.05)
             : Colors.transparent,
-        shape: _showAppBarTitle
+        shape: showAppBarTitle
             ? Border(
                 bottom: BorderSide(
                   color: getBorderColor(scaffoldBgColor, isDark: isDark),
@@ -152,9 +168,10 @@ class _PageScaffoldState extends State<PageScaffold> {
                 ),
               )
             : null,
-        title: _showAppBarTitle
+        title: showAppBarTitle
             ? Text(
                 appBarTitleText,
+                maxLines: 1,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18.0,
@@ -164,7 +181,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                 overflow: TextOverflow.ellipsis,
               )
             : null,
-        centerTitle: !widget.isHome,
+        centerTitle: !widget.isHome && !appBarTitleOnLeft,
         actions: widget.actions
             ?.map((a) => Padding(
                   padding: const EdgeInsets.only(right: appPaddingSmall),
