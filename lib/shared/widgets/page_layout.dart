@@ -236,7 +236,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 24.0,
-          letterSpacing: -2.0,
+          letterSpacing: -1.0,
           color: textColor,
         ),
         decoration: InputDecoration(

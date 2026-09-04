@@ -515,7 +515,7 @@ class AppFabState extends State<AppFab> {
         onTap: widget.onChecklistSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.link,
+        icon: Icons.sticky_note_2,
         label: AppText.tr('option_link'),
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
