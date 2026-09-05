@@ -29,7 +29,7 @@ void main() {
     test('seeds demo notes on first launch', () async {
       final notes = await repository.loadNotes();
 
-      expect(notes, hasLength(24));
+      expect(notes, hasLength(36));
       expect(notes.every((n) => !n.isDeleted), isTrue);
     });
 

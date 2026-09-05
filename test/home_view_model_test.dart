@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
@@ -72,6 +73,17 @@ class _InMemoryNotesRepository implements NotesRepository {
             (n.title.toLowerCase().contains(query.toLowerCase()) ||
                 n.content.toLowerCase().contains(query.toLowerCase())))
         .toList();
+  }
+
+  @override
+  Future<void> deleteAllNotes() async {
+    notes.clear();
+  }
+
+  @override
+  Future<void> seedFixtures() async {
+    notes.clear();
+    notes.addAll(buildNotesFixtures());
   }
 }
 

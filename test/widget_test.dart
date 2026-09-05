@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/note.dart';
@@ -80,6 +81,17 @@ class _InMemoryNotesRepository implements NotesRepository {
             (n.title.toLowerCase().contains(query.toLowerCase()) ||
                 n.content.toLowerCase().contains(query.toLowerCase())))
         .toList();
+  }
+
+  @override
+  Future<void> deleteAllNotes() async {
+    notes.clear();
+  }
+
+  @override
+  Future<void> seedFixtures() async {
+    notes.clear();
+    notes.addAll(buildNotesFixtures());
   }
 }
 
