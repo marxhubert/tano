@@ -57,7 +57,7 @@ lib/
 - Thème **clair / sombre / système**.
 - Langue **anglais / français**.
 - Splash screen natif (Android + iOS) et loader in-app.
-- 24 **notes de démonstration** semées au premier lancement.
+- 36 **notes de démonstration** semées au premier lancement.
 
 ## 4. Ce qui fonctionne bien ✅
 
