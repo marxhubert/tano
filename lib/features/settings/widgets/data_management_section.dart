@@ -40,9 +40,17 @@ class DataManagementSection extends StatelessWidget {
                   onTap: viewModel.isResetting
                       ? () {}
                       : () async {
-                          await viewModel.developerReset();
-                          if (context.mounted) {
-                            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+                          final confirm = await getConfirmation(
+                            context: context,
+                            actionTitle: 'Developer reset',
+                            action: AppText.tr('reset'),
+                          );
+                          if (confirm == true) {
+                            await viewModel.developerReset();
+                            if (context.mounted) {
+                              Navigator.of(context)
+                                  .pushNamedAndRemoveUntil('/home', (route) => false);
+                            }
                           }
                         },
                 ),
