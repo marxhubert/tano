@@ -232,7 +232,7 @@ class LinkTextEditingController extends TextEditingController {
     super.text,
     required this.linkColor,
     Set<String>? activeNoteIds,
-  }) : activeNoteIds = activeNoteIds ?? {};
+  }) : activeNoteIds = activeNoteIds != null ? Set.from(activeNoteIds) : {};
 
   final Color linkColor;
   Set<String> activeNoteIds;
