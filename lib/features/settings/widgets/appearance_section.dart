@@ -127,7 +127,7 @@ class _ThemePreview extends StatelessWidget {
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: 20,
+                  height: 18,
                   child: Container(
                     decoration: const BoxDecoration(
                       color: tanoTeal,
@@ -141,7 +141,7 @@ class _ThemePreview extends StatelessWidget {
                   alignment: Alignment.topCenter,
                   child: Container(
                     margin: const EdgeInsets.only(top: 4),
-                    width: 16,
+                    width: Theme.of(context).platform == TargetPlatform.android ? 5 : 16,
                     height: 5,
                     decoration: BoxDecoration(
                       color: Colors.black,
@@ -178,7 +178,7 @@ class _ThemePreview extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 12.0,
+              fontSize: 17.0,
               color: primaryTextColor(context),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
@@ -187,7 +187,7 @@ class _ThemePreview extends StatelessWidget {
           Icon(
             isSelected ? Icons.check_circle : Icons.panorama_fish_eye,
             color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.5),
-            size: 16,
+            size: 20,
           ),
         ],
       ),

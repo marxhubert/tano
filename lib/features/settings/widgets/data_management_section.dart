@@ -78,22 +78,11 @@ class DataManagementSection extends StatelessWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppText.tr('desc_recycle_bin'),
-                    style: TextStyle(fontSize: 12.0, color: mutedTextColor(context), height: 1.4),
-                  ),
-                  const SizedBox(height: 12.0),
-                  Text(
-                    AppText.tr('desc_reset_data'),
-                    style: TextStyle(fontSize: 12.0, color: mutedTextColor(context), height: 1.4),
-                  ),
-                ],
-              ),
+            SettingsFooter(
+              children: [
+                SettingsFooterText(text: AppText.tr('desc_recycle_bin')),
+                SettingsFooterText(text: AppText.tr('desc_reset_data')),
+              ],
             ),
           ],
         );
