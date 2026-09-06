@@ -52,16 +52,10 @@ class AboutSection extends StatelessWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
-              child: Text(
-                AppText.tr('desc_bug_report'),
-                style: TextStyle(
-                  fontSize: 12.0,
-                  color: mutedTextColor(context),
-                  height: 1.4,
-                ),
-              ),
+            SettingsFooter(
+              children: [
+                SettingsFooterText(text: AppText.tr('desc_bug_report')),
+              ],
             ),
           ],
         );

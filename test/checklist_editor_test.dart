@@ -250,7 +250,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
-    expect(find.text('All notes'), findsOneWidget);
+    expect(find.text('My notes'), findsOneWidget);
   });
 
   testWidgets('tapping the checkbox toggles without activating focus',

@@ -8,14 +8,50 @@ class SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 2.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 4.0),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: TextStyle(
-          color: tanoTeal.withValues(alpha: 0.7),
+          color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
-          fontSize: 11.0,
-          letterSpacing: 1.2,
+          fontSize: 17.0,
+          letterSpacing: -0.08,
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsFooter extends StatelessWidget {
+  const SettingsFooter({super.key, required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 0.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+}
+
+class SettingsFooterText extends StatelessWidget {
+  const SettingsFooterText({super.key, required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13.0,
+          color: mutedTextColor(context),
+          height: 1.4,
         ),
       ),
     );
@@ -78,19 +114,19 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      visualDensity: const VisualDensity(vertical: -4.0),
+      visualDensity: const VisualDensity(vertical: -1.0),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-      dense: true,
+      dense: false,
       title: Text(
         title,
         style: TextStyle(
           color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
           fontWeight: fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
-          fontSize: 14.0,
+          fontSize: 17.0,
         ),
       ),
       trailing: trailing ??
-          (selected ? const Icon(Icons.check_circle, color: tanoTeal, size: 16.0) : null),
+          (selected ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0) : null),
       onTap: onTap,
     );
   }
@@ -111,12 +147,15 @@ class SettingsSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      visualDensity: const VisualDensity(vertical: -4.0),
+      visualDensity: const VisualDensity(vertical: -1.0),
       contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
-      dense: true,
+      dense: false,
       title: Text(
         title,
-        style: TextStyle(color: primaryTextColor(context), fontSize: 14.0),
+        style: TextStyle(
+          color: primaryTextColor(context),
+          fontSize: 17.0,
+        ),
       ),
       trailing: Transform.scale(
         scale: 0.8,

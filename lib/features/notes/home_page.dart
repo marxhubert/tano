@@ -352,13 +352,14 @@ class HomeState extends State<Home> with RouteAware {
         menuItems.forEach((String key, PopupItem popupItem) {
           popupItems.add(popupItem);
         });
-        return popupItems.map((PopupItem popupItem) {
+        return popupItems.map<PopupMenuEntry<PopupItem>>((PopupItem popupItem) {
           if (popupItem.value == 'separator') {
-            return const PopupMenuDivider(height: 1.0) as PopupMenuEntry<PopupItem>;
+            return const PopupMenuDivider(height: 1.0);
           }
           return PopupMenuItem<PopupItem>(
             value: popupItem,
-            height: 38.0,
+            height: popupItem.value == 'header' ? 40.0 : 48.0,
+            enabled: popupItem.value != 'header',
             padding: EdgeInsets.zero,
             child: popupButton(
               context: context,

@@ -77,7 +77,7 @@ class AppText {
 
   static const Map<String, String> _en = <String, String>{
     // Home
-    'all_notes': 'All notes',
+    'all_notes': 'My notes',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Search',
@@ -172,7 +172,7 @@ class AppText {
 
   static const Map<String, String> _fr = <String, String>{
     // Home
-    'all_notes': 'Toutes les notes',
+    'all_notes': 'Mes notes',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Rechercher',
@@ -267,7 +267,7 @@ class AppText {
 
   static const Map<String, String> _mg = <String, String>{
     // Home
-    'all_notes': 'Naoty rehetra',
+    'all_notes': 'Ireo tanoko',
     'note': 'Naoty',
     'notes': 'Naoty',
     'search': 'Karohy',
