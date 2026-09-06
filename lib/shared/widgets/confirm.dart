@@ -24,14 +24,27 @@ Future<bool?> getConfirmation({
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
-            isDestructiveAction: isSave, // Match Material logic
-            child: Text(isSave ? AppText.tr('quit') : AppText.tr('cancel')),
+            isDestructiveAction: isSave,
+            child: Text(
+              isSave ? AppText.tr('quit') : AppText.tr('cancel'),
+              style: TextStyle(
+                color: isSave ? Colors.red : primaryTextColor(context),
+                fontSize: 17.0,
+              ),
+            ),
           ),
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, true),
             isDefaultAction: true,
             isDestructiveAction: isDestructive,
-            child: Text(action),
+            child: Text(
+              action,
+              style: TextStyle(
+                color: isDestructive ? Colors.red : tanoTeal,
+                fontSize: 17.0,
+                fontWeight: isDestructive ? FontWeight.normal : FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
