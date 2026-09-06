@@ -383,8 +383,8 @@ class AppFabState extends State<AppFab> {
         final note = sortedNotes[index];
         return _VerticalMenuItem(
           icon: Icons.sticky_note_2,
-          iconSize: 18.0,
-          fontSize: 13.0,
+          iconSize: 20.0,
+          fontSize: 17.0,
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
@@ -449,7 +449,7 @@ class AppFabState extends State<AppFab> {
           Text(
             AppText.tr('menu_theme'),
             style: const TextStyle(
-                color: Colors.white, fontSize: 15),
+                color: Colors.white, fontSize: 17),
           ),
           const SizedBox(height: 16),
           GridView.builder(
@@ -750,7 +750,7 @@ class _SubMenuLayout extends StatelessWidget {
       children: [
         // Fixed Header
         Container(
-          padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(20.0, 2.0, 20.0, 2.0),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary,
             border: Border(
@@ -764,10 +764,13 @@ class _SubMenuLayout extends StatelessWidget {
             children: [
               TextButton.icon(
                 onPressed: onBack,
-                icon: const Icon(Icons.arrow_back_ios, size: 14, color: Colors.white70),
+                icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white70),
                 label: Text(
                   title,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 17.0,
+                  ),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -825,7 +828,7 @@ class _VerticalMenuItem extends StatelessWidget {
     this.iconColor,
     this.textColor,
     this.iconSize = 20.0,
-    this.fontSize = 14.0,
+    this.fontSize = 17.0,
     this.maxLines,
   });
 
@@ -886,7 +889,7 @@ class _SelectionFabButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(icon, size: 24.0, color: effectiveColor),
+            Icon(icon, size: 20.0, color: effectiveColor),
             Text(
               label,
               style: TextStyle(

@@ -77,7 +77,7 @@ class AppText {
 
   static const Map<String, String> _en = <String, String>{
     // Home
-    'all_notes': 'All notes',
+    'all_notes': 'My notes',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Search',
@@ -90,6 +90,7 @@ class AppText {
     'delete_notes': 'Delete {count} notes',
     'delete_all_notes': 'Delete all notes',
     'delete': 'Delete',
+    'reset': 'Reset',
     'select_all': 'All',
     'select_none': 'None',
     'note_deleted': 'Note deleted',
@@ -171,7 +172,7 @@ class AppText {
 
   static const Map<String, String> _fr = <String, String>{
     // Home
-    'all_notes': 'Toutes les notes',
+    'all_notes': 'Mes notes',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Rechercher',
@@ -184,6 +185,7 @@ class AppText {
     'delete_notes': 'Supprimer les {count} notes',
     'delete_all_notes': 'Supprimer toutes les notes',
     'delete': 'Supprimer',
+    'reset': 'Réinitialiser',
     'select_all': 'Tout',
     'select_none': 'Rien',
     'note_deleted': 'Note supprimée',
@@ -265,7 +267,7 @@ class AppText {
 
   static const Map<String, String> _mg = <String, String>{
     // Home
-    'all_notes': 'Naoty rehetra',
+    'all_notes': 'Ireo tanoko',
     'note': 'Naoty',
     'notes': 'Naoty',
     'search': 'Karohy',
@@ -278,6 +280,7 @@ class AppText {
     'delete_notes': 'Hamafa naoty {count}',
     'delete_all_notes': 'Hamafa ny naoty rehetra',
     'delete': 'Fafao',
+    'reset': 'Fafao',
     'select_all': 'Rehetra',
     'select_none': 'Tsy misy',
     'note_deleted': 'Voafafa ny naoty',

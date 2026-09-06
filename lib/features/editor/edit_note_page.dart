@@ -363,9 +363,8 @@ class _EditNoteState extends State<EditNote> {
 
   /// Picks a file, copies it into the attachments store and persists the note.
   Future<void> _addAttachment() async {
-    final FilePickerResult? result = await FilePicker.pickFiles();
-    if (result == null || result.files.isEmpty) return;
-    final PlatformFile file = result.files.single;
+    final PlatformFile? file = await FilePicker.pickFile();
+    if (file == null) return;
     final String? sourcePath = file.path;
     if (sourcePath == null) return;
 
