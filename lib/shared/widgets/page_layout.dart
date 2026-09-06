@@ -146,7 +146,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         titleSpacing: widget.isHome
             ? appPaddingLarge
             : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
-        elevation: showAppBarTitle ? 2.0 : 0.0,
+        elevation: 0.0,
         shadowColor: showAppBarTitle
             ? Colors.black.withValues(alpha: 0.05)
             : Colors.transparent,
@@ -173,9 +173,9 @@ class _PageScaffoldState extends State<PageScaffold> {
                 appBarTitleText,
                 maxLines: 1,
                 style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18.0,
-                  letterSpacing: -1.0,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17.0,
+                  letterSpacing: -0.41,
                   color: textColor,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -234,9 +234,9 @@ class _PageScaffoldState extends State<PageScaffold> {
         textCapitalization: TextCapitalization.sentences,
         onChanged: widget.titleOnChanged,
         style: TextStyle(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           fontSize: 24.0,
-          letterSpacing: -1.0,
+          letterSpacing: -0.41,
           color: textColor,
         ),
         decoration: InputDecoration(
@@ -252,9 +252,9 @@ class _PageScaffoldState extends State<PageScaffold> {
     return Text(
       widget.title,
       style: TextStyle(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         fontSize: 24.0,
-        letterSpacing: -2.0,
+        letterSpacing: -0.41,
         color: textColor,
       ),
     );

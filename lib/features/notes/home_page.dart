@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
@@ -276,11 +277,17 @@ class HomeState extends State<Home> with RouteAware {
           padding: const EdgeInsets.only(right: 12.0),
           child: TextButton(
             onPressed: _viewModel.exitSelectionMode,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             child: Text(
               AppText.tr('cancel'),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14.0,
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                fontSize: 17.0,
+                color: tanoTeal,
               ),
             ),
           ),
@@ -293,11 +300,17 @@ class HomeState extends State<Home> with RouteAware {
           padding: const EdgeInsets.only(right: 12.0),
           child: TextButton(
             onPressed: _exitSearchMode,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             child: Text(
               AppText.tr('cancel'),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14.0,
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                fontSize: 17.0,
+                color: tanoTeal,
               ),
             ),
           ),
@@ -310,53 +323,127 @@ class HomeState extends State<Home> with RouteAware {
         onPressed: _enterSearchMode,
       ),
       const ThemeToggleButton(),
-      PopupMenuButton<PopupItem>(
-        icon: const Icon(Icons.more_vert),
-        offset: const Offset(0, 56),
-        elevation: 4.0,
-        constraints: const BoxConstraints(minWidth: 160.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(appBorderRadius),
-        ),
-        onSelected: ((valueSelected) async {
-          switch (valueSelected.value.toLowerCase()) {
-            case "list":
-              _changeLayout('list');
-              break;
-            case "gridlist":
-              _changeLayout('gridlist');
-              break;
-            case "settings":
-              await Navigator.of(context).pushNamed('/settings');
-              _loadPreferences();
-              await _viewModel.load();
-              break;
-          }
-        }),
-        itemBuilder: (BuildContext context) {
-          final List<PopupItem> popupItems = [];
-          menuItems.forEach((String key, PopupItem popupItem) {
-            popupItems.add(popupItem);
-          });
-          return popupItems.map((PopupItem popupItem) {
-            if (popupItem.value == 'separator') {
-              return const PopupMenuDivider(height: 1.0) as PopupMenuEntry<PopupItem>;
-            }
-            return PopupMenuItem<PopupItem>(
-              value: popupItem,
-              height: 38.0,
-              padding: EdgeInsets.zero,
-              child: popupButton(
-                context: context,
-                popupItem: popupItem,
-                layout: _viewModel.viewLayout,
-                lang: LocaleController.instance.language,
-              ),
-            );
-          }).toList();
-        },
-      ),
+      _buildAdaptiveMenu(),
     ];
+  }
+
+  Widget _buildAdaptiveMenu() {
+    final ThemeData theme = Theme.of(context);
+    if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
+      return IconButton(
+        icon: const Icon(Icons.more_vert),
+        onPressed: () => _showCupertinoActionSheet(),
+      );
+    }
+
+    return PopupMenuButton<PopupItem>(
+      icon: const Icon(Icons.more_vert),
+      offset: const Offset(0, 56),
+      elevation: 4.0,
+      constraints: const BoxConstraints(minWidth: 160.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(appBorderRadius),
+      ),
+      onSelected: ((valueSelected) async {
+        _handleMenuAction(valueSelected.value.toLowerCase());
+      }),
+      itemBuilder: (BuildContext context) {
+        final List<PopupItem> popupItems = [];
+        menuItems.forEach((String key, PopupItem popupItem) {
+          popupItems.add(popupItem);
+        });
+        return popupItems.map((PopupItem popupItem) {
+          if (popupItem.value == 'separator') {
+            return const PopupMenuDivider(height: 1.0) as PopupMenuEntry<PopupItem>;
+          }
+          return PopupMenuItem<PopupItem>(
+            value: popupItem,
+            height: 38.0,
+            padding: EdgeInsets.zero,
+            child: popupButton(
+              context: context,
+              popupItem: popupItem,
+              layout: _viewModel.viewLayout,
+              lang: LocaleController.instance.language,
+            ),
+          );
+        }).toList();
+      },
+    );
+  }
+
+  void _showCupertinoActionSheet() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoActionSheet(
+        actions: <CupertinoActionSheetAction>[
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleMenuAction('list');
+            },
+            child: Text(
+              AppText.tr('menu_list'),
+              style: TextStyle(
+                color: tanoTeal,
+                fontSize: 20.0,
+                fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleMenuAction('gridlist');
+            },
+            child: Text(
+              AppText.tr('menu_grid'),
+              style: TextStyle(
+                color: tanoTeal,
+                fontSize: 20.0,
+                fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleMenuAction('settings');
+            },
+            child: Text(
+              AppText.tr('settings'),
+              style: const TextStyle(color: tanoTeal, fontSize: 20.0),
+            ),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(
+            AppText.tr('cancel'),
+            style: TextStyle(color: primaryTextColor(context), fontSize: 20.0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleMenuAction(String action) async {
+    switch (action) {
+      case "list":
+        _changeLayout('list');
+        break;
+      case "gridlist":
+        _changeLayout('gridlist');
+        break;
+      case "settings":
+        await Navigator.of(context).pushNamed('/settings');
+        _loadPreferences();
+        await _viewModel.load();
+        break;
+    }
   }
 
   @override
