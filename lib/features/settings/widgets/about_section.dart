@@ -3,6 +3,9 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
+import 'package:tano/features/settings/about_page.dart';
+import 'package:tano/features/settings/update_page.dart';
+import 'package:tano/features/settings/feedback_page.dart';
 import 'settings_widgets.dart';
 
 class AboutSection extends StatelessWidget {
@@ -24,26 +27,31 @@ class AboutSection extends StatelessWidget {
                   title: AppText.tr('about'),
                   selected: false,
                   onTap: () {
-                    if (viewModel.packageInfo != null) {
-                      showDialog(
-                        context: context,
-                        builder: (context) => aboutInfo(
-                          context: context,
-                          packageInfo: viewModel.packageInfo!,
-                        ),
-                      );
-                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AboutPage()),
+                    );
                   },
                 ),
                 SettingsTile(
                   title: AppText.tr('option_check_update'),
                   selected: false,
-                  onTap: () => viewModel.checkForUpdates(),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const UpdatePage()),
+                    );
+                  },
                 ),
                 SettingsTile(
                   title: AppText.tr('option_feedback'),
                   selected: false,
-                  onTap: () => viewModel.sendFeedback(),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FeedbackPage()),
+                    );
+                  },
                 ),
                 SettingsSwitchTile(
                   title: AppText.tr('option_bug_report'),

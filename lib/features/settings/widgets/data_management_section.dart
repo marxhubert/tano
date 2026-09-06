@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/features/settings/reset_page.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'settings_widgets.dart';
@@ -61,19 +62,11 @@ class DataManagementSection extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   onTap: viewModel.isResetting
                       ? () {}
-                      : () async {
-                          final confirm = await getConfirmation(
-                            context: context,
-                            actionTitle: AppText.tr('option_reset_data'),
-                            action: AppText.tr('delete'),
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ResetPage()),
                           );
-                          if (confirm == true) {
-                            await viewModel.resetData();
-                            if (context.mounted) {
-                              Navigator.of(context)
-                                  .pushNamedAndRemoveUntil('/home', (route) => false);
-                            }
-                          }
                         },
                 ),
               ],

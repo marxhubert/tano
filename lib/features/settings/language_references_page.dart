@@ -86,8 +86,7 @@ class LanguageReferencesPage extends StatelessWidget {
                                   text: ref.word,
                                   style: TextStyle(
                                     color: primaryTextColor(context),
-                                    fontSize: 15.0,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17.0,
                                   ),
                                 ),
                               ],
