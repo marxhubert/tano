@@ -57,35 +57,36 @@ Widget popupButton({
   bool editMode = false,
 }) {
   if ('separator' == popupItem.value) {
-    return Container(
-      color: Colors.grey,
-      height: 0.36,
-      margin: EdgeInsets.all(0.0),
-      child: null,
-    );
+    return const SizedBox.shrink();
   }
   if ('header' == popupItem.value) {
-    return Text(
-      popupItem.title,
-      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+      child: Text(
+        popupItem.title,
+        style: TextStyle(
+          color: mutedTextColor(context),
+          fontWeight: FontWeight.bold,
+          fontSize: 17.0,
+          letterSpacing: -0.08,
+        ),
+      ),
     );
   }
 
   final Icon? icon = popupItem.icon;
-  final bool isSelected =
-      !editMode &&
+  final bool isSelected = !editMode &&
       (popupItem.value == layout ||
           popupItem.value == sort ||
           popupItem.value == lang);
-  final Color? selectedColor = isSelected
-      ? Theme.of(context).colorScheme.primary
-      : null;
+  
+  final Color activeColor = isSelected ? tanoTeal : primaryTextColor(context);
 
   final Widget label = Text(
     popupItem.title,
     style: TextStyle(
-      color: selectedColor ?? primaryTextColor(context),
-      fontSize: 14.0,
+      color: activeColor,
+      fontSize: 17.0,
       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
     ),
     overflow: TextOverflow.ellipsis,
@@ -93,13 +94,13 @@ Widget popupButton({
 
   return ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-    visualDensity: const VisualDensity(vertical: -4.0),
-    dense: true,
+    visualDensity: const VisualDensity(vertical: -1.0),
+    dense: false,
     title: label,
     trailing: icon != null
         ? Icon(
             icon.icon,
-            color: selectedColor ?? mutedTextColor(context),
+            color: isSelected ? tanoTeal : mutedTextColor(context),
             size: 20.0,
           )
         : null,

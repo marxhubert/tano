@@ -39,58 +39,59 @@ class LanguageSection extends StatelessWidget {
               ],
             ),
             if (language == 'mg')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 0.0),
-                child: Text.rich(
-                  TextSpan(
-                    style: TextStyle(
-                      fontSize: 12.0,
-                      color: mutedTextColor(context),
-                      height: 1.5,
+              SettingsFooter(
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      style: TextStyle(
+                        fontSize: Theme.of(context).platform == TargetPlatform.iOS ? 13.0 : 12.0,
+                        color: mutedTextColor(context),
+                        height: 1.5,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Misy '),
+                        TextSpan(
+                          text: 'fiteny',
+                          style: const TextStyle(
+                            color: tanoAmber,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LanguageReferencesPage(),
+                                ),
+                              );
+                            },
+                        ),
+                        const TextSpan(text: ' na '),
+                        TextSpan(
+                          text: 'voambolana',
+                          style: const TextStyle(
+                            color: tanoAmber,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LanguageReferencesPage(),
+                                ),
+                              );
+                            },
+                        ),
+                        const TextSpan(
+                          text: ' sasany notsongaina manokana noho izy ireo fohy kokoa no sady feno ara-kevitra.',
+                        ),
+                      ],
                     ),
-                    children: [
-                      const TextSpan(text: 'Misy '),
-                      TextSpan(
-                        text: 'fiteny',
-                        style: const TextStyle(
-                          color: tanoAmber,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LanguageReferencesPage(),
-                              ),
-                            );
-                          },
-                      ),
-                      const TextSpan(text: ' na '),
-                      TextSpan(
-                        text: 'voambolana',
-                        style: const TextStyle(
-                          color: tanoAmber,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LanguageReferencesPage(),
-                              ),
-                            );
-                          },
-                      ),
-                      const TextSpan(
-                        text: ' sasany notsongaina manokana noho izy ireo fohy kokoa no sady feno ara-kevitra.',
-                      ),
-                    ],
                   ),
-                ),
+                ],
               ),
           ],
         );
