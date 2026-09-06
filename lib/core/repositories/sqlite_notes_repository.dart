@@ -213,6 +213,24 @@ class SQLiteNotesRepository implements NotesRepository {
     return results.map((json) => Note.fromJson(json)).toList();
   }
 
+  @override
+  Future<void> deleteAllNotes() async {
+    final db = await _database;
+    await db.delete('notes');
+  }
+
+  @override
+  Future<void> seedFixtures() async {
+    final db = await _database;
+    await db.transaction((txn) async {
+      await txn.delete('notes');
+      final List<Note> seed = buildNotesFixtures();
+      for (final note in seed) {
+        await txn.insert('notes', note.toJson());
+      }
+    });
+  }
+
   /// Migrates data from the old JSON file if it exists.
   Future<List<Note>> _handleMigration(Database db) async {
     try {

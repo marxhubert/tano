@@ -32,4 +32,10 @@ abstract class NotesRepository {
 
   /// Searches for notes matching the query in title or content.
   Future<List<Note>> searchNotes(String query);
+
+  /// Deletes all notes from storage.
+  Future<void> deleteAllNotes();
+
+  /// Resets the database and seeds it with demo fixtures.
+  Future<void> seedFixtures();
 }

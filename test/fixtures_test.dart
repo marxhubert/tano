@@ -4,8 +4,8 @@ import 'package:tano/core/models/notes_json_codec.dart';
 
 void main() {
   group('buildNotesFixtures', () {
-    test('creates exactly 24 notes', () {
-      expect(buildNotesFixtures(), hasLength(24));
+    test('creates exactly 36 notes', () {
+      expect(buildNotesFixtures(), hasLength(36));
     });
 
     test('covers all the categories', () {
@@ -35,7 +35,7 @@ void main() {
 
     test('the dates are all different', () {
       final dates = buildNotesFixtures().map((n) => n.date).toSet();
-      expect(dates, hasLength(24));
+      expect(dates, hasLength(36));
     });
 
     test('the notes have a non-empty title and content', () {
@@ -49,7 +49,7 @@ void main() {
     test('the generated JSON is readable by the model', () {
       final notes = buildNotesFixtures();
       final restored = decodeNotes(encodeNotes(notes));
-      expect(restored, hasLength(24));
+      expect(restored, hasLength(36));
       expect(restored.first.title, notes.first.title);
       expect(restored.first.important, notes.first.important);
     });
