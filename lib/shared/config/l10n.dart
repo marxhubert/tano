@@ -173,6 +173,12 @@ class AppText {
     'language_references': 'Language References',
     'attachment': 'Attachment',
     'attachments': 'Attachments',
+    'licenses': 'Licenses',
+    'license_disclaimer': 'This has been translated from the original English version by an AI, then reviewed and verified by a human. However, translation errors may still occur. We apologize in advance and thank you for your understanding.',
+    'license_view_original': 'View original version',
+    'lang_en': 'ENGLISH',
+    'lang_fr': 'FRENCH',
+    'lang_mg': 'MALAGASY',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -273,6 +279,12 @@ class AppText {
     'language_references': 'Références Linguistiques',
     'attachment': 'Pièce jointe',
     'attachments': 'Pièces jointes',
+    'licenses': 'Licences',
+    'license_disclaimer': "Ceci a été traduit de la version originale anglaise par une IA, puis relu et vérifié par un humain. Toutefois, des erreurs de traduction peuvent encore subsister. Nous nous en excusons par avance et vous remercions de votre compréhension.",
+    'license_view_original': "Voir la version originale",
+    'lang_en': 'ANGLAIS',
+    'lang_fr': 'FRANÇAIS',
+    'lang_mg': 'MALAGASY',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -373,6 +385,12 @@ class AppText {
     'language_references': 'Rakiteny tsotra',
     'attachment': 'Rakitra ampiana',
     'attachments': 'Rakitra ampiana',
+    'licenses': 'Lisansa',
+    'license_disclaimer': "Ity dia nadika avy tamin'ny dikan-teny anglisy tany am-boalohany tamin'ny alalan'ny AI, nefa efa novakiana sy nohamarinin'olombelona. Na izany aza, mety mbola hisy ny hadisoana amin'ny fandikan-teny. Mifona mialoha izahay ary misaotra anareo amin'ny fahatakarana.",
+    'license_view_original': "Hijery ny dikan-teny tany am-boalohany",
+    'lang_en': 'ANGLISY',
+    'lang_fr': 'FRANTSAY',
+    'lang_mg': 'MALAGASY',
   };
 
   /// Returns the string associated with [key] in the current language,

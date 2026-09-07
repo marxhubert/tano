@@ -7,6 +7,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 import 'package:tano/features/settings/widgets/settings_widgets.dart';
+import 'package:tano/features/settings/licenses_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatefulWidget {
@@ -251,7 +252,7 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 54.0),
+          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -274,10 +275,29 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
             ),
           ),
         ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12.0, 24.0, 12.0, 0.0),
+          sliver: SliverToBoxAdapter(
+            child: SettingsCard(
+              children: [
+                SettingsTile(
+                  title: AppText.tr('licenses'),
+                  selected: false,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LicensesPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
         SliverFillRemaining(
           hasScrollBody: false,
           child: Container(
-            padding: const EdgeInsets.only(top: 54.0, bottom: 24.0),
+            padding: const EdgeInsets.only(top: 90.0, bottom: 24.0),
             alignment: Alignment.bottomCenter,
             child: Text(
               '© 2026, Marx Hubert',

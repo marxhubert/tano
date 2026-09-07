@@ -63,3 +63,4 @@ flutter:
 
   assets:
     - assets/config/malagasy_refs.json
+    - assets/licenses/
