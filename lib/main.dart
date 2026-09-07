@@ -4,6 +4,7 @@ import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/core/services/analytics_service.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -18,6 +19,10 @@ void main() async {
     ThemeController.instance.init(),
     LanguageReferencesController.instance.init(),
   ]);
+
+  // Gather basic device info on first launch for future decision making
+  await AnalyticsService.instance.collectFirstLaunchInfo();
+
   runApp(const Tano());
 }
 

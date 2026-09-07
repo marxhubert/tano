@@ -1,0 +1,24 @@
+TanoNote Privacy Policy and Terms of Use
+
+At TanoNote, we are committed to providing a secure and focused note-taking experience while respecting your privacy.
+
+Data Collection for Improvement:
+To help us provide better support and plan the evolution of the application, TanoNote collects certain technical, non-personal information during the first launch or after a full reset. This data includes:
+- Device brand and model
+- Operating system and version
+- Screen size and pixel density
+- Country and system language
+- Application version and build number
+
+Purpose and Anonymity:
+This information is collected for the following purposes:
+1. Statistical Analysis: To understand which devices and system versions are most used, allowing us to prioritize development efforts and optimizations.
+2. Technical Support: To help identify the root causes of potential bugs or performance issues on specific hardware.
+3. User Experience: To ensure the interface scales correctly across all screen types.
+
+It is important to note that this data is entirely anonymous. We do not collect any personal information, names, emails, or the content of your notes. Your notes are stored locally on your device and are never accessed during this process.
+
+By using TanoNote, you help us build a better tool for everyone while keeping your private life private.
+
+Thank you for your trust.
+© 2026, Marx Hubert

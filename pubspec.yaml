@@ -21,9 +21,12 @@ dependencies:
   uuid: ^4.5.1
   file_picker: ^12.2.0
   open_filex: ^4.7.0
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
@@ -63,3 +66,4 @@ flutter:
 
   assets:
     - assets/config/malagasy_refs.json
+    - assets/licenses/
