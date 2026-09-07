@@ -1,0 +1,24 @@
+Fitsipika momba ny Tsiambaratelo sy ny Fampiasana ny TanoNote
+
+Ao amin'ny TanoNote, izahay dia manao lohalaharana ny fanomezana traikefa fanoratana azo antoka sy mazava, sady manaja ny tsiambaratelonao.
+
+Fanangonana Angona ho an'ny Fanatsarana:
+Mba hanampiana anay hanome fanohanana tsara kokoa sy handaminana ny fivoaran'ny fampiharana, ny TanoNote dia manangona fampahalalana teknika sasany izay tsy mitonona anarana mandritra ny fanokafana voalohany na aorian'ny famerenana tanteraka ny angona. Ireto avy izany:
+- Ny marika sy ny karazana finday
+- Ny rafitra miasa (OS) sy ny dikan-teniny
+- Ny haben'ny efijery sy ny hakitry ny teboka (pixel density)
+- Ny firenena sy ny fitenin'ny rafitra
+- Ny dikan-tenin'ny fampiharana sy ny laharan'ny build
+
+Tanjona sy Tsiambaratelo:
+Ireo fampahalalana ireo dia angonina ho an'ireto tanjona manaraka ireto:
+1. Fandalinana Statistika: Mba hahafantarana hoe inona ny finday sy ny dikan-tenin'ny rafitra be mpampiasa indrindra, ahafahanay mandamina ny asa fampivoarana sy ny fanatsarana.
+2. Fanohanana Teknika: Mba hanampiana amin'ny fitadiavana ny antony mahatonga ny olana (bug) na ny fahalemen'ny fampandehanana amin'ny fitaovana sasany.
+3. Traikefan'ny Mpampiasa: Mba hiantohana fa ny sary sy ny endriky ny fampiharana dia mifanaraka tsara amin'ny karazana efijery rehetra.
+
+Zava-dehibe ny mahafantatra fa ireto angona ireto dia tsy mitonona anarana tanteraka. Tsy manangona fampahalalana manokana izahay, toy ny anarana, mailaka, na ny votoatin'ny naoty soratanao. Ny naotinao dia mipetraka ao anatin'ny findainao ihany ary tsy misy olona afaka mijery izany mandritra ity dingana ity.
+
+Amin'ny fampiasanao ny TanoNote, ianao dia manampy anay hamorona fitaovana tsara kokoa ho an'ny rehetra sady mitazona ny fiainanao manokana ho tsiambaratelo.
+
+Misaotra amin'ny fitokisanao.
+© 2026, Marx Hubert

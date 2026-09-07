@@ -120,7 +120,12 @@ class AppText {
     'important': 'Important',
     'save_changes': 'Save changes',
     'about_description':
-        'The main goal of Tano is to provide a simple tool that lets you write notes to keep your ideas, create to-do lists and organize your projects at the same place. Tano prioritizes ease of use over bells and whistles.',
+        'TanoNote is a minimal, secure, and fast note-taking app designed to keep your ideas organized and your mind focused. It prioritizes privacy by keeping all your data exclusively on your device.',
+    'about_cta':
+        'Help us grow and improve TanoNote! Your support allows us to keep the app free and private for everyone. Consider taking action below:',
+    'about_support': 'Support the project',
+    'about_premium': 'Get Premium version',
+    'about_more': 'You may also want (anonymously):',
     'close_button': 'Close',
     'home': 'Home',
     'about': 'About',
@@ -138,7 +143,7 @@ class AppText {
     'option_lock': 'Lock',
     'option_check_update': 'Check for update',
     'option_feedback': 'Give feedback',
-    'option_bug_report': 'Bug report',
+    'option_bug_report': 'Allow bug report',
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report': 'Help us improve TanoNote by automatically sending anonymous crash reports and performance data.',
@@ -168,6 +173,12 @@ class AppText {
     'language_references': 'Language References',
     'attachment': 'Attachment',
     'attachments': 'Attachments',
+    'licenses': 'Licenses',
+    'license_disclaimer': 'This has been translated from the original English version by an AI, then reviewed and verified by a human. However, translation errors may still occur. We apologize in advance and thank you for your understanding.',
+    'license_view_original': 'View original version',
+    'lang_en': 'ENGLISH',
+    'lang_fr': 'FRENCH',
+    'lang_mg': 'MALAGASY',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -215,7 +226,12 @@ class AppText {
     'important': "Important",
     'save_changes': 'Enregistrer',
     'about_description':
-        "TanoNote est un simple outil de prise de note qui pourra, je l'espère vivement, vous être utile pour sauvegarder vos idées.\nJe vous invite à me faire part de vos remarques et conseils pour me donner le plaisir de continuer à l'améliorer. Merci.",
+        "TanoNote est une application de prise de notes minimaliste, sécurisée et rapide, conçue pour organiser vos idées tout en restant concentré. Elle privilégie votre vie privée en conservant toutes vos données exclusivement sur votre appareil.",
+    'about_cta':
+        "Aidez-nous à faire grandir et améliorer TanoNote ! Votre soutien nous permet de garder l'application gratuite et privée pour tous. Voici comment vous pouvez nous aider :",
+    'about_support': "Soutenir le projet",
+    'about_premium': "Passer à la version Premium",
+    'about_more': "Vous pouvez également (et de façon anonyme) :",
     'close_button': 'Fermer',
     'home': 'Accueil',
     'about': 'À propos',
@@ -233,7 +249,7 @@ class AppText {
     'option_lock': 'Verrouiller',
     'option_check_update': 'Mise à jour',
     'option_feedback': 'Donner un avis',
-    'option_bug_report': 'Rapport de bug',
+    'option_bug_report': 'Autoriser les rapports de bug',
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report': 'Aidez-nous à améliorer TanoNote en envoyant automatiquement des rapports d\'erreur anonymes.',
@@ -263,6 +279,12 @@ class AppText {
     'language_references': 'Références Linguistiques',
     'attachment': 'Pièce jointe',
     'attachments': 'Pièces jointes',
+    'licenses': 'Licences',
+    'license_disclaimer': "Ceci a été traduit de la version originale anglaise par une IA, puis relu et vérifié par un humain. Toutefois, des erreurs de traduction peuvent encore subsister. Nous nous en excusons par avance et vous remercions de votre compréhension.",
+    'license_view_original': "Voir la version originale",
+    'lang_en': 'ANGLAIS',
+    'lang_fr': 'FRANÇAIS',
+    'lang_mg': 'MALAGASY',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -310,7 +332,12 @@ class AppText {
     'important': 'Zava-dehibe',
     'save_changes': 'Tehirizo',
     'about_description':
-        'Ny tanjona lehibe amin\'ny Tano dia ny hanolotra fitaovana tsotra ahafahanao manoratra naoty hitahirizana ny hevitrao, hamoronana lisitra tokony hatao ary handaminana ny tetikasanao amin\'ny toerana iray ihany.',
+        "Ny TanoNote dia fitaovana fanoratana tsotra, azo antoka ary haingana natao hanampiana anao amin'ny fandaminana ny hevitrao sy ny fifantohana. Omenay lanja ny tsiambaratelonao ka ao anatin'ny findainao ihany no mipetraka ny angon-drakitrao rehetra.",
+    'about_cta':
+        "Ampio izahay hampandroso sy hanatsara hatrany ny TanoNote! Ny fanohananao dia mamela anay hihazona ity fitaovana ity ho maimaim-poana sy hanaja ny tsiambaratelon'ny rehetra. Azonao atao ireto manaraka ireto:",
+    'about_support': "Hanohana ny tetikasa",
+    'about_premium': "Hividy ny dikan-teny Premium",
+    'about_more': "Azonao atao koa (sady tsy mila anarana) ny:",
     'close_button': 'Hidio',
     'home': 'Fandraisana',
     'about': 'Momba ny',
@@ -326,9 +353,9 @@ class AppText {
     'option_find': 'Karohy ao anaty naoty',
     'option_move': 'Hafindra any amin\'ny',
     'option_lock': 'Hahidy',
-    'option_check_update': 'Hijerena ny fanavaozana',
+    'option_check_update': 'Hizaha vao',
     'option_feedback': 'Hanome hevitra',
-    'option_bug_report': 'Hitatitra olana',
+    'option_bug_report': 'Hamela ny tatitra bug',
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report': 'Ampio izahay hanatsara ny TanoNote amin\'ny alalan\'ny fandefasana tatitra momba ny olana miseho amin\'ny fampiasanao ny rindrankajy.',
@@ -358,6 +385,12 @@ class AppText {
     'language_references': 'Rakiteny tsotra',
     'attachment': 'Rakitra ampiana',
     'attachments': 'Rakitra ampiana',
+    'licenses': 'Lisansa',
+    'license_disclaimer': "Ity dia nadika avy tamin'ny dikan-teny anglisy tany am-boalohany tamin'ny alalan'ny AI, nefa efa novakiana sy nohamarinin'olombelona. Na izany aza, mety mbola hisy ny hadisoana amin'ny fandikan-teny. Mifona mialoha izahay ary misaotra anareo amin'ny fahatakarana.",
+    'license_view_original': "Hijery ny dikan-teny tany am-boalohany",
+    'lang_en': 'ANGLISY',
+    'lang_fr': 'FRANTSAY',
+    'lang_mg': 'MALAGASY',
   };
 
   /// Returns the string associated with [key] in the current language,
