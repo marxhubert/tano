@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
-import 'package:tano/shared/widgets/theme.dart';
-import 'package:tano/shared/widgets/info.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/features/settings/about_page.dart';
 import 'package:tano/features/settings/update_page.dart';
