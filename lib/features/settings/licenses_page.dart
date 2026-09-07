@@ -14,7 +14,7 @@ class LicensesPage extends StatefulWidget {
 
 class _LicensesPageState extends State<LicensesPage> {
   String _licenseText = '';
-  String _currentLang = LocaleController.instance.language;
+  final String _currentLang = LocaleController.instance.language;
   bool _showingOriginal = false;
   bool _isLoading = true;
 

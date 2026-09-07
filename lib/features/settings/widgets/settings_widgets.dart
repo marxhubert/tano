@@ -162,7 +162,7 @@ class SettingsSwitchTile extends StatelessWidget {
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: tanoTeal,
+          activeThumbColor: tanoTeal,
         ),
       ),
     );
