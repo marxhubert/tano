@@ -58,6 +58,8 @@ class PageScaffold extends StatefulWidget {
     this.titleOnChanged,
     this.backgroundColor,
     this.titlePaddingLeft,
+    this.titleWidget,
+    this.appBarTitleWidget,
   });
 
   final String title;
@@ -80,6 +82,12 @@ class PageScaffold extends StatefulWidget {
   final ValueChanged<String>? titleOnChanged;
   final Color? backgroundColor;
   final double? titlePaddingLeft;
+
+  /// Optional widget to replace the default title text in the body.
+  final Widget? titleWidget;
+
+  /// Optional widget to replace the default title text in the AppBar.
+  final Widget? appBarTitleWidget;
 
   @override
   State<PageScaffold> createState() => _PageScaffoldState();
@@ -169,16 +177,18 @@ class _PageScaffoldState extends State<PageScaffold> {
               )
             : null,
         title: showAppBarTitle
-            ? Text(
-                appBarTitleText,
-                maxLines: 1,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 17.0,
-                  letterSpacing: -0.41,
-                  color: textColor,
-                ),
-                overflow: TextOverflow.ellipsis,
+            ? (widget.appBarTitleWidget ??
+                Text(
+                  appBarTitleText,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 17.0,
+                    letterSpacing: -0.41,
+                    color: textColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                )
               )
             : null,
         centerTitle: !widget.isHome && !appBarTitleOnLeft,
@@ -206,7 +216,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                 textBaseline: TextBaseline.alphabetic,
                 children: <Widget>[
                   Expanded(
-                    child: _buildTitleField(textColor),
+                    child: widget.titleWidget ?? _buildTitleField(textColor),
                   ),
                   if (widget.headerTrailing != null) widget.headerTrailing!,
                 ],
