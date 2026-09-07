@@ -1,1 +1,24 @@
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin. Fusce varius, ligula non tempus aliquam, nunc turpis ullamcorper nibh, in tempus sapien eros vitae ligula. Pellentesque rhoncus nunc et zzzz. Donec iaculis gravida nulla. Donec quis nibh at libero adipiscing dapibus. Mauris a purus. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Etiam lobortis facilisis sem. Nullam nec mi et neque pharetra sollicitudin. Praesent imperdiet mi nec ante. (Licence Française Lorem Ipsum)
+Politique de Confidentialité et Conditions d'Utilisation de TanoNote
+
+Chez TanoNote, nous nous engageons à fournir une expérience de prise de notes sécurisée et concentrée, tout en respectant votre vie privée.
+
+Collecte de Données pour l'Amélioration :
+Pour nous aider à fournir un meilleur support et à planifier l'évolution de l'application, TanoNote collecte certaines informations techniques non personnelles lors du premier lancement ou après une réinitialisation complète. Ces données incluent :
+- La marque et le modèle de l'appareil
+- Le système d'exploitation et sa version
+- La taille de l'écran et la densité de pixels
+- Le pays et la langue du système
+- La version de l'application et le numéro de build
+
+Objectif et Anonymat :
+Ces informations sont collectées pour les objectifs suivants :
+1. Analyse Statistique : Pour comprendre quels appareils et versions de système sont les plus utilisés, nous permettant de prioriser les efforts de développement et les optimisations.
+2. Support Technique : Pour aider à identifier les causes profondes de bugs potentiels ou de problèmes de performance sur du matériel spécifique.
+3. Expérience Utilisateur : Pour s'assurer que l'interface s'adapte correctement à tous les types d'écrans.
+
+Il est important de noter que ces données sont entièrement anonymes. Nous ne collectons aucune information personnelle, noms, e-mails ou le contenu de vos notes. Vos notes sont stockées localement sur votre appareil et ne sont jamais consultées durant ce processus.
+
+En utilisant TanoNote, vous nous aidez à construire un meilleur outil pour tous tout en gardant votre vie privée, privée.
+
+Merci de votre confiance.
+© 2026, Marx Hubert
