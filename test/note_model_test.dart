@@ -42,6 +42,16 @@ void main() {
       expect(restored.attachments, <String>['x.txt', 'y.pdf']);
     });
 
+    test('serializes and deserializes coverImage', () {
+      final note = Note(
+        id: '1',
+        title: 'a',
+        coverImage: 'image.png',
+      );
+      final restored = Note.fromJson(note.toJson());
+      expect(restored.coverImage, 'image.png');
+    });
+
     test('missing attachments default to an empty list', () {
       expect(Note.fromJson(<String, dynamic>{}).attachments, isEmpty);
     });
