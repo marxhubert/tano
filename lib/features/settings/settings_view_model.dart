@@ -50,26 +50,43 @@ class SettingsViewModel extends ChangeNotifier {
     return prefs.getBool('sortAscending') ?? true;
   }
 
-  Future<void> resetData() async {
+  Future<void> performHardReset({
+    required bool deleteData,
+    required bool deletePrefs,
+  }) async {
     _isResetting = true;
     notifyListeners();
     final startTime = DateTime.now();
     try {
-      // 1. Delete all notes from DB
-      await getIt<NotesRepository>().deleteAllNotes();
+      if (deleteData) {
+        await getIt<NotesRepository>().deleteAllNotes();
+        // Also clear analytics flag so it re-collects on next "first" launch
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.remove('firstLaunchAnalyticsSent');
+        // Ensure we don't auto-seed fixtures on next load
+        await prefs.setBool('database_initial_seed_done', true);
+      }
 
-      // 2. Clear all preferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      if (deletePrefs) {
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        // Keep the analytics flag if we are NOT deleting data
+        final bool? analyticsSent = prefs.getBool('firstLaunchAnalyticsSent');
+        
+        await prefs.clear();
+        
+        if (analyticsSent != null && !deleteData) {
+          await prefs.setBool('firstLaunchAnalyticsSent', analyticsSent);
+        }
 
-      // 3. Re-init core controllers to reflect default state
-      await Future.wait([
-        LocaleController.instance.init(),
-        ThemeController.instance.init(),
-        LanguageReferencesController.instance.init(),
-      ]);
+        // Re-init core controllers to reflect default state
+        await Future.wait([
+          LocaleController.instance.init(),
+          ThemeController.instance.init(),
+          LanguageReferencesController.instance.init(),
+        ]);
+      }
 
-      // 4. Minimum delay for visual feedback
+      // Minimum delay for visual feedback
       final elapsed = DateTime.now().difference(startTime);
       const minDuration = Duration(milliseconds: 1200);
       if (elapsed < minDuration) {
@@ -79,6 +96,10 @@ class SettingsViewModel extends ChangeNotifier {
       _isResetting = false;
       notifyListeners();
     }
+  }
+
+  Future<void> resetData() async {
+    await performHardReset(deleteData: true, deletePrefs: true);
   }
 
   Future<void> developerReset() async {
