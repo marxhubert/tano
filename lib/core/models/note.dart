@@ -16,6 +16,7 @@ class Note {
     this.isLocked = false,
     this.deletedAt,
     this.attachments = const <String>[],
+    this.coverImage,
   });
 
   final String id;
@@ -28,6 +29,7 @@ class Note {
   final bool isPinned;
   final bool isLocked;
   final String? deletedAt;
+  final String? coverImage;
 
   /// File names (stored under the attachments directory) attached to the
   /// note. Kept as opaque names; the system opens them on demand.
@@ -45,6 +47,7 @@ class Note {
         isLocked: json['isLocked'] == 1,
         deletedAt: json['deletedAt'] as String?,
         attachments: _decodeAttachments(json['attachments']),
+        coverImage: json['coverImage'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -59,6 +62,7 @@ class Note {
         'isLocked': isLocked ? 1 : 0,
         'deletedAt': deletedAt,
         'attachments': jsonEncode(attachments),
+        'coverImage': coverImage,
       };
 
   /// Canonical category name for uncategorized notes ('nuage' pastel).
@@ -101,6 +105,7 @@ class Note {
     bool? isLocked,
     String? deletedAt,
     List<String>? attachments,
+    String? coverImage,
   }) {
     return Note(
       id: id ?? this.id,
@@ -114,6 +119,7 @@ class Note {
       isLocked: isLocked ?? this.isLocked,
       deletedAt: deletedAt ?? this.deletedAt,
       attachments: attachments ?? this.attachments,
+      coverImage: coverImage ?? this.coverImage,
     );
   }
 }
