@@ -183,6 +183,7 @@ class AppText {
     'lang_en': 'ENGLISH',
     'lang_fr': 'FRENCH',
     'lang_mg': 'MALAGASY',
+    'delete_photo': 'Delete photo',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -293,6 +294,7 @@ class AppText {
     'lang_en': 'ANGLAIS',
     'lang_fr': 'FRANÇAIS',
     'lang_mg': 'MALAGASY',
+    'delete_photo': 'Supprimer la photo',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -403,6 +405,7 @@ class AppText {
     'lang_en': 'ANGLISY',
     'lang_fr': 'FRANTSAY',
     'lang_mg': 'MALAGASY',
+    'delete_photo': 'Hamafa ny sary',
   };
 
   /// Returns the string associated with [key] in the current language,

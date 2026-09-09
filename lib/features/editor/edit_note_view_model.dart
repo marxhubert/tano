@@ -19,6 +19,7 @@ class EditNoteViewModel extends ChangeNotifier {
     isPinned = initialNote?.isPinned ?? false;
     isLocked = initialNote?.isLocked ?? false;
     attachments = List<String>.of(initialNote?.attachments ?? const <String>[]);
+    coverImage = initialNote?.coverImage;
     _initialNote = _buildInitialNote(
       title: initialNote?.title ?? '',
       content: initialNote?.content ?? '',
@@ -37,6 +38,7 @@ class EditNoteViewModel extends ChangeNotifier {
   late bool isPinned;
   late bool isLocked;
   late List<String> attachments;
+  String? coverImage;
   late Note _initialNote;
 
   /// Loads the note data from the repository (refresh).
@@ -48,6 +50,7 @@ class EditNoteViewModel extends ChangeNotifier {
     important = note.important;
     isPinned = note.isPinned;
     isLocked = note.isLocked;
+    coverImage = note.coverImage;
     selectedDate = DateTime.tryParse(note.date) ?? DateTime.now();
     notifyListeners();
   }
@@ -76,6 +79,12 @@ class EditNoteViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCoverImage(String? value) {
+    if (coverImage == value) return;
+    coverImage = value;
+    notifyListeners();
+  }
+
   /// Builds the [Note] from the current form values.
   Note buildNote({required String title, required String content}) {
     final String trimmedContent = content.trim();
@@ -96,6 +105,7 @@ class EditNoteViewModel extends ChangeNotifier {
       isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
+      coverImage: coverImage,
     );
   }
 
@@ -110,12 +120,13 @@ class EditNoteViewModel extends ChangeNotifier {
           important != _initialNote.important ||
           category != _initialNote.category ||
           isPinned != _initialNote.isPinned ||
-          isLocked != _initialNote.isLocked;
+          isLocked != _initialNote.isLocked ||
+          coverImage != _initialNote.coverImage;
   }
 
   /// Business rule: a note is savable when at least its title or its content is not blank.
   bool isValid({required String title, required String content}) {
-    return title.trim().isNotEmpty || content.trim().isNotEmpty;
+    return title.trim().isNotEmpty || content.trim().isNotEmpty || coverImage != null;
   }
 
   /// Persists a saved note.
@@ -147,6 +158,7 @@ class EditNoteViewModel extends ChangeNotifier {
       isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
+      coverImage: coverImage,
     );
   }
 }
