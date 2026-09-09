@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,12 +52,13 @@ class _EditNoteState extends State<EditNote> {
   /// Set while the toggle handler intentionally unfocuses the field, so the
   /// focus-loss cleanup does not run for that spurious focus change.
   bool _suppressFocusLossCleanup = false;
+  bool _showRemoveCoverButton = false;
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
 
-  // Undo/redo history of (title, content) snapshots.
-  final List<({String title, String content})> _history = [];
+  // Undo/redo history of snapshots.
+  final List<({String title, String content, String? coverImage})> _history = [];
   int _historyIndex = 0;
 
   @override
@@ -80,7 +82,11 @@ class _EditNoteState extends State<EditNote> {
     _contentFocusHadFocus = _contentFocus.hasFocus;
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
     _history.add(
-      (title: _titleController.text, content: _contentController.text),
+      (
+        title: _titleController.text,
+        content: _contentController.text,
+        coverImage: _viewModel.coverImage,
+      ),
     );
   }
 
@@ -154,9 +160,12 @@ class _EditNoteState extends State<EditNote> {
     final current = (
       title: _titleController.text,
       content: _contentController.text,
+      coverImage: _viewModel.coverImage,
     );
     final last = _history[_historyIndex];
-    if (last.title == current.title && last.content == current.content) {
+    if (last.title == current.title &&
+        last.content == current.content &&
+        last.coverImage == current.coverImage) {
       return; // no actual change
     }
     if (_historyIndex + 1 < _history.length) {
@@ -175,11 +184,16 @@ class _EditNoteState extends State<EditNote> {
   /// Whether [current] continues the same "word"/"space"/"newline" typing run
   /// as [old].
   bool _shouldCoalesce(
-    ({String title, String content}) old,
-    ({String title, String content}) current,
+    ({String title, String content, String? coverImage}) old,
+    ({String title, String content, String? coverImage}) current,
   ) {
     final bool titleChanged = old.title != current.title;
     final bool contentChanged = old.content != current.content;
+    final bool coverChanged = old.coverImage != current.coverImage;
+
+    // Image changes never coalesce with text typing.
+    if (coverChanged) return false;
+
     if (titleChanged && contentChanged) return false;
     if (titleChanged) {
       return _coalescesSingleCharInsertion(old.title, current.title);
@@ -224,6 +238,7 @@ class _EditNoteState extends State<EditNote> {
     final snapshot = _history[_historyIndex];
     _titleController.text = snapshot.title;
     _contentController.setTextForRestore(snapshot.content);
+    _viewModel.setCoverImage(snapshot.coverImage);
     _getNoteContentLength(snapshot.content);
     setState(() {});
   }
@@ -361,6 +376,29 @@ class _EditNoteState extends State<EditNote> {
     _contentFocus.requestFocus();
   }
 
+  Future<void> _selectCoverImage() async {
+    final result = await FilePicker.pickFile(
+      type: FileType.image,
+    );
+    if (result == null) return;
+    final String? sourcePath = result.path;
+    if (sourcePath == null) return;
+
+    final String name = await _attachmentsStore.import(sourcePath, result.name);
+    _viewModel.setCoverImage(name);
+    _recordEdit();
+  }
+
+  Future<void> _removeCoverImage() async {
+    final String? name = _viewModel.coverImage;
+    if (name == null) return;
+    // We don't necessarily want to delete the file from disk here if it might 
+    // be used as an attachment too, but for simplicity we can just unset it.
+    // If it's a dedicated cover image, we could call _attachmentsStore.remove(name).
+    _viewModel.setCoverImage(null);
+    _recordEdit();
+  }
+
   /// Picks a file, copies it into the attachments store and persists the note.
   Future<void> _addAttachment() async {
     final PlatformFile? file = await FilePicker.pickFile();
@@ -482,6 +520,11 @@ class _EditNoteState extends State<EditNote> {
             onTap: () {
               FocusScope.of(context).unfocus();
               _fabKey.currentState?.closeVerticalMenu();
+              if (_showRemoveCoverButton) {
+                setState(() {
+                  _showRemoveCoverButton = false;
+                });
+              }
             },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
@@ -636,6 +679,82 @@ class _EditNoteState extends State<EditNote> {
                     ),
                   ),
                 ),
+                if (_viewModel.coverImage != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: FutureBuilder<String>(
+                        future: _attachmentsStore.pathOf(_viewModel.coverImage!),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox.shrink();
+                          return Stack(
+                            children: [
+                              GestureDetector(
+                                onLongPress: () {
+                                  setState(() {
+                                    _showRemoveCoverButton = !_showRemoveCoverButton;
+                                  });
+                                },
+                                child: Stack(
+                                  children: [
+                                    Image.file(
+                                      File(snapshot.data!),
+                                      width: double.infinity,
+                                      fit: BoxFit.fitWidth,
+                                    ),
+                                    if (isDark)
+                                      Positioned.fill(
+                                        child: Container(
+                                          color: Colors.black.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (_showRemoveCoverButton)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final bool? confirm = await getConfirmation(
+                                        context: context,
+                                        actionTitle: AppText.tr('delete_photo'),
+                                        action: AppText.tr('delete'),
+                                      );
+                                      if (confirm == true) {
+                                        _removeCoverImage();
+                                        setState(() {
+                                          _showRemoveCoverButton = false;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                        size: 24.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                     12.0,
@@ -738,7 +857,10 @@ class _EditNoteState extends State<EditNote> {
                   );
                 },
                 onMore: () {}, // Placeholder for animation triggering if needed
-                onImageSelected: () {}, // TODO: Implement image selection
+                onImageSelected: () {
+                  _selectCoverImage();
+                  _fabKey.currentState?.closeVerticalMenu();
+                },
                 onChecklistSelected: () {
                   _insertChecklist();
                   _fabKey.currentState?.closeVerticalMenu();
