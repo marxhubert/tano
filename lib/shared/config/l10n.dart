@@ -149,6 +149,10 @@ class AppText {
     'desc_bug_report': 'Help us improve TanoNote by automatically sending anonymous crash reports and performance data.',
     'desc_recycle_bin': 'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
     'desc_reset_data': 'Resetting data will permanently delete all your notes and preferences. This action cannot be undone.',
+    'option_delete_data': 'Delete all data',
+    'option_delete_prefs': 'Delete all preferences',
+    'desc_delete_data': 'This will permanently remove all your notes and attachments.',
+    'desc_delete_prefs': 'This will reset all your settings (theme, language, sorting) to their default values.',
     // Menu
     'menu_display': 'Display',
     'menu_list': 'List',
@@ -255,6 +259,10 @@ class AppText {
     'desc_bug_report': 'Aidez-nous à améliorer TanoNote en envoyant automatiquement des rapports d\'erreur anonymes.',
     'desc_recycle_bin': 'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
     'desc_reset_data': 'La réinitialisation supprimera définitivement toutes vos notes et préférences. Cette action est irréversible.',
+    'option_delete_data': 'Supprimer toutes les données',
+    'option_delete_prefs': 'Supprimer toutes les préférences',
+    'desc_delete_data': 'Ceci supprimera définitivement toutes vos notes et pièces jointes.',
+    'desc_delete_prefs': 'Ceci réinitialisera tous vos réglages (thème, langue, tri) à leurs valeurs par défaut.',
     // Menu
     'menu_display': 'Affichage',
     'menu_list': 'Liste',
@@ -361,6 +369,10 @@ class AppText {
     'desc_bug_report': 'Ampio izahay hanatsara ny TanoNote amin\'ny alalan\'ny fandefasana tatitra momba ny olana miseho amin\'ny fampiasanao ny rindrankajy.',
     'desc_recycle_bin': 'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
     'desc_reset_data': 'Ny famerenana ny angona dia hamafa tanteraka ny naoty sy ny fikirana rehetra nataonao. Tsy azo averina intsony izany rehefa voafafa.',
+    'option_delete_data': 'Hamafa ny angona rehetra',
+    'option_delete_prefs': 'Hamafa ny fikirana rehetra',
+    'desc_delete_data': 'Hamafa tanteraka ny naoty sy ny rakitra rehetra izany.',
+    'desc_delete_prefs': 'Hamerina ny fikirana rehetra (loko, fiteny, filaminana) amin\'ny teo aloha izany.',
     // Menu
     'menu_display': 'Fampisehoana',
     'menu_list': 'Lisitra',

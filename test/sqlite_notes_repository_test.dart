@@ -1,18 +1,21 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/sqlite_notes_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
 
   late Directory tempDir;
   late SQLiteNotesRepository repository;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     tempDir = await Directory.systemTemp.createTemp('tano_test_');
     repository = SQLiteNotesRepository(
       databaseFactoryOverride: databaseFactoryFfi,
