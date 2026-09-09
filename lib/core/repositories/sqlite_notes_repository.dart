@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
@@ -86,12 +87,22 @@ class SQLiteNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // 1. Check if database is empty to handle first-run/migration
-    final List<Map<String, dynamic>> existing = await db.query('notes');
-    if (existing.isEmpty) {
-      final List<Note> migrated = await _handleMigration(db);
-      return migrated.where((n) => !n.isDeleted).toList();
+    // 1. Check if database is empty and if we should seed (first-run only)
+    final bool hasSeeded = prefs.getBool('database_initial_seed_done') ?? false;
+
+    if (!hasSeeded) {
+      final List<Map<String, dynamic>> existing = await db.query('notes');
+      if (existing.isEmpty) {
+        final List<Note> migrated = await _handleMigration(db);
+        await prefs.setBool('database_initial_seed_done', true);
+        return migrated.where((n) => !n.isDeleted).toList();
+      } else {
+        // If notes already exist (e.g. from a previous version without the flag),
+        // we just mark it as done.
+        await prefs.setBool('database_initial_seed_done', true);
+      }
     }
 
     final List<Map<String, dynamic>> active = await db.query(
