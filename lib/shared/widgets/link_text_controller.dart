@@ -237,6 +237,23 @@ class LinkTextEditingController extends TextEditingController {
   final Color linkColor;
   Set<String> activeNoteIds;
 
+  /// Current "find in note" query; empty means no highlight.
+  String searchQuery = '';
+
+  /// Index of the currently highlighted occurrence (for cyclic navigation).
+  int searchCurrentIndex = 0;
+
+  /// Blink intensity for the current occurrence (0..1). 1 = fully highlighted.
+  double _searchBlinkValue = 1.0;
+
+  double get searchBlinkValue => _searchBlinkValue;
+
+  set searchBlinkValue(double value) {
+    if (_searchBlinkValue == value) return;
+    _searchBlinkValue = value;
+    notifyListeners();
+  }
+
   bool _suppressAtomicDeletion = false;
 
   /// Sets [text] without triggering atomic link deletion. Used when restoring
@@ -249,6 +266,38 @@ class LinkTextEditingController extends TextEditingController {
     } finally {
       _suppressAtomicDeletion = false;
     }
+  }
+
+  /// Updates the "find in note" highlight and notifies the field to repaint.
+  void setSearchHighlight(String query, int currentIndex) {
+    if (searchQuery == query && searchCurrentIndex == currentIndex) return;
+    searchQuery = query;
+    searchCurrentIndex = currentIndex;
+    notifyListeners();
+  }
+
+  /// Returns the offsets of every *visible* occurrence of [query] in the note,
+  /// skipping matches that fall inside hidden markup (link ids, markers, the
+  /// truncated part of long link titles, …) so the counter and the highlight
+  /// stay in sync with what the user actually sees.
+  List<int> searchOccurrences(String query) {
+    if (query.isEmpty || text.isEmpty) return const <int>[];
+    final TextSpan span =
+        buildMarkdownTextSpan(text, const TextStyle(), linkColor, activeNoteIds);
+    final List<bool> visible = _visibleMask(span, text.length);
+    final String lowerText = text.toLowerCase();
+    final String lowerQuery = query.toLowerCase();
+    final List<int> starts = <int>[];
+    int from = 0;
+    while (true) {
+      final int index = lowerText.indexOf(lowerQuery, from);
+      if (index == -1) break;
+      if (_isRangeVisible(visible, index, query.length)) {
+        starts.add(index);
+      }
+      from = index + lowerQuery.length;
+    }
+    return starts;
   }
 
   static final RegExp linkRegExp = RegExp(r'\[\[([^:]+):([^\]]+)\]\]');
@@ -351,7 +400,14 @@ class LinkTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    return buildMarkdownTextSpan(text, style, linkColor, activeNoteIds);
+    final TextSpan markdown =
+        buildMarkdownTextSpan(text, style, linkColor, activeNoteIds);
+    if (searchQuery.trim().isEmpty) {
+      return markdown;
+    }
+    final List<int> occurrences = searchOccurrences(searchQuery);
+    return _applySearchHighlight(markdown, searchQuery, searchCurrentIndex,
+        occurrences, searchBlinkValue);
   }
 
   /// Renders a light markdown subset (headings, task lists, bullets, bold,
@@ -388,6 +444,145 @@ class LinkTextEditingController extends TextEditingController {
     Set<String> activeNoteIds,
   ) {
     return buildMarkdownTextSpan(text, style, linkColor, activeNoteIds);
+  }
+
+  static TextSpan _applySearchHighlight(
+    TextSpan span,
+    String query,
+    int currentIndex,
+    List<int> occurrences,
+    double blinkValue,
+  ) {
+    if (occurrences.isEmpty) return span;
+    final List<InlineSpan> children =
+        span.children ?? const <InlineSpan>[];
+    if (children.isEmpty) return span;
+    return TextSpan(
+      style: span.style,
+      children: _highlightChildren(
+        children,
+        occurrences,
+        query.length,
+        currentIndex,
+        blinkValue,
+      ),
+    );
+  }
+
+  static List<InlineSpan> _highlightChildren(
+    List<InlineSpan> children,
+    List<int> occurrences,
+    int queryLength,
+    int currentIndex,
+    double blinkValue,
+  ) {
+    final List<InlineSpan> result = <InlineSpan>[];
+    int offset = 0;
+    for (final InlineSpan child in children) {
+      if (child is WidgetSpan) {
+        result.add(child);
+        offset += 1;
+      } else if (child is TextSpan) {
+        final String childText = child.text ?? '';
+        if (childText.isEmpty) {
+          result.add(child);
+          continue;
+        }
+        result.addAll(
+          _highlightTextSpan(
+            childText,
+            child.style,
+            offset,
+            occurrences,
+            queryLength,
+            currentIndex,
+            blinkValue,
+          ),
+        );
+        offset += childText.length;
+      } else {
+        result.add(child);
+      }
+    }
+    return result;
+  }
+
+  static List<bool> _visibleMask(TextSpan span, int length) {
+    final List<bool> mask = List<bool>.filled(length, true);
+    int offset = 0;
+    void mark(InlineSpan s) {
+      if (s is WidgetSpan) {
+        if (offset < length) mask[offset] = false;
+        offset += 1;
+      } else if (s is TextSpan) {
+        final String t = s.text ?? '';
+        final bool hidden = s.style?.fontSize == 0;
+        if (hidden) {
+          for (int i = 0; i < t.length && offset + i < length; i++) {
+            mask[offset + i] = false;
+          }
+        }
+        offset += t.length;
+        s.children?.forEach(mark);
+      }
+    }
+
+    span.children?.forEach(mark);
+    return mask;
+  }
+
+  static bool _isRangeVisible(List<bool> visible, int start, int length) {
+    if (start < 0 || start + length > visible.length) return false;
+    for (int i = start; i < start + length; i++) {
+      if (!visible[i]) return false;
+    }
+    return true;
+  }
+
+  static List<InlineSpan> _highlightTextSpan(
+    String text,
+    TextStyle? style,
+    int offset,
+    List<int> occurrences,
+    int queryLength,
+    int currentIndex,
+    double blinkValue,
+  ) {
+    final int childStart = offset;
+    final int childEnd = offset + text.length;
+    final List<InlineSpan> result = <InlineSpan>[];
+    int pos = 0;
+    for (int i = 0; i < occurrences.length; i++) {
+      final int occStart = occurrences[i];
+      final int occEnd = occStart + queryLength;
+      if (occEnd <= childStart) continue;
+      if (occStart >= childEnd) break;
+
+      final int localStart = (occStart - childStart).clamp(0, text.length);
+      final int localEnd = (occEnd - childStart).clamp(0, text.length);
+      if (localStart > pos) {
+        result.add(
+          TextSpan(text: text.substring(pos, localStart), style: style),
+        );
+      }
+      final bool isCurrent = i == currentIndex;
+      final double currentAlpha = 0.2 + 0.61 * blinkValue;
+      result.add(
+        TextSpan(
+          text: text.substring(localStart, localEnd),
+          style: (style ?? const TextStyle()).copyWith(
+            backgroundColor: isCurrent
+                ? Colors.amber.withValues(alpha: currentAlpha)
+                : Colors.amber.withValues(alpha: 0.36),
+          ),
+        ),
+      );
+      pos = localEnd;
+    }
+    if (pos < text.length) {
+      result.add(TextSpan(text: text.substring(pos), style: style));
+    }
+    return result;
   }
 
   static void _appendLine(
