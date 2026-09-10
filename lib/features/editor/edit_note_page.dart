@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
@@ -36,7 +37,8 @@ class EditNote extends StatefulWidget {
   State<EditNote> createState() => _EditNoteState();
 }
 
-class _EditNoteState extends State<EditNote> {
+class _EditNoteState extends State<EditNote>
+    with SingleTickerProviderStateMixin {
   late final EditNoteViewModel _viewModel;
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _titleController = TextEditingController();
@@ -56,6 +58,12 @@ class _EditNoteState extends State<EditNote> {
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
+  final GlobalKey _contentFieldKey = GlobalKey();
+  final TextEditingController _findController = TextEditingController();
+  final FocusNode _findFocusNode = FocusNode();
+  bool _isFindMode = false;
+  int _currentFindIndex = 0;
+  late final AnimationController _highlightBlinkController;
 
   // Undo/redo history of snapshots.
   final List<({String title, String content, String? coverImage})> _history = [];
@@ -76,7 +84,14 @@ class _EditNoteState extends State<EditNote> {
       text: widget.noteAction.note?.content ?? '',
       linkColor: tanoAmber,
     );
-    
+
+    _highlightBlinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    )..addListener(() {
+        _contentController.searchBlinkValue = _highlightBlinkController.value;
+      });
+
     _loadActiveNoteIds();
     _contentFocus.addListener(_onContentFocusChanged);
     _contentFocusHadFocus = _contentFocus.hasFocus;
@@ -107,8 +122,160 @@ class _EditNoteState extends State<EditNote> {
     _contentController.dispose();
     _titleFocus.dispose();
     _contentFocus.dispose();
+    _findController.dispose();
+    _findFocusNode.dispose();
+    _highlightBlinkController.dispose();
     _viewModel.dispose();
     super.dispose();
+  }
+
+  void _enterFindMode() {
+    _fabKey.currentState?.closeVerticalMenu();
+    setState(() {
+      _isFindMode = true;
+    });
+    _highlightBlinkController.repeat(reverse: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _findFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _clearFind() {
+    _findController.clear();
+    _currentFindIndex = 0;
+    _contentController.setSearchHighlight('', 0);
+    setState(() {});
+  }
+
+  void _exitFindMode() {
+    _findController.clear();
+    _currentFindIndex = 0;
+    _contentController.setSearchHighlight('', 0);
+    _highlightBlinkController.stop();
+    _highlightBlinkController.value = 1.0;
+    _contentController.searchBlinkValue = 1.0;
+    setState(() {
+      _isFindMode = false;
+    });
+  }
+
+  void _onFindChanged(String value) {
+    _currentFindIndex = 0;
+    if (value.isEmpty) {
+      _contentController.setSearchHighlight('', 0);
+      setState(() {});
+      return;
+    }
+    final List<int> occurrences = _findOccurrences();
+    if (occurrences.isEmpty) {
+      _contentController.setSearchHighlight(value, 0);
+      setState(() {});
+      return;
+    }
+    _selectOccurrence(occurrences.first);
+  }
+
+  List<int> _findOccurrences() {
+    return _contentController.searchOccurrences(_findController.text);
+  }
+
+  void _nextOccurrence() {
+    final List<int> occurrences = _findOccurrences();
+    if (occurrences.isEmpty) return;
+    _currentFindIndex = (_currentFindIndex + 1) % occurrences.length;
+    _selectOccurrence(occurrences[_currentFindIndex]);
+  }
+
+  void _prevOccurrence() {
+    final List<int> occurrences = _findOccurrences();
+    if (occurrences.isEmpty) return;
+    _currentFindIndex =
+        (_currentFindIndex - 1 + occurrences.length) % occurrences.length;
+    _selectOccurrence(occurrences[_currentFindIndex]);
+  }
+
+  void _selectOccurrence(int start) {
+    final String query = _findController.text;
+    _contentController.selection = TextSelection(
+      baseOffset: start,
+      extentOffset: start + query.length,
+    );
+    _contentController.setSearchHighlight(query, _currentFindIndex);
+    setState(() {});
+    _scrollToOccurrence(start, query.length);
+  }
+
+  void _scrollToOccurrence(int start, int length) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final BuildContext? fieldContext = _contentFieldKey.currentContext;
+      if (fieldContext == null) return;
+      final RenderObject? root = fieldContext.findRenderObject();
+      if (root == null) return;
+      final RenderEditable? editable = _findRenderEditable(root);
+      if (editable == null) return;
+      final Rect rect = _rangeRect(editable, start, length);
+      final RenderAbstractViewport? viewport =
+          RenderAbstractViewport.maybeOf(editable);
+      if (viewport == null) return;
+
+      // When the whole note already fits on screen, centring the occurrence
+      // produces a pointless bounce: just keep the current scroll position.
+      if (_isOccurrenceVisible(viewport, editable, rect)) return;
+
+      final RevealedOffset revealed =
+          viewport.getOffsetToReveal(editable, 0.5, rect: rect);
+      Scrollable.of(fieldContext).position.animateTo(
+        revealed.offset,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  bool _isOccurrenceVisible(
+    RenderAbstractViewport viewport,
+    RenderEditable editable,
+    Rect rect,
+  ) {
+    final RenderBox viewportBox = viewport as RenderBox;
+    final double viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final double viewportBottom = viewportTop + viewportBox.size.height;
+
+    final double occTop = editable.localToGlobal(rect.topLeft).dy;
+    final double occBottom = editable.localToGlobal(rect.bottomRight).dy;
+
+    // Keep room for the FAB overlay at the bottom.
+    const double bottomInset = 90.0;
+
+    return occTop >= viewportTop && occBottom <= viewportBottom - bottomInset;
+  }
+
+  RenderEditable? _findRenderEditable(RenderObject root) {
+    if (root is RenderEditable) return root;
+    RenderEditable? found;
+    root.visitChildren((RenderObject child) {
+      found ??= _findRenderEditable(child);
+    });
+    return found;
+  }
+
+  Rect _rangeRect(RenderEditable editable, int start, int length) {
+    final Rect? rect = editable.getRectForComposingRange(
+      TextRange(start: start, end: start + length),
+    );
+    if (rect != null && !rect.isEmpty) return rect;
+    return editable.getLocalRectForCaret(TextPosition(offset: start));
+  }
+
+  int get _findTotal => _isFindMode ? _findOccurrences().length : 0;
+
+  int get _findCurrent {
+    if (!_isFindMode || _findController.text.isEmpty) return 0;
+    final int total = _findTotal;
+    return total > 0 ? _currentFindIndex + 1 : 0;
   }
 
   void _saveNote() {
@@ -571,6 +738,26 @@ class _EditNoteState extends State<EditNote> {
                   ),
                 ],
                 const ThemeToggleButton(),
+                if (_isFindMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: TextButton(
+                      onPressed: _exitFindMode,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        AppText.tr('cancel'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 17.0,
+                          color: tanoTeal,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
               slivers: [
                 SliverPadding(
@@ -769,6 +956,7 @@ class _EditNoteState extends State<EditNote> {
                             _contentFocus.hasFocus;
                       },
                       child: TextField(
+                        key: _contentFieldKey,
                         maxLines: null,
                         minLines: 10,
                         showCursor: true,
@@ -845,6 +1033,15 @@ class _EditNoteState extends State<EditNote> {
                 isImportant: _viewModel.important,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
+                isFindMode: _isFindMode,
+                findCurrent: _findCurrent,
+                findTotal: _findTotal,
+                controller: _findController,
+                focusNode: _findFocusNode,
+                onSearchChanged: _onFindChanged,
+                onFindPrev: _prevOccurrence,
+                onFindNext: _nextOccurrence,
+                onFindReset: _clearFind,
                 onSave: _saveNote,
                 onColorLens: () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
@@ -914,7 +1111,7 @@ class _EditNoteState extends State<EditNote> {
                     content: _contentController.text,
                   );
                 },
-                onFindSelected: () {}, // TODO: Implement Find in note
+                onFindSelected: _enterFindMode,
                 onMoveSelected: () {}, // TODO: Implement Move to
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
                 onShareSelected: () {}, // TODO: Implement Share

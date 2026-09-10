@@ -25,6 +25,31 @@ TextEditingValue _backspace(String text, int cursor) {
 
 void main() {
   group('LinkTextEditingController', () {
+    test('markdown rendering preserves 1:1 length mapping', () {
+      final texts = <String>[
+        '- [ ] Future\n[[id1:Study plan]]\n- [ ] tutu',
+        '# Title\n[[id1:${'a' * 40}]]\n- item',
+        '**bold** `code` [[id1:title]]',
+        'plain text with t u t u no markup',
+      ];
+      for (final text in texts) {
+        final span = LinkTextEditingController.buildMarkdownTextSpan(
+          text,
+          const TextStyle(fontSize: 14.4),
+          Colors.amber,
+          {'id1'},
+        );
+        expect(span.toPlainText().length, text.length,
+            reason: '1:1 mapping broken for: $text');
+      }
+    });
+
+    test('searchOccurrences skips occurrences inside hidden markup', () {
+      final c = _linkController('tutu [[tu:id]] tutu', 0);
+      // "tu" also matches inside the link id "tu", which is hidden, so it is
+      // excluded from the visible matches.
+      expect(c.searchOccurrences('tu'), [0, 2, 15, 17]);
+    });
     test('one backspace deletes the whole link (cursor after ]])', () {
       final c = _linkController('[[id1:title1]]', 14);
 

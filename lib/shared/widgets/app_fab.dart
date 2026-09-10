@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -16,6 +17,9 @@ class AppFab extends StatefulWidget {
     this.isSearchMode = false,
     this.isSelectionMode = false,
     this.isEditorMode = false,
+    this.isFindMode = false,
+    this.findCurrent = 0,
+    this.findTotal = 0,
     this.isAddMode = false,
     this.isPinned = false,
     this.isImportant = false,
@@ -41,6 +45,9 @@ class AppFab extends StatefulWidget {
     this.onPinSelected,
     this.onImportantSelected,
     this.onFindSelected,
+    this.onFindPrev,
+    this.onFindNext,
+    this.onFindReset,
     this.onMoveSelected,
     this.onLockSelected,
     this.onDeleteSelected,
@@ -51,6 +58,9 @@ class AppFab extends StatefulWidget {
   final bool isSearchMode;
   final bool isSelectionMode;
   final bool isEditorMode;
+  final bool isFindMode;
+  final int findCurrent;
+  final int findTotal;
   final bool isAddMode;
   final bool isPinned;
   final bool isImportant;
@@ -76,6 +86,9 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onPinSelected;
   final VoidCallback? onImportantSelected;
   final VoidCallback? onFindSelected;
+  final VoidCallback? onFindPrev;
+  final VoidCallback? onFindNext;
+  final VoidCallback? onFindReset;
   final VoidCallback? onMoveSelected;
   final VoidCallback? onLockSelected;
   final VoidCallback? onDeleteSelected;
@@ -91,7 +104,7 @@ class AppFabState extends State<AppFab> {
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
   List<Note> _availableNotes = [];
-  
+
   // Sorting state for links
   LinkSortCriteria _sortCriteria = LinkSortCriteria.date;
   bool _isAscending = true;
@@ -169,8 +182,9 @@ class AppFabState extends State<AppFab> {
       _wasKeyboardClosed = isKeyboardClosed;
     }
 
-    bool isExpanded = widget.isSearchMode || widget.isSelectionMode;
-    if (widget.isEditorMode) {
+    bool isExpanded =
+        widget.isSearchMode || widget.isSelectionMode || widget.isFindMode;
+    if (widget.isEditorMode && !widget.isFindMode) {
       isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
     }
 
@@ -191,14 +205,14 @@ class AppFabState extends State<AppFab> {
     // Translation calculation
     double tx = 0.0;
     if ((isExpanded || isMenuOpen) && (isMenuOpen || !isKeyboardClosed)) {
-      tx = 12.0; 
+      tx = 12.0;
     }
 
     double ty = 0.0;
     if (isMenuOpen) {
-      ty = 8.0; 
+      ty = 8.0;
     } else if (!isKeyboardClosed) {
-      ty = 12.0; 
+      ty = 12.0;
     }
 
     // Dynamic Vertical Menu Heights
@@ -220,7 +234,9 @@ class AppFabState extends State<AppFab> {
     // In search mode the bar is more compact (48) than the default (64),
     // and only when the keyboard is open (the "high" position).
     final double barHeight =
-        (widget.isSearchMode && !isKeyboardClosed) ? 48.0 : btnHeight;
+        ((widget.isSearchMode || widget.isFindMode) && !isKeyboardClosed)
+        ? 48.0
+        : btnHeight;
 
     double currentHeight = barHeight;
     if (isMenuOpen) {
@@ -236,11 +252,12 @@ class AppFabState extends State<AppFab> {
       transform: Matrix4.translationValues(tx, ty, 0.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: isMenuOpen 
-          ? BorderRadius.vertical(
-              top: Radius.circular(24.0), 
-              bottom: Radius.circular(borderRadiusValue))
-          : BorderRadius.circular(borderRadiusValue),
+        borderRadius: isMenuOpen
+            ? BorderRadius.vertical(
+                top: Radius.circular(24.0),
+                bottom: Radius.circular(borderRadiusValue),
+              )
+            : BorderRadius.circular(borderRadiusValue),
         border: Border.all(
           color: getBorderColor(
             Theme.of(context).colorScheme.primary,
@@ -256,67 +273,86 @@ class AppFabState extends State<AppFab> {
           ),
         ],
       ),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final double expansionProgress = isExpanded || isMenuOpen
-            ? (constraints.maxWidth - btnHeight) /
-                (targetExpandedWidth - btnHeight)
-            : 0.0;
-        
-        final bool showContent = !isExpanded || isMenuOpen || expansionProgress > 0.8;
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double expansionProgress = isExpanded || isMenuOpen
+              ? (constraints.maxWidth - btnHeight) /
+                    (targetExpandedWidth - btnHeight)
+              : 0.0;
 
-        return Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            // Measurement zone - Unconstrained height to avoid race conditions during animation
-            Offstage(
-              child: OverflowBox(
-                // Measure at a fixed open-menu width so the heights stay
-                // stable no matter the current FAB width (the closed FAB is
-                // only 64px wide and would otherwise under-measure).
-                minWidth: 0,
-                maxWidth: screenWidth - 24.0,
-                minHeight: 0,
-                maxHeight: double.infinity,
-                alignment: Alignment.topCenter,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(key: _colorMenuKey, child: _buildColorMenu(context)),
-                    Container(key: _addMenuKey, child: _buildAddMenu(context)),
-                    Container(key: _moreMenuKey, child: _buildMoreMenu(context)),
-                    Container(key: _linkMenuKey, child: _buildLinkMenu(context, isMeasurement: true)),
-                  ],
-                ),
-              ),
-            ),
-            
-            if (isMenuOpen)
-              Positioned(
-                bottom: btnHeight,
-                left: 0,
-                right: 0,
-                top: 0,
-                child: AnimatedOpacity(
-                  opacity: showContent ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 150),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: _buildVerticalMenuContent(context),
+          final bool showContent =
+              !isExpanded || isMenuOpen || expansionProgress > 0.8;
+
+          return Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Measurement zone - Unconstrained height to avoid race conditions during animation
+              Offstage(
+                child: OverflowBox(
+                  // Measure at a fixed open-menu width so the heights stay
+                  // stable no matter the current FAB width (the closed FAB is
+                  // only 64px wide and would otherwise under-measure).
+                  minWidth: 0,
+                  maxWidth: screenWidth - 24.0,
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        key: _colorMenuKey,
+                        child: _buildColorMenu(context),
+                      ),
+                      Container(
+                        key: _addMenuKey,
+                        child: _buildAddMenu(context),
+                      ),
+                      Container(
+                        key: _moreMenuKey,
+                        child: _buildMoreMenu(context),
+                      ),
+                      Container(
+                        key: _linkMenuKey,
+                        child: _buildLinkMenu(context, isMeasurement: true),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            
-            SizedBox(
-              height: barHeight,
-              child: AnimatedOpacity(
-                opacity: showContent ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 150),
-                child: _buildMainContent(context, isExpanded, targetExpandedWidth),
+
+              if (isMenuOpen)
+                Positioned(
+                  bottom: btnHeight,
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: AnimatedOpacity(
+                    opacity: showContent ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 150),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _buildVerticalMenuContent(context),
+                    ),
+                  ),
+                ),
+
+              SizedBox(
+                height: barHeight,
+                child: AnimatedOpacity(
+                  opacity: showContent ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: _buildMainContent(
+                    context,
+                    isExpanded,
+                    targetExpandedWidth,
+                  ),
+                ),
               ),
-            ),
-          ],
-        );
-      }),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -349,16 +385,14 @@ class AppFabState extends State<AppFab> {
     }
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.15),
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.15)),
       child: content,
     );
   }
 
   List<Note> _getSortedNotes() {
     final List<Note> sorted = List.from(_availableNotes);
-    
+
     sorted.sort((a, b) {
       int cmp;
       if (_sortCriteria == LinkSortCriteria.date) {
@@ -370,13 +404,13 @@ class AppFabState extends State<AppFab> {
       }
       return _isAscending ? cmp : -cmp;
     });
-    
+
     return sorted;
   }
 
   Widget _buildLinkMenu(BuildContext context, {bool isMeasurement = false}) {
     final sortedNotes = _getSortedNotes();
-    
+
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(sortedNotes.length, (index) {
@@ -412,13 +446,15 @@ class AppFabState extends State<AppFab> {
       actions: [
         IconButton(
           icon: Icon(
-            _sortCriteria == LinkSortCriteria.date ? Icons.sort : Icons.sort_by_alpha,
+            _sortCriteria == LinkSortCriteria.date
+                ? Icons.sort
+                : Icons.sort_by_alpha,
             size: 20,
             color: Colors.white70,
           ),
           onPressed: () => setState(() {
-            _sortCriteria = _sortCriteria == LinkSortCriteria.date 
-                ? LinkSortCriteria.title 
+            _sortCriteria = _sortCriteria == LinkSortCriteria.date
+                ? LinkSortCriteria.title
                 : LinkSortCriteria.date;
           }),
           padding: const EdgeInsets.all(8.0),
@@ -426,7 +462,9 @@ class AppFabState extends State<AppFab> {
         ),
         IconButton(
           icon: Icon(
-            _isAscending ? Icons.keyboard_double_arrow_down : Icons.keyboard_double_arrow_up,
+            _isAscending
+                ? Icons.keyboard_double_arrow_down
+                : Icons.keyboard_double_arrow_up,
             size: 20,
             color: Colors.white70,
           ),
@@ -448,8 +486,7 @@ class AppFabState extends State<AppFab> {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(
-                color: Colors.white, fontSize: 17),
+            style: const TextStyle(color: Colors.white, fontSize: 17),
           ),
           const SizedBox(height: 16),
           GridView.builder(
@@ -473,10 +510,7 @@ class AppFabState extends State<AppFab> {
                 child: Container(
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.white30,
-                      width: 1.0,
-                    ),
+                    border: Border.all(color: Colors.white30, width: 1.0),
                   ),
                   child: Stack(
                     children: [
@@ -488,8 +522,11 @@ class AppFabState extends State<AppFab> {
                       ),
                       if (isSelected)
                         const Center(
-                          child: Icon(Icons.check_circle,
-                              color: tanoAmber, size: 20.0),
+                          child: Icon(
+                            Icons.check_circle,
+                            color: tanoAmber,
+                            size: 20.0,
+                          ),
                         ),
                     ],
                   ),
@@ -596,14 +633,24 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildMainContent(
-      BuildContext context, bool isExpanded, double targetWidth) {
-    if (widget.isEditorMode) return _buildEditorBar(context, isExpanded, targetWidth);
+    BuildContext context,
+    bool isExpanded,
+    double targetWidth,
+  ) {
+    if (widget.isFindMode) return _buildFindBar(context);
+    if (widget.isEditorMode) {
+      return _buildEditorBar(context, isExpanded, targetWidth);
+    }
     if (widget.isSelectionMode) return _buildSelectionBar(context, targetWidth);
     if (widget.isSearchMode) return _buildSearchBar(context);
     return _buildDefaultAddButton();
   }
 
-  Widget _buildEditorBar(BuildContext context, bool isExpanded, double targetWidth) {
+  Widget _buildEditorBar(
+    BuildContext context,
+    bool isExpanded,
+    double targetWidth,
+  ) {
     if (!isExpanded) {
       return IconButton(
         icon: const Icon(Icons.more_horiz, color: Colors.white),
@@ -637,7 +684,11 @@ class AppFabState extends State<AppFab> {
         },
       ),
       IconButton(
-        icon: const Icon(Icons.arrow_forward_ios, size: 20.0, color: Colors.white),
+        icon: const Icon(
+          Icons.arrow_forward_ios,
+          size: 20.0,
+          color: Colors.white,
+        ),
         onPressed: () => setState(() {
           _verticalMenu = FabVerticalMenu.none;
           _isManuallyExpanded = false;
@@ -715,6 +766,154 @@ class AppFabState extends State<AppFab> {
     );
   }
 
+  Widget _buildFindBar(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color navColor = Color.lerp(scheme.primary, Colors.black, 0.1)!;
+    final Color fieldColor = scheme.primary.withValues(alpha: 0.35);
+    final bool hasQuery = widget.controller?.text.isNotEmpty ?? false;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (hasQuery) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 4.0),
+                child: _buildCounterBox(),
+              ),
+              _buildNavButton(Icons.chevron_left, widget.onFindPrev, navColor),
+            ] else
+              SizedBox(
+                width: 44.0,
+                child: const Center(
+                  child: Icon(Icons.search, color: Colors.white, size: 26.0),
+                ),
+              ),
+          ],
+        ),
+        Expanded(
+          child: Container(
+            color: fieldColor,
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: TextField(
+              controller: widget.controller,
+              focusNode: widget.focusNode,
+              expands: true,
+              maxLines: null,
+              minLines: null,
+              textAlignVertical: TextAlignVertical.center,
+              textInputAction: TextInputAction.search,
+              style: const TextStyle(color: Colors.white, fontSize: 16.0),
+              decoration: InputDecoration(
+                hintText: AppText.tr('find_in_note'),
+                hintStyle: const TextStyle(color: Colors.white70),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.deny('\n'),
+              ],
+              onChanged: widget.onSearchChanged,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (hasQuery) ...[
+              _buildNavButton(Icons.chevron_right, widget.onFindNext, navColor),
+              Padding(
+                padding: const EdgeInsets.only(right: 4.0),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => widget.onFindReset?.call(),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavButton(IconData icon, VoidCallback? onPressed, Color color) {
+    return SizedBox(
+      width: 44.0,
+      child: Material(
+        color: color,
+        child: InkWell(
+          onTap: onPressed,
+          child: Center(child: Icon(icon, color: Colors.white, size: 28.0)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCounterBox() {
+    final int total = widget.findTotal;
+    final int digitCount = total.toString().length;
+
+    // 3+ digits: place "/y" below "x", flush and right-aligned.
+    if (digitCount >= 3) {
+      return SizedBox(
+        width: 48.0,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Text(
+                '${widget.findCurrent}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.bold,
+                  height: 0.8,
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(0, 0),
+                child: Text(
+                  '/$total',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.0,
+                    height: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final double suffixSize = digitCount == 1 ? 14.0 : 10.0;
+    return SizedBox(
+      width: 48.0,
+      child: Center(
+        child: RichText(
+          text: TextSpan(
+            style: const TextStyle(color: Colors.white, fontSize: 14.0),
+            children: <InlineSpan>[
+              TextSpan(
+                text: '${widget.findCurrent}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              TextSpan(
+                text: '/$total',
+                style: TextStyle(fontSize: suffixSize),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHorizontalBar(double width, List<Widget> children) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -764,13 +963,14 @@ class _SubMenuLayout extends StatelessWidget {
             children: [
               TextButton.icon(
                 onPressed: onBack,
-                icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white70),
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  size: 20,
+                  color: Colors.white70,
+                ),
                 label: Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 17.0,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 17.0),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -790,7 +990,10 @@ class _SubMenuLayout extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.15),
             ),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: child,
             ),
           ),
@@ -848,14 +1051,19 @@ class _VerticalMenuItem extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
-          crossAxisAlignment: maxLines != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          crossAxisAlignment: maxLines != null
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.center,
           children: [
             Icon(icon, color: iconColor ?? Colors.white70, size: iconSize),
             const SizedBox(width: 8.0),
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(color: textColor ?? Colors.white, fontSize: fontSize),
+                style: TextStyle(
+                  color: textColor ?? Colors.white,
+                  fontSize: fontSize,
+                ),
                 maxLines: maxLines,
                 overflow: maxLines != null ? TextOverflow.ellipsis : null,
               ),
@@ -895,7 +1103,7 @@ class _SelectionFabButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.0,
                 color: effectiveColor,
-                fontWeight: FontWeight.bold,  
+                fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
             ),
