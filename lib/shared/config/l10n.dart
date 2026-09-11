@@ -81,6 +81,8 @@ class AppText {
     'my_folders': 'My folders',
     'move': 'Move',
     'move_folders_error': 'Folders cannot be moved.',
+    'delete_folder_question':
+        'This folder contains {count} notes. Delete them with the folder?',
     'search_results': 'Results',
     'add_folder': 'Add folder',
     'folder_name': 'Folder name',
@@ -238,6 +240,8 @@ class AppText {
     'my_folders': 'Mes dossiers',
     'move': 'Déplacer',
     'move_folders_error': 'Les dossiers ne peuvent pas être déplacés.',
+    'delete_folder_question':
+        'Ce dossier contient {count} notes. Les supprimer avec le dossier ?',
     'search_results': 'Résultats',
     'add_folder': 'Ajouter un dossier',
     'folder_name': 'Nom du dossier',
@@ -395,6 +399,8 @@ class AppText {
     'my_folders': 'Ireo rakitra',
     'move': 'Hamindra',
     'move_folders_error': 'Tsy azo afindra ny rakitra.',
+    'delete_folder_question':
+        'Misy {count} naoty ity rakitra ity. Hofafana miaraka aminy ve?',
     'search_results': 'Vokatra',
     'add_folder': 'Hampiditra rakitra',
     'folder_name': 'Anaran\'ny rakitra',

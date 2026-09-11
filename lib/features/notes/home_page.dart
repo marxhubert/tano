@@ -674,6 +674,11 @@ class HomeState extends State<Home> with RouteAware {
                   context: context,
                   actionTitle: _deleteActionTitle(),
                   action: AppText.tr('delete'),
+                  message: _viewModel.hasFolderInSelection
+                      ? AppText.tr('delete_folder_question', <String, String>{
+                          'count': '${_viewModel.selectedFoldersNoteCount}',
+                        })
+                      : null,
                 );
                 if (confirmDeletion == true) {
                   await _viewModel.deleteSelected();

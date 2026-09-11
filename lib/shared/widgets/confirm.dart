@@ -8,6 +8,7 @@ Future<bool?> getConfirmation({
   required BuildContext context,
   required String actionTitle,
   required String action,
+  String? message,
 }) async {
   final ThemeData theme = Theme.of(context);
   final bool isSave = action.toLowerCase() == AppText.tr('save').toLowerCase();
@@ -20,7 +21,7 @@ Future<bool?> getConfirmation({
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: Text(actionTitle),
-        content: Text(AppText.tr('confirm_question')),
+        content: Text(message ?? AppText.tr('confirm_question')),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
@@ -57,7 +58,7 @@ Future<bool?> getConfirmation({
     builder: (context) => AlertDialog(
       scrollable: true,
       title: Text(actionTitle),
-      content: Text(AppText.tr('confirm_question')),
+      content: Text(message ?? AppText.tr('confirm_question')),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context, false),
