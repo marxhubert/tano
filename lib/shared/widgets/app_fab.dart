@@ -23,6 +23,7 @@ class AppFab extends StatefulWidget {
     this.isAddMode = false,
     this.isPinned = false,
     this.isImportant = false,
+    this.isLocked = false,
     this.controller,
     this.focusNode,
     this.onAdd,
@@ -64,6 +65,7 @@ class AppFab extends StatefulWidget {
   final bool isAddMode;
   final bool isPinned;
   final bool isImportant;
+  final bool isLocked;
   final String? currentNoteId;
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -607,8 +609,8 @@ class AppFabState extends State<AppFab> {
         onTap: widget.onShareSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.lock_outline,
-        label: AppText.tr('option_lock'),
+        icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
+        label: widget.isLocked ? AppText.tr('option_unlock') : AppText.tr('option_lock'),
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(

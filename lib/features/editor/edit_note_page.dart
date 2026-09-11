@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -25,12 +26,17 @@ class EditNote extends StatefulWidget {
   final NoteAction noteAction;
   final Note? sourceNote;
 
+  /// Whether the lock chain was already unlocked before opening this note.
+  /// When true, following a link to a locked note does not prompt again.
+  final bool authenticated;
+
   const EditNote({
     super.key,
     required this.add,
     required this.index,
     required this.noteAction,
     this.sourceNote,
+    this.authenticated = false,
   });
 
   @override
@@ -288,8 +294,7 @@ class _EditNoteState extends State<EditNote>
       title: _titleController.text,
       content: _contentController.text,
     )) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppText.tr('content_empty'))));
+      showAdaptiveNotice(context, AppText.tr('content_empty'));
     } else {
       Navigator.pop(
         context,
@@ -416,8 +421,7 @@ class _EditNoteState extends State<EditNote>
       title: _titleController.text,
       content: _contentController.text,
     )) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppText.tr('content_empty'))));
+      showAdaptiveNotice(context, AppText.tr('content_empty'));
       return;
     }
     final note = _viewModel.buildNote(
@@ -445,6 +449,17 @@ class _EditNoteState extends State<EditNote>
         notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
     if (targetNote.id.isEmpty || !mounted) return;
 
+    // Authentication carries over to linked notes: being allowed to read this
+    // note already proves the user unlocked the chain, so following a link to
+    // another locked note must not prompt again.
+    bool authenticated = widget.authenticated;
+    if (targetNote.isLocked && !authenticated) {
+      authenticated = await AuthService.instance.authenticate(
+        reason: AppText.tr('auth_reason'),
+      );
+      if (!authenticated || !mounted) return;
+    }
+
     // Save current note changes (if any) before navigating.
     final currentNote = _viewModel.buildNote(
       title: _titleController.text,
@@ -466,6 +481,7 @@ class _EditNoteState extends State<EditNote>
           add: false,
           index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: targetNote),
+          authenticated: authenticated,
         ),
         fullscreenDialog: true,
       ),
@@ -774,6 +790,21 @@ class _EditNoteState extends State<EditNote>
                               spacing: 8.0,
                               runSpacing: 4.0,
                               children: [
+                                if (_viewModel.isLocked) ...[
+                                  Icon(
+                                    Icons.lock_outline,
+                                    size: 12.0,
+                                    color: mutedTextColor(context),
+                                  ),
+                                  Text(
+                                    '|',
+                                    style: TextStyle(
+                                      color: mutedTextColor(context)
+                                          .withValues(alpha: 0.3),
+                                      fontSize: 11.0,
+                                    ),
+                                  ),
+                                ],
                                 Text(
                                   formatNoteDate(_viewModel.selectedDate.toString()),
                                   style: TextStyle(
@@ -1031,6 +1062,7 @@ class _EditNoteState extends State<EditNote>
                 isAddMode: widget.add,
                 isPinned: _viewModel.isPinned,
                 isImportant: _viewModel.important,
+                isLocked: _viewModel.isLocked,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
                 isFindMode: _isFindMode,
@@ -1115,7 +1147,37 @@ class _EditNoteState extends State<EditNote>
                 onMoveSelected: () {}, // TODO: Implement Move to
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
                 onShareSelected: () {}, // TODO: Implement Share
-                onLockSelected: () {}, // TODO: Implement Lock
+                onLockSelected: () async {
+                  FocusScope.of(context).unfocus();
+                  // Give the keyboard time to close before the system prompt.
+                  await Future.delayed(const Duration(milliseconds: 200));
+                  if (!mounted) return;
+
+                  final LockToggleResult result = await _viewModel.toggleLock();
+                  // The gesture lives in a builder, so guard its own context.
+                  if (!context.mounted) return;
+
+                  if (result == LockToggleResult.unavailable) {
+                    // No system credential: refuse rather than lock the note
+                    // forever.
+                    _fabKey.currentState?.closeVerticalMenu();
+                    await showAdaptiveAlert(
+                      context: context,
+                      title: AppText.tr('lock_unavailable_title'),
+                      message: AppText.tr('lock_requires_device_lock'),
+                    );
+                    return;
+                  }
+                  // A cancelled authentication leaves the menu open so the
+                  // user can retry.
+                  if (result == LockToggleResult.cancelled) return;
+
+                  await _viewModel.autoSaveThemeOrBookmark(
+                    title: _titleController.text,
+                    content: _contentController.text,
+                  );
+                  _fabKey.currentState?.closeVerticalMenu();
+                },
                 onDeleteSelected: () async {
                   final bool? confirmDeletion = await getConfirmation(
                     context: context,
