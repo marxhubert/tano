@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
@@ -100,10 +100,10 @@ class HomeState extends State<Home> with RouteAware {
     _wasInSelectionMode = _viewModel.isInSelectionMode;
   }
 
-  Future<SharedPreferences> _getPrefs() => SharedPreferences.getInstance();
+  Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
 
   Future<void> _loadPreferences() async {
-    final SharedPreferences prefs = await _getPrefs();
+    final SecurePreferences prefs = await _getPrefs();
     if (!prefs.containsKey('viewLayout')) {
       await prefs.setString('viewLayout', 'gridlist');
     }
@@ -125,7 +125,7 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Future<void> _saveViewLayoutPref(String viewLayout) async {
-    final SharedPreferences prefs = await _getPrefs();
+    final SecurePreferences prefs = await _getPrefs();
     await prefs.setString('viewLayout', viewLayout);
   }
 
@@ -450,7 +450,12 @@ class HomeState extends State<Home> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      // Also rebuild when the language changes: a route that stays in the
+      // stack does not rebuild on its own.
+      listenable: Listenable.merge(<Listenable>[
+        _viewModel,
+        LocaleController.instance,
+      ]),
       builder: (BuildContext context, Widget? child) {
         return PageScaffold(
           title: AppText.tr('all_notes'),

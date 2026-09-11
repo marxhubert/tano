@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shikamarx.tano"
+    namespace = "com.marxhubert.tanonote"
     compileSdk = 36
 
     compileOptions {
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.shikamarx.tano"
+        applicationId = "com.marxhubert.tanonote"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode
