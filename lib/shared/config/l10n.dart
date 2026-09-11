@@ -78,6 +78,11 @@ class AppText {
   static const Map<String, String> _en = <String, String>{
     // Home
     'all_notes': 'My notes',
+    'my_folders': 'My folders',
+    'search_results': 'Results',
+    'add_folder': 'Add folder',
+    'folder_name': 'Folder name',
+    'folder_empty': 'This folder is empty',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Search',
@@ -228,6 +233,11 @@ class AppText {
   static const Map<String, String> _fr = <String, String>{
     // Home
     'all_notes': 'Mes notes',
+    'my_folders': 'Mes dossiers',
+    'search_results': 'Résultats',
+    'add_folder': 'Ajouter un dossier',
+    'folder_name': 'Nom du dossier',
+    'folder_empty': 'Ce dossier est vide',
     'note': 'Note',
     'notes': 'Notes',
     'search': 'Rechercher',
@@ -378,6 +388,11 @@ class AppText {
   static const Map<String, String> _mg = <String, String>{
     // Home
     'all_notes': 'Ireo tanoko',
+    'my_folders': 'Ireo rakitra',
+    'search_results': 'Vokatra',
+    'add_folder': 'Hampiditra rakitra',
+    'folder_name': 'Anaran\'ny rakitra',
+    'folder_empty': 'Foana ity rakitra ity',
     'note': 'Naoty',
     'notes': 'Naoty',
     'search': 'Karohy',

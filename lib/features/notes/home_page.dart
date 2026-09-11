@@ -212,6 +212,68 @@ class HomeState extends State<Home> with RouteAware {
     return AppText.tr('delete_note');
   }
 
+  /// Prompts for a folder name and creates the folder. Empty names fall back
+  /// to "Folder X" inside the view model.
+  Future<void> _addFolder() async {
+    final TextEditingController controller = TextEditingController();
+    final bool isApple = Theme.of(context).platform == TargetPlatform.iOS ||
+        Theme.of(context).platform == TargetPlatform.macOS;
+
+    final String? name = isApple
+        ? await showCupertinoDialog<String>(
+            context: context,
+            builder: (BuildContext context) => CupertinoAlertDialog(
+              title: Text(AppText.tr('add_folder')),
+              content: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: CupertinoTextField(
+                  controller: controller,
+                  autofocus: true,
+                  placeholder: AppText.tr('folder_name'),
+                  padding: const EdgeInsets.all(8.0),
+                ),
+              ),
+              actions: <Widget>[
+                CupertinoDialogAction(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppText.tr('cancel')),
+                ),
+                CupertinoDialogAction(
+                  isDefaultAction: true,
+                  onPressed: () => Navigator.pop(context, controller.text),
+                  child: Text(AppText.tr('save')),
+                ),
+              ],
+            ),
+          )
+        : await showDialog<String>(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: Text(AppText.tr('add_folder')),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: AppText.tr('folder_name'),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppText.tr('cancel')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, controller.text),
+                  child: Text(AppText.tr('save')),
+                ),
+              ],
+            ),
+          );
+
+    if (name == null || !mounted) return;
+    await _viewModel.addFolder(name);
+  }
+
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
     showAdaptiveNoticeWithAction(
@@ -458,7 +520,7 @@ class HomeState extends State<Home> with RouteAware {
       ]),
       builder: (BuildContext context, Widget? child) {
         return PageScaffold(
-          title: AppText.tr('all_notes'),
+          title: AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
@@ -521,6 +583,7 @@ class HomeState extends State<Home> with RouteAware {
             onAdd: () {
               _openNoteEditor(add: true, note: Note());
             },
+            onAddFolder: _addFolder,
             onSearchChanged: (String value) {
               _viewModel.setSearchQuery(value);
             },
