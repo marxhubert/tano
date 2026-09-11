@@ -20,6 +20,7 @@ d'amélioration proposés, organisés par catégorie.
 | [`07-architecture-cible.md`](./07-architecture-cible.md) | **Architecture cible** : stockage SQLite/Drift, synchronisation P2P WebRTC, chiffrement E2E. |
 | [`08-charte-graphique.md`](./08-charte-graphique.md) | **Charte graphique** : couleurs, typographie, composants. |
 | [`09-securite-chiffrement.md`](./09-securite-chiffrement.md) | **Sécurité** : chiffrement du stockage au repos, clé d'installation, export/import chiffré. |
+| [`10-dossiers.md`](./10-dossiers.md) | **Dossiers** : modèle, cartes, groupes d'accueil, FAB, verrouillage, suppression, recherche. |
 
 ## Résumé exécutif
 
