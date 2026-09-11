@@ -226,6 +226,18 @@ class HomeViewModel extends ChangeNotifier {
   bool get hasFolderInSelection =>
       _folders.any((Folder f) => _selected.contains(f.id));
 
+  /// Total number of notes held by the selected folders, for the delete
+  /// confirmation.
+  int get selectedFoldersNoteCount {
+    int count = 0;
+    for (final Folder folder in _folders) {
+      if (_selected.contains(folder.id)) {
+        count += noteCountIn(folder.id);
+      }
+    }
+    return count;
+  }
+
   Future<void> deleteSelected() async {
     final List<Note> removed = <Note>[];
     final List<int> indexes = <int>[];
@@ -234,16 +246,17 @@ class HomeViewModel extends ChangeNotifier {
         .map((Folder f) => f.id)
         .toSet();
 
+    // Deleting a folder deletes its content too.
     for (final String folderId in folderIds) {
+      final List<Note> children =
+          _allNotes.where((Note n) => n.folderId == folderId).toList();
+      for (final Note note in children) {
+        await repository.trashNote(note.id);
+      }
+      _allNotes.removeWhere((Note n) => n.folderId == folderId);
       await _foldersRepository?.trashFolder(folderId);
     }
-    if (folderIds.isNotEmpty) {
-      // Trashed folders unfiled their notes; drop them from the folder groups.
-      _allNotes = _allNotes
-          .map((Note n) => folderIds.contains(n.folderId) ? n.withoutFolder() : n)
-          .toList();
-      _folders.removeWhere((Folder f) => folderIds.contains(f.id));
-    }
+    _folders.removeWhere((Folder f) => folderIds.contains(f.id));
 
     for (int i = 0; i < _allNotes.length; i++) {
       if (_selected.contains(_allNotes[i].id)) {

@@ -236,20 +236,21 @@ void main() {
   });
 
   group('deletion', () {
-    test('deleting a folder also trashes the folder and unfiles its notes', () async {
+    test('deleting a folder also trashes its notes', () async {
       final _FakeRepo repo = _FakeRepo(
         notes: <Note>[_note(id: 'n1', folderId: 'f1')],
         folders: <Folder>[_folder(id: 'f1')],
       );
       final HomeViewModel vm = _vm(repo);
       vm.enterSelectionMode('f1');
+      expect(vm.selectedFoldersNoteCount, 1);
       await vm.deleteSelected();
 
       expect(vm.folders, isEmpty);
       expect(repo.folders.single.isDeleted, isTrue);
-      // The note is unfiled and visible again, not deleted by the folder.
-      expect(vm.notes.map((Note n) => n.id), <String>['n1']);
-      expect(repo.notes.single.isDeleted, isFalse);
+      // The folder content goes to the trash with it.
+      expect(vm.notes, isEmpty);
+      expect(repo.notes.single.isDeleted, isTrue);
     });
 
     test('folders cannot be moved', () async {
