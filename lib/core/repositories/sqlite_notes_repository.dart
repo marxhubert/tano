@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
@@ -176,7 +176,7 @@ class SQLiteNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
 
     // 1. Check if database is empty and if we should seed (first-run only)
     final bool hasSeeded = prefs.getBool('database_initial_seed_done') ?? false;
