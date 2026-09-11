@@ -17,6 +17,8 @@ class AppFab extends StatefulWidget {
     this.isSearchMode = false,
     this.isSelectionMode = false,
     this.isEditorMode = false,
+    this.isFolderMode = false,
+    this.onAddNote,
     this.isFindMode = false,
     this.findCurrent = 0,
     this.findTotal = 0,
@@ -60,6 +62,13 @@ class AppFab extends StatefulWidget {
   final bool isSearchMode;
   final bool isSelectionMode;
   final bool isEditorMode;
+
+  /// Folder page: the add menu offers a cover and a new note, the more menu
+  /// offers pin, bookmark, lock and delete.
+  final bool isFolderMode;
+
+  /// Folder page: creates a note inside the folder.
+  final VoidCallback? onAddNote;
   final bool isFindMode;
   final int findCurrent;
   final int findTotal;
@@ -554,6 +563,24 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildAddMenu(BuildContext context) {
+    // On the folder page the "+" offers a cover image or a new note.
+    if (widget.isFolderMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: Icons.crop_original,
+          label: AppText.tr('option_image'),
+          onTap: widget.onImageSelected,
+        ),
+        _VerticalMenuItem(
+          icon: Icons.note_add,
+          label: AppText.tr('add_note'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAddNote?.call();
+          },
+        ),
+      ]);
+    }
     // On the home screen the "+" first offers folders, then notes, with a
     // separator in between.
     if (!widget.isEditorMode) {
@@ -613,6 +640,38 @@ class AppFabState extends State<AppFab> {
     final String capitalizedDelete = deleteLabel.isNotEmpty
         ? deleteLabel[0].toUpperCase() + deleteLabel.substring(1)
         : '';
+
+    // On the folder page only the folder-relevant actions are offered.
+    if (widget.isFolderMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+          label: AppText.tr('option_pin'),
+          iconColor: widget.isPinned ? tanoAmber : null,
+          onTap: widget.onPinSelected,
+        ),
+        _VerticalMenuItem(
+          icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+          label: AppText.tr('important'),
+          iconColor: widget.isImportant ? tanoAmber : null,
+          onTap: widget.onImportantSelected,
+        ),
+        _VerticalMenuItem(
+          icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
+          label: widget.isLocked
+              ? AppText.tr('option_unlock')
+              : AppText.tr('option_lock'),
+          onTap: widget.onLockSelected,
+        ),
+        _VerticalMenuItem(
+          icon: Icons.delete_outline,
+          label: capitalizedDelete,
+          iconColor: const Color(0xFFFF8A80),
+          textColor: const Color(0xFFFF8A80),
+          onTap: widget.onDeleteSelected,
+        ),
+      ]);
+    }
 
     return _buildVerticalList([
       _VerticalMenuItem(
