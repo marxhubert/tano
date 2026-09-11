@@ -288,6 +288,34 @@ class HomeState extends State<Home> with RouteAware {
     await _viewModel.addFolder(name);
   }
 
+  /// Moves the selected notes into a folder (or unfiles them).
+  Future<void> _moveSelected() async {
+    if (_viewModel.hasFolderInSelection) {
+      showAdaptiveNotice(context, AppText.tr('move_folders_error'));
+      return;
+    }
+    final List<Folder> folders = _viewModel.folders;
+    final String? target = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => SimpleDialog(
+        title: Text(AppText.tr('option_move')),
+        children: <Widget>[
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, ''),
+            child: Text(AppText.tr('no_folder')),
+          ),
+          for (final Folder folder in folders)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, folder.id),
+              child: Text(folder.name),
+            ),
+        ],
+      ),
+    );
+    if (target == null || !mounted) return;
+    await _viewModel.moveSelectedTo(target.isEmpty ? null : target);
+  }
+
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
     showAdaptiveNoticeWithAction(
@@ -686,12 +714,7 @@ class HomeState extends State<Home> with RouteAware {
                 }
               }
             },
-            onMoveSelected: () {
-              if (_viewModel.hasFolderInSelection) {
-                showAdaptiveNotice(context, AppText.tr('move_folders_error'));
-              }
-              // TODO: move the selected notes into a folder.
-            },
+            onMoveSelected: _moveSelected,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

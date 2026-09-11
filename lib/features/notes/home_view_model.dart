@@ -273,6 +273,23 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Moves the selected notes into [folderId], or unfiles them when null.
+  Future<void> moveSelectedTo(String? folderId) async {
+    for (int i = 0; i < _allNotes.length; i++) {
+      if (!_selected.contains(_allNotes[i].id)) continue;
+      final Note moved = folderId == null
+          ? _allNotes[i].withoutFolder()
+          : _allNotes[i].copyWith(folderId: folderId);
+      _allNotes[i] = moved;
+      await repository.upsertNote(moved);
+    }
+    _sort();
+    _selected.clear();
+    _isInSelectionMode = false;
+    _actionButtons = 'add';
+    notifyListeners();
+  }
+
   Future<void> removeNote(String id) async {
     final int index = _allNotes.indexWhere((Note note) => note.id == id);
     if (index == -1) return;

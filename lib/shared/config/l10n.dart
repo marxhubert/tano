@@ -80,6 +80,7 @@ class AppText {
     'all_notes': 'My notes',
     'my_folders': 'My folders',
     'move': 'Move',
+    'no_folder': 'No folder',
     'move_folders_error': 'Folders cannot be moved.',
     'delete_folder': 'Delete folder',
     'delete_folder_question':
@@ -240,6 +241,7 @@ class AppText {
     'all_notes': 'Mes notes',
     'my_folders': 'Mes dossiers',
     'move': 'Déplacer',
+    'no_folder': 'Aucun dossier',
     'move_folders_error': 'Les dossiers ne peuvent pas être déplacés.',
     'delete_folder': 'Supprimer le dossier',
     'delete_folder_question':
@@ -400,6 +402,7 @@ class AppText {
     'all_notes': 'Ireo tanoko',
     'my_folders': 'Ireo rakitra',
     'move': 'Hamindra',
+    'no_folder': 'Tsy misy rakitra',
     'move_folders_error': 'Tsy azo afindra ny rakitra.',
     'delete_folder': 'Fafana ny rakitra',
     'delete_folder_question':
