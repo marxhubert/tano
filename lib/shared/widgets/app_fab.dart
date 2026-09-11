@@ -638,16 +638,6 @@ class AppFabState extends State<AppFab> {
         onTap: widget.onMoveSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.person_add_alt,
-        label: AppText.tr('option_collaborators'),
-        onTap: widget.onCollaboratorsSelected,
-      ),
-      _VerticalMenuItem(
-        icon: Icons.share,
-        label: AppText.tr('option_share'),
-        onTap: widget.onShareSelected,
-      ),
-      _VerticalMenuItem(
         icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
         label: widget.isLocked ? AppText.tr('option_unlock') : AppText.tr('option_lock'),
         onTap: widget.onLockSelected,
@@ -745,6 +735,12 @@ class AppFabState extends State<AppFab> {
         : deleteLabel;
 
     return _buildHorizontalBar(targetWidth, [
+      _SelectionFabButton(
+        icon: Icons.drive_file_move_outline,
+        label: AppText.tr('move'),
+        color: Colors.white,
+        onPressed: widget.onMoveSelected ?? () {},
+      ),
       _SelectionFabButton(
         icon: Icons.delete,
         label: capitalizedDelete,

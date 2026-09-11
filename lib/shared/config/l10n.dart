@@ -79,6 +79,8 @@ class AppText {
     // Home
     'all_notes': 'My notes',
     'my_folders': 'My folders',
+    'move': 'Move',
+    'move_folders_error': 'Folders cannot be moved.',
     'search_results': 'Results',
     'add_folder': 'Add folder',
     'folder_name': 'Folder name',
@@ -234,6 +236,8 @@ class AppText {
     // Home
     'all_notes': 'Mes notes',
     'my_folders': 'Mes dossiers',
+    'move': 'Déplacer',
+    'move_folders_error': 'Les dossiers ne peuvent pas être déplacés.',
     'search_results': 'Résultats',
     'add_folder': 'Ajouter un dossier',
     'folder_name': 'Nom du dossier',
@@ -389,6 +393,8 @@ class AppText {
     // Home
     'all_notes': 'Ireo tanoko',
     'my_folders': 'Ireo rakitra',
+    'move': 'Hamindra',
+    'move_folders_error': 'Tsy azo afindra ny rakitra.',
     'search_results': 'Vokatra',
     'add_folder': 'Hampiditra rakitra',
     'folder_name': 'Anaran\'ny rakitra',
