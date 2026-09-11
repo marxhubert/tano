@@ -18,6 +18,8 @@ d'amélioration proposés, organisés par catégorie.
 | [`05-plan-tests-qualite.md`](./05-plan-tests-qualite.md) | Plan **tests & qualité** : couverture, intégration, automatisation. |
 | [`06-roadmap.md`](./06-roadmap.md) | **Feuille de route** priorisée par phases. |
 | [`07-architecture-cible.md`](./07-architecture-cible.md) | **Architecture cible** : stockage SQLite/Drift, synchronisation P2P WebRTC, chiffrement E2E. |
+| [`08-charte-graphique.md`](./08-charte-graphique.md) | **Charte graphique** : couleurs, typographie, composants. |
+| [`09-securite-chiffrement.md`](./09-securite-chiffrement.md) | **Sécurité** : chiffrement du stockage au repos, clé d'installation, export/import chiffré. |
 
 ## Résumé exécutif
 

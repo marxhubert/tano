@@ -1,4 +1,4 @@
-package com.shikamarx.tano
+package com.marxhubert.tanonote
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
