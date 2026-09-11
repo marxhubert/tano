@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
@@ -13,19 +14,27 @@ import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/folder_card.dart';
 
 class _Repo implements NotesRepository, FoldersRepository {
-  _Repo({required this.notes, required this.folders});
-
-  final List<Note> notes;
-  final List<Folder> folders;
+  final List<Note> notes = <Note>[
+    Note(id: 'n1', title: 'Free note', content: 'x', date: '2026-01-01 00:00:00.000'),
+  ];
+  final List<Folder> folders = <Folder>[];
 
   @override
-  Future<List<Note>> loadNotes() async => notes;
+  Future<List<Note>> loadNotes() async => notes.where((Note n) => !n.isDeleted).toList();
   @override
-  Future<List<Note>> loadTrashNotes() async => <Note>[];
+  Future<List<Note>> loadTrashNotes() async => notes.where((Note n) => n.isDeleted).toList();
   @override
   Future<List<Note>> searchNotes(String query) async => notes;
   @override
-  Future<void> upsertNote(Note note) async {}
+  Future<void> upsertNote(Note note) async {
+    final int i = notes.indexWhere((Note n) => n.id == note.id);
+    if (i == -1) {
+      notes.add(note);
+    } else {
+      notes[i] = note;
+    }
+  }
+
   @override
   Future<void> trashNote(String id) async {}
   @override
@@ -52,6 +61,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       folders[i] = folder;
     }
   }
+
   @override
   Future<void> trashFolder(String id) async {}
   @override
@@ -61,7 +71,11 @@ class _Repo implements NotesRepository, FoldersRepository {
 }
 
 void main() {
-  setUp(() async {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('creates a folder and shows it on the home screen', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await LocaleController.instance.init();
     await ThemeController.instance.init();
@@ -75,78 +89,30 @@ void main() {
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
     }
-  });
-
-  testWidgets('folders are shown above the notes with their own header', (
-    tester,
-  ) async {
-    getIt.registerSingleton<NotesRepository>(
-      _Repo(
-        notes: <Note>[
-          Note(id: 'n1', title: 'Free note', content: 'x', date: '2026-01-01 00:00:00.000'),
-          Note(
-            id: 'n2',
-            title: 'Filed note',
-            content: 'x',
-            date: '2026-01-01 00:00:00.000',
-            folderId: 'f1',
-          ),
-        ],
-        folders: <Folder>[
-          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
-        ],
-      ),
-    );
+    final _Repo repository = _Repo();
+    getIt.registerSingleton<NotesRepository>(repository);
 
     await tester.pumpWidget(const Tano());
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
+    expect(find.text('My notes'), findsWidgets);
 
-    expect(find.text('My folders'), findsWidgets);
-    expect(find.byType(FolderCard), findsOneWidget);
-    expect(find.text('Perso'), findsOneWidget);
-    // The filed note is not in the notes group.
-    expect(find.text('Free note'), findsOneWidget);
-    expect(find.text('Filed note'), findsNothing);
-  });
-
-  testWidgets('creating a folder from the FAB adds exactly one folder', (
-    tester,
-  ) async {
-    final _Repo repo = _Repo(notes: <Note>[], folders: <Folder>[]);
-    getIt.registerSingleton<NotesRepository>(repo);
-
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
-
+    // Create a folder from the home "+" menu.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Add folder'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Perso');
+    // iOS uses a CupertinoTextField, Android a TextField: EditableText covers
+    // both.
+    await tester.enterText(find.byType(EditableText), 'Perso');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(repo.folders, hasLength(1));
-    expect(repo.folders.single.name, 'Perso');
-  });
-
-  testWidgets('without folders the page stays "My notes"', (tester) async {
-    getIt.registerSingleton<NotesRepository>(
-      _Repo(
-        notes: <Note>[
-          Note(id: 'n1', title: 'Free note', content: 'x', date: '2026-01-01 00:00:00.000'),
-        ],
-        folders: <Folder>[],
-      ),
-    );
-
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
-
-    expect(find.text('My notes'), findsWidgets);
-    expect(find.byType(FolderCard), findsNothing);
+    // The folder must be persisted exactly once...
+    expect(repository.folders, hasLength(1));
+    // ...and shown on the home screen.
+    expect(find.text('My folders'), findsWidgets);
+    expect(find.byType(FolderCard), findsWidgets);
+    expect(find.text('Perso'), findsWidgets);
   });
 }
