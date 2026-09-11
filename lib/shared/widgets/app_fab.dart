@@ -27,6 +27,7 @@ class AppFab extends StatefulWidget {
     this.controller,
     this.focusNode,
     this.onAdd,
+    this.onAddFolder,
     this.onSearchChanged,
     this.onReset,
     this.onDelete,
@@ -70,6 +71,9 @@ class AppFab extends StatefulWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final VoidCallback? onAdd;
+
+  /// Home screen: creates a new folder.
+  final VoidCallback? onAddFolder;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onReset;
   final VoidCallback? onDelete;
@@ -542,6 +546,33 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildAddMenu(BuildContext context) {
+    // On the home screen the "+" first offers folders, then notes, with a
+    // separator in between.
+    if (!widget.isEditorMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: Icons.create_new_folder,
+          label: AppText.tr('add_folder'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAddFolder?.call();
+          },
+        ),
+        Divider(
+          height: 1.0,
+          thickness: 0.5,
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+        _VerticalMenuItem(
+          icon: Icons.note_add,
+          label: AppText.tr('add_note'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAdd?.call();
+          },
+        ),
+      ]);
+    }
     return _buildVerticalList([
       _VerticalMenuItem(
         icon: Icons.crop_original,
@@ -762,9 +793,10 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildDefaultAddButton() {
+    // The "+" expands upward to offer folders and notes.
     return IconButton(
       icon: const Icon(Icons.add, color: Colors.white),
-      onPressed: widget.onAdd,
+      onPressed: () => _toggleVerticalMenu(FabVerticalMenu.add),
     );
   }
 
