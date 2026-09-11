@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -47,6 +49,10 @@ class NoteListView extends StatelessWidget {
               viewModel.toggleFavorite(note.id);
               return false;
             }
+            if (note.isLocked) {
+              showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+              return false;
+            }
             return await confirmDelete();
           },
           onDismissed: (direction) {
@@ -55,6 +61,7 @@ class NoteListView extends StatelessWidget {
           },
           child: NoteCard(
             note: note,
+            isListLayout: true,
             isSelected: isSelected,
             isInSelectionMode: viewModel.isInSelectionMode,
             onTap: () {
