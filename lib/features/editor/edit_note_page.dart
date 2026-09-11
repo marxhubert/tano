@@ -1150,10 +1150,14 @@ class _EditNoteState extends State<EditNote>
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
                 onShareSelected: () {}, // TODO: Implement Share
                 onLockSelected: () async {
-                  FocusScope.of(context).unfocus();
-                  // Give the keyboard time to close before the system prompt.
-                  await Future.delayed(const Duration(milliseconds: 200));
-                  if (!mounted) return;
+                  // Locking takes effect immediately (there is no prompt).
+                  // Unlocking shows the system prompt, so close the keyboard
+                  // first.
+                  if (_viewModel.isLocked) {
+                    FocusScope.of(context).unfocus();
+                    await Future.delayed(const Duration(milliseconds: 200));
+                    if (!mounted) return;
+                  }
 
                   final LockToggleResult result = await _viewModel.toggleLock();
                   // The gesture lives in a builder, so guard its own context.
@@ -1174,6 +1178,8 @@ class _EditNoteState extends State<EditNote>
                   // user can retry.
                   if (result == LockToggleResult.cancelled) return;
 
+                  // Persist silently, exactly like pin and bookmark: the lock
+                  // is effective immediately, no explicit save is needed.
                   await _viewModel.autoSaveThemeOrBookmark(
                     title: _titleController.text,
                     content: _contentController.text,

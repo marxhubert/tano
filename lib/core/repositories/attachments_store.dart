@@ -58,6 +58,28 @@ class AttachmentsStore {
     return p.join(dir.path, name);
   }
 
+  /// Decrypts a stored attachment and returns its bytes (used by export).
+  Future<Uint8List> read(String name) async {
+    final Directory dir = await _dir();
+    final Uint8List encrypted =
+        await File(p.join(dir.path, name)).readAsBytes();
+    return LocalCipher.decrypt(encrypted, await _keyProvider());
+  }
+
+  /// Encrypts [bytes] under [name] unless a file already exists. Returns
+  /// whether it wrote a new file (used by import).
+  Future<bool> writeIfAbsent(String name, Uint8List bytes) async {
+    final Directory dir = await _dir();
+    final File file = File(p.join(dir.path, name));
+    if (await file.exists()) return false;
+    final Uint8List encrypted = await LocalCipher.encrypt(
+      bytes,
+      await _keyProvider(),
+    );
+    await file.writeAsBytes(encrypted, flush: true);
+    return true;
+  }
+
   /// Decrypts [name] into the cache and returns the plaintext path, for the
   /// system viewer or image widgets. The copy is reused until [remove].
   Future<String> materialize(String name) async {
