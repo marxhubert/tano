@@ -108,6 +108,33 @@ class AppText {
     'confirm_question': 'Are you sure you want to continue?',
     'quit': 'Leave',
     'retry': 'Retry',
+    'data_transfer_title': 'Import & export',
+    'desc_export_data':
+        'Save your notes and attachments to a .tano file, encrypted or not.',
+    'desc_import_data':
+        'Add notes and attachments from a .tano file. Existing notes are kept.',
+    'option_export_before_reset': 'Export my data first',
+    'desc_export_before_reset':
+        'Strongly recommended: deleted notes cannot be recovered. Export a copy first.',
+    'developer_reset': 'Developer reset',
+    'export_data': 'Export data',
+    'import_data': 'Import data',
+    'export_action': 'Export',
+    'import_action': 'Import',
+    'export_encrypt': 'Encrypt the export',
+    'export_password': 'Password',
+    'export_password_hint': '8 characters minimum',
+    'password_too_short': 'The password must be at least 8 characters.',
+    'export_locked_warning':
+        'Some notes are locked: a cleartext export will unlock them.',
+    'export_done': 'Export saved.',
+    'import_password_title': 'Encrypted export',
+    'import_password_message': 'Enter the password of this export.',
+    'import_failed': 'Import failed',
+    'import_done':
+        '{added} notes added, {skipped} skipped, {unlocked} unlocked.',
+    'import_clear_warning':
+        'Cleartext exports are not protected. Keep them safe.',
     'quit_app': 'Quit',
     'load_error_title': 'Unable to load your notes',
     'load_error_message':
@@ -231,6 +258,33 @@ class AppText {
     'confirm_question': 'Voulez-vous vraiment continuer ?',
     'quit': 'Quitter',
     'retry': 'Réessayer',
+    'data_transfer_title': 'Import & export',
+    'desc_export_data':
+        'Enregistrez vos notes et pièces jointes dans un fichier .tano, chiffré ou non.',
+    'desc_import_data':
+        "Ajoutez les notes et pièces jointes d'un fichier .tano. Les notes existantes sont conservées.",
+    'option_export_before_reset': 'Exporter mes données avant',
+    'desc_export_before_reset':
+        'Fortement recommandé : une fois supprimées, vos notes ne peuvent pas être récupérées. Exportez-en une copie avant.',
+    'developer_reset': 'Réinitialisation développeur',
+    'export_data': 'Exporter les données',
+    'import_data': 'Importer des données',
+    'export_action': 'Exporter',
+    'import_action': 'Importer',
+    'export_encrypt': "Chiffrer l'export",
+    'export_password': 'Mot de passe',
+    'export_password_hint': '8 caractères minimum',
+    'password_too_short': 'Le mot de passe doit faire au moins 8 caractères.',
+    'export_locked_warning':
+        'Des notes sont verrouillées : un export en clair les déverrouillera.',
+    'export_done': 'Export enregistré.',
+    'import_password_title': 'Export chiffré',
+    'import_password_message': "Saisissez le mot de passe de cet export.",
+    'import_failed': "Échec de l'import",
+    'import_done':
+        '{added} notes ajoutées, {skipped} ignorées, {unlocked} déverrouillées.',
+    'import_clear_warning':
+        "Les exports en clair ne sont pas protégés. Gardez-les en sécurité.",
     'quit_app': 'Quitter',
     'load_error_title': 'Impossible de charger vos notes',
     'load_error_message':
@@ -354,6 +408,33 @@ class AppText {
     'confirm_question': 'Tena te hanohy ve ianao?',
     'quit': 'Hiala',
     'retry': 'Andramo indray',
+    'data_transfer_title': 'Fanafarana & fanondranana',
+    'desc_export_data':
+        'Tehirizo ao anaty rakitra .tano ny naoty sy ny attache, voahidy na tsia.',
+    'desc_import_data':
+        'Ampio ao ny naoty sy attache avy amin\'ny rakitra .tano. Voatahiry ny naoty efa misy.',
+    'option_export_before_reset': 'Avoahy aloha ny angona',
+    'desc_export_before_reset':
+        'Tena atolotra: tsy azo averina ny naoty voafafa. Avoahy aloha ny kopian\'izy ireo.',
+    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    'export_data': 'Avoaka ny angona',
+    'import_data': 'Hampiditra angona',
+    'export_action': 'Avoaka',
+    'import_action': 'Hampiditra',
+    'export_encrypt': 'Hidio ny fanondranana',
+    'export_password': 'Teny miafina',
+    'export_password_hint': '8 litera farafahakeliny',
+    'password_too_short': 'Tokony 8 litera Farafahakeliny ny teny miafina.',
+    'export_locked_warning':
+        'Misy naoty voahidy: ny fanondranana mazava dia hamaha azy ireo.',
+    'export_done': 'Voatahiry ny fanondranana.',
+    'import_password_title': 'Fanondranana voahidy',
+    'import_password_message': 'Ampidiro ny teny miafina amin\'ity fanondranana ity.',
+    'import_failed': 'Tsy nahomby ny fampidirana',
+    'import_done':
+        '{added} naoty nampidirina, {skipped} nolavina, {unlocked} navahana.',
+    'import_clear_warning':
+        'Tsy voaaro ny fanondranana mazava. Tano tsara izy ireo.',
     'quit_app': 'Hiala',
     'load_error_title': 'Tsy afaka naka ny naoty',
     'load_error_message':

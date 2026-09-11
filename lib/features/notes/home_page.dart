@@ -450,7 +450,12 @@ class HomeState extends State<Home> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      // Also rebuild when the language changes: a route that stays in the
+      // stack does not rebuild on its own.
+      listenable: Listenable.merge(<Listenable>[
+        _viewModel,
+        LocaleController.instance,
+      ]),
       builder: (BuildContext context, Widget? child) {
         return PageScaffold(
           title: AppText.tr('all_notes'),
