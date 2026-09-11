@@ -41,6 +41,8 @@ class _FolderPageState extends State<FolderPage> {
   bool _isSearchMode = false;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
+  bool _isSelectionMode = false;
+  final Set<String> _selected = <String>{};
 
   FoldersRepository? get _foldersRepository {
     final NotesRepository repository = getIt<NotesRepository>();
@@ -161,6 +163,41 @@ class _FolderPageState extends State<FolderPage> {
     }
   }
 
+  void _enterSelection(String id) {
+    setState(() {
+      _selected.add(id);
+      _isSelectionMode = true;
+    });
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (!_selected.remove(id)) {
+        _selected.add(id);
+      }
+    });
+  }
+
+  void _exitSelection() {
+    setState(() {
+      _selected.clear();
+      _isSelectionMode = false;
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    final NotesRepository repository = getIt<NotesRepository>();
+    for (final String id in _selected.toList()) {
+      await repository.trashNote(id);
+    }
+    if (!mounted) return;
+    setState(() {
+      _notes.removeWhere((Note note) => _selected.contains(note.id));
+      _selected.clear();
+      _isSelectionMode = false;
+    });
+  }
+
   /// Notes shown: the folder content, filtered by the local search.
   List<Note> get _visibleNotes {
     final String query = _searchQuery.trim().toLowerCase();
@@ -175,27 +212,50 @@ class _FolderPageState extends State<FolderPage> {
   @override
   Widget build(BuildContext context) {
     return PageScaffold(
-      title: _folder.name,
-      actions: <Widget>[
-        IconButton(
-          icon: Icon(_isSearchMode ? Icons.close : Icons.search),
-          onPressed: () {
-            setState(() {
-              _isSearchMode = !_isSearchMode;
-              if (!_isSearchMode) {
-                _searchController.clear();
-                _searchQuery = '';
-              }
-            });
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () => _openNote(add: true, note: _newNote()),
-        ),
-      ],
+      title: _isSelectionMode
+          ? AppText.tr('selected_count', <String, String>{
+              'count': '${_selected.length}',
+            })
+          : _folder.name,
+      actions: _isSelectionMode
+          ? <Widget>[
+              TextButton(
+                onPressed: _exitSelection,
+                child: Text(
+                  AppText.tr('cancel'),
+                  style: const TextStyle(fontSize: 17.0),
+                ),
+              ),
+            ]
+          : <Widget>[
+              IconButton(
+                icon: Icon(_isSearchMode ? Icons.close : Icons.search),
+                onPressed: () {
+                  setState(() {
+                    _isSearchMode = !_isSearchMode;
+                    if (!_isSearchMode) {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    }
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _openNote(add: true, note: _newNote()),
+              ),
+            ],
       floatingActionButtonLocation: const FlushEndFabLocation(),
-      floatingActionButton: AppFab(
+      floatingActionButton: _isSelectionMode
+          ? AppFab(
+              isSelectionMode: true,
+              onDelete: _deleteSelected,
+              onClearSelection: () => setState(() => _selected.clear()),
+              onSelectAll: () => setState(
+                () => _selected.addAll(_notes.map((Note note) => note.id)),
+              ),
+            )
+          : AppFab(
         key: _fabKey,
         isEditorMode: true,
         isFolderMode: true,
@@ -313,7 +373,17 @@ class _FolderPageState extends State<FolderPage> {
   Widget _card(Note note, {required bool isList}) {
     return NoteCard(
       note: note,
-      onTap: () => _openNote(add: false, note: note),
+      isSelected: _selected.contains(note.id),
+      isInSelectionMode: _isSelectionMode,
+      onSelectionToggle: () => _toggleSelection(note.id),
+      onLongPress: () => _enterSelection(note.id),
+      onTap: () {
+        if (_isSelectionMode) {
+          _toggleSelection(note.id);
+        } else {
+          _openNote(add: false, note: note);
+        }
+      },
       builder: (BuildContext context, Color textColor) => isList
           ? ListTile(
               title: Text(
