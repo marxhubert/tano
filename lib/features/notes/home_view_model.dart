@@ -37,6 +37,11 @@ class HomeViewModel extends ChangeNotifier {
   Set<String> get selected => _selected;
   bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
+  /// Whether any of the selected notes is locked.
+  bool get hasLockedInSelection {
+    return _notes.any((n) => _selected.contains(n.id) && n.isLocked);
+  }
+
   /// IDs of all active (not deleted) notes.
   Set<String> get activeNoteIds => _notes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
 
