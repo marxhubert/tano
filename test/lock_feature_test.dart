@@ -170,7 +170,7 @@ void main() {
     await ThemeController.instance.init();
     PackageInfo.setMockInitialValues(
       appName: 'tano',
-      packageName: 'com.shikamarx.tano',
+      packageName: 'com.marxhubert.tanonote',
       version: '0.8.4',
       buildNumber: '1',
       buildSignature: '',
