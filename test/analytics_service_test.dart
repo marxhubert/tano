@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/services/analytics_service.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 
 class TestAnalyticsService extends AnalyticsService {
   bool gatherDataCalled = false;
@@ -34,20 +35,22 @@ void main() {
 
     test('collectFirstLaunchInfo calls gatherData and sets the flag on first run', () async {
       final service = TestAnalyticsService();
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SecurePreferences.getInstance();
       
       expect(prefs.getBool(prefKey), isNull);
       expect(service.gatherDataCalled, isFalse);
 
       await service.collectFirstLaunchInfo();
 
-      expect(prefs.getBool(prefKey), isTrue);
+      // A fresh read reflects what the service persisted.
+      final reread = await SecurePreferences.getInstance();
+      expect(reread.getBool(prefKey), isTrue);
       expect(service.gatherDataCalled, isTrue);
     });
 
     test('collectFirstLaunchInfo does not call gatherData if already sent', () async {
       final service = TestAnalyticsService();
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SecurePreferences.getInstance();
       await prefs.setBool(prefKey, true);
 
       await service.collectFirstLaunchInfo();

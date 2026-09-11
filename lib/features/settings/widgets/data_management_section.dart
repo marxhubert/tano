@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/features/settings/data_transfer_page.dart';
 import 'package:tano/features/settings/reset_page.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
-import 'package:tano/shared/widgets/confirm.dart';
 import 'settings_widgets.dart';
 
 class DataManagementSection extends StatelessWidget {
@@ -21,38 +21,21 @@ class DataManagementSection extends StatelessWidget {
             SettingsCard(
               children: [
                 SettingsTile(
+                  title: AppText.tr('data_transfer_title'),
+                  selected: false,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataTransferPage(),
+                    ),
+                  ),
+                ),
+                SettingsTile(
                   title: AppText.tr('option_recycle_bin'),
                   selected: false,
                   onTap: () {
                     Navigator.of(context).pushNamed('/trash');
                   },
-                ),
-                SettingsTile(
-                  title: 'Developer reset',
-                  selected: false,
-                  trailing: viewModel.isResetting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator.adaptive(strokeWidth: 2.0),
-                        )
-                      : null,
-                  onTap: viewModel.isResetting
-                      ? () {}
-                      : () async {
-                          final confirm = await getConfirmation(
-                            context: context,
-                            actionTitle: 'Developer reset',
-                            action: AppText.tr('reset'),
-                          );
-                          if (confirm == true) {
-                            await viewModel.developerReset();
-                            if (context.mounted) {
-                              Navigator.of(context)
-                                  .pushNamedAndRemoveUntil('/home', (route) => false);
-                            }
-                          }
-                        },
                 ),
                 SettingsTile(
                   title: AppText.tr('option_reset_data'),
@@ -64,7 +47,9 @@ class DataManagementSection extends StatelessWidget {
                       : () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const ResetPage()),
+                            MaterialPageRoute(
+                              builder: (context) => const ResetPage(),
+                            ),
                           );
                         },
                 ),

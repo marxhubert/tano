@@ -59,8 +59,11 @@ class SettingsFooterText extends StatelessWidget {
 }
 
 class SettingsCard extends StatelessWidget {
-  const SettingsCard({super.key, required this.children});
+  const SettingsCard({super.key, required this.children, this.color});
   final List<Widget> children;
+
+  /// Optional card background, for emphasised sections.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -82,9 +85,10 @@ class SettingsCard extends StatelessWidget {
 
     return Card(
       elevation: 0.0,
-      color: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.06)
-          : Colors.black.withValues(alpha: 0.06),
+      color: color ??
+          (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.06)),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18.0),
       ),

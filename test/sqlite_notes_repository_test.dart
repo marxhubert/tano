@@ -93,6 +93,58 @@ void main() {
       expect(await repository.loadTrashNotes(), isEmpty);
     });
 
+    test('converts a legacy plaintext database to the encrypted one', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+
+      // A database produced by a version before encryption: plain SQLite.
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          content TEXT,
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isPinned INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 5');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'legacy-enc',
+        'title': 'Before encryption',
+        'content': 'secret content',
+        'date': '2026-01-01 00:00:00.000',
+        'important': 0,
+        'category': 'note',
+        'isDeleted': 0,
+        'isPinned': 0,
+        'isLocked': 0,
+      });
+      await legacy.close();
+
+      final SQLiteNotesRepository encrypted = SQLiteNotesRepository(
+        databaseFactoryOverride: databaseFactoryFfi,
+        databasePath: path,
+        documentsDirectory: () async => tempDir,
+        passwordProvider: () async => 'test-passphrase',
+      );
+      final notes = await encrypted.loadNotes();
+
+      expect(notes.map((n) => n.id), contains('legacy-enc'));
+      expect(
+        notes.firstWhere((n) => n.id == 'legacy-enc').content,
+        'secret content',
+      );
+      // The legacy file is kept aside, never deleted.
+      expect(File('$path.plain.bak').existsSync(), isTrue);
+    });
+
     test('searchNotes escapes LIKE wildcards literally', () async {
       await repository.upsertNote(
         Note(id: 'pct', title: '100% done', content: 'x', date: '2026-01-01 00:00:00.000'),

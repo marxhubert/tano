@@ -28,23 +28,29 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PageScaffold(
-      title: AppText.tr('settings'),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: appPaddingMedium),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              const AppearanceSection(),
-              SortingSection(viewModel: _viewModel),
-              const LanguageSection(),
-              AboutSection(viewModel: _viewModel),
-              DataManagementSection(viewModel: _viewModel),
-              const SizedBox(height: 40.0),
-            ]),
+    // Rebuild the whole page when the language changes. A pushed route does not
+    // rebuild on its own, so without this the new strings would only appear
+    // after navigating away and back.
+    return ListenableBuilder(
+      listenable: LocaleController.instance,
+      builder: (context, _) => PageScaffold(
+        title: AppText.tr('settings'),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: appPaddingMedium),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const AppearanceSection(),
+                SortingSection(viewModel: _viewModel),
+                const LanguageSection(),
+                AboutSection(viewModel: _viewModel),
+                DataManagementSection(viewModel: _viewModel),
+                const SizedBox(height: 40.0),
+              ]),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

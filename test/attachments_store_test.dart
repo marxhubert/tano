@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
@@ -9,7 +10,11 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('tano_attachments_test');
-    store = AttachmentsStore(documentsDirectory: () async => tempDir);
+    store = AttachmentsStore(
+      documentsDirectory: () async => tempDir,
+      cacheDirectory: () async => tempDir,
+      keyProvider: () async => Uint8List.fromList(List<int>.filled(32, 7)),
+    );
   });
 
   tearDown(() async {
@@ -18,15 +23,31 @@ void main() {
     }
   });
 
-  test('import copies the file and returns its name', () async {
+  test('import encrypts the file and materialize decrypts it', () async {
     final File source = File('${tempDir.path}/src.txt');
     await source.writeAsString('hello');
 
     final String name = await store.import(source.path, 'note.txt');
     expect(name, 'note.txt');
 
-    final String path = await store.pathOf(name);
-    expect(await File(path).readAsString(), 'hello');
+    // The stored file must not be readable as plaintext.
+    final String storedPath = await store.pathOf(name);
+    final List<int> onDisk = await File(storedPath).readAsBytes();
+    expect(String.fromCharCodes(onDisk), isNot('hello'));
+
+    // The plaintext is only materialized on demand.
+    final String plainPath = await store.materialize(name);
+    expect(await File(plainPath).readAsString(), 'hello');
+  });
+
+  test('materialize reuses the decrypted copy', () async {
+    final File source = File('${tempDir.path}/src2.txt');
+    await source.writeAsString('payload');
+    final String name = await store.import(source.path, 'note2.txt');
+
+    final String first = await store.materialize(name);
+    final String second = await store.materialize(name);
+    expect(first, second);
   });
 
   test('import makes a unique name when the name already exists', () async {
@@ -42,13 +63,17 @@ void main() {
     expect(second, 'note (1).txt');
   });
 
-  test('remove deletes the stored file', () async {
+  test('remove deletes the stored file and the materialized copy', () async {
     final File source = File('${tempDir.path}/src.txt');
     await source.writeAsString('x');
 
     final String name = await store.import(source.path, 'note.txt');
+    final String plainPath = await store.materialize(name);
+    expect(await File(plainPath).exists(), isTrue);
+
     await store.remove(name);
 
     expect(await File(await store.pathOf(name)).exists(), isFalse);
+    expect(await File(plainPath).exists(), isFalse);
   });
 }

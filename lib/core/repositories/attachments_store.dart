@@ -1,18 +1,33 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:tano/core/services/installation_key.dart';
+import 'package:tano/core/services/local_cipher.dart';
 
-/// Stores attachment files on disk under the documents attachments directory
-/// and returns the stored file name (which is also persisted on the note).
-/// Only the name is linked from the database; the system opens the file on
-/// demand.
+/// Stores attachments and cover images **encrypted** on disk under the
+/// documents `attachments` directory.
+///
+/// Only the stored file name is persisted on the note. The plaintext is never
+/// written to that directory: it is materialized on demand into the cache for
+/// the system viewer or image widgets.
 class AttachmentsStore {
-  AttachmentsStore({Future<Directory> Function()? documentsDirectory})
-      : _documentsDirectory =
-            documentsDirectory ?? getApplicationDocumentsDirectory;
+  AttachmentsStore({
+    Future<Directory> Function()? documentsDirectory,
+    Future<Directory> Function()? cacheDirectory,
+    Future<Uint8List> Function()? keyProvider,
+  })  : _documentsDirectory =
+            documentsDirectory ?? getApplicationDocumentsDirectory,
+        _cacheDirectory = cacheDirectory ?? getTemporaryDirectory,
+        _keyProvider = keyProvider ?? InstallationKey.instance.filesKey;
 
   final Future<Directory> Function() _documentsDirectory;
+  final Future<Directory> Function() _cacheDirectory;
+  final Future<Uint8List> Function() _keyProvider;
+
+  /// Plaintext copies materialized on demand, keyed by stored name.
+  final Map<String, String> _materialized = <String, String>{};
 
   Future<Directory> _dir() async {
     final Directory docs = await _documentsDirectory();
@@ -23,27 +38,87 @@ class AttachmentsStore {
     return dir;
   }
 
-  /// Copies [sourcePath] into the attachments directory under a unique file
+  /// Encrypts [sourcePath] into the attachments directory under a unique file
   /// name and returns that stored name.
   Future<String> import(String sourcePath, String desiredName) async {
     final Directory dir = await _dir();
     final String name = await _uniqueName(dir, desiredName);
-    await File(sourcePath).copy(p.join(dir.path, name));
+    final Uint8List clear = await File(sourcePath).readAsBytes();
+    final Uint8List encrypted = await LocalCipher.encrypt(
+      clear,
+      await _keyProvider(),
+    );
+    await File(p.join(dir.path, name)).writeAsBytes(encrypted, flush: true);
     return name;
   }
 
-  /// Absolute path of a stored attachment, for opening with the system.
+  /// Absolute path of the stored (encrypted) attachment.
   Future<String> pathOf(String name) async {
     final Directory dir = await _dir();
     return p.join(dir.path, name);
   }
 
-  /// Deletes a stored attachment, if present.
+  /// Decrypts a stored attachment and returns its bytes (used by export).
+  Future<Uint8List> read(String name) async {
+    final Directory dir = await _dir();
+    final Uint8List encrypted =
+        await File(p.join(dir.path, name)).readAsBytes();
+    return LocalCipher.decrypt(encrypted, await _keyProvider());
+  }
+
+  /// Encrypts [bytes] under [name] unless a file already exists. Returns
+  /// whether it wrote a new file (used by import).
+  Future<bool> writeIfAbsent(String name, Uint8List bytes) async {
+    final Directory dir = await _dir();
+    final File file = File(p.join(dir.path, name));
+    if (await file.exists()) return false;
+    final Uint8List encrypted = await LocalCipher.encrypt(
+      bytes,
+      await _keyProvider(),
+    );
+    await file.writeAsBytes(encrypted, flush: true);
+    return true;
+  }
+
+  /// Decrypts [name] into the cache and returns the plaintext path, for the
+  /// system viewer or image widgets. The copy is reused until [remove].
+  Future<String> materialize(String name) async {
+    final String? cached = _materialized[name];
+    if (cached != null && await File(cached).exists()) return cached;
+
+    final Directory dir = await _dir();
+    final Uint8List encrypted =
+        await File(p.join(dir.path, name)).readAsBytes();
+    final Uint8List clear = await LocalCipher.decrypt(
+      encrypted,
+      await _keyProvider(),
+    );
+
+    final Directory cache = Directory(
+      p.join((await _cacheDirectory()).path, 'tano_attachments'),
+    );
+    if (!await cache.exists()) {
+      await cache.create(recursive: true);
+    }
+    final File file = File(p.join(cache.path, name));
+    await file.writeAsBytes(clear, flush: true);
+    _materialized[name] = file.path;
+    return file.path;
+  }
+
+  /// Deletes the stored attachment and any materialized plaintext copy.
   Future<void> remove(String name) async {
     final Directory dir = await _dir();
     final File file = File(p.join(dir.path, name));
     if (await file.exists()) {
       await file.delete();
+    }
+    final String? temp = _materialized.remove(name);
+    if (temp != null) {
+      final File tempFile = File(temp);
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
     }
   }
 
