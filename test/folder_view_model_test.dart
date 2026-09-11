@@ -202,7 +202,7 @@ void main() {
       expect(vm.folders, isEmpty);
       expect(vm.notes.map((Note n) => n.id), containsAll(<String>['n1', 'n3']));
       expect(vm.notes.map((Note n) => n.id), isNot(contains('n2')));
-      expect(vm.pageTitleKey, 'results');
+      expect(vm.pageTitleKey, 'search_results');
     });
   });
 

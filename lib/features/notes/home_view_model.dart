@@ -64,7 +64,7 @@ class HomeViewModel extends ChangeNotifier {
 
   /// l10n key of the page title: search results, folders or plain notes.
   String get pageTitleKey {
-    if (hasSearchQuery) return 'results';
+    if (hasSearchQuery) return 'search_results';
     if (hasFolders) return 'my_folders';
     return 'all_notes';
   }
