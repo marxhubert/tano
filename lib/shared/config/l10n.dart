@@ -81,6 +81,7 @@ class AppText {
     'my_folders': 'My folders',
     'move': 'Move',
     'no_folder': 'No folder',
+    'selected_count': '{count} selected',
     'move_folders_error': 'Folders cannot be moved.',
     'delete_folder': 'Delete folder',
     'delete_folder_question':
@@ -242,6 +243,7 @@ class AppText {
     'my_folders': 'Mes dossiers',
     'move': 'Déplacer',
     'no_folder': 'Aucun dossier',
+    'selected_count': '{count} sélectionnée(s)',
     'move_folders_error': 'Les dossiers ne peuvent pas être déplacés.',
     'delete_folder': 'Supprimer le dossier',
     'delete_folder_question':
@@ -403,6 +405,7 @@ class AppText {
     'my_folders': 'Ireo rakitra',
     'move': 'Hamindra',
     'no_folder': 'Tsy misy rakitra',
+    'selected_count': '{count} voafidy',
     'move_folders_error': 'Tsy azo afindra ny rakitra.',
     'delete_folder': 'Fafana ny rakitra',
     'delete_folder_question':
