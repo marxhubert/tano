@@ -253,6 +253,33 @@ void main() {
       expect(repo.notes.single.isDeleted, isTrue);
     });
 
+    test('moving a selected note files it in the target folder', () async {
+      final _FakeRepo repo = _FakeRepo(
+        notes: <Note>[_note(id: 'n1'), _note(id: 'n2')],
+        folders: <Folder>[_folder(id: 'f1', name: 'Perso')],
+      );
+      final HomeViewModel vm = _vm(repo);
+      vm.enterSelectionMode('n1');
+      await vm.moveSelectedTo('f1');
+
+      expect(vm.notes.map((Note n) => n.id), <String>['n2']);
+      expect(vm.noteCountIn('f1'), 1);
+      expect(repo.notes.firstWhere((Note n) => n.id == 'n1').folderId, 'f1');
+    });
+
+    test('moving a note to no folder unfiles it', () async {
+      final _FakeRepo repo = _FakeRepo(
+        notes: <Note>[_note(id: 'n1', folderId: 'f1')],
+        folders: <Folder>[_folder(id: 'f1')],
+      );
+      final HomeViewModel vm = _vm(repo);
+      vm.enterSelectionMode('n1');
+      await vm.moveSelectedTo(null);
+
+      expect(vm.notes.map((Note n) => n.id), <String>['n1']);
+      expect(vm.noteCountIn('f1'), 0);
+    });
+
     test('folders cannot be moved', () async {
       final _FakeRepo repo = _FakeRepo(folders: <Folder>[_folder(id: 'f1')]);
       final HomeViewModel vm = _vm(repo);
