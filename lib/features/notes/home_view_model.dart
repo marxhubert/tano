@@ -111,6 +111,13 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reloads only the folders (the notes were provided by the splash).
+  Future<void> loadFolders() async {
+    _folders = await _foldersRepository?.loadFolders() ?? <Folder>[];
+    _sort();
+    notifyListeners();
+  }
+
   Future<void> setSearchQuery(String query) async {
     if (_searchQuery == query) return;
     _searchQuery = query;

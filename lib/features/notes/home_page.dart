@@ -59,8 +59,14 @@ class HomeState extends State<Home> with RouteAware {
       initialNotes: widget.initialNotes,
     );
     _wasInSelectionMode = _viewModel.isInSelectionMode;
-    // Always load: the splash provides the notes, but folders are loaded here.
-    _viewModel.load();
+    if (widget.initialNotes == null) {
+      // Navigation flows that do not receive the data loaded by the splash
+      // screen fall back to loading the notes themselves.
+      _viewModel.load();
+    } else {
+      // The notes are already there; only the folders still need loading.
+      _viewModel.loadFolders();
+    }
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
   }
