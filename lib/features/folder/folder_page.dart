@@ -10,7 +10,9 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/confirm.dart';
@@ -31,10 +33,14 @@ class FolderPage extends StatefulWidget {
 class _FolderPageState extends State<FolderPage> {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
+  final TextEditingController _searchController = TextEditingController();
 
   late Folder _folder;
   List<Note> _notes = <Note>[];
   bool _loading = true;
+  bool _isSearchMode = false;
+  String _searchQuery = '';
+  String _viewLayout = 'gridlist';
 
   FoldersRepository? get _foldersRepository {
     final NotesRepository repository = getIt<NotesRepository>();
@@ -47,7 +53,22 @@ class _FolderPageState extends State<FolderPage> {
   void initState() {
     super.initState();
     _folder = widget.folder;
+    _loadPreferences();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPreferences() async {
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+    });
   }
 
   Future<void> _load() async {
@@ -84,8 +105,7 @@ class _FolderPageState extends State<FolderPage> {
     await _load();
   }
 
-  Note _newNote() =>
-      Note(folderId: _folder.id, category: _folder.category);
+  Note _newNote() => Note(folderId: _folder.id, category: _folder.category);
 
   Future<void> _selectCover() async {
     final PlatformFile? result = await FilePicker.pickFile(
@@ -99,7 +119,6 @@ class _FolderPageState extends State<FolderPage> {
 
   Future<void> _toggleLock() async {
     if (!_folder.isLocked) {
-      // Locking is refused when the device cannot authenticate.
       if (!await AuthService.instance.isAvailable()) {
         if (!mounted) return;
         await showAdaptiveAlert(
@@ -142,11 +161,34 @@ class _FolderPageState extends State<FolderPage> {
     }
   }
 
+  /// Notes shown: the folder content, filtered by the local search.
+  List<Note> get _visibleNotes {
+    final String query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return _notes;
+    return _notes
+        .where((Note note) =>
+            note.title.toLowerCase().contains(query) ||
+            note.content.toLowerCase().contains(query))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PageScaffold(
       title: _folder.name,
       actions: <Widget>[
+        IconButton(
+          icon: Icon(_isSearchMode ? Icons.close : Icons.search),
+          onPressed: () {
+            setState(() {
+              _isSearchMode = !_isSearchMode;
+              if (!_isSearchMode) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.add),
           onPressed: () => _openNote(add: true, note: _newNote()),
@@ -176,7 +218,23 @@ class _FolderPageState extends State<FolderPage> {
         onDeleteSelected: _delete,
       ),
       slivers: <Widget>[
-        if (_folder.coverImage != null)
+        if (_isSearchMode)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: AppText.tr('search'),
+                  isDense: true,
+                ),
+                onChanged: (String value) =>
+                    setState(() => _searchQuery = value),
+              ),
+            ),
+          ),
+        if (_folder.coverImage != null && !_isSearchMode)
           SliverToBoxAdapter(
             child: FutureBuilder<String>(
               future: _attachmentsStore.materialize(_folder.coverImage!),
@@ -202,55 +260,121 @@ class _FolderPageState extends State<FolderPage> {
             hasScrollBody: false,
             child: Center(child: CircularProgressIndicator.adaptive()),
           )
-        else if (_notes.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Text(
-                AppText.tr('folder_empty'),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14.0, color: mutedTextColor(context)),
-              ),
-            ),
-          )
         else
-          SliverPadding(
-            padding: const EdgeInsets.all(appPaddingMedium),
-            sliver: SliverList.separated(
-              itemCount: _notes.length,
-              itemBuilder: (BuildContext context, int index) {
-                final Note note = _notes[index];
-                return NoteCard(
-                  note: note,
-                  onTap: () => _openNote(add: false, note: note),
-                  builder: (BuildContext context, Color textColor) => ListTile(
-                    title: Text(
-                      note.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
+          _buildNotes(),
+      ],
+    );
+  }
+
+  Widget _buildNotes() {
+    final List<Note> notes = _visibleNotes;
+    if (notes.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            _isSearchMode
+                ? AppText.tr('no_note_found')
+                : AppText.tr('folder_empty'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14.0, color: mutedTextColor(context)),
+          ),
+        ),
+      );
+    }
+
+    if (_viewLayout == 'list') {
+      return SliverPadding(
+        padding: const EdgeInsets.all(appPaddingMedium),
+        sliver: SliverList.separated(
+          itemCount: notes.length,
+          itemBuilder: (BuildContext context, int index) =>
+              _card(notes[index], isList: true),
+          separatorBuilder: (BuildContext context, int index) =>
+              const SizedBox(height: 8.0),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(appPaddingMedium),
+      sliver: SliverGrid.count(
+        crossAxisCount: gridCrossAxisCount(context),
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 8.0,
+        childAspectRatio: 0.9,
+        children: notes
+            .map((Note note) => _card(note, isList: false))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _card(Note note, {required bool isList}) {
+    return NoteCard(
+      note: note,
+      onTap: () => _openNote(add: false, note: note),
+      builder: (BuildContext context, Color textColor) => isList
+          ? ListTile(
+              title: Text(
+                note.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              subtitle: Text(
+                note.content,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.0,
+                  color: textColor.withValues(alpha: 0.8),
+                ),
+              ),
+            )
+          : Container(
+              padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 4.0,
+                children: <Widget>[
+                  Text(
+                    formatNoteDate(note.date),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 8.0,
+                      color: textColor.withValues(alpha: 0.6),
                     ),
-                    subtitle: Text(
+                  ),
+                  Text(
+                    note.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11.0,
+                      color: textColor,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
                       note.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.clip,
                       style: TextStyle(
-                        fontSize: 11.0,
+                        fontSize: 10.0,
                         color: textColor.withValues(alpha: 0.8),
+                        height: 1.4,
                       ),
                     ),
                   ),
-                );
-              },
-              separatorBuilder: (BuildContext context, int index) =>
-                  const SizedBox(height: 8.0),
+                ],
+              ),
             ),
-          ),
-      ],
     );
   }
 }
