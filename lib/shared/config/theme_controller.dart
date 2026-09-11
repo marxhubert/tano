@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 
 /// Manages the application theme mode (light, dark, or system).
 class ThemeController extends ChangeNotifier {
@@ -15,7 +15,7 @@ class ThemeController extends ChangeNotifier {
 
   /// Loads the saved theme mode from preferences.
   Future<void> init() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     final String? saved = prefs.getString(_prefKey);
     if (saved == 'light') {
       _themeMode = ThemeMode.light;
@@ -32,7 +32,7 @@ class ThemeController extends ChangeNotifier {
     if (_themeMode == mode) return;
     _themeMode = mode;
     notifyListeners();
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setString(_prefKey, mode.name);
   }
 }
