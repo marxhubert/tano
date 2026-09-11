@@ -102,8 +102,11 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Loads notes and folders from the repository.
   Future<void> load() async {
-    _allNotes = await repository.loadNotes();
-    _folders = await _foldersRepository?.loadFolders() ?? <Folder>[];
+    // Copy defensively: a repository may return a list it keeps mutating.
+    _allNotes = List<Note>.of(await repository.loadNotes());
+    _folders = List<Folder>.of(
+      await _foldersRepository?.loadFolders() ?? const <Folder>[],
+    );
     if (hasSearchQuery) {
       await _refreshSearch();
     }
@@ -113,7 +116,9 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Reloads only the folders (the notes were provided by the splash).
   Future<void> loadFolders() async {
-    _folders = await _foldersRepository?.loadFolders() ?? <Folder>[];
+    _folders = List<Folder>.of(
+      await _foldersRepository?.loadFolders() ?? const <Folder>[],
+    );
     _sort();
     notifyListeners();
   }
@@ -134,7 +139,8 @@ class HomeViewModel extends ChangeNotifier {
   /// only searchable from within, with "find in note".
   Future<void> _refreshSearch() async {
     final List<Note> results = await repository.searchNotes(_searchQuery);
-    _searchResults = results.where((Note n) => !n.isLocked).toList();
+    _searchResults =
+        results.where((Note n) => !n.isLocked).toList(growable: true);
   }
 
   void setViewLayout(String viewLayout) {
