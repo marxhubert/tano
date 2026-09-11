@@ -76,9 +76,14 @@ un mot de passe de note.
      **déverrouillées** (sinon elles seraient inutilisables).
 
 ### Format
-- Extension unique **`.tano`**, avec un en-tête versionné indiquant notamment si le
-  contenu est clair ou chiffré (et les paramètres KDF le cas échéant).
-- Charge utile : `manifest.json` (notes) + `attachments/` (fichiers), empaquetés en ZIP.
+- Extension unique **`.tano`**.
+- **Export en clair** : un ZIP standard (magic `PK…`), donc lisible directement avec
+  n'importe quel outil de décompression.
+- **Export chiffré** : un conteneur `TANO1` = magic + version + sel Argon2id (16 octets)
+  + charge utile AES-GCM.
+- Charge utile : `manifest.json` (notes) + `attachments/` (fichiers), empaquetés en ZIP
+  avant l'éventuel chiffrement.
+- À l'import, le format est détecté automatiquement (magic `TANO1` → chiffré, sinon ZIP).
 
 ## 6. Sauvegardes du système d'exploitation
 
