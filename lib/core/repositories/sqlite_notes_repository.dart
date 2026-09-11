@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
@@ -16,10 +16,12 @@ class SQLiteNotesRepository implements NotesRepository {
     DatabaseFactory? databaseFactoryOverride,
     String? databasePath,
     Future<Directory> Function()? documentsDirectory,
+    Future<String?> Function()? passwordProvider,
   })  : _databaseFactory = databaseFactoryOverride ?? databaseFactory,
         _databasePath = databasePath,
         _documentsDirectory =
-            documentsDirectory ?? getApplicationDocumentsDirectory;
+            documentsDirectory ?? getApplicationDocumentsDirectory,
+        _passwordProvider = passwordProvider;
 
   /// Injectable for tests (e.g. `databaseFactoryFfi`); defaults to the
   /// platform implementation.
@@ -32,6 +34,10 @@ class SQLiteNotesRepository implements NotesRepository {
   /// Location of the legacy JSON file migrated on first launch.
   final Future<Directory> Function() _documentsDirectory;
 
+  /// Provides the SQLCipher passphrase. When null (tests), the database is
+  /// opened in the clear.
+  final Future<String?> Function()? _passwordProvider;
+
   Database? _db;
 
   Future<Database> get _database async {
@@ -40,58 +46,137 @@ class SQLiteNotesRepository implements NotesRepository {
     return _db!;
   }
 
+  static const int _schemaVersion = 5;
+
+  /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
+  /// with these bytes, an encrypted one does not.
+  static const List<int> _sqliteMagic = <int>[
+    0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, // "SQLite "
+    0x66, 0x6F, 0x72, 0x6D, 0x61, 0x74, 0x20, 0x33, // "format 3"
+    0x00,
+  ];
+
   Future<Database> _initDb() async {
     final String path = _databasePath ??
         join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
-    return await _databaseFactory.openDatabase(
+    final String? password = await _passwordProvider?.call();
+
+    // A database created before encryption must be carried over before the
+    // encrypted one takes its place.
+    final List<Map<String, Object?>>? legacyRows =
+        await _extractPlaintextRows(path, password);
+
+    final Database db = await _databaseFactory.openDatabase(
       path,
-      options: OpenDatabaseOptions(
-        version: 5,
-        onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE notes (
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            content TEXT,
-            date TEXT,
-            important INTEGER,
-            category TEXT,
-            isDeleted INTEGER DEFAULT 0,
-            isPinned INTEGER DEFAULT 0,
-            isLocked INTEGER DEFAULT 0,
-            deletedAt TEXT,
-            attachments TEXT,
-            coverImage TEXT
-          )
-        ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute(
-              'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0');
-          await db.execute(
-              'ALTER TABLE notes ADD COLUMN isPinned INTEGER DEFAULT 0');
-          await db.execute(
-              'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
-        }
-        if (oldVersion < 3) {
-          await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
-        }
-        if (oldVersion < 4) {
-          await db.execute('ALTER TABLE notes ADD COLUMN attachments TEXT');
-        }
-        if (oldVersion < 5) {
-          await db.execute('ALTER TABLE notes ADD COLUMN coverImage TEXT');
-        }
-      },
+      options: SqlCipherOpenDatabaseOptions(
+        version: _schemaVersion,
+        password: password,
+        onCreate: _createSchema,
+        onUpgrade: _upgradeSchema,
       ),
     );
+
+    if (legacyRows != null && legacyRows.isNotEmpty) {
+      final Batch batch = db.batch();
+      for (final Map<String, Object?> row in legacyRows) {
+        batch.insert(
+          'notes',
+          row,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+    }
+    return db;
+  }
+
+  /// Reads the rows of a legacy unencrypted database, then renames it so the
+  /// encrypted database can take its place. The old file is kept, never
+  /// deleted.
+  Future<List<Map<String, Object?>>?> _extractPlaintextRows(
+    String path,
+    String? password,
+  ) async {
+    if (password == null) return null;
+    final File file = File(path);
+    if (!file.existsSync()) return null;
+    if (!await _isPlaintextSqlite(file)) return null;
+
+    final Database legacy = await _databaseFactory.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: _schemaVersion,
+        onCreate: _createSchema,
+        onUpgrade: _upgradeSchema,
+      ),
+    );
+    final List<Map<String, Object?>> rows = await legacy.query('notes');
+    await legacy.close();
+    await file.rename('$path.plain.bak');
+    return rows;
+  }
+
+  Future<bool> _isPlaintextSqlite(File file) async {
+    final RandomAccessFile handle = await file.open();
+    try {
+      final List<int> header = await handle.read(_sqliteMagic.length);
+      if (header.length != _sqliteMagic.length) return false;
+      for (int i = 0; i < _sqliteMagic.length; i++) {
+        if (header[i] != _sqliteMagic[i]) return false;
+      }
+      return true;
+    } finally {
+      await handle.close();
+    }
+  }
+
+  Future<void> _createSchema(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE notes (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        content TEXT,
+        date TEXT,
+        important INTEGER,
+        category TEXT,
+        isDeleted INTEGER DEFAULT 0,
+        isPinned INTEGER DEFAULT 0,
+        isLocked INTEGER DEFAULT 0,
+        deletedAt TEXT,
+        attachments TEXT,
+        coverImage TEXT
+      )
+    ''');
+  }
+
+  Future<void> _upgradeSchema(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN isPinned INTEGER DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE notes ADD COLUMN attachments TEXT');
+    }
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE notes ADD COLUMN coverImage TEXT');
+    }
   }
 
   @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
 
     // 1. Check if database is empty and if we should seed (first-run only)
     final bool hasSeeded = prefs.getBool('database_initial_seed_done') ?? false;

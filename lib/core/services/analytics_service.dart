@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 
 class AnalyticsService {
   AnalyticsService();
@@ -13,7 +13,7 @@ class AnalyticsService {
 
   /// Collects non-private device and app information on the very first launch.
   Future<void> collectFirstLaunchInfo() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     
     // Check if we already collected this info
     if (prefs.getBool(_prefKey) ?? false) {

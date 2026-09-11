@@ -170,7 +170,7 @@ void main() {
     await ThemeController.instance.init();
     PackageInfo.setMockInitialValues(
       appName: 'tano',
-      packageName: 'com.shikamarx.tano',
+      packageName: 'com.marxhubert.tanonote',
       version: '0.8.4',
       buildNumber: '1',
       buildSignature: '',
@@ -567,6 +567,32 @@ void main() {
 
       expect(find.text('Locked notes cannot be deleted'), findsOneWidget);
       expect(repository.notes.single.isDeleted, isFalse);
+    });
+  });
+
+  group('lock persistence', () {
+    testWidgets('locking a note persists without an explicit save', (
+      tester,
+    ) async {
+      AuthService.instance = _FakeAuthService();
+      final repository = _InMemoryNotesRepository(<Note>[_note()]);
+      getIt.registerSingleton<NotesRepository>(repository);
+
+      await tester.pumpWidget(const Tano());
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Hello'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EditNote), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+
+      // No explicit save was needed: the repository already holds the lock.
+      expect(repository.notes.single.isLocked, isTrue);
     });
   });
 
