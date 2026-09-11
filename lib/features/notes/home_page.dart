@@ -147,7 +147,8 @@ class HomeState extends State<Home> with RouteAware {
     required Note note,
   }) async {
     bool authenticated = false;
-    if (note.isLocked) {
+    // A locked note filed in a locked folder does not prompt again.
+    if (_viewModel.isNoteEffectivelyLocked(note)) {
       authenticated = await AuthService.instance.authenticate(
         reason: AppText.tr('auth_reason'),
       );
@@ -679,6 +680,12 @@ class HomeState extends State<Home> with RouteAware {
                   _showUndoSnackBar();
                 }
               }
+            },
+            onMoveSelected: () {
+              if (_viewModel.hasFolderInSelection) {
+                showAdaptiveNotice(context, AppText.tr('move_folders_error'));
+              }
+              // TODO: move the selected notes into a folder.
             },
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
