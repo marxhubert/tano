@@ -228,7 +228,20 @@ class HomeState extends State<Home> with RouteAware {
 
   /// Prompts for a folder name and creates the folder. Empty names fall back
   /// to "Folder X" inside the view model.
+  bool _isAddingFolder = false;
+
   Future<void> _addFolder() async {
+    // Guard against a double submission (fast double tap / keyboard submit).
+    if (_isAddingFolder) return;
+    _isAddingFolder = true;
+    try {
+      await _promptAndCreateFolder();
+    } finally {
+      _isAddingFolder = false;
+    }
+  }
+
+  Future<void> _promptAndCreateFolder() async {
     final TextEditingController controller = TextEditingController();
     final bool isApple = Theme.of(context).platform == TargetPlatform.iOS ||
         Theme.of(context).platform == TargetPlatform.macOS;
