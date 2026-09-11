@@ -17,6 +17,7 @@ class Note {
     this.deletedAt,
     this.attachments = const <String>[],
     this.coverImage,
+    this.folderId,
   });
 
   final String id;
@@ -30,6 +31,9 @@ class Note {
   final bool isLocked;
   final String? deletedAt;
   final String? coverImage;
+
+  /// Folder this note is filed in, or null when it is unfiled.
+  final String? folderId;
 
   /// File names (stored under the attachments directory) attached to the
   /// note. Kept as opaque names; the system opens them on demand.
@@ -48,6 +52,7 @@ class Note {
         deletedAt: json['deletedAt'] as String?,
         attachments: _decodeAttachments(json['attachments']),
         coverImage: json['coverImage'] as String?,
+        folderId: json['folderId'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -63,6 +68,7 @@ class Note {
         'deletedAt': deletedAt,
         'attachments': jsonEncode(attachments),
         'coverImage': coverImage,
+        'folderId': folderId,
       };
 
   /// Canonical category name for uncategorized notes ('nuage' pastel).
@@ -92,6 +98,22 @@ class Note {
     return value;
   }
 
+  /// Returns this note with no folder (used when a folder is deleted).
+  Note withoutFolder() => Note(
+        id: id,
+        title: title,
+        content: content,
+        date: date,
+        important: important,
+        category: category,
+        isDeleted: isDeleted,
+        isPinned: isPinned,
+        isLocked: isLocked,
+        deletedAt: deletedAt,
+        attachments: attachments,
+        coverImage: coverImage,
+      );
+
   /// Returns a copy of this note with the given fields replaced.
   Note copyWith({
     String? id,
@@ -106,6 +128,7 @@ class Note {
     String? deletedAt,
     List<String>? attachments,
     String? coverImage,
+    String? folderId,
   }) {
     return Note(
       id: id ?? this.id,
@@ -120,6 +143,7 @@ class Note {
       deletedAt: deletedAt ?? this.deletedAt,
       attachments: attachments ?? this.attachments,
       coverImage: coverImage ?? this.coverImage,
+      folderId: folderId ?? this.folderId,
     );
   }
 }

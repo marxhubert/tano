@@ -1,18 +1,37 @@
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/action.dart';
 
 /// Owns the state and the actions of the home screen.
+///
+/// The home shows two groups: folders first, then the notes that are not filed
+/// in any folder. Folders are invisible to the search.
 class HomeViewModel extends ChangeNotifier {
-  HomeViewModel({required this.repository, List<Note>? initialNotes})
-      : _notes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[] {
-    _sortNotes();
+  HomeViewModel({
+    required this.repository,
+    FoldersRepository? foldersRepository,
+    List<Note>? initialNotes,
+    List<Folder>? initialFolders,
+  })  : _foldersRepository = foldersRepository,
+        _allNotes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[],
+        _folders =
+            initialFolders != null ? List<Folder>.of(initialFolders) : <Folder>[] {
+    _sort();
   }
 
   final NotesRepository repository;
 
-  List<Note> _notes;
+  /// Folders storage. Null in the many tests that only provide notes; folders
+  /// are then simply empty.
+  final FoldersRepository? _foldersRepository;
+
+  List<Note> _allNotes;
+  List<Folder> _folders;
+  List<Note>? _searchResults;
   String _searchQuery = '';
   String _sortBy = 'date';
   String _secondarySortBy = 'date';
@@ -23,9 +42,15 @@ class HomeViewModel extends ChangeNotifier {
   String _actionButtons = 'add';
   (List<Note>, List<int>)? _lastDeleted;
 
-  /// Notes currently displayed, filtered by the search query.
-  List<Note> get notes => List<Note>.unmodifiable(_filteredNotes());
-  int get notesCount => _filteredNotes().length;
+  /// Notes currently displayed: unfiled notes, or the search results.
+  List<Note> get notes => List<Note>.unmodifiable(_visibleNotes());
+
+  /// Folders currently displayed (never during a search).
+  List<Folder> get folders =>
+      hasSearchQuery ? const <Folder>[] : List<Folder>.unmodifiable(_folders);
+
+  bool get hasFolders => folders.isNotEmpty;
+  int get notesCount => _visibleNotes().length;
   String get sortBy => _sortBy;
   String get secondarySortBy => _secondarySortBy;
   bool get sortAscending => _sortAscending;
@@ -37,21 +62,52 @@ class HomeViewModel extends ChangeNotifier {
   Set<String> get selected => _selected;
   bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
-  /// Whether any of the selected notes is locked.
+  /// l10n key of the page title: search results, folders or plain notes.
+  String get pageTitleKey {
+    if (hasSearchQuery) return 'results';
+    if (hasFolders) return 'my_folders';
+    return 'all_notes';
+  }
+
+  /// Whether any selected note or folder is locked.
   bool get hasLockedInSelection {
-    return _notes.any((n) => _selected.contains(n.id) && n.isLocked);
+    return _allNotes.any((n) => _selected.contains(n.id) && n.isLocked) ||
+        _folders.any((f) => _selected.contains(f.id) && f.isLocked);
+  }
+
+  /// Whether [note] should prompt for authentication where it currently is.
+  ///
+  /// A locked note filed in a locked folder does not: opening the folder
+  /// already authenticated. Moving it out makes it locked again, because the
+  /// flag itself is never changed.
+  bool isNoteEffectivelyLocked(Note note) {
+    if (!note.isLocked) return false;
+    final Folder? folder = folderOf(note);
+    return !(folder != null && folder.isLocked);
+  }
+
+  /// Folder a note is filed in, if any.
+  Folder? folderOf(Note note) {
+    final String? id = note.folderId;
+    if (id == null) return null;
+    for (final Folder folder in _folders) {
+      if (folder.id == id) return folder;
+    }
+    return null;
   }
 
   /// IDs of all active (not deleted) notes.
-  Set<String> get activeNoteIds => _notes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
+  Set<String> get activeNoteIds =>
+      _allNotes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
 
-  /// Loads the notes from the repository.
+  /// Loads notes and folders from the repository.
   Future<void> load() async {
-    _notes = await repository.loadNotes();
+    _allNotes = await repository.loadNotes();
+    _folders = await _foldersRepository?.loadFolders() ?? <Folder>[];
     if (hasSearchQuery) {
-      _notes = await repository.searchNotes(_searchQuery);
+      await _refreshSearch();
     }
-    _sortNotes();
+    _sort();
     notifyListeners();
   }
 
@@ -59,12 +115,19 @@ class HomeViewModel extends ChangeNotifier {
     if (_searchQuery == query) return;
     _searchQuery = query;
     if (hasSearchQuery) {
-      _notes = await repository.searchNotes(_searchQuery);
+      await _refreshSearch();
     } else {
-      _notes = await repository.loadNotes();
+      _searchResults = null;
     }
-    _sortNotes();
+    _sort();
     notifyListeners();
+  }
+
+  /// Runs the repository search, then drops the locked notes: locked notes are
+  /// only searchable from within, with "find in note".
+  Future<void> _refreshSearch() async {
+    final List<Note> results = await repository.searchNotes(_searchQuery);
+    _searchResults = results.where((Note n) => !n.isLocked).toList();
   }
 
   void setViewLayout(String viewLayout) {
@@ -80,31 +143,40 @@ class HomeViewModel extends ChangeNotifier {
     if (sortBy == 'alpha' || sortBy == 'date') {
       _secondarySortBy = sortBy;
     }
-    _sortNotes();
+    _sort();
     notifyListeners();
   }
 
   void setSecondarySortBy(String sortBy) {
     if (_secondarySortBy == sortBy) return;
     _secondarySortBy = sortBy;
-    _sortNotes();
+    _sort();
     notifyListeners();
   }
 
   void setSortAscending(bool ascending) {
     if (_sortAscending == ascending) return;
     _sortAscending = ascending;
-    _sortNotes();
+    _sort();
     notifyListeners();
   }
 
   void toggleFavorite(String id) {
-    final int index = _notes.indexWhere((Note note) => note.id == id);
-    if (index == -1) return;
-    final Note note = _notes[index];
-    _notes[index] = note.copyWith(important: !note.important);
-    repository.upsertNote(_notes[index]);
-    notifyListeners();
+    final int noteIndex = _allNotes.indexWhere((Note note) => note.id == id);
+    if (noteIndex != -1) {
+      final Note note = _allNotes[noteIndex];
+      _allNotes[noteIndex] = note.copyWith(important: !note.important);
+      repository.upsertNote(_allNotes[noteIndex]);
+      notifyListeners();
+      return;
+    }
+    final int folderIndex = _folders.indexWhere((Folder f) => f.id == id);
+    if (folderIndex != -1) {
+      final Folder folder = _folders[folderIndex];
+      _folders[folderIndex] = folder.copyWith(important: !folder.important);
+      _foldersRepository?.upsertFolder(_folders[folderIndex]);
+      notifyListeners();
+    }
   }
 
   void enterSelectionMode(String id) {
@@ -122,8 +194,11 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void selectAll() {
-    for (final Note note in _filteredNotes()) {
+    for (final Note note in _visibleNotes()) {
       _selected.add(note.id);
+    }
+    for (final Folder folder in folders) {
+      _selected.add(folder.id);
     }
     notifyListeners();
   }
@@ -140,17 +215,37 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether the selection contains a folder, which cannot be moved.
+  bool get hasFolderInSelection =>
+      _folders.any((Folder f) => _selected.contains(f.id));
+
   Future<void> deleteSelected() async {
     final List<Note> removed = <Note>[];
     final List<int> indexes = <int>[];
-    for (int i = 0; i < _notes.length; i++) {
-      if (_selected.contains(_notes[i].id)) {
-        removed.add(_notes[i]);
+    final Set<String> folderIds = _folders
+        .where((Folder f) => _selected.contains(f.id))
+        .map((Folder f) => f.id)
+        .toSet();
+
+    for (final String folderId in folderIds) {
+      await _foldersRepository?.trashFolder(folderId);
+    }
+    if (folderIds.isNotEmpty) {
+      // Trashed folders unfiled their notes; drop them from the folder groups.
+      _allNotes = _allNotes
+          .map((Note n) => folderIds.contains(n.folderId) ? n.withoutFolder() : n)
+          .toList();
+      _folders.removeWhere((Folder f) => folderIds.contains(f.id));
+    }
+
+    for (int i = 0; i < _allNotes.length; i++) {
+      if (_selected.contains(_allNotes[i].id)) {
+        removed.add(_allNotes[i]);
         indexes.add(i);
-        await repository.trashNote(_notes[i].id);
+        await repository.trashNote(_allNotes[i].id);
       }
     }
-    _notes.removeWhere((Note note) => _selected.contains(note.id));
+    _allNotes.removeWhere((Note note) => _selected.contains(note.id));
     _lastDeleted = (removed, indexes);
     _selected.clear();
     _isInSelectionMode = false;
@@ -159,11 +254,11 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> removeNote(String id) async {
-    final int index = _notes.indexWhere((Note note) => note.id == id);
+    final int index = _allNotes.indexWhere((Note note) => note.id == id);
     if (index == -1) return;
-    final Note note = _notes[index];
+    final Note note = _allNotes[index];
     await repository.trashNote(id);
-    _notes.removeAt(index);
+    _allNotes.removeAt(index);
     _lastDeleted = (<Note>[note], <int>[index]);
     notifyListeners();
   }
@@ -174,24 +269,74 @@ class HomeViewModel extends ChangeNotifier {
     final List<Note> notesToRestore = record.$1;
     final List<int> originalIndexes = record.$2;
     for (int i = 0; i < notesToRestore.length; i++) {
-      final note = notesToRestore[i];
+      final Note note = notesToRestore[i];
       await repository.restoreNote(note.id);
-      final index = originalIndexes[i] > _notes.length ? _notes.length : originalIndexes[i];
-      _notes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
+      final int index =
+          originalIndexes[i] > _allNotes.length ? _allNotes.length : originalIndexes[i];
+      _allNotes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
     }
     _lastDeleted = null;
     notifyListeners();
   }
 
   Future<void> togglePin(String id) async {
-    final int index = _notes.indexWhere((Note note) => note.id == id);
+    final int folderIndex = _folders.indexWhere((Folder f) => f.id == id);
+    if (folderIndex != -1) {
+      await _foldersRepository?.toggleFolderPin(id);
+      final Folder folder = _folders[folderIndex];
+      _folders[folderIndex] = folder.copyWith(isPinned: !folder.isPinned);
+      _sort();
+      notifyListeners();
+      return;
+    }
+    final int index = _allNotes.indexWhere((Note note) => note.id == id);
     if (index == -1) return;
     await repository.togglePin(id);
-    final Note note = _notes[index];
-    _notes[index] = note.copyWith(isPinned: !note.isPinned);
-    _sortNotes();
+    final Note note = _allNotes[index];
+    _allNotes[index] = note.copyWith(isPinned: !note.isPinned);
+    _sort();
     notifyListeners();
   }
+
+  /// Creates a folder. An empty [name] falls back to "Folder X".
+  Future<Folder> addFolder(String name) async {
+    final String trimmed = name.trim();
+    final String folderName = trimmed.isNotEmpty
+        ? trimmed
+        : await _foldersRepository?.nextFolderName() ?? 'Folder 1';
+    final Folder folder = Folder(
+      id: const Uuid().v4(),
+      name: folderName,
+      date: DateTime.now().toString(),
+    );
+    await _foldersRepository?.upsertFolder(folder);
+    _folders.add(folder);
+    _sort();
+    notifyListeners();
+    return folder;
+  }
+
+  /// Persists a folder change (name, theme, cover, lock…).
+  Future<void> saveFolder(Folder folder) async {
+    final int index = _folders.indexWhere((Folder f) => f.id == folder.id);
+    if (index != -1) {
+      _folders[index] = folder;
+    } else {
+      _folders.add(folder);
+    }
+    await _foldersRepository?.upsertFolder(folder);
+    _sort();
+    notifyListeners();
+  }
+
+  /// Notes filed in [folderId], sorted with the current criteria.
+  List<Note> notesInFolder(String folderId) {
+    return _allNotes.where((Note n) => n.folderId == folderId).toList();
+  }
+
+  /// Number of notes filed in [folderId].
+  int noteCountIn(String folderId) =>
+      _allNotes.where((Note n) => n.folderId == folderId).length;
 
   Future<void> applyNoteAction({
     required bool add,
@@ -201,23 +346,23 @@ class HomeViewModel extends ChangeNotifier {
     switch (action.kind) {
       case NoteActionKind.save:
         if (add) {
-          _notes.add(action.note!);
+          _allNotes.add(action.note!);
         } else {
-          final int index = _notes.indexWhere(
+          final int index = _allNotes.indexWhere(
             (Note note) => note.id == originalId,
           );
           if (index != -1) {
-            _notes[index] = action.note!;
+            _allNotes[index] = action.note!;
           }
         }
         await repository.upsertNote(action.note!);
         break;
       case NoteActionKind.delete:
-        final int index = _notes.indexWhere(
+        final int index = _allNotes.indexWhere(
           (Note note) => note.id == originalId,
         );
         if (index != -1) {
-          final Note removed = _notes.removeAt(index);
+          final Note removed = _allNotes.removeAt(index);
           await repository.trashNote(originalId);
           _lastDeleted = (<Note>[removed], <int>[index]);
         }
@@ -228,31 +373,58 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Note> _filteredNotes() {
-    return _notes;
+  List<Note> _visibleNotes() {
+    final List<Note> source =
+        hasSearchQuery ? (_searchResults ?? <Note>[]) : _unfiledNotes();
+    return List<Note>.of(source);
   }
 
-  void _sortNotes() {
-    _notes.sort((note1, note2) {
-      // 1. Priority to Pinned notes
-      if (note1.isPinned && !note2.isPinned) return -1;
-      if (!note1.isPinned && note2.isPinned) return 1;
+  List<Note> _unfiledNotes() =>
+      _allNotes.where((Note note) => note.folderId == null).toList();
 
-      // 2. Then follow the user criteria
-      int comparison = _compare(note1, note2, _sortBy);
+  void _sort() {
+    _allNotes.sort(_compareNotes);
+    _folders.sort(_compareFolders);
+  }
 
-      if (comparison == 0 && (_sortBy == 'important' || _sortBy == 'theme')) {
-        // Compose with the last chosen "Title" or "Date" if primary sort is equal
-        comparison = _compare(note1, note2, _secondarySortBy);
-      }
+  int _compareNotes(Note note1, Note note2) {
+    return _compareEntities(
+      pinned1: note1.isPinned,
+      pinned2: note2.isPinned,
+      compare: () => _compare(note1, note2, _sortBy),
+      fallbackCompare: () => _compare(note1, note2, _secondarySortBy),
+      dateCompare: () => _compare(note1, note2, 'date'),
+    );
+  }
 
-      if (comparison == 0 && _sortBy != 'date' && _secondarySortBy != 'date') {
-        // Absolute fallback to date (newest first)
-        comparison = _compare(note1, note2, 'date');
-      }
+  int _compareFolders(Folder folder1, Folder folder2) {
+    return _compareEntities(
+      pinned1: folder1.isPinned,
+      pinned2: folder2.isPinned,
+      compare: () => _compareFolder(folder1, folder2, _sortBy),
+      fallbackCompare: () => _compareFolder(folder1, folder2, _secondarySortBy),
+      dateCompare: () => _compareFolder(folder1, folder2, 'date'),
+    );
+  }
 
-      return _sortAscending ? comparison : -comparison;
-    });
+  int _compareEntities({
+    required bool pinned1,
+    required bool pinned2,
+    required int Function() compare,
+    required int Function() fallbackCompare,
+    required int Function() dateCompare,
+  }) {
+    if (pinned1 && !pinned2) return -1;
+    if (!pinned1 && pinned2) return 1;
+
+    int comparison = compare();
+    if (comparison == 0 && (_sortBy == 'important' || _sortBy == 'theme')) {
+      comparison = fallbackCompare();
+    }
+    if (comparison == 0 && _sortBy != 'date' && _secondarySortBy != 'date') {
+      comparison = dateCompare();
+    }
+    return _sortAscending ? comparison : -comparison;
   }
 
   int _compare(Note note1, Note note2, String criteria) {
@@ -269,6 +441,25 @@ class HomeViewModel extends ChangeNotifier {
       case 'category':
         return _themeWeight(note1.category)
             .compareTo(_themeWeight(note2.category));
+      default:
+        return 0;
+    }
+  }
+
+  int _compareFolder(Folder folder1, Folder folder2, String criteria) {
+    switch (criteria) {
+      case 'alpha':
+        return folder1.name.toLowerCase().compareTo(folder2.name.toLowerCase());
+      case 'date':
+        return folder2.date.compareTo(folder1.date);
+      case 'important':
+        final int a = folder1.important ? 1 : 0;
+        final int b = folder2.important ? 1 : 0;
+        return b.compareTo(a);
+      case 'theme':
+      case 'category':
+        return _themeWeight(folder1.category)
+            .compareTo(_themeWeight(folder2.category));
       default:
         return 0;
     }
