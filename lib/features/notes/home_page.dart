@@ -2,12 +2,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/features/notes/widgets/folder_grid_view.dart';
+import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/core/models/action.dart';
@@ -44,16 +49,18 @@ class HomeState extends State<Home> with RouteAware {
   @override
   void initState() {
     super.initState();
+    final NotesRepository repository = getIt<NotesRepository>();
     _viewModel = HomeViewModel(
-      repository: getIt<NotesRepository>(),
+      repository: repository,
+      // The SQLite repository also knows about folders; the in-memory test
+      // doubles only implement notes, in which case folders stay empty.
+      foldersRepository:
+          repository is FoldersRepository ? repository as FoldersRepository : null,
       initialNotes: widget.initialNotes,
     );
     _wasInSelectionMode = _viewModel.isInSelectionMode;
-    if (widget.initialNotes == null) {
-      // Navigation flows that do not receive the data loaded by the
-      // splash screen fall back to loading the notes themselves.
-      _viewModel.load();
-    }
+    // Always load: the splash provides the notes, but folders are loaded here.
+    _viewModel.load();
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
   }
@@ -303,6 +310,10 @@ class HomeState extends State<Home> with RouteAware {
       );
     }
 
+    return _notesSliver(notes, viewLayout);
+  }
+
+  Widget _notesSliver(List<Note> notes, String viewLayout) {
     switch (viewLayout) {
       case 'gridlist':
         return NoteGridView(
@@ -322,6 +333,64 @@ class HomeState extends State<Home> with RouteAware {
           confirmDelete: _confirmDelete,
         );
     }
+  }
+
+  /// Home content: the folder group on top, then the unfiled notes.
+  Widget _buildHomeContent() {
+    final List<Folder> folders = _viewModel.folders;
+    final List<Note> notes = _viewModel.notes;
+    final String viewLayout = _viewModel.viewLayout;
+
+    if (folders.isEmpty) {
+      return _layoutChanger(notes, viewLayout);
+    }
+
+    return SliverMainAxisGroup(
+      slivers: <Widget>[
+        _sectionHeader(AppText.tr('my_folders')),
+        if (viewLayout == 'list')
+          FolderListView(viewModel: _viewModel, onOpenFolder: _openFolder)
+        else
+          FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
+        const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+        if (notes.isNotEmpty) ...<Widget>[
+          _sectionHeader(AppText.tr('all_notes')),
+          _notesSliver(notes, viewLayout),
+        ],
+      ],
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 15.0,
+            fontWeight: FontWeight.bold,
+            color: mutedTextColor(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openFolder(Folder folder) async {
+    if (folder.isLocked) {
+      final bool authenticated = await AuthService.instance.authenticate(
+        reason: AppText.tr('auth_reason'),
+      );
+      if (!authenticated || !mounted) return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => FolderPage(folder: folder),
+      ),
+    );
+    await _viewModel.load();
   }
 
   Future<bool?> _confirmDelete() {
@@ -571,7 +640,7 @@ class HomeState extends State<Home> with RouteAware {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(appPaddingMedium),
-              sliver: _layoutChanger(_viewModel.notes, _viewModel.viewLayout),
+              sliver: _buildHomeContent(),
             ),
           ],
           floatingActionButtonLocation: const FlushEndFabLocation(),
