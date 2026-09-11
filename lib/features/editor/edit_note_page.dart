@@ -605,7 +605,7 @@ class _EditNoteState extends State<EditNote>
 
   /// Opens an attached file with the system's default app.
   Future<void> _openAttachment(String name) async {
-    final String path = await _attachmentsStore.pathOf(name);
+    final String path = await _attachmentsStore.materialize(name);
     await OpenFilex.open(path);
   }
 
@@ -902,7 +902,9 @@ class _EditNoteState extends State<EditNote>
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       child: FutureBuilder<String>(
-                        future: _attachmentsStore.pathOf(_viewModel.coverImage!),
+                        future: _attachmentsStore.materialize(
+                          _viewModel.coverImage!,
+                        ),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const SizedBox.shrink();
                           return Stack(

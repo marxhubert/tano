@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -28,7 +28,7 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Future<void> setSorting(String sortBy) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setString('sortBy', sortBy);
     if (sortBy == 'alpha' || sortBy == 'date') {
       await prefs.setString('secondarySortBy', sortBy);
@@ -36,17 +36,17 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Future<String> getSorting() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     return prefs.getString('sortBy') ?? 'date';
   }
 
   Future<void> setSortAscending(bool ascending) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setBool('sortAscending', ascending);
   }
 
   Future<bool> getSortAscending() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     return prefs.getBool('sortAscending') ?? true;
   }
 
@@ -61,14 +61,14 @@ class SettingsViewModel extends ChangeNotifier {
       if (deleteData) {
         await getIt<NotesRepository>().deleteAllNotes();
         // Also clear analytics flag so it re-collects on next "first" launch
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        final SecurePreferences prefs = await SecurePreferences.getInstance();
         await prefs.remove('firstLaunchAnalyticsSent');
         // Ensure we don't auto-seed fixtures on next load
         await prefs.setBool('database_initial_seed_done', true);
       }
 
       if (deletePrefs) {
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        final SecurePreferences prefs = await SecurePreferences.getInstance();
         // Keep the analytics flag if we are NOT deleting data
         final bool? analyticsSent = prefs.getBool('firstLaunchAnalyticsSent');
         
@@ -111,7 +111,7 @@ class SettingsViewModel extends ChangeNotifier {
       await getIt<NotesRepository>().deleteAllNotes();
 
       // 2. Clear all preferences (theme, language, sorting, etc.)
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SecurePreferences prefs = await SecurePreferences.getInstance();
       await prefs.clear();
 
       // 3. Re-seed fixtures

@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/shared/config/secure_preferences.dart';
 
 /// Application language manager.
 ///
@@ -23,7 +23,7 @@ class LocaleController extends ChangeNotifier {
   /// Loads the saved language, or detects it automatically on first launch
   /// based on the user's country and system language.
   Future<void> init() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     final String? saved = prefs.getString(_prefKey);
 
     if (saved != null && supportedLanguages.contains(saved)) {
@@ -63,7 +63,7 @@ class LocaleController extends ChangeNotifier {
   Future<void> setLanguage(String language) async {
     _language = language;
     notifyListeners();
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setString(_prefKey, language);
   }
 }
@@ -107,6 +107,11 @@ class AppText {
     'results': '{count} matching results',
     'confirm_question': 'Are you sure you want to continue?',
     'quit': 'Leave',
+    'retry': 'Retry',
+    'quit_app': 'Quit',
+    'load_error_title': 'Unable to load your notes',
+    'load_error_message':
+        'Something went wrong while opening the app. You can try again.',
     'cancel': 'Cancel',
     'ok': 'OK',
     'back': 'Back',
@@ -225,6 +230,11 @@ class AppText {
     'results': '{count} résultats correspondants',
     'confirm_question': 'Voulez-vous vraiment continuer ?',
     'quit': 'Quitter',
+    'retry': 'Réessayer',
+    'quit_app': 'Quitter',
+    'load_error_title': 'Impossible de charger vos notes',
+    'load_error_message':
+        "Une erreur est survenue à l'ouverture de l'application. Vous pouvez réessayer.",
     'cancel': 'Annuler',
     'ok': 'OK',
     'back': 'Retour',
@@ -343,6 +353,11 @@ class AppText {
     'results': 'Valiny {count} hita',
     'confirm_question': 'Tena te hanohy ve ianao?',
     'quit': 'Hiala',
+    'retry': 'Andramo indray',
+    'quit_app': 'Hiala',
+    'load_error_title': 'Tsy afaka naka ny naoty',
+    'load_error_message':
+        'Nisy olana teo am-panokafana ny rindranasa. Afaka manandrana indray ianao.',
     'cancel': 'Atsaharo',
     'ok': 'OK',
     'back': 'Hiverina',
