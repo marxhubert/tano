@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -18,6 +20,7 @@ class NoteCard extends StatelessWidget {
     this.isSelected = false,
     this.isInSelectionMode = false,
     this.onSelectionToggle,
+    this.isListLayout = false,
   });
 
   final Note note;
@@ -27,6 +30,48 @@ class NoteCard extends StatelessWidget {
   final bool isSelected;
   final bool isInSelectionMode;
   final VoidCallback? onSelectionToggle;
+
+  /// Whether the card sits in the list layout. Only the locked placeholder
+  /// differs: a list row keeps two title lines, left aligned, while a grid
+  /// tile centers up to three.
+  final bool isListLayout;
+
+  static Widget _lockedIcon(Color textColor) {
+    return Icon(
+      Icons.lock_outline,
+      size: 20.0,
+      color: textColor.withValues(alpha: 0.6),
+    );
+  }
+
+  static Widget _lockedTitle(
+    Note note,
+    Color textColor, {
+    required TextAlign align,
+    required int maxLines,
+  }) {
+    return Text(
+      note.title.isEmpty ? AppText.tr('no_title') : note.title,
+      textAlign: align,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 12.0,
+        fontWeight: FontWeight.bold,
+        color: textColor,
+      ),
+    );
+  }
+
+  static Widget _lockedDate(Note note, Color textColor) {
+    return Text(
+      formatNoteDate(note.date),
+      style: TextStyle(
+        fontSize: 9.0,
+        color: textColor.withValues(alpha: 0.6),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +130,74 @@ class NoteCard extends StatelessWidget {
             onLongPress: onLongPress,
             child: builder(context, textColor),
           ),
+
+          // A locked note shows nothing but its lock, title and date.
+          if (note.isLocked)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: onTap,
+                onLongPress: onLongPress,
+                child: Container(
+                  color: bgColor,
+                  child: isListLayout
+                      // List: lock on the left, title and date stacked right.
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                            ),
+                            child: Row(
+                              children: <Widget>[
+                                _lockedIcon(textColor),
+                                const SizedBox(width: 10.0),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      _lockedTitle(
+                                        note,
+                                        textColor,
+                                        align: TextAlign.start,
+                                        maxLines: 2,
+                                      ),
+                                      const SizedBox(height: 2.0),
+                                      _lockedDate(note, textColor),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      // Grid: everything centered in the tile.
+                      : Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                _lockedIcon(textColor),
+                                const SizedBox(height: 6.0),
+                                _lockedTitle(
+                                  note,
+                                  textColor,
+                                  align: TextAlign.center,
+                                  maxLines: 3,
+                                ),
+                                const SizedBox(height: 2.0),
+                                _lockedDate(note, textColor),
+                              ],
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ),
 
           // Selection Overlay
           if (isInSelectionMode)

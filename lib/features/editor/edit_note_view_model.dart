@@ -2,6 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/shared/config/l10n.dart';
+
+/// Outcome of [EditNoteViewModel.toggleLock], so the UI can react to each case.
+enum LockToggleResult {
+  /// The note is now locked.
+  locked,
+
+  /// The note is now unlocked.
+  unlocked,
+
+  /// The user cancelled or failed the system authentication.
+  cancelled,
+
+  /// The device has no system credential, so the note cannot be locked.
+  unavailable,
+}
 
 /// Owns the form state and the note-building logic of the edit screen.
 class EditNoteViewModel extends ChangeNotifier {
@@ -63,6 +80,31 @@ class EditNoteViewModel extends ChangeNotifier {
   void togglePin() {
     isPinned = !isPinned;
     notifyListeners();
+  }
+
+  /// Locks or unlocks the note.
+  ///
+  /// Locking is immediate: there is nothing to protect yet. It is however
+  /// refused when the device has no system credential, since the note could
+  /// then never be unlocked again. Unlocking always requires the system
+  /// credential.
+  Future<LockToggleResult> toggleLock() async {
+    if (isLocked) {
+      final bool authenticated = await AuthService.instance.authenticate(
+        reason: AppText.tr('auth_reason'),
+      );
+      if (!authenticated) return LockToggleResult.cancelled;
+      isLocked = false;
+      notifyListeners();
+      return LockToggleResult.unlocked;
+    }
+
+    if (!await AuthService.instance.isAvailable()) {
+      return LockToggleResult.unavailable;
+    }
+    isLocked = true;
+    notifyListeners();
+    return LockToggleResult.locked;
   }
 
   void setCategory(String category) {

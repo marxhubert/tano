@@ -5,6 +5,7 @@ import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -132,6 +133,15 @@ class HomeState extends State<Home> with RouteAware {
     required bool add,
     required Note note,
   }) async {
+    bool authenticated = false;
+    if (note.isLocked) {
+      authenticated = await AuthService.instance.authenticate(
+        reason: AppText.tr('auth_reason'),
+      );
+      // The system prompt is awaited: the widget may be gone by now.
+      if (!authenticated || !mounted) return;
+    }
+
     final NoteAction? result = await Navigator.push(
       context,
       MaterialPageRoute<NoteAction>(
@@ -139,6 +149,7 @@ class HomeState extends State<Home> with RouteAware {
           add: add,
           index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
+          authenticated: authenticated,
         ),
         fullscreenDialog: true,
       ),
@@ -202,24 +213,13 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   void _showUndoSnackBar() {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(AppText.tr('note_deleted')),
-          duration: const Duration(seconds: 3),
-          // A SnackBar with an action defaults to persist: true, which makes
-          // the timeout a no-op. Opt back into the timed auto-dismiss.
-          persist: false,
-          action: SnackBarAction(
-            label: AppText.tr('undo'),
-            onPressed: () {
-              _viewModel.undoLastDelete();
-            },
-          ),
-        ),
-      );
+    ScaffoldMessenger.of(context).clearSnackBars();
+    showAdaptiveNoticeWithAction(
+      context: context,
+      message: AppText.tr('note_deleted'),
+      actionLabel: AppText.tr('undo'),
+      onAction: _viewModel.undoLastDelete,
+    );
   }
 
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
@@ -523,6 +523,8 @@ class HomeState extends State<Home> with RouteAware {
             onDelete: () async {
               if (!_viewModel.hasSelection) {
                 // TODO: No action needed for now, maybe show a hint?
+              } else if (_viewModel.hasLockedInSelection) {
+                showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
               } else {
                 final bool? confirmDeletion = await getConfirmation(
                   context: context,

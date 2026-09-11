@@ -4,6 +4,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -35,9 +36,7 @@ class SplashScreenState extends State<SplashScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error while loading : $e')));
+      showAdaptiveNotice(context, 'Error while loading : $e');
     }
   }
 
