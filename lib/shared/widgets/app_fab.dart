@@ -193,6 +193,10 @@ class AppFabState extends State<AppFab> {
     if (widget.isEditorMode && !widget.isFindMode) {
       isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
     }
+    // The home "+" is not "expanded" by itself, but its menu must stay open.
+    if (!widget.isEditorMode && isMenuOpen) {
+      isExpanded = true;
+    }
 
     if (!isExpanded && isMenuOpen) {
       _verticalMenu = FabVerticalMenu.none;
@@ -250,7 +254,11 @@ class AppFabState extends State<AppFab> {
     }
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      // The home add-menu must not be laid out while the bar animates from the
+      // collapsed circle, where it would overflow: open it instantly.
+      duration: !widget.isEditorMode && isMenuOpen
+          ? Duration.zero
+          : const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       height: currentHeight,
       width: currentWidth,
