@@ -67,12 +67,25 @@ class FolderCard extends StatelessWidget {
                 color: tanoAmber.withValues(alpha: 0.8),
               ),
             ),
+          // Same position as a pinned note's indicator.
+          if (folder.isPinned)
+            Positioned(
+              top: 2.0,
+              left: 2.0,
+              child: Icon(
+                Icons.push_pin,
+                size: 14.0,
+                color: textColor.withValues(alpha: 0.5),
+              ),
+            ),
           InkWell(
             onTap: onTap,
             onLongPress: onLongPress,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 6.0),
-              child: isListLayout ? _buildList(textColor) : _buildGrid(textColor),
+              child: isListLayout
+                  ? _buildList(textColor, bgColor)
+                  : _buildGrid(textColor, bgColor),
             ),
           ),
           if (isInSelectionMode)
@@ -82,16 +95,38 @@ class FolderCard extends StatelessWidget {
                 child: Container(
                   color: isSelected ? Colors.black38 : Colors.black12,
                   child: Align(
-                    alignment: Alignment.topLeft,
+                    alignment: Alignment.topRight,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Icon(
-                        isSelected
-                            ? Icons.check_circle
-                            : Icons.panorama_fish_eye,
-                        size: 24.0,
-                        color: isDark ? TanoStates.action.dark : tanoTeal,
-                      ),
+                      child: isSelected
+                          // Same white disc behind the check as a note.
+                          ? Stack(
+                              alignment: Alignment.center,
+                              children: <Widget>[
+                                const SizedBox(
+                                  width: 18.0,
+                                  height: 18.0,
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    radius: 100.0,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.check_circle,
+                                  size: 24.0,
+                                  color: isDark
+                                      ? TanoStates.action.dark
+                                      : tanoTeal,
+                                ),
+                              ],
+                            )
+                          : Icon(
+                              Icons.panorama_fish_eye,
+                              size: 24.0,
+                              color: isDark
+                                  ? TanoStates.action.dark
+                                  : tanoTeal,
+                            ),
                     ),
                   ),
                 ),
@@ -102,14 +137,14 @@ class FolderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGrid(Color textColor) {
+  Widget _buildGrid(Color textColor, Color bgColor) {
     // Fill the whole card so every area (not just the text) stays tappable.
     return SizedBox(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.folder_open, size: 22.0, color: textColor),
+          _folderIcon(textColor, bgColor),
           const Spacer(),
           Text(
             folder.name,
@@ -127,10 +162,10 @@ class FolderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildList(Color textColor) {
+  Widget _buildList(Color textColor, Color bgColor) {
     return Row(
       children: <Widget>[
-        Icon(Icons.folder_open, size: 22.0, color: textColor),
+        _folderIcon(textColor, bgColor),
         const SizedBox(width: 10.0),
         Expanded(
           child: Column(
@@ -155,6 +190,29 @@ class FolderCard extends StatelessWidget {
     );
   }
 
+  /// The folder glyph: a slightly larger open folder, or a closed folder
+  /// with a small lock inside it when the folder is locked.
+  Widget _folderIcon(Color textColor, Color bgColor) {
+    if (!folder.isLocked) {
+      return Icon(Icons.folder_open, size: 24.0, color: textColor);
+    }
+    return SizedBox(
+      width: 24.0,
+      height: 24.0,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(Icons.folder, size: 24.0, color: textColor),
+          // The lock sits inside the folder, a bit to the right.
+          Transform.translate(
+            offset: const Offset(0.5, 0.5),
+            child: Icon(Icons.key, size: 16.0, color: bgColor),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _metadata(Color textColor) {
     if (noteCount <= 0) return const SizedBox.shrink();
     return Padding(
@@ -167,9 +225,8 @@ class FolderCard extends StatelessWidget {
             size: 11.0,
             color: textColor.withValues(alpha: 0.6),
           ),
-          const SizedBox(width: 3.0),
           Text(
-            '$noteCount',
+            'x$noteCount',
             style: TextStyle(
               fontSize: 9.0,
               color: textColor.withValues(alpha: 0.6),
