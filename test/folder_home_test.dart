@@ -9,7 +9,9 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/features/folder/folder_page.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/folder_card.dart';
@@ -234,6 +236,9 @@ void main() {
     await tester.tap(find.byType(FolderCard));
     await tester.pumpAndSettle();
 
+    // The folder FAB rests reduced: expand it before using the more menu.
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
 
@@ -264,6 +269,9 @@ void main() {
     await tester.tap(find.byType(FolderCard));
     await tester.pumpAndSettle();
 
+    // The folder FAB rests reduced: expand it before using the more menu.
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
@@ -310,6 +318,9 @@ void main() {
     await tester.tap(find.byType(FolderCard));
     await tester.pumpAndSettle();
 
+    // The folder FAB rests reduced: expand it before using the more menu.
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
@@ -462,6 +473,9 @@ void main() {
     await tester.tap(find.byType(FolderCard));
     await tester.pumpAndSettle();
 
+    // The folder FAB rests reduced: expand it before using the more menu.
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
@@ -498,6 +512,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    // The folder FAB rests reduced: expand it before entering selection.
+    await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
 
     final Finder fabBox = find.descendant(
@@ -672,5 +690,172 @@ void main() {
       find.byKey(const ValueKey<String>('folder_metadata')),
       findsNothing,
     );
+  });
+
+  testWidgets('folder card shows the pin and the [icon]xN count', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'A',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'B',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(
+            id: 'f1',
+            name: 'Perso',
+            date: '2026-01-01 00:00:00.000',
+            isPinned: true,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    final Finder card = find.byType(FolderCard);
+    // Pinned folder: the pin sits where a note's pin sits.
+    expect(
+      find.descendant(of: card, matching: find.byIcon(Icons.push_pin)),
+      findsOneWidget,
+    );
+    // [icon]xN note count.
+    expect(
+      find.descendant(
+        of: card,
+        matching: find.byIcon(Icons.description_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(find.descendant(of: card, matching: find.text('x2')), findsOneWidget);
+  });
+
+  testWidgets('selection overlay sits at the top right of the card', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    final Finder align = find.ancestor(
+      of: find.byIcon(Icons.check_circle),
+      matching: find.byType(Align),
+    );
+    expect(align, findsWidgets);
+    expect(tester.widget<Align>(align.first).alignment, Alignment.topRight);
+    // Selected folder shows the same white disc as a selected note.
+    expect(
+      find.descendant(
+        of: find.byType(FolderCard),
+        matching: find.byType(CircleAvatar),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('folder note cards match the home layout', (tester) async {
+    const String date = '2026-01-01 00:00:00.000';
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'A',
+            content: '## Tasks\\n- [ ] one',
+            date: date,
+            folderId: 'f1',
+            isPinned: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: date),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    final Finder page = find.byType(FolderPage);
+    // Metadata line at the bottom of the card, like home.
+    expect(
+      find.descendant(of: page, matching: find.byType(NoteCounts)),
+      findsOneWidget,
+    );
+    // The date shifts right when the note is pinned, like home.
+    final Finder dateText = find.descendant(
+      of: page,
+      matching: find.text(formatNoteDate(date)),
+    );
+    final Padding padding = tester.widget<Padding>(
+      find.ancestor(of: dateText, matching: find.byType(Padding)).first,
+    );
+    expect(padding.padding, const EdgeInsets.only(left: 8.0));
+  });
+
+  testWidgets('the FAB rests collapsed when the folder list scrolls', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          for (int i = 0; i < 40; i++)
+            Note(
+              id: 'n$i',
+              title: 'Note $i',
+              content: 'x',
+              date: '2026-01-01 00:00:00.000',
+              folderId: 'f1',
+            ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    // Long list: the FAB is reduced so it does not hide the last notes.
+    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
+    expect(find.byIcon(Icons.more_vert), findsNothing);
   });
 }

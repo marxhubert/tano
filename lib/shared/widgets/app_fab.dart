@@ -19,6 +19,7 @@ class AppFab extends StatefulWidget {
     this.isEditorMode = false,
     this.isFolderMode = false,
     this.isTitleEditing = false,
+    this.collapsedByDefault = false,
     this.onAddNote,
     this.isFindMode = false,
     this.findCurrent = 0,
@@ -71,6 +72,10 @@ class AppFab extends StatefulWidget {
 
   /// Folder page: the title is being renamed, so the FAB stays reduced.
   final bool isTitleEditing;
+
+  /// When true, the FAB rests in its reduced (circular) form, unless the user
+  /// explicitly expands it. Used when the folder list can scroll.
+  final bool collapsedByDefault;
 
   /// Folder page: creates a note inside the folder.
   final VoidCallback? onAddNote;
@@ -163,6 +168,16 @@ class AppFabState extends State<AppFab> {
     });
   }
 
+  /// Collapses the FAB back to its reduced (circular) form.
+  void collapse() {
+    if (_isManuallyExpanded != false || _verticalMenu != FabVerticalMenu.none) {
+      setState(() {
+        _isManuallyExpanded = false;
+        _verticalMenu = FabVerticalMenu.none;
+      });
+    }
+  }
+
   void closeVerticalMenu() {
     if (_verticalMenu != FabVerticalMenu.none) {
       setState(() => _verticalMenu = FabVerticalMenu.none);
@@ -211,7 +226,8 @@ class AppFabState extends State<AppFab> {
         !widget.isFindMode &&
         !widget.isSelectionMode &&
         !widget.isSearchMode) {
-      isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
+      isExpanded =
+          _isManuallyExpanded ?? (isKeyboardClosed && !widget.collapsedByDefault);
     }
     // While the folder title is being renamed, the FAB stays reduced
     // (circular) whatever the keyboard/menu state.

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/note_card.dart';
-import 'package:tano/shared/widgets/link_text_controller.dart';
+import 'package:tano/shared/widgets/note_card_content.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// List of note rows with swipe-to-favorite and swipe-to-delete.
@@ -73,57 +72,10 @@ class NoteListView extends StatelessWidget {
             },
             onLongPress: () => viewModel.enterSelectionMode(note.id),
             onSelectionToggle: () => viewModel.toggleSelection(note.id),
-            builder: (context, textColor) => ListTile(
-              title: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      note.title,
-                      style: TextStyle(
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 9.0),
-                  Text(
-                    formatNoteDate(note.date),
-                    style: TextStyle(
-                      fontSize: 9.0,
-                      color: textColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  RichText(
-                    maxLines: 3,
-                    overflow: TextOverflow.clip,
-                    text: LinkTextEditingController.buildMarkdownTextSpan(
-                      note.content,
-                      TextStyle(
-                        fontSize: 12.0,
-                        color: textColor.withValues(alpha: 0.8),
-                        height: 1.4,
-                      ),
-                      tanoAmber,
-                      viewModel.activeNoteIds,
-                    ),
-                  ),
-                  NoteCounts(
-                    content: note.content,
-                    color: textColor.withValues(alpha: 0.6),
-                    attachmentCount: note.attachments.length,
-                  ),
-                ],
-              ),
+            builder: (context, textColor) => buildNoteListContent(
+              note: note,
+              textColor: textColor,
+              activeNoteIds: viewModel.activeNoteIds,
             ),
           ),
         );
