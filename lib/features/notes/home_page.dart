@@ -366,22 +366,14 @@ class HomeState extends State<Home> with RouteAware {
       return;
     }
     final List<Folder> folders = _viewModel.folders;
-    final String? target = await showDialog<String>(
+    final String? target = await showAdaptiveChoice<String>(
       context: context,
-      builder: (BuildContext dialogContext) => SimpleDialog(
-        title: Text(AppText.tr('option_move')),
-        children: <Widget>[
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(dialogContext, ''),
-            child: Text(AppText.tr('no_folder')),
-          ),
-          for (final Folder folder in folders)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(dialogContext, folder.id),
-              child: Text(folder.name),
-            ),
-        ],
-      ),
+      title: AppText.tr('option_move'),
+      choices: <AdaptiveChoice<String>>[
+        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
+        for (final Folder folder in folders)
+          AdaptiveChoice<String>(label: folder.name, value: folder.id),
+      ],
     );
     if (target == null || !mounted) return;
     await _viewModel.moveSelectedTo(target.isEmpty ? null : target);

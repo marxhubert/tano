@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -23,6 +25,7 @@ class _Repo implements NotesRepository, FoldersRepository {
 
   final List<Note> notes;
   final List<Folder> folders;
+  final List<String> trashed = <String>[];
 
   @override
   Future<List<Note>> loadNotes() async => notes;
@@ -31,9 +34,22 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<List<Note>> searchNotes(String query) async => notes;
   @override
-  Future<void> upsertNote(Note note) async {}
+  Future<void> upsertNote(Note note) async {
+    final int i = notes.indexWhere((Note n) => n.id == note.id);
+    if (i == -1) {
+      notes.add(note);
+    } else {
+      notes[i] = note;
+    }
+  }
   @override
-  Future<void> trashNote(String id) async {}
+  Future<void> trashNote(String id) async {
+    trashed.add(id);
+    final int i = notes.indexWhere((Note n) => n.id == id);
+    if (i != -1) {
+      notes[i] = notes[i].copyWith(isDeleted: true, deletedAt: 'now');
+    }
+  }
   @override
   Future<void> restoreNote(String id) async {}
   @override
@@ -1141,5 +1157,132 @@ void main() {
     await tester.pumpAndSettle();
     expect(auth.calls, 2);
     expect(find.byType(EditNote), findsOneWidget);
+  });
+
+  testWidgets('folder selection move files a note into another folder', (
+    tester,
+  ) async {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(id: 'n1', title: 'A', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        Folder(id: 'f2', name: 'Work', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard).first);
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('A'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 single note selected'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
+    await tester.pumpAndSettle();
+
+    // The current folder is not offered; Work is.
+    expect(find.text('Home'), findsOneWidget);
+    await tester.tap(find.text('Work'));
+    await tester.pumpAndSettle();
+
+    expect(repo.notes.firstWhere((Note n) => n.id == 'n1').folderId, 'f2');
+  });
+
+  testWidgets('the editor moves the note to a folder', (tester) async {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Move to'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Perso'));
+    await tester.pumpAndSettle();
+
+    expect(repo.notes.firstWhere((Note n) => n.id == 'n1').folderId, 'f1');
+  });
+
+  testWidgets('the move picker is an iOS action sheet on iOS', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Select the note on the home page, then open the move picker.
+    await tester.longPress(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CupertinoActionSheet), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('deleting selected notes in a folder asks for confirmation', (
+    tester,
+  ) async {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(id: 'n1', title: 'A', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('A'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete));
+    await tester.pumpAndSettle();
+
+    // Nothing is deleted before the confirmation.
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(repo.trashed, isEmpty);
+
+    await tester.tap(find.text('DELETE'));
+    await tester.pumpAndSettle();
+    expect(repo.trashed, contains('n1'));
   });
 }

@@ -3,6 +3,63 @@ import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
+
+/// One option of [showAdaptiveChoice].
+class AdaptiveChoice<T> {
+  const AdaptiveChoice({required this.label, required this.value});
+
+  final String label;
+  final T value;
+}
+
+/// Shows a list of choices: an iOS action sheet on iOS/macOS and a Material
+/// dialog elsewhere. Returns the chosen value, or null when dismissed.
+Future<T?> showAdaptiveChoice<T>({
+  required BuildContext context,
+  required String title,
+  required List<AdaptiveChoice<T>> choices,
+}) async {
+  final ThemeData theme = Theme.of(context);
+  final bool isApple =
+      theme.platform == TargetPlatform.iOS ||
+      theme.platform == TargetPlatform.macOS;
+
+  if (isApple) {
+    return showCupertinoModalPopup<T>(
+      context: context,
+      builder: (BuildContext popupContext) => CupertinoActionSheet(
+        title: Text(title),
+        actions: <Widget>[
+          for (final AdaptiveChoice<T> choice in choices)
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(popupContext, choice.value),
+              child: Text(choice.label),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(popupContext),
+          child: Text(AppText.tr('cancel')),
+        ),
+      ),
+    );
+  }
+
+  return showDialog<T>(
+    context: context,
+    builder: (BuildContext dialogContext) => SimpleDialog(
+      title: Text(title),
+      children: <Widget>[
+        for (final AdaptiveChoice<T> choice in choices)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, choice.value),
+            child: Text(choice.label),
+          ),
+      ],
+    ),
+  );
+}
+
 /// Shows an adaptive confirmation dialog (Material on Android, Cupertino on iOS).
 Future<bool?> getConfirmation({
   required BuildContext context,
