@@ -37,6 +37,7 @@ class EditNoteViewModel extends ChangeNotifier {
     isLocked = initialNote?.isLocked ?? false;
     attachments = List<String>.of(initialNote?.attachments ?? const <String>[]);
     coverImage = initialNote?.coverImage;
+    folderId = initialNote?.folderId;
     _initialNote = _buildInitialNote(
       title: initialNote?.title ?? '',
       content: initialNote?.content ?? '',
@@ -56,6 +57,9 @@ class EditNoteViewModel extends ChangeNotifier {
   late bool isLocked;
   late List<String> attachments;
   String? coverImage;
+
+  /// Folder the note belongs to, preserved across edits and creation.
+  String? folderId;
   late Note _initialNote;
 
   /// Loads the note data from the repository (refresh).
@@ -68,6 +72,7 @@ class EditNoteViewModel extends ChangeNotifier {
     isPinned = note.isPinned;
     isLocked = note.isLocked;
     coverImage = note.coverImage;
+    folderId = note.folderId;
     selectedDate = DateTime.tryParse(note.date) ?? DateTime.now();
     notifyListeners();
   }
@@ -127,20 +132,30 @@ class EditNoteViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Builds the [Note] from the current form values.
-  Note buildNote({required String title, required String content}) {
+  /// Normalizes raw editor values the same way [buildNote] does, so that
+  /// dirty checks and save-time normalization compare like with like.
+  static ({String title, String content}) normalize({
+    required String title,
+    required String content,
+  }) {
     final String trimmedContent = content.trim();
     final String trimmedTitle = title.trim();
     final int max = trimmedContent.length < 18 ? trimmedContent.length : 18;
     final String computedTitle = trimmedTitle != ''
         ? trimmedTitle
         : trimmedContent.substring(0, max).replaceAll('\n', ' ');
+    return (title: computedTitle, content: trimmedContent);
+  }
+
+  /// Builds the [Note] from the current form values.
+  Note buildNote({required String title, required String content}) {
+    final normalized = normalize(title: title, content: content);
 
     return Note(
       id: id,
       date: selectedDate.toString(),
-      title: computedTitle,
-      content: trimmedContent,
+      title: normalized.title,
+      content: normalized.content,
       important: important,
       category: category,
       isDeleted: isDeleted,
@@ -148,17 +163,24 @@ class EditNoteViewModel extends ChangeNotifier {
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,
+      folderId: folderId,
     );
   }
 
   /// Whether the current form differs from the note as it was opened.
   bool isDirty({required String title, required String content}) {
-    // Compare the raw editor values against the raw initial values. The
-    // save-time normalization (trimming, deriving a title from the content)
-    // must not count as a user edit, otherwise notes with leading/trailing
-    // whitespace would always look dirty.
-    return title != _initialNote.title ||
-          content != _initialNote.content ||
+    // Compare normalized values on both sides so the save-time normalization
+    // (trimming, deriving a title from the content) never counts as a user
+    // edit. This is also what makes an in-place save settle: [_initialNote]
+    // then holds the normalized note while the editor still holds the raw
+    // text (an untitled note keeps an empty title field after saving).
+    final current = normalize(title: title, content: content);
+    final initial = normalize(
+      title: _initialNote.title,
+      content: _initialNote.content,
+    );
+    return current.title != initial.title ||
+          current.content != initial.content ||
           important != _initialNote.important ||
           category != _initialNote.category ||
           isPinned != _initialNote.isPinned ||
@@ -201,6 +223,7 @@ class EditNoteViewModel extends ChangeNotifier {
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,
+      folderId: folderId,
     );
   }
 }

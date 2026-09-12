@@ -117,11 +117,16 @@ void main() {
     }
   });
 
-  ExportService exporter() => ExportService(attachments: sourceAttachments);
+  // Cheap Argon2id parameters: the production cost times the tests out.
+  ExportService exporter() => ExportService(
+        attachments: sourceAttachments,
+        argon2: Argon2Params.fast,
+      );
   ImportService importer({bool canLock = false}) => ImportService(
         repository: repository,
         attachments: targetAttachments,
         auth: _FakeAuth(available: canLock),
+        argon2: Argon2Params.fast,
       );
 
   test('cleartext export is a plain ZIP and round-trips notes + attachments',

@@ -16,7 +16,12 @@ class AppFab extends StatefulWidget {
     super.key,
     this.isSearchMode = false,
     this.isSelectionMode = false,
+    this.canMove = true,
     this.isEditorMode = false,
+    this.isFolderMode = false,
+    this.isTitleEditing = false,
+    this.collapsedByDefault = false,
+    this.onAddNote,
     this.isFindMode = false,
     this.findCurrent = 0,
     this.findTotal = 0,
@@ -27,6 +32,7 @@ class AppFab extends StatefulWidget {
     this.controller,
     this.focusNode,
     this.onAdd,
+    this.onAddFolder,
     this.onSearchChanged,
     this.onReset,
     this.onDelete,
@@ -52,13 +58,32 @@ class AppFab extends StatefulWidget {
     this.onMoveSelected,
     this.onLockSelected,
     this.onDeleteSelected,
+    this.onEditTitle,
     this.onCollaboratorsSelected,
     this.onShareSelected,
   });
 
   final bool isSearchMode;
   final bool isSelectionMode;
+
+  /// Selection mode: whether the "move" action is available. It is refused as
+  /// soon as a folder is part of the selection.
+  final bool canMove;
   final bool isEditorMode;
+
+  /// Folder page: the add menu offers a cover and a new note, the more menu
+  /// offers pin, bookmark, lock and delete.
+  final bool isFolderMode;
+
+  /// Folder page: the title is being renamed, so the FAB stays reduced.
+  final bool isTitleEditing;
+
+  /// When true, the FAB rests in its reduced (circular) form, unless the user
+  /// explicitly expands it. Used when the folder list can scroll.
+  final bool collapsedByDefault;
+
+  /// Folder page: creates a note inside the folder.
+  final VoidCallback? onAddNote;
   final bool isFindMode;
   final int findCurrent;
   final int findTotal;
@@ -70,6 +95,9 @@ class AppFab extends StatefulWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final VoidCallback? onAdd;
+
+  /// Home screen: creates a new folder.
+  final VoidCallback? onAddFolder;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onReset;
   final VoidCallback? onDelete;
@@ -94,6 +122,9 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onMoveSelected;
   final VoidCallback? onLockSelected;
   final VoidCallback? onDeleteSelected;
+
+  /// Folder page: renames the folder from the title line.
+  final VoidCallback? onEditTitle;
   final VoidCallback? onCollaboratorsSelected;
   final VoidCallback? onShareSelected;
 
@@ -142,6 +173,16 @@ class AppFabState extends State<AppFab> {
     });
   }
 
+  /// Collapses the FAB back to its reduced (circular) form.
+  void collapse() {
+    if (_isManuallyExpanded != false || _verticalMenu != FabVerticalMenu.none) {
+      setState(() {
+        _isManuallyExpanded = false;
+        _verticalMenu = FabVerticalMenu.none;
+      });
+    }
+  }
+
   void closeVerticalMenu() {
     if (_verticalMenu != FabVerticalMenu.none) {
       setState(() => _verticalMenu = FabVerticalMenu.none);
@@ -186,13 +227,31 @@ class AppFabState extends State<AppFab> {
 
     bool isExpanded =
         widget.isSearchMode || widget.isSelectionMode || widget.isFindMode;
-    if (widget.isEditorMode && !widget.isFindMode) {
-      isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
+    if (widget.isEditorMode &&
+        !widget.isFindMode &&
+        !widget.isSelectionMode &&
+        !widget.isSearchMode) {
+      isExpanded =
+          _isManuallyExpanded ?? (isKeyboardClosed && !widget.collapsedByDefault);
+    }
+    // While the folder title is being renamed, the FAB stays reduced
+    // (circular) whatever the keyboard/menu state.
+    if (widget.isTitleEditing) {
+      isExpanded = false;
+    }
+    // The home "+" is not "expanded" by itself, but its menu must stay open.
+    if (!widget.isEditorMode && isMenuOpen) {
+      isExpanded = true;
     }
 
     if (!isExpanded && isMenuOpen) {
       _verticalMenu = FabVerticalMenu.none;
     }
+
+    // The home "+" turns into a narrow column of two icons, keeping its width.
+    final bool homeAddOpen = !widget.isEditorMode &&
+        !widget.isFolderMode &&
+        _verticalMenu == FabVerticalMenu.add;
 
     // Target width based on state
     final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
@@ -200,18 +259,24 @@ class AppFabState extends State<AppFab> {
         : screenWidth - 48.0;
 
     double currentWidth = btnHeight;
-    if (isExpanded || isMenuOpen) {
+    if (homeAddOpen) {
+      currentWidth = btnHeight;
+    } else if (isExpanded || isMenuOpen) {
       currentWidth = targetExpandedWidth;
     }
 
-    // Translation calculation
+    // Translation calculation. The home add column keeps the FAB margins.
     double tx = 0.0;
-    if ((isExpanded || isMenuOpen) && (isMenuOpen || !isKeyboardClosed)) {
+    if (!homeAddOpen &&
+        (isExpanded || isMenuOpen) &&
+        (isMenuOpen || !isKeyboardClosed)) {
       tx = 12.0;
     }
 
     double ty = 0.0;
-    if (isMenuOpen) {
+    if (homeAddOpen) {
+      ty = 0.0;
+    } else if (isMenuOpen) {
       ty = 8.0;
     } else if (!isKeyboardClosed) {
       ty = 12.0;
@@ -241,11 +306,21 @@ class AppFabState extends State<AppFab> {
         : btnHeight;
 
     double currentHeight = barHeight;
-    if (isMenuOpen) {
+    if (homeAddOpen) {
+      // Two stacked icon buttons.
+      currentHeight = btnHeight * 2;
+    } else if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
     }
 
-    return AnimatedContainer(
+    return TapRegion(
+      // Tapping anywhere else folds the FAB back to its resting form.
+      onTapOutside: (_) {
+        if (_verticalMenu != FabVerticalMenu.none) {
+          setState(() => _verticalMenu = FabVerticalMenu.none);
+        }
+      },
+      child: AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       height: currentHeight,
@@ -255,11 +330,11 @@ class AppFabState extends State<AppFab> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
         borderRadius: isMenuOpen
-            ? BorderRadius.vertical(
-                top: Radius.circular(24.0),
-                bottom: Radius.circular(borderRadiusValue),
-              )
-            : BorderRadius.circular(borderRadiusValue),
+          ? BorderRadius.vertical(
+              top: Radius.circular(homeAddOpen ? borderRadiusValue : 24.0),
+              bottom: Radius.circular(borderRadiusValue),
+            )
+          : BorderRadius.circular(borderRadiusValue),
         border: Border.all(
           color: getBorderColor(
             Theme.of(context).colorScheme.primary,
@@ -323,38 +398,126 @@ class AppFabState extends State<AppFab> {
                 ),
               ),
 
-              if (isMenuOpen)
-                Positioned(
-                  bottom: btnHeight,
-                  left: 0,
-                  right: 0,
-                  top: 0,
+              if (homeAddOpen)
+                Positioned.fill(
+                  child: TapRegion(
+                    // Tapping anywhere else folds the FAB back to its "+".
+                    onTapOutside: (_) =>
+                        setState(() => _verticalMenu = FabVerticalMenu.none),
+                    // Let the column keep its natural height while the FAB
+                    // grows, instead of overflowing during the animation.
+                    child: OverflowBox(
+                      maxHeight: double.infinity,
+                      alignment: Alignment.center,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        builder:
+                            (BuildContext context, double value, Widget? child) =>
+                                Opacity(
+                                  opacity: value,
+                                  child: Transform.scale(
+                                    scale: 0.85 + 0.15 * value,
+                                    child: child,
+                                  ),
+                                ),
+                        child: _buildHomeAddIcons(),
+                      ),
+                    ),
+                  ),
+                )
+              else ...<Widget>[
+                if (isMenuOpen)
+                  Positioned(
+                    bottom: btnHeight,
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: AnimatedOpacity(
+                      opacity: showContent ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _buildVerticalMenuContent(context),
+                      ),
+                    ),
+                  ),
+
+                SizedBox(
+                  height: barHeight,
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 150),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _buildVerticalMenuContent(context),
+                    // Only the icons swap: the FAB box itself does not move.
+                    // The outgoing set zooms out while the incoming zooms in.
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(
+                                  begin: 0.75,
+                                  end: 1.0,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                      child: KeyedSubtree(
+                        key: ValueKey<bool>(widget.isSelectionMode),
+                        child: _buildMainContent(
+                          context,
+                          isExpanded,
+                          targetExpandedWidth,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-
-              SizedBox(
-                height: barHeight,
-                child: AnimatedOpacity(
-                  opacity: showContent ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 150),
-                  child: _buildMainContent(
-                    context,
-                    isExpanded,
-                    targetExpandedWidth,
-                  ),
-                ),
-              ),
+              ],
             ],
           );
         },
       ),
+      ),
+    );
+  }
+
+  /// Narrow vertical column shown instead of the home "+": add folder on top,
+  /// add note below, icons only.
+  Widget _buildHomeAddIcons() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        IconButton(
+          iconSize: 24.0,
+          icon: const Icon(Icons.create_new_folder, color: Colors.white),
+          onPressed: () {
+            setState(() => _verticalMenu = FabVerticalMenu.none);
+            widget.onAddFolder?.call();
+          },
+        ),
+        const SizedBox(height: 6.0),
+        Divider(
+          height: 1.0,
+          thickness: 0.5,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
+        const SizedBox(height: 6.0),
+        IconButton(
+          iconSize: 24.0,
+          icon: const Icon(Icons.note_add, color: Colors.white),
+          onPressed: () {
+            setState(() => _verticalMenu = FabVerticalMenu.none);
+            widget.onAdd?.call();
+          },
+        ),
+      ],
     );
   }
 
@@ -542,6 +705,51 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildAddMenu(BuildContext context) {
+    // On the folder page the "+" offers a cover image or a new note.
+    if (widget.isFolderMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: Icons.crop_original,
+          label: AppText.tr('option_image'),
+          onTap: widget.onImageSelected,
+        ),
+        _VerticalMenuItem(
+          icon: Icons.note_add,
+          label: AppText.tr('add_note'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAddNote?.call();
+          },
+        ),
+      ]);
+    }
+    // On the home screen the "+" first offers folders, then notes, with a
+    // separator in between.
+    if (!widget.isEditorMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: Icons.create_new_folder,
+          label: AppText.tr('add_folder'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAddFolder?.call();
+          },
+        ),
+        Divider(
+          height: 1.0,
+          thickness: 0.5,
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+        _VerticalMenuItem(
+          icon: Icons.note_add,
+          label: AppText.tr('add_note'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAdd?.call();
+          },
+        ),
+      ]);
+    }
     return _buildVerticalList([
       _VerticalMenuItem(
         icon: Icons.crop_original,
@@ -575,6 +783,43 @@ class AppFabState extends State<AppFab> {
         ? deleteLabel[0].toUpperCase() + deleteLabel.substring(1)
         : '';
 
+    // On the folder page only the folder-relevant actions are offered.
+    if (widget.isFolderMode) {
+      return _buildVerticalList([
+        _VerticalMenuItem(
+          icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+          label: AppText.tr('option_pin'),
+          iconColor: widget.isPinned ? tanoAmber : null,
+          onTap: widget.onPinSelected,
+        ),
+        _VerticalMenuItem(
+          icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+          label: AppText.tr('important'),
+          iconColor: widget.isImportant ? tanoAmber : null,
+          onTap: widget.onImportantSelected,
+        ),
+        _VerticalMenuItem(
+          icon: Icons.edit_outlined,
+          label: AppText.tr('edit'),
+          onTap: widget.onEditTitle,
+        ),
+        _VerticalMenuItem(
+          icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
+          label: widget.isLocked
+              ? AppText.tr('option_unlock')
+              : AppText.tr('option_lock'),
+          onTap: widget.onLockSelected,
+        ),
+        _VerticalMenuItem(
+          icon: Icons.delete_outline,
+          label: capitalizedDelete,
+          iconColor: const Color(0xFFFF8A80),
+          textColor: const Color(0xFFFF8A80),
+          onTap: widget.onDeleteSelected,
+        ),
+      ]);
+    }
+
     return _buildVerticalList([
       _VerticalMenuItem(
         icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
@@ -597,16 +842,6 @@ class AppFabState extends State<AppFab> {
         icon: Icons.drive_file_move_outlined,
         label: AppText.tr('option_move'),
         onTap: widget.onMoveSelected,
-      ),
-      _VerticalMenuItem(
-        icon: Icons.person_add_alt,
-        label: AppText.tr('option_collaborators'),
-        onTap: widget.onCollaboratorsSelected,
-      ),
-      _VerticalMenuItem(
-        icon: Icons.share,
-        label: AppText.tr('option_share'),
-        onTap: widget.onShareSelected,
       ),
       _VerticalMenuItem(
         icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
@@ -640,11 +875,11 @@ class AppFabState extends State<AppFab> {
     double targetWidth,
   ) {
     if (widget.isFindMode) return _buildFindBar(context);
+    if (widget.isSelectionMode) return _buildSelectionBar(context, targetWidth);
+    if (widget.isSearchMode) return _buildSearchBar(context);
     if (widget.isEditorMode) {
       return _buildEditorBar(context, isExpanded, targetWidth);
     }
-    if (widget.isSelectionMode) return _buildSelectionBar(context, targetWidth);
-    if (widget.isSearchMode) return _buildSearchBar(context);
     return _buildDefaultAddButton();
   }
 
@@ -707,10 +942,9 @@ class AppFabState extends State<AppFab> {
 
     return _buildHorizontalBar(targetWidth, [
       _SelectionFabButton(
-        icon: Icons.delete,
-        label: capitalizedDelete,
-        color: const Color(0xFFFF8A80),
-        onPressed: widget.onDelete ?? () {},
+        icon: Icons.select_all,
+        label: AppText.tr('select_all'),
+        onPressed: widget.onSelectAll ?? () {},
       ),
       _SelectionFabButton(
         icon: Icons.check_box_outline_blank,
@@ -718,9 +952,17 @@ class AppFabState extends State<AppFab> {
         onPressed: widget.onClearSelection ?? () {},
       ),
       _SelectionFabButton(
-        icon: Icons.select_all,
-        label: AppText.tr('select_all'),
-        onPressed: widget.onSelectAll ?? () {},
+        icon: Icons.drive_file_move_outline,
+        label: AppText.tr('move'),
+        color: Colors.white,
+        // Moving is refused as soon as a folder is selected.
+        onPressed: widget.canMove ? (widget.onMoveSelected ?? () {}) : null,
+      ),
+      _SelectionFabButton(
+        icon: Icons.delete,
+        label: capitalizedDelete,
+        color: const Color(0xFFFF8A80),
+        onPressed: widget.onDelete ?? () {},
       ),
     ]);
   }
@@ -762,9 +1004,10 @@ class AppFabState extends State<AppFab> {
   }
 
   Widget _buildDefaultAddButton() {
+    // The "+" expands upward to offer folders and notes.
     return IconButton(
       icon: const Icon(Icons.add, color: Colors.white),
-      onPressed: widget.onAdd,
+      onPressed: () => _toggleVerticalMenu(FabVerticalMenu.add),
     );
   }
 
@@ -1081,18 +1324,22 @@ class _SelectionFabButton extends StatelessWidget {
   const _SelectionFabButton({
     required this.icon,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
     this.color,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveColor = color ?? Colors.white;
+    final Color base = color ?? Colors.white;
+    // A null callback means the action is disabled: dim it and ignore taps.
+    final Color effectiveColor = onPressed == null
+        ? base.withValues(alpha: 0.35)
+        : base;
     return Expanded(
       child: InkWell(
         onTap: onPressed,

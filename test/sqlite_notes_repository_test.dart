@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/sqlite_notes_repository.dart';
 
 void main() {
@@ -29,11 +30,12 @@ void main() {
   });
 
   group('SQLiteNotesRepository', () {
-    test('seeds demo notes on first launch', () async {
+    test('seeds demo notes and folders on first launch', () async {
       final notes = await repository.loadNotes();
 
-      expect(notes, hasLength(36));
+      expect(notes, hasLength(buildNotesFixtures().length));
       expect(notes.every((n) => !n.isDeleted), isTrue);
+      expect(await repository.loadFolders(), hasLength(5));
     });
 
     test('migrates notes from the legacy JSON file', () async {

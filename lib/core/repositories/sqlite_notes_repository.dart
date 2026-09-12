@@ -5,13 +5,15 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
-/// SQLite-backed [NotesRepository] implementation.
-class SQLiteNotesRepository implements NotesRepository {
+/// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
+class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
     String? databasePath,
@@ -46,7 +48,7 @@ class SQLiteNotesRepository implements NotesRepository {
     return _db!;
   }
 
-  static const int _schemaVersion = 5;
+  static const int _schemaVersion = 6;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -144,6 +146,21 @@ class SQLiteNotesRepository implements NotesRepository {
         isLocked INTEGER DEFAULT 0,
         deletedAt TEXT,
         attachments TEXT,
+        coverImage TEXT,
+        folderId TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE folders (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        date TEXT,
+        important INTEGER DEFAULT 0,
+        category TEXT,
+        isPinned INTEGER DEFAULT 0,
+        isLocked INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0,
+        deletedAt TEXT,
         coverImage TEXT
       )
     ''');
@@ -171,6 +188,94 @@ class SQLiteNotesRepository implements NotesRepository {
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE notes ADD COLUMN coverImage TEXT');
     }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE notes ADD COLUMN folderId TEXT');
+      await db.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isPinned INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT
+        )
+      ''');
+    }
+  }
+
+  @override
+  Future<List<Folder>> loadFolders() async {
+    final db = await _database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'folders',
+      where: 'isDeleted = 0',
+    );
+    return results.map((json) => Folder.fromJson(json)).toList();
+  }
+
+  @override
+  Future<void> upsertFolder(Folder folder) async {
+    final db = await _database;
+    await db.insert(
+      'folders',
+      folder.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<void> trashFolder(String id) async {
+    final db = await _database;
+    // Notes are unfiled rather than deleted: trashing a folder must never lose
+    // the notes it contained.
+    await db.update(
+      'notes',
+      <String, Object?>{'folderId': null},
+      where: 'folderId = ?',
+      whereArgs: <Object?>[id],
+    );
+    await db.update(
+      'folders',
+      <String, Object?>{
+        'isDeleted': 1,
+        'deletedAt': DateTime.now().toString(),
+      },
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
+  }
+
+  @override
+  Future<void> toggleFolderPin(String id) async {
+    final db = await _database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'folders',
+      columns: <String>['isPinned'],
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
+    if (result.isNotEmpty) {
+      final int currentPin = result.first['isPinned'] as int;
+      await db.update(
+        'folders',
+        <String, Object?>{'isPinned': currentPin == 1 ? 0 : 1},
+        where: 'id = ?',
+        whereArgs: <Object?>[id],
+      );
+    }
+  }
+
+  @override
+  Future<String> nextFolderName() async {
+    final Set<String> names =
+        (await loadFolders()).map((Folder f) => f.name).toSet();
+    int i = 1;
+    while (names.contains('Folder $i')) {
+      i++;
+    }
+    return 'Folder $i';
   }
 
   @override
@@ -324,8 +429,12 @@ class SQLiteNotesRepository implements NotesRepository {
     final db = await _database;
     await db.transaction((txn) async {
       await txn.delete('notes');
-      final List<Note> seed = buildNotesFixtures();
-      for (final note in seed) {
+      await txn.delete('folders');
+      final TanoFixtures fixtures = buildFixtures();
+      for (final folder in fixtures.folders) {
+        await txn.insert('folders', folder.toJson());
+      }
+      for (final note in fixtures.notes) {
         await txn.insert('notes', note.toJson());
       }
     });
@@ -360,13 +469,16 @@ class SQLiteNotesRepository implements NotesRepository {
 
     // Default seed if no legacy data found
     debugPrint('SQLite: Seeding default notes...');
-    final List<Note> seed = buildNotesFixtures();
+    final TanoFixtures fixtures = buildFixtures();
     await db.transaction((txn) async {
-      for (final note in seed) {
+      for (final folder in fixtures.folders) {
+        await txn.insert('folders', folder.toJson());
+      }
+      for (final note in fixtures.notes) {
         await txn.insert('notes', note.toJson());
       }
     });
-    return seed;
+    return fixtures.notes;
   }
 }
 
