@@ -158,4 +158,80 @@ void main() {
     expect(find.text('Hello'), findsNothing);
     expect(repository.notes.first.title, 'Hello updated');
   });
+
+  testWidgets('app bar save persists in place without leaving the editor', (
+    tester,
+  ) async {
+    final repository = _InMemoryNotesRepository();
+    getIt.registerSingleton<NotesRepository>(repository);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Create a note from the home FAB.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'Fresh note');
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.save), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.save));
+    await tester.pumpAndSettle();
+
+    // The save happens in place: the note is persisted but the editor stays.
+    expect(find.byType(Home), findsNothing);
+    expect(repository.notes, hasLength(1));
+    expect(repository.notes.single.title, 'Fresh note');
+
+    // Going back then reveals the note on home without any extra prompt.
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(Home), findsOneWidget);
+    expect(find.text('Fresh note'), findsOneWidget);
+  });
+
+  testWidgets('saving an untitled note settles the dirty state', (tester) async {
+    final repository = _InMemoryNotesRepository();
+    getIt.registerSingleton<NotesRepository>(repository);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.pumpAndSettle();
+
+    // Type only in the body: the title is derived from it when saving.
+    await tester.enterText(find.byType(TextField).last, 'Body only');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.save));
+    await tester.pumpAndSettle();
+
+    expect(repository.notes, hasLength(1));
+
+    // The save action is now disabled: there is nothing left to save.
+    final IconButton saveButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byIcon(Icons.save),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(saveButton.onPressed, isNull);
+
+    // Leaving must not prompt, and home must show the saved note.
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(Home), findsOneWidget);
+    expect(find.text('Body only'), findsWidgets);
+  });
 }

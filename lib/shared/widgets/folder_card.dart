@@ -103,23 +103,27 @@ class FolderCard extends StatelessWidget {
   }
 
   Widget _buildGrid(Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Icon(Icons.folder_open, size: 22.0, color: textColor),
-        const Spacer(),
-        Text(
-          folder.name,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12.0,
-            fontWeight: FontWeight.bold,
-            color: textColor,
+    // Fill the whole card so every area (not just the text) stays tappable.
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(Icons.folder_open, size: 22.0, color: textColor),
+          const Spacer(),
+          Text(
+            folder.name,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
           ),
-        ),
-        _metadata(textColor),
-      ],
+          _metadata(textColor),
+        ],
+      ),
     );
   }
 

@@ -89,4 +89,22 @@ class Folder {
       coverImage: coverImage ?? this.coverImage,
     );
   }
+
+  /// Returns a copy of this folder without its cover image.
+  ///
+  /// [copyWith] cannot clear the nullable [coverImage] field, so removing the
+  /// cover goes through this explicit copy.
+  Folder withoutCover() {
+    return Folder(
+      id: id,
+      name: name,
+      date: date,
+      important: important,
+      category: category,
+      isPinned: isPinned,
+      isLocked: isLocked,
+      isDeleted: isDeleted,
+      deletedAt: deletedAt,
+    );
+  }
 }

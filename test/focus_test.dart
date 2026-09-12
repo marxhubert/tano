@@ -87,7 +87,7 @@ void main() {
     // Open the add-note editor: the home "+" now offers folders and notes.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add note'));
+    await tester.tap(find.byIcon(Icons.note_add));
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsNWidgets(2));

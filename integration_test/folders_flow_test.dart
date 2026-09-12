@@ -100,7 +100,7 @@ void main() {
     // Create a folder from the home "+" menu.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add folder'));
+    await tester.tap(find.byIcon(Icons.create_new_folder));
     await tester.pumpAndSettle();
     // iOS uses a CupertinoTextField, Android a TextField: EditableText covers
     // both.
