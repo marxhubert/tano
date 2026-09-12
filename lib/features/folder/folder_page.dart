@@ -10,13 +10,13 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
-import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/note_card_content.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -41,11 +41,17 @@ class _FolderPageState extends State<FolderPage> {
 
   late Folder _folder;
   List<Note> _notes = <Note>[];
+  Set<String> _activeNoteIds = <String>{};
   bool _loading = true;
   bool _isSearchMode = false;
   bool _searchStarted = false;
   bool _isEditingTitle = false;
   bool _showRemoveCoverButton = false;
+
+  /// Cached cover materialization, so rebuilding the page does not restart
+  /// the future and flash the placeholder.
+  String? _coverName;
+  Future<String>? _coverFuture;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
   bool _isSelectionMode = false;
@@ -89,6 +95,10 @@ class _FolderPageState extends State<FolderPage> {
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
     if (!mounted) return;
     setState(() {
+      _activeNoteIds = all
+          .where((Note note) => !note.isDeleted)
+          .map((Note note) => note.id)
+          .toSet();
       _notes = all.where((Note note) => note.folderId == _folder.id).toList();
       _loading = false;
     });
@@ -191,6 +201,15 @@ class _FolderPageState extends State<FolderPage> {
     await _save(_folder.withoutCover());
     if (!mounted) return;
     setState(() => _showRemoveCoverButton = false);
+  }
+
+  /// Materializes the cover once per file name.
+  Future<String> _coverPath(String name) {
+    if (_coverName != name || _coverFuture == null) {
+      _coverName = name;
+      _coverFuture = _attachmentsStore.materialize(name);
+    }
+    return _coverFuture!;
   }
 
   Future<void> _toggleLock() async {
@@ -429,6 +448,8 @@ class _FolderPageState extends State<FolderPage> {
       folderColor,
       isDark: isDark,
     );
+    // The folder's FAB always rests in its reduced form; tapping it expands
+    // the action bar. This keeps it from hiding the notes or the cover.
     return PageScaffold(
       backgroundColor: immersiveBg,
       // The folder name is always the page title, even in selection mode.
@@ -518,6 +539,7 @@ class _FolderPageState extends State<FolderPage> {
         isFolderMode: true,
         isSelectionMode: _isSelectionMode,
         isSearchMode: _isSearchMode,
+        collapsedByDefault: true,
         controller: _searchController,
         focusNode: _searchFocusNode,
         isPinned: _folder.isPinned,
@@ -562,9 +584,16 @@ class _FolderPageState extends State<FolderPage> {
         if (_folder.coverImage != null && !_resultsVisible)
           SliverToBoxAdapter(
             child: FutureBuilder<String>(
-              future: _attachmentsStore.materialize(_folder.coverImage!),
+              future: _coverPath(_folder.coverImage!),
               builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (!snapshot.hasData) return const SizedBox.shrink();
+                if (!snapshot.hasData) {
+                  // Reserve the cover's height from the first frame so the
+                  // page does not jump when the image finishes loading.
+                  return const Padding(
+                    padding: EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
+                    child: _CoverPlaceholder(),
+                  );
+                }
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
                   child: TapRegion(
@@ -709,6 +738,7 @@ class _FolderPageState extends State<FolderPage> {
   Widget _card(Note note, {required bool isList}) {
     return NoteCard(
       note: note,
+      isListLayout: isList,
       isSelected: _selected.contains(note.id),
       isInSelectionMode: _isSelectionMode,
       onSelectionToggle: () => _toggleSelection(note.id),
@@ -720,67 +750,48 @@ class _FolderPageState extends State<FolderPage> {
           _openNote(add: false, note: note);
         }
       },
+      // Same body as the home page cards.
       builder: (BuildContext context, Color textColor) => isList
-          ? ListTile(
-              title: Text(
-                note.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-              subtitle: Text(
-                note.content,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11.0,
-                  color: textColor.withValues(alpha: 0.8),
-                ),
-              ),
+          ? buildNoteListContent(
+              note: note,
+              textColor: textColor,
+              activeNoteIds: _activeNoteIds,
             )
-          : Container(
-              padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 4.0,
-                children: <Widget>[
-                  Text(
-                    formatNoteDate(note.date),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 8.0,
-                      color: textColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  Text(
-                    note.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11.0,
-                      color: textColor,
-                    ),
-                  ),
-                  Flexible(
-                    child: Text(
-                      note.content,
-                      overflow: TextOverflow.clip,
-                      style: TextStyle(
-                        fontSize: 10.0,
-                        color: textColor.withValues(alpha: 0.8),
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          : buildNoteGridContent(
+              note: note,
+              textColor: textColor,
+              activeNoteIds: _activeNoteIds,
             ),
+    );
+  }
+}
+
+/// Neutral block shown while a cover image is read from disk, so the page
+/// keeps its layout and does not jump when the image appears.
+class _CoverPlaceholder extends StatelessWidget {
+  const _CoverPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(appBorderRadius),
+      child: SizedBox(
+        height: 160.0,
+        width: double.infinity,
+        child: ColoredBox(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.05),
+          child: Center(
+            child: Icon(
+              Icons.image_outlined,
+              size: 28.0,
+              color: mutedTextColor(context).withValues(alpha: 0.5),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
