@@ -207,7 +207,7 @@ class NoteCard extends StatelessWidget {
                 child: Container(
                   color: isSelected ? Colors.black38 : Colors.black12,
                   child: Align(
-                    alignment: Alignment.topLeft,
+                    alignment: Alignment.topRight,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: isSelected
