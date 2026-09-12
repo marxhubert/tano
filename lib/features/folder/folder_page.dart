@@ -291,7 +291,25 @@ class _FolderPageState extends State<FolderPage> {
     if (_isSearchMode) _exitSearchMode();
   }
 
+  /// Title of the delete confirmation, based on the current selection.
+  String _deleteActionTitle() {
+    final int count = _selected.length;
+    final int total = _visibleNotes.length;
+    if (count > 1) {
+      return count == total
+          ? AppText.tr('delete_all_notes')
+          : AppText.tr('delete_notes', <String, String>{'count': '$count'});
+    }
+    return AppText.tr('delete_note');
+  }
+
   Future<void> _deleteSelected() async {
+    final bool? confirm = await getConfirmation(
+      context: context,
+      actionTitle: _deleteActionTitle(),
+      action: AppText.tr('delete'),
+    );
+    if (confirm != true || !mounted) return;
     final NotesRepository repository = getIt<NotesRepository>();
     for (final String id in _selected.toList()) {
       await repository.trashNote(id);
@@ -304,6 +322,43 @@ class _FolderPageState extends State<FolderPage> {
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
+  }
+
+  /// Moves the selected notes to another folder, or back home.
+  Future<void> _moveSelected() async {
+    final NotesRepository repository = getIt<NotesRepository>();
+    final List<Folder> folders =
+        await _foldersRepository?.loadFolders() ?? const <Folder>[];
+    if (!mounted) return;
+    final String? target = await showAdaptiveChoice<String>(
+      context: context,
+      title: AppText.tr('option_move'),
+      choices: <AdaptiveChoice<String>>[
+        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
+        for (final Folder folder in folders)
+          if (folder.id != _folder.id)
+            AdaptiveChoice<String>(label: folder.name, value: folder.id),
+      ],
+    );
+    if (target == null || !mounted) return;
+    final List<Note> selected = _notes
+        .where((Note note) => _selected.contains(note.id))
+        .toList();
+    for (final Note note in selected) {
+      await repository.upsertNote(
+        target.isEmpty
+            ? note.withoutFolder()
+            : note.copyWith(folderId: target),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _selected.clear();
+      _isSelectionMode = false;
+    });
+    // Leaving the selection never brings the search back.
+    if (_isSearchMode) _exitSearchMode();
+    await _load();
   }
 
   /// Notes shown: the folder content, filtered by the local search. A locked
@@ -588,6 +643,7 @@ class _FolderPageState extends State<FolderPage> {
         },
         onReset: _clearSearch,
         onDelete: _deleteSelected,
+        onMoveSelected: _moveSelected,
         onClearSelection: () => setState(() => _selected.clear()),
         onSelectAll: () => setState(
           // Only the notes currently shown (search results included).
