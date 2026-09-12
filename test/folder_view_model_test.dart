@@ -287,4 +287,18 @@ void main() {
       expect(vm.hasFolderInSelection, isTrue);
     });
   });
+
+  test('withoutCover clears the cover image', () {
+    final Folder folder = Folder(
+      id: 'f1',
+      name: 'Perso',
+      date: '2026-01-01 00:00:00.000',
+      coverImage: 'cover.jpg',
+    );
+
+    final Folder cleared = folder.withoutCover();
+    expect(cleared.coverImage, isNull);
+    expect(cleared.id, 'f1');
+    expect(cleared.name, 'Perso');
+  });
 }

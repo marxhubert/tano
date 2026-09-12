@@ -256,6 +256,7 @@ class HomeState extends State<Home> with RouteAware {
                 child: CupertinoTextField(
                   controller: controller,
                   autofocus: true,
+                  maxLength: 54,
                   placeholder: AppText.tr('folder_name'),
                   padding: const EdgeInsets.all(8.0),
                 ),
@@ -280,6 +281,7 @@ class HomeState extends State<Home> with RouteAware {
               content: TextField(
                 controller: controller,
                 autofocus: true,
+                maxLength: 54,
                 decoration: InputDecoration(
                   labelText: AppText.tr('folder_name'),
                 ),
@@ -395,31 +397,51 @@ class HomeState extends State<Home> with RouteAware {
 
     return SliverMainAxisGroup(
       slivers: <Widget>[
-        _sectionHeader(AppText.tr('my_folders')),
+        // The folder group has no header of its own: the page title is its
+        // title. Only the notes group gets one, styled like the page title.
         if (viewLayout == 'list')
           FolderListView(viewModel: _viewModel, onOpenFolder: _openFolder)
         else
           FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
         const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
         if (notes.isNotEmpty) ...<Widget>[
-          _sectionHeader(AppText.tr('all_notes')),
+          _notesSectionHeader(),
           _notesSliver(notes, viewLayout),
         ],
       ],
     );
   }
 
-  Widget _sectionHeader(String title) {
+  /// "My notes" group header: same style as the page title, with the note
+  /// count on the same line.
+  Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 15.0,
-            fontWeight: FontWeight.bold,
-            color: mutedTextColor(context),
-          ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                AppText.tr('all_notes'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 24.0,
+                  letterSpacing: -0.41,
+                  color: primaryTextColor(context),
+                ),
+              ),
+            ),
+            Text(
+              '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+              style: TextStyle(
+                color: mutedTextColor(context),
+                fontWeight: FontWeight.w400,
+                fontSize: 13.0,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -678,7 +700,9 @@ class HomeState extends State<Home> with RouteAware {
                   ),
                 )
               : Text(
-                  '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
+                  _viewModel.hasFolders
+                      ? '${_viewModel.folders.length} ${_viewModel.folders.length > 1 ? AppText.tr('folders') : AppText.tr('folder')}'
+                      : '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
                   style: TextStyle(
                     color: mutedTextColor(context),
                     fontWeight: FontWeight.w400,

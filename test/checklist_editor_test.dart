@@ -268,7 +268,7 @@ void main() {
     // Create a new note: the home "+" opens the add menu.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add note'));
+    await tester.tap(find.byIcon(Icons.note_add));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
 
@@ -325,7 +325,7 @@ void main() {
     // Create a new note and insert a checklist.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add note'));
+    await tester.tap(find.byIcon(Icons.note_add));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
