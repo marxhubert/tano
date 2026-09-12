@@ -84,8 +84,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Open the add-note editor.
+    // Open the add-note editor: the home "+" now offers folders and notes.
     await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.note_add));
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsNWidgets(2));

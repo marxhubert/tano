@@ -44,13 +44,16 @@ class ImportService {
     required NotesRepository repository,
     AttachmentsStore? attachments,
     AuthService? auth,
+    Argon2Params argon2 = const Argon2Params(),
   })  : _repository = repository,
         _attachments = attachments ?? AttachmentsStore(),
-        _auth = auth ?? AuthService.instance;
+        _auth = auth ?? AuthService.instance,
+        _argon2 = argon2;
 
   final NotesRepository _repository;
   final AttachmentsStore _attachments;
   final AuthService _auth;
+  final Argon2Params _argon2;
 
   /// Whether [data] is an encrypted container.
   static bool isEncrypted(Uint8List data) {
@@ -146,7 +149,8 @@ class ImportService {
     final Uint8List payload = data.sublist(
       saltStart + ExportService.saltLength,
     );
-    final Uint8List key = await ExportService.deriveKey(password, salt);
+    final Uint8List key =
+        await ExportService.deriveKey(password, salt, params: _argon2);
     try {
       return await LocalCipher.decrypt(payload, key);
     } catch (_) {
