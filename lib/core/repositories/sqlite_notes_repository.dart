@@ -429,8 +429,12 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final db = await _database;
     await db.transaction((txn) async {
       await txn.delete('notes');
-      final List<Note> seed = buildNotesFixtures();
-      for (final note in seed) {
+      await txn.delete('folders');
+      final TanoFixtures fixtures = buildFixtures();
+      for (final folder in fixtures.folders) {
+        await txn.insert('folders', folder.toJson());
+      }
+      for (final note in fixtures.notes) {
         await txn.insert('notes', note.toJson());
       }
     });
@@ -465,13 +469,16 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
 
     // Default seed if no legacy data found
     debugPrint('SQLite: Seeding default notes...');
-    final List<Note> seed = buildNotesFixtures();
+    final TanoFixtures fixtures = buildFixtures();
     await db.transaction((txn) async {
-      for (final note in seed) {
+      for (final folder in fixtures.folders) {
+        await txn.insert('folders', folder.toJson());
+      }
+      for (final note in fixtures.notes) {
         await txn.insert('notes', note.toJson());
       }
     });
-    return seed;
+    return fixtures.notes;
   }
 }
 
