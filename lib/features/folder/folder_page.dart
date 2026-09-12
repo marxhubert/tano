@@ -165,6 +165,17 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   Future<void> _openNote({required bool add, required Note note}) async {
+    // Opening a note leaves the search: coming back shows the whole folder.
+    if (_isSearchMode) _exitSearchMode();
+    // A locked note always asks for the system credential, unless the folder
+    // itself is locked: opening it already authenticated the user.
+    bool authenticated = _folder.isLocked;
+    if (note.isLocked && !authenticated) {
+      authenticated = await AuthService.instance.authenticate(
+        reason: AppText.tr('auth_reason'),
+      );
+      if (!authenticated || !mounted) return;
+    }
     final NoteAction? result = await Navigator.push<NoteAction>(
       context,
       MaterialPageRoute<NoteAction>(
@@ -172,8 +183,7 @@ class _FolderPageState extends State<FolderPage> {
           add: add,
           index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
-          // Inside a locked folder the folder authentication already happened.
-          authenticated: _folder.isLocked,
+          authenticated: authenticated,
         ),
       ),
     );
@@ -257,9 +267,7 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   void _enterSelection(String id) {
-    if (_isSearchMode) {
-      _exitSearchMode();
-    }
+    // Keep the search active: the selection stays scoped to the results.
     setState(() {
       _selected.add(id);
       _isSelectionMode = true;
@@ -279,6 +287,8 @@ class _FolderPageState extends State<FolderPage> {
       _selected.clear();
       _isSelectionMode = false;
     });
+    // Leaving the selection never brings the search back.
+    if (_isSearchMode) _exitSearchMode();
   }
 
   Future<void> _deleteSelected() async {
@@ -292,16 +302,20 @@ class _FolderPageState extends State<FolderPage> {
       _selected.clear();
       _isSelectionMode = false;
     });
+    // Leaving the selection never brings the search back.
+    if (_isSearchMode) _exitSearchMode();
   }
 
-  /// Notes shown: the folder content, filtered by the local search.
+  /// Notes shown: the folder content, filtered by the local search. A locked
+  /// note never shows up in the search results.
   List<Note> get _visibleNotes {
     final String query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return _notes;
     return _notes
         .where((Note note) =>
-            note.title.toLowerCase().contains(query) ||
-            note.content.toLowerCase().contains(query))
+            !note.isLocked &&
+            (note.title.toLowerCase().contains(query) ||
+                note.content.toLowerCase().contains(query)))
         .toList();
   }
 
@@ -315,9 +329,10 @@ class _FolderPageState extends State<FolderPage> {
   /// Trailing text on the title line, mirroring the home page.
   Widget? _buildHeaderTrailing(BuildContext context) {
     if (_isSelectionMode) {
-      // Exactly the home page's wording: single, x/y or all selected.
+      // Exactly the home page's wording: single, x/y or all selected. While
+      // searching, the total is the number of results.
       final int count = _selected.length;
-      final int total = _notes.length;
+      final int total = _visibleNotes.length;
       final String label = count == 0
           ? AppText.tr('no_note_selected')
           : (count > 1
@@ -575,7 +590,8 @@ class _FolderPageState extends State<FolderPage> {
         onDelete: _deleteSelected,
         onClearSelection: () => setState(() => _selected.clear()),
         onSelectAll: () => setState(
-          () => _selected.addAll(_notes.map((Note note) => note.id)),
+          // Only the notes currently shown (search results included).
+          () => _selected.addAll(_visibleNotes.map((Note note) => note.id)),
         ),
       ),
       slivers: <Widget>[

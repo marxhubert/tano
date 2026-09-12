@@ -98,35 +98,7 @@ class FolderCard extends StatelessWidget {
                     alignment: Alignment.topRight,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: isSelected
-                          // Same white disc behind the check as a note.
-                          ? Stack(
-                              alignment: Alignment.center,
-                              children: <Widget>[
-                                const SizedBox(
-                                  width: 18.0,
-                                  height: 18.0,
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.white,
-                                    radius: 100.0,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.check_circle,
-                                  size: 24.0,
-                                  color: isDark
-                                      ? TanoStates.action.dark
-                                      : tanoTeal,
-                                ),
-                              ],
-                            )
-                          : Icon(
-                              Icons.panorama_fish_eye,
-                              size: 24.0,
-                              color: isDark
-                                  ? TanoStates.action.dark
-                                  : tanoTeal,
-                            ),
+                      child: _selectionIcon(isDark),
                     ),
                   ),
                 ),
@@ -136,6 +108,33 @@ class FolderCard extends StatelessWidget {
       ),
     );
   }
+
+  /// Selection indicator. A locked folder cannot be selected, so it shows no
+  /// circle at all.
+  Widget _selectionIcon(bool isDark) {
+    if (folder.isLocked) return const SizedBox.shrink();
+    final Color color = isDark ? TanoStates.action.dark : tanoTeal;
+    if (!isSelected) {
+      return Icon(Icons.panorama_fish_eye, size: 24.0, color: color);
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: <Widget>[
+        const SizedBox(
+          width: 18.0,
+          height: 18.0,
+          child: CircleAvatar(backgroundColor: Colors.white, radius: 100.0),
+        ),
+        Icon(Icons.check_circle, size: 24.0, color: color),
+      ],
+    );
+  }
+
+  /// Empty folder row: the 32px glyph plus the card's 14px vertical padding.
+  static const double _emptyRowHeight = 46.0;
+
+  /// List rows are kept at least 1.5x the empty height.
+  static const double _listRowMinHeight = _emptyRowHeight * 1.5 - 14.0;
 
   Widget _buildGrid(Color textColor, Color bgColor) {
     // Fill the whole card so every area (not just the text) stays tappable.
@@ -163,30 +162,35 @@ class FolderCard extends StatelessWidget {
   }
 
   Widget _buildList(Color textColor, Color bgColor) {
-    return Row(
-      children: <Widget>[
-        _folderIcon(textColor, bgColor),
-        const SizedBox(width: 10.0),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                folder.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+    // Keep every folder row at least 1.5x the height of an empty one, so the
+    // list stays comfortable even without a note count.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _listRowMinHeight),
+      child: Row(
+        children: <Widget>[
+          _folderIcon(textColor, bgColor),
+          const SizedBox(width: 10.0),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  folder.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
-              ),
-              _metadata(textColor),
-            ],
+                _metadata(textColor),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

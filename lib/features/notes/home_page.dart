@@ -146,6 +146,8 @@ class HomeState extends State<Home> with RouteAware {
     required bool add,
     required Note note,
   }) async {
+    // Opening a note leaves the search: coming back shows the whole list.
+    if (_isSearchMode) _exitSearchMode();
     bool authenticated = false;
     // A locked note filed in a locked folder does not prompt again.
     if (_viewModel.isNoteEffectivelyLocked(note)) {
@@ -213,6 +215,60 @@ class HomeState extends State<Home> with RouteAware {
     setState(() {
       _isSearchMode = false;
     });
+  }
+
+  /// Selection message on the home page: it speaks about notes, folders or
+  /// items depending on what is currently selected.
+  String _selectionMessage() {
+    if (!_viewModel.hasSelection) return AppText.tr('no_item_selected');
+
+    final bool notes = _viewModel.hasNoteInSelection;
+    final bool folders = _viewModel.hasFolderInSelection;
+
+    if (notes && folders) {
+      return _selectionCountMessage(
+        count: _viewModel.selectedCount,
+        total: _viewModel.itemsCount,
+        single: 'single_item_selected',
+        many: 'items_selected',
+        all: 'all_items_selected',
+      );
+    }
+    if (folders) {
+      return _selectionCountMessage(
+        count: _viewModel.selectedFoldersCount,
+        total: _viewModel.foldersCount,
+        single: 'single_folder_selected',
+        many: 'folders_selected',
+        all: 'all_folders_selected',
+      );
+    }
+    return _selectionCountMessage(
+      count: _viewModel.selectedNotesCount,
+      total: _viewModel.notesCount,
+      single: 'single_note_selected',
+      many: 'notes_selected',
+      all: 'all_notes_selected',
+    );
+  }
+
+  String _selectionCountMessage({
+    required int count,
+    required int total,
+    required String single,
+    required String many,
+    required String all,
+  }) {
+    if (count > 1) {
+      if (count == total) {
+        return AppText.tr(all, <String, String>{'count': '$count'});
+      }
+      return AppText.tr(many, <String, String>{
+        'count': '$count',
+        'total': '$total',
+      });
+    }
+    return AppText.tr(single, <String, String>{'count': '$count'});
   }
 
   String _deleteActionTitle() {
@@ -448,6 +504,8 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Future<void> _openFolder(Folder folder) async {
+    // Opening a folder leaves the search: coming back shows the whole list.
+    if (_isSearchMode) _exitSearchMode();
     if (folder.isLocked) {
       final bool authenticated = await AuthService.instance.authenticate(
         reason: AppText.tr('auth_reason'),
@@ -668,28 +726,7 @@ class HomeState extends State<Home> with RouteAware {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      _viewModel.selected.isEmpty
-                          ? AppText.tr('no_note_selected')
-                          : (_viewModel.selectedCount > 1
-                              ? (_viewModel.selectedCount ==
-                                      _viewModel.notesCount
-                                  ? AppText.tr(
-                                      'all_notes_selected',
-                                      <String, String>{
-                                        'count': '${_viewModel.notesCount}',
-                                      },
-                                    )
-                                  : AppText.tr('notes_selected', <String,
-                                      String>{
-                                      'count': '${_viewModel.selectedCount}',
-                                      'total': '${_viewModel.notesCount}',
-                                    }))
-                              : AppText.tr(
-                                  'single_note_selected',
-                                  <String, String>{
-                                    'count': '${_viewModel.selectedCount}',
-                                  },
-                                )),
+                      _selectionMessage(),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontWeight: FontWeight.w400,
@@ -719,6 +756,7 @@ class HomeState extends State<Home> with RouteAware {
           floatingActionButton: AppFab(
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
+            canMove: !_viewModel.hasFolderInSelection,
             controller: _searchController,
             focusNode: _searchFocusNode,
             onAdd: () {
