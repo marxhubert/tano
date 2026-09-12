@@ -16,6 +16,7 @@ class AppFab extends StatefulWidget {
     super.key,
     this.isSearchMode = false,
     this.isSelectionMode = false,
+    this.canMove = true,
     this.isEditorMode = false,
     this.isFolderMode = false,
     this.isTitleEditing = false,
@@ -64,6 +65,10 @@ class AppFab extends StatefulWidget {
 
   final bool isSearchMode;
   final bool isSelectionMode;
+
+  /// Selection mode: whether the "move" action is available. It is refused as
+  /// soon as a folder is part of the selection.
+  final bool canMove;
   final bool isEditorMode;
 
   /// Folder page: the add menu offers a cover and a new note, the more menu
@@ -937,16 +942,9 @@ class AppFabState extends State<AppFab> {
 
     return _buildHorizontalBar(targetWidth, [
       _SelectionFabButton(
-        icon: Icons.drive_file_move_outline,
-        label: AppText.tr('move'),
-        color: Colors.white,
-        onPressed: widget.onMoveSelected ?? () {},
-      ),
-      _SelectionFabButton(
-        icon: Icons.delete,
-        label: capitalizedDelete,
-        color: const Color(0xFFFF8A80),
-        onPressed: widget.onDelete ?? () {},
+        icon: Icons.select_all,
+        label: AppText.tr('select_all'),
+        onPressed: widget.onSelectAll ?? () {},
       ),
       _SelectionFabButton(
         icon: Icons.check_box_outline_blank,
@@ -954,9 +952,17 @@ class AppFabState extends State<AppFab> {
         onPressed: widget.onClearSelection ?? () {},
       ),
       _SelectionFabButton(
-        icon: Icons.select_all,
-        label: AppText.tr('select_all'),
-        onPressed: widget.onSelectAll ?? () {},
+        icon: Icons.drive_file_move_outline,
+        label: AppText.tr('move'),
+        color: Colors.white,
+        // Moving is refused as soon as a folder is selected.
+        onPressed: widget.canMove ? (widget.onMoveSelected ?? () {}) : null,
+      ),
+      _SelectionFabButton(
+        icon: Icons.delete,
+        label: capitalizedDelete,
+        color: const Color(0xFFFF8A80),
+        onPressed: widget.onDelete ?? () {},
       ),
     ]);
   }
@@ -1318,18 +1324,22 @@ class _SelectionFabButton extends StatelessWidget {
   const _SelectionFabButton({
     required this.icon,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
     this.color,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveColor = color ?? Colors.white;
+    final Color base = color ?? Colors.white;
+    // A null callback means the action is disabled: dim it and ignore taps.
+    final Color effectiveColor = onPressed == null
+        ? base.withValues(alpha: 0.35)
+        : base;
     return Expanded(
       child: InkWell(
         onTap: onPressed,

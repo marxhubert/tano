@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
@@ -62,6 +64,23 @@ class _Repo implements NotesRepository, FoldersRepository {
   Future<void> toggleFolderPin(String id) async {}
   @override
   Future<String> nextFolderName() async => 'Folder 1';
+}
+
+/// Fakes the system credential prompt (no platform channel in tests).
+class _FakeAuth extends AuthService {
+  _FakeAuth({this.authorized = true});
+
+  bool authorized;
+  int calls = 0;
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  Future<bool> authenticate({String? reason}) async {
+    calls++;
+    return authorized;
+  }
 }
 
 void main() {
@@ -857,5 +876,270 @@ void main() {
     // Long list: the FAB is reduced so it does not hide the last notes.
     expect(find.byIcon(Icons.more_horiz), findsOneWidget);
     expect(find.byIcon(Icons.more_vert), findsNothing);
+  });
+
+  testWidgets('home selection counts notes, folders and items', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Free2', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n3', title: 'Filed', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // One note selected: the note wording, total = unfiled notes.
+    await tester.longPress(find.text('Free'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 single note selected'), findsOneWidget);
+
+    // Adding the folder switches to the items wording, total = 2 notes + 1 folder.
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+    expect(find.text('2/3 items selected'), findsOneWidget);
+
+    // The move action is disabled when a folder is part of the selection.
+    final InkWell moveButton = tester.widget<InkWell>(
+      find.ancestor(
+        of: find.byIcon(Icons.drive_file_move_outline),
+        matching: find.byType(InkWell),
+      ).first,
+    );
+    expect(moveButton.onTap, isNull);
+
+    // FAB order: all, none, move, delete.
+    final double all = tester.getCenter(find.byIcon(Icons.select_all)).dx;
+    final double none = tester
+        .getCenter(find.byIcon(Icons.check_box_outline_blank))
+        .dx;
+    final double move = tester
+        .getCenter(find.byIcon(Icons.drive_file_move_outline))
+        .dx;
+    final double delete = tester.getCenter(find.byIcon(Icons.delete)).dx;
+    expect(all, lessThan(none));
+    expect(none, lessThan(move));
+    expect(move, lessThan(delete));
+  });
+
+  testWidgets('folder list rows have a minimum height', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'viewLayout': 'list',
+    });
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Empty folder (no metadata) still gets 1.5x its natural row height.
+    expect(tester.getSize(find.byType(FolderCard)).height, greaterThanOrEqualTo(69.0));
+  });
+
+  testWidgets('locked folders are not selectable but locked notes are', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Locked note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(
+            id: 'f1',
+            name: 'Perso',
+            date: '2026-01-01 00:00:00.000',
+            isLocked: true,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Long-pressing a locked folder does not enter selection mode.
+    await tester.longPress(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('selected'), findsNothing);
+
+    // A locked note is still selectable (the locked placeholder sits on top
+    // of the card content, so the title appears twice).
+    await tester.longPress(find.byType(NoteCard));
+    await tester.pumpAndSettle();
+    expect(find.text('1 single note selected'), findsOneWidget);
+
+    // The locked folder shows no selection circle.
+    expect(
+      find.descendant(
+        of: find.byType(FolderCard),
+        matching: find.byIcon(Icons.panorama_fish_eye),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('opening a result leaves the home search', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    final Finder field = find.descendant(
+      of: find.byType(AppFab),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(field, 'Al');
+    await tester.pumpAndSettle();
+    expect(find.text('Results'), findsWidgets);
+
+    // Open the note from the results, then come back.
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+
+    // The search is gone: back to the normal title.
+    expect(find.text('My notes'), findsWidgets);
+    expect(find.text('Results'), findsNothing);
+  });
+
+  testWidgets('folder selection stays scoped to the search results', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          for (int i = 0; i < 6; i++)
+            Note(
+              id: 'n$i',
+              title: 'Match $i',
+              content: 'x',
+              date: '2026-01-01 00:00:00.000',
+              folderId: 'f1',
+            ),
+          Note(id: 'o1', title: 'Other', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+          Note(id: 'l1', title: 'Match locked', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1', isLocked: true),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    final Finder field = find.descendant(
+      of: find.byType(AppFab),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(field, 'Match');
+    await tester.pumpAndSettle();
+
+    // The locked match is excluded, 6 results remain.
+    expect(find.byType(NoteCard), findsNWidgets(6));
+    expect(find.text('Match locked'), findsNothing);
+
+    await tester.longPress(find.text('Match 0'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 single note selected'), findsOneWidget);
+
+    await tester.tap(find.byType(NoteCard).at(1));
+    await tester.pumpAndSettle();
+    // Total is the number of results, not the whole folder.
+    expect(find.text('2/6 notes selected'), findsOneWidget);
+
+    // Cancelling the selection drops the search too.
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Results'), findsNothing);
+    // Back to the normal folder view: the search action is available again.
+    expect(find.byIcon(Icons.search), findsOneWidget);
+    expect(find.text('Perso'), findsWidgets);
+  });
+
+  testWidgets('a locked note in an unlocked folder asks for the credential', (
+    tester,
+  ) async {
+    final _FakeAuth auth = _FakeAuth(authorized: false);
+    final AuthService originalAuth = AuthService.instance;
+    AuthService.instance = auth;
+    addTearDown(() => AuthService.instance = originalAuth);
+
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Locked note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FolderCard));
+    await tester.pumpAndSettle();
+
+    // Refused credential: the prompt runs but the editor stays closed.
+    await tester.tap(find.byType(NoteCard));
+    await tester.pumpAndSettle();
+    expect(auth.calls, 1);
+    expect(find.byType(EditNote), findsNothing);
+
+    // Accepted credential: the note opens.
+    auth.authorized = true;
+    await tester.tap(find.byType(NoteCard));
+    await tester.pumpAndSettle();
+    expect(auth.calls, 2);
+    expect(find.byType(EditNote), findsOneWidget);
   });
 }

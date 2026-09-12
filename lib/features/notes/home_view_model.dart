@@ -51,6 +51,11 @@ class HomeViewModel extends ChangeNotifier {
 
   bool get hasFolders => folders.isNotEmpty;
   int get notesCount => _visibleNotes().length;
+  int get foldersCount => folders.length;
+
+  /// Total selectable items on the home page: unfiled notes plus folders
+  /// (notes filed in a folder are not shown here).
+  int get itemsCount => notesCount + foldersCount;
   String get sortBy => _sortBy;
   String get secondarySortBy => _secondarySortBy;
   bool get sortAscending => _sortAscending;
@@ -192,7 +197,12 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  /// A locked folder can never be selected; locked notes still can.
+  bool _isLockedFolder(String id) =>
+      _folders.any((Folder f) => f.id == id && f.isLocked);
+
   void enterSelectionMode(String id) {
+    if (_isLockedFolder(id)) return;
     _selected.add(id);
     _isInSelectionMode = true;
     _actionButtons = 'multiple';
@@ -200,6 +210,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   void toggleSelection(String id) {
+    if (_isLockedFolder(id)) return;
     if (!_selected.remove(id)) {
       _selected.add(id);
     }
@@ -210,8 +221,9 @@ class HomeViewModel extends ChangeNotifier {
     for (final Note note in _visibleNotes()) {
       _selected.add(note.id);
     }
+    // A locked folder is not selectable.
     for (final Folder folder in folders) {
-      _selected.add(folder.id);
+      if (!folder.isLocked) _selected.add(folder.id);
     }
     notifyListeners();
   }
@@ -231,6 +243,20 @@ class HomeViewModel extends ChangeNotifier {
   /// Whether the selection contains a folder, which cannot be moved.
   bool get hasFolderInSelection =>
       _folders.any((Folder f) => _selected.contains(f.id));
+
+  /// Number of selected notes currently shown on the home page.
+  int get selectedNotesCount =>
+      _visibleNotes().where((Note n) => _selected.contains(n.id)).length;
+
+  /// Number of selected folders.
+  int get selectedFoldersCount =>
+      folders.where((Folder f) => _selected.contains(f.id)).length;
+
+  bool get hasNoteInSelection => selectedNotesCount > 0;
+
+  /// True when the selection mixes notes and folders.
+  bool get hasMixedSelection =>
+      hasNoteInSelection && hasFolderInSelection;
 
   /// Total number of notes held by the selected folders, for the delete
   /// confirmation.
