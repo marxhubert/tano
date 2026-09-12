@@ -13,11 +13,37 @@ import 'package:tano/core/services/local_cipher.dart';
 /// A cleartext export is a plain ZIP (readable with any unzip tool). An
 /// encrypted export is a custom container starting with [magic] and holding the
 /// Argon2id salt followed by the AES-GCM payload.
+/// Argon2id cost parameters for encrypted exports.
+///
+/// The production defaults are deliberately strong; [fast] keeps derivation
+/// near-instant so tests do not blow their timeout in CI.
+class Argon2Params {
+  const Argon2Params({
+    this.parallelism = 4,
+    this.memory = 65536,
+    this.iterations = 3,
+  });
+
+  final int parallelism;
+  final int memory;
+  final int iterations;
+
+  static const Argon2Params fast = Argon2Params(
+    parallelism: 1,
+    memory: 256,
+    iterations: 1,
+  );
+}
+
 class ExportService {
-  ExportService({AttachmentsStore? attachments})
-      : _attachments = attachments ?? AttachmentsStore();
+  ExportService({
+    AttachmentsStore? attachments,
+    Argon2Params argon2 = const Argon2Params(),
+  })  : _attachments = attachments ?? AttachmentsStore(),
+        _argon2 = argon2;
 
   final AttachmentsStore _attachments;
+  final Argon2Params _argon2;
 
   static const String magic = 'TANO1';
   static const int version = 1;
@@ -67,7 +93,7 @@ class ExportService {
     if (password == null) return zipped;
 
     final List<int> salt = _randomBytes(saltLength);
-    final Uint8List key = await deriveKey(password, salt);
+    final Uint8List key = await deriveKey(password, salt, params: _argon2);
     final Uint8List encrypted = await LocalCipher.encrypt(zipped, key);
 
     final BytesBuilder out = BytesBuilder(copy: false);
@@ -79,11 +105,15 @@ class ExportService {
   }
 
   /// Derives a 32-byte key from [password] and [salt] with Argon2id.
-  static Future<Uint8List> deriveKey(String password, List<int> salt) async {
+  static Future<Uint8List> deriveKey(
+    String password,
+    List<int> salt, {
+    Argon2Params params = const Argon2Params(),
+  }) async {
     final Argon2id algorithm = Argon2id(
-      parallelism: 4,
-      memory: 65536,
-      iterations: 3,
+      parallelism: params.parallelism,
+      memory: params.memory,
+      iterations: params.iterations,
       hashLength: 32,
     );
     final SecretKey secret = await algorithm.deriveKey(
