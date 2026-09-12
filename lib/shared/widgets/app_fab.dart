@@ -18,6 +18,7 @@ class AppFab extends StatefulWidget {
     this.isSelectionMode = false,
     this.isEditorMode = false,
     this.isFolderMode = false,
+    this.isTitleEditing = false,
     this.onAddNote,
     this.isFindMode = false,
     this.findCurrent = 0,
@@ -55,6 +56,7 @@ class AppFab extends StatefulWidget {
     this.onMoveSelected,
     this.onLockSelected,
     this.onDeleteSelected,
+    this.onEditTitle,
     this.onCollaboratorsSelected,
     this.onShareSelected,
   });
@@ -66,6 +68,9 @@ class AppFab extends StatefulWidget {
   /// Folder page: the add menu offers a cover and a new note, the more menu
   /// offers pin, bookmark, lock and delete.
   final bool isFolderMode;
+
+  /// Folder page: the title is being renamed, so the FAB stays reduced.
+  final bool isTitleEditing;
 
   /// Folder page: creates a note inside the folder.
   final VoidCallback? onAddNote;
@@ -107,6 +112,9 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onMoveSelected;
   final VoidCallback? onLockSelected;
   final VoidCallback? onDeleteSelected;
+
+  /// Folder page: renames the folder from the title line.
+  final VoidCallback? onEditTitle;
   final VoidCallback? onCollaboratorsSelected;
   final VoidCallback? onShareSelected;
 
@@ -199,8 +207,16 @@ class AppFabState extends State<AppFab> {
 
     bool isExpanded =
         widget.isSearchMode || widget.isSelectionMode || widget.isFindMode;
-    if (widget.isEditorMode && !widget.isFindMode) {
+    if (widget.isEditorMode &&
+        !widget.isFindMode &&
+        !widget.isSelectionMode &&
+        !widget.isSearchMode) {
       isExpanded = _isManuallyExpanded ?? isKeyboardClosed;
+    }
+    // While the folder title is being renamed, the FAB stays reduced
+    // (circular) whatever the keyboard/menu state.
+    if (widget.isTitleEditing) {
+      isExpanded = false;
     }
     // The home "+" is not "expanded" by itself, but its menu must stay open.
     if (!widget.isEditorMode && isMenuOpen) {
@@ -211,24 +227,35 @@ class AppFabState extends State<AppFab> {
       _verticalMenu = FabVerticalMenu.none;
     }
 
+    // The home "+" turns into a narrow column of two icons, keeping its width.
+    final bool homeAddOpen = !widget.isEditorMode &&
+        !widget.isFolderMode &&
+        _verticalMenu == FabVerticalMenu.add;
+
     // Target width based on state
     final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
         ? screenWidth - 24.0
         : screenWidth - 48.0;
 
     double currentWidth = btnHeight;
-    if (isExpanded || isMenuOpen) {
+    if (homeAddOpen) {
+      currentWidth = btnHeight;
+    } else if (isExpanded || isMenuOpen) {
       currentWidth = targetExpandedWidth;
     }
 
-    // Translation calculation
+    // Translation calculation. The home add column keeps the FAB margins.
     double tx = 0.0;
-    if ((isExpanded || isMenuOpen) && (isMenuOpen || !isKeyboardClosed)) {
+    if (!homeAddOpen &&
+        (isExpanded || isMenuOpen) &&
+        (isMenuOpen || !isKeyboardClosed)) {
       tx = 12.0;
     }
 
     double ty = 0.0;
-    if (isMenuOpen) {
+    if (homeAddOpen) {
+      ty = 0.0;
+    } else if (isMenuOpen) {
       ty = 8.0;
     } else if (!isKeyboardClosed) {
       ty = 12.0;
@@ -258,16 +285,22 @@ class AppFabState extends State<AppFab> {
         : btnHeight;
 
     double currentHeight = barHeight;
-    if (isMenuOpen) {
+    if (homeAddOpen) {
+      // Two stacked icon buttons.
+      currentHeight = btnHeight * 2;
+    } else if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
     }
 
-    return AnimatedContainer(
-      // The home add-menu must not be laid out while the bar animates from the
-      // collapsed circle, where it would overflow: open it instantly.
-      duration: !widget.isEditorMode && isMenuOpen
-          ? Duration.zero
-          : const Duration(milliseconds: 250),
+    return TapRegion(
+      // Tapping anywhere else folds the FAB back to its resting form.
+      onTapOutside: (_) {
+        if (_verticalMenu != FabVerticalMenu.none) {
+          setState(() => _verticalMenu = FabVerticalMenu.none);
+        }
+      },
+      child: AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       height: currentHeight,
       width: currentWidth,
@@ -276,11 +309,11 @@ class AppFabState extends State<AppFab> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
         borderRadius: isMenuOpen
-            ? BorderRadius.vertical(
-                top: Radius.circular(24.0),
-                bottom: Radius.circular(borderRadiusValue),
-              )
-            : BorderRadius.circular(borderRadiusValue),
+          ? BorderRadius.vertical(
+              top: Radius.circular(homeAddOpen ? borderRadiusValue : 24.0),
+              bottom: Radius.circular(borderRadiusValue),
+            )
+          : BorderRadius.circular(borderRadiusValue),
         border: Border.all(
           color: getBorderColor(
             Theme.of(context).colorScheme.primary,
@@ -344,38 +377,126 @@ class AppFabState extends State<AppFab> {
                 ),
               ),
 
-              if (isMenuOpen)
-                Positioned(
-                  bottom: btnHeight,
-                  left: 0,
-                  right: 0,
-                  top: 0,
+              if (homeAddOpen)
+                Positioned.fill(
+                  child: TapRegion(
+                    // Tapping anywhere else folds the FAB back to its "+".
+                    onTapOutside: (_) =>
+                        setState(() => _verticalMenu = FabVerticalMenu.none),
+                    // Let the column keep its natural height while the FAB
+                    // grows, instead of overflowing during the animation.
+                    child: OverflowBox(
+                      maxHeight: double.infinity,
+                      alignment: Alignment.center,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        builder:
+                            (BuildContext context, double value, Widget? child) =>
+                                Opacity(
+                                  opacity: value,
+                                  child: Transform.scale(
+                                    scale: 0.85 + 0.15 * value,
+                                    child: child,
+                                  ),
+                                ),
+                        child: _buildHomeAddIcons(),
+                      ),
+                    ),
+                  ),
+                )
+              else ...<Widget>[
+                if (isMenuOpen)
+                  Positioned(
+                    bottom: btnHeight,
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: AnimatedOpacity(
+                      opacity: showContent ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _buildVerticalMenuContent(context),
+                      ),
+                    ),
+                  ),
+
+                SizedBox(
+                  height: barHeight,
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 150),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _buildVerticalMenuContent(context),
+                    // Only the icons swap: the FAB box itself does not move.
+                    // The outgoing set zooms out while the incoming zooms in.
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(
+                                  begin: 0.75,
+                                  end: 1.0,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                      child: KeyedSubtree(
+                        key: ValueKey<bool>(widget.isSelectionMode),
+                        child: _buildMainContent(
+                          context,
+                          isExpanded,
+                          targetExpandedWidth,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-
-              SizedBox(
-                height: barHeight,
-                child: AnimatedOpacity(
-                  opacity: showContent ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 150),
-                  child: _buildMainContent(
-                    context,
-                    isExpanded,
-                    targetExpandedWidth,
-                  ),
-                ),
-              ),
+              ],
             ],
           );
         },
       ),
+      ),
+    );
+  }
+
+  /// Narrow vertical column shown instead of the home "+": add folder on top,
+  /// add note below, icons only.
+  Widget _buildHomeAddIcons() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        IconButton(
+          iconSize: 24.0,
+          icon: const Icon(Icons.create_new_folder, color: Colors.white),
+          onPressed: () {
+            setState(() => _verticalMenu = FabVerticalMenu.none);
+            widget.onAddFolder?.call();
+          },
+        ),
+        const SizedBox(height: 6.0),
+        Divider(
+          height: 1.0,
+          thickness: 0.5,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
+        const SizedBox(height: 6.0),
+        IconButton(
+          iconSize: 24.0,
+          icon: const Icon(Icons.note_add, color: Colors.white),
+          onPressed: () {
+            setState(() => _verticalMenu = FabVerticalMenu.none);
+            widget.onAdd?.call();
+          },
+        ),
+      ],
     );
   }
 
@@ -657,6 +778,11 @@ class AppFabState extends State<AppFab> {
           onTap: widget.onImportantSelected,
         ),
         _VerticalMenuItem(
+          icon: Icons.edit_outlined,
+          label: AppText.tr('edit'),
+          onTap: widget.onEditTitle,
+        ),
+        _VerticalMenuItem(
           icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
           label: widget.isLocked
               ? AppText.tr('option_unlock')
@@ -728,11 +854,11 @@ class AppFabState extends State<AppFab> {
     double targetWidth,
   ) {
     if (widget.isFindMode) return _buildFindBar(context);
+    if (widget.isSelectionMode) return _buildSelectionBar(context, targetWidth);
+    if (widget.isSearchMode) return _buildSearchBar(context);
     if (widget.isEditorMode) {
       return _buildEditorBar(context, isExpanded, targetWidth);
     }
-    if (widget.isSelectionMode) return _buildSelectionBar(context, targetWidth);
-    if (widget.isSearchMode) return _buildSearchBar(context);
     return _buildDefaultAddButton();
   }
 

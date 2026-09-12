@@ -100,6 +100,16 @@ void main() {
       expect(note.content, 'Some content');
     });
 
+    test('buildNote keeps the folder the note belongs to', () {
+      final vm = EditNoteViewModel(
+        repository: _InMemoryNotesRepository(),
+        add: true,
+        initialNote: const Note(folderId: 'f1', category: 'nuage'),
+      );
+
+      expect(vm.buildNote(title: 'T', content: 'C').folderId, 'f1');
+    });
+
     test('buildNote uses the start of the content as title when empty', () {
       final vm = EditNoteViewModel(
         repository: _InMemoryNotesRepository(),
@@ -159,6 +169,16 @@ void main() {
         vm.isDirty(title: 'Documentation', content: 'Contenu avec une ligne\n'),
         isFalse,
       );
+    });
+
+    test('isDirty is false after saving an untitled note (derived title)', () async {
+      final repository = _InMemoryNotesRepository();
+      final vm = EditNoteViewModel(repository: repository, add: true);
+
+      final note = vm.buildNote(title: '', content: 'Body only');
+      await vm.persistSavedNote(note);
+
+      expect(vm.isDirty(title: '', content: 'Body only'), isFalse);
     });
 
     test('isDirty is true when the content changes', () {
