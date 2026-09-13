@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -21,6 +22,7 @@ class NoteCard extends StatelessWidget {
     this.isInSelectionMode = false,
     this.onSelectionToggle,
     this.isListLayout = false,
+    this.coverImage,
   });
 
   final Note note;
@@ -35,6 +37,10 @@ class NoteCard extends StatelessWidget {
   /// differs: a list row keeps two title lines, left aligned, while a grid
   /// tile centers up to three.
   final bool isListLayout;
+
+  /// Stored cover image name, drawn as a background. A locked note never
+  /// shows its cover.
+  final String? coverImage;
 
   static Widget _lockedIcon(Color textColor) {
     return Icon(
@@ -98,13 +104,33 @@ class NoteCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        children: <Widget>[
-          // Pinned indicator
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          // The cover is a background: the top half in the grid, the left
+          // third in the list. The content keeps its place, just shifted.
+          final bool showCover = coverImage != null && !note.isLocked;
+          final double coverHeight =
+              showCover && !isListLayout ? constraints.maxHeight / 2 : 0.0;
+          final double coverWidth =
+              showCover && isListLayout ? constraints.maxWidth / 3 : 0.0;
+          return Stack(
+            children: <Widget>[
+              if (showCover)
+                Positioned(
+                  top: 0.0,
+                  left: 0.0,
+                  right: isListLayout ? null : 0.0,
+                  bottom: isListLayout ? 0.0 : null,
+                  width: isListLayout ? coverWidth : null,
+                  height: isListLayout ? null : coverHeight,
+                  child: CoverImage(name: coverImage!),
+                ),
+          // Markers sit after the cover, never on top of it: below it in the
+          // grid, just to its right in the list.
           if (note.isPinned)
             Positioned(
-              top: 2.0,
-              left: 2.0,
+              top: showCover && !isListLayout ? coverHeight + 2.0 : 2.0,
+              left: showCover && isListLayout ? coverWidth + 4.0 : 2.0,
               child: Icon(
                 Icons.push_pin,
                 size: 14.0,
@@ -112,10 +138,10 @@ class NoteCard extends StatelessWidget {
               ),
             ),
 
-          // The visual "Important" bookmark behind the content
           if (note.important)
             Positioned(
-              top: -4.0,
+              // Glued to the cover's bottom edge in the grid.
+              top: showCover && !isListLayout ? coverHeight - 2.0 : -4.0,
               right: 4.0,
               child: Icon(
                 Icons.bookmark,
@@ -124,12 +150,29 @@ class NoteCard extends StatelessWidget {
               ),
             ),
 
-          // Actual Note Content
-          InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            child: builder(context, textColor),
-          ),
+          // Actual Note Content, shifted to leave room for the cover. A list
+          // row is sized by its content; a grid tile fills its cell so the
+          // whole cover stays tappable.
+          if (isListLayout)
+            InkWell(
+              onTap: onTap,
+              onLongPress: onLongPress,
+              child: Padding(
+                padding: EdgeInsets.only(left: coverWidth),
+                child: builder(context, textColor),
+              ),
+            )
+          else
+            Positioned.fill(
+              child: InkWell(
+                onTap: onTap,
+                onLongPress: onLongPress,
+                child: Padding(
+                  padding: EdgeInsets.only(top: coverHeight),
+                  child: builder(context, textColor),
+                ),
+              ),
+            ),
 
           // A locked note shows nothing but its lock, title and date.
           if (note.isLocked)
@@ -243,7 +286,9 @@ class NoteCard extends StatelessWidget {
                 ),
               ),
             ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -213,6 +213,40 @@ class _FolderPageState extends State<FolderPage> {
     setState(() => _showRemoveCoverButton = false);
   }
 
+  /// Red "remove cover" button, anchored to the cover's top right corner.
+  Widget _removeCoverButton(BuildContext context) {
+    return Positioned(
+      top: 8.0,
+      right: 8.0,
+      child: GestureDetector(
+        onTap: () async {
+          final bool? confirm = await getConfirmation(
+            context: context,
+            actionTitle: AppText.tr('delete_photo'),
+            action: AppText.tr('delete'),
+          );
+          if (confirm == true) {
+            await _removeCover();
+          }
+        },
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 4.0,
+                offset: Offset(0.0, 2.0),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.cancel, color: Colors.red, size: 24.0),
+        ),
+      ),
+    );
+  }
+
   /// Materializes the cover once per file name.
   Future<String> _coverPath(String name) {
     if (_coverName != name || _coverFuture == null) {
@@ -659,11 +693,28 @@ class _FolderPageState extends State<FolderPage> {
               future: _coverPath(_folder.coverImage!),
               builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
                 if (!snapshot.hasData) {
-                  // Reserve the cover's height from the first frame so the
-                  // page does not jump when the image finishes loading.
-                  return const Padding(
-                    padding: EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
-                    child: _CoverPlaceholder(),
+                  // Reserve the cover's height from the first frame so the page
+                  // does not jump when the image finishes loading. A file that
+                  // cannot be read is marked and can be removed right away.
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
+                    child: Stack(
+                      children: <Widget>[
+                        const _CoverPlaceholder(),
+                        if (snapshot.hasError) ...<Widget>[
+                          Center(
+                            child: Text(
+                              AppText.tr('corrupted_image'),
+                              style: TextStyle(
+                                color: mutedTextColor(context),
+                                fontSize: 13.0,
+                              ),
+                            ),
+                          ),
+                          _removeCoverButton(context),
+                        ],
+                      ],
+                    ),
                   );
                 }
                 return Padding(
@@ -696,54 +747,22 @@ class _FolderPageState extends State<FolderPage> {
                                   width: double.infinity,
                                   fit: BoxFit.cover,
                                 ),
-                                // Dark mode dims the cover, like a note's.
-                                if (Theme.of(context).brightness ==
-                                    Brightness.dark)
-                                  Positioned.fill(
-                                    child: Container(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.3,
-                                      ),
+                                // Dim the cover, stronger in dark mode.
+                                Positioned.fill(
+                                  child: Container(
+                                    color: Colors.black.withValues(
+                                      alpha: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? 0.3
+                                          : 0.12,
                                     ),
                                   ),
+                                ),
                               ],
                             ),
                           ),
                           if (_showRemoveCoverButton)
-                            Positioned(
-                              top: 8.0,
-                              right: 8.0,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  final bool? confirm = await getConfirmation(
-                                    context: context,
-                                    actionTitle: AppText.tr('delete_photo'),
-                                    action: AppText.tr('delete'),
-                                  );
-                                  if (confirm == true) {
-                                    await _removeCover();
-                                  }
-                                },
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 4.0,
-                                        offset: Offset(0.0, 2.0),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.cancel,
-                                    color: Colors.red,
-                                    size: 24.0,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            _removeCoverButton(context),
                         ],
                       ),
                     ),
@@ -810,6 +829,7 @@ class _FolderPageState extends State<FolderPage> {
   Widget _card(Note note, {required bool isList}) {
     return NoteCard(
       note: note,
+      coverImage: note.coverImage,
       isListLayout: isList,
       isSelected: _selected.contains(note.id),
       isInSelectionMode: _isSelectionMode,

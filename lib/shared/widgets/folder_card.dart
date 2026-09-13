@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/folder.dart';
+import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// A folder card, shared by the list and grid views.
@@ -19,6 +20,7 @@ class FolderCard extends StatelessWidget {
     this.isSelected = false,
     this.isInSelectionMode = false,
     this.onSelectionToggle,
+    this.coverImage,
   });
 
   final Folder folder;
@@ -29,6 +31,9 @@ class FolderCard extends StatelessWidget {
   final bool isSelected;
   final bool isInSelectionMode;
   final VoidCallback? onSelectionToggle;
+
+  /// Stored cover image name, drawn as a background.
+  final String? coverImage;
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +60,33 @@ class FolderCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        children: <Widget>[
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          // The cover is a background: the top half in the grid, the left
+          // third in the list.
+          final bool showCover = coverImage != null && !folder.isLocked;
+          final double coverHeight =
+              showCover && !isListLayout ? constraints.maxHeight / 2 : 0.0;
+          final double coverWidth =
+              showCover && isListLayout ? constraints.maxWidth / 3 : 0.0;
+          return Stack(
+            children: <Widget>[
+              if (showCover)
+                Positioned(
+                  top: 0.0,
+                  left: 0.0,
+                  right: isListLayout ? null : 0.0,
+                  bottom: isListLayout ? 0.0 : null,
+                  width: isListLayout ? coverWidth : null,
+                  height: isListLayout ? null : coverHeight,
+                  child: CoverImage(name: coverImage!),
+                ),
+          // Markers sit after the cover, never on top of it: below it in the
+          // grid, just to its right in the list.
           if (folder.important)
             Positioned(
-              top: -4.0,
+              // Glued to the cover's bottom edge in the grid.
+              top: showCover && !isListLayout ? coverHeight - 2.0 : -4.0,
               right: 4.0,
               child: Icon(
                 Icons.bookmark,
@@ -67,27 +94,42 @@ class FolderCard extends StatelessWidget {
                 color: tanoAmber.withValues(alpha: 0.8),
               ),
             ),
-          // Same position as a pinned note's indicator.
           if (folder.isPinned)
             Positioned(
-              top: 2.0,
-              left: 2.0,
+              top: showCover && !isListLayout ? coverHeight + 2.0 : 2.0,
+              left: showCover && isListLayout ? coverWidth + 4.0 : 2.0,
               child: Icon(
                 Icons.push_pin,
                 size: 14.0,
                 color: textColor.withValues(alpha: 0.5),
               ),
             ),
-          InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 6.0),
-              child: isListLayout
-                  ? _buildList(textColor, bgColor)
-                  : _buildGrid(textColor, bgColor),
+          if (isListLayout)
+            InkWell(
+              onTap: onTap,
+              onLongPress: onLongPress,
+              child: Padding(
+                padding: EdgeInsets.only(left: coverWidth),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 6.0),
+                  child: _buildList(textColor, bgColor, showCover),
+                ),
+              ),
+            )
+          else
+            Positioned.fill(
+              child: InkWell(
+                onTap: onTap,
+                onLongPress: onLongPress,
+                child: Padding(
+                  padding: EdgeInsets.only(top: coverHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 6.0),
+                    child: _buildGrid(textColor, bgColor),
+                  ),
+                ),
+              ),
             ),
-          ),
           if (isInSelectionMode)
             Positioned.fill(
               child: GestureDetector(
@@ -104,7 +146,9 @@ class FolderCard extends StatelessWidget {
                 ),
               ),
             ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -136,6 +180,9 @@ class FolderCard extends StatelessWidget {
   /// List rows are kept at least 1.5x the empty height.
   static const double _listRowMinHeight = _emptyRowHeight * 1.5 - 14.0;
 
+  /// A cover puts the icon above the text, so the row needs a bit more.
+  static const double _listMinHeightWithCover = _listRowMinHeight + 16.0;
+
   Widget _buildGrid(Color textColor, Color bgColor) {
     // Fill the whole card so every area (not just the text) stays tappable.
     return SizedBox(
@@ -161,36 +208,57 @@ class FolderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildList(Color textColor, Color bgColor) {
-    // Keep every folder row at least 1.5x the height of an empty one, so the
-    // list stays comfortable even without a note count.
+  Widget _buildList(Color textColor, Color bgColor, bool hasCover) {
+    final TextStyle nameStyle = TextStyle(
+      fontSize: 14.0,
+      fontWeight: FontWeight.bold,
+      color: textColor,
+    );
+    // Keep every folder row at least 1.5x the height of an empty one, and a
+    // little more when a cover pushes the icon above the text.
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _listRowMinHeight),
-      child: Row(
-        children: <Widget>[
-          _folderIcon(textColor, bgColor),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
+      constraints: BoxConstraints(
+        minHeight: hasCover ? _listMinHeightWithCover : _listRowMinHeight,
+      ),
+      child: hasCover
+          ? Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                // Kept clear of the pin, which sits at the top of the row.
+                const SizedBox(height: 10.0),
+                _folderIcon(textColor, bgColor),
+                const SizedBox(height: 6.0),
                 Text(
                   folder.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+                  style: nameStyle,
                 ),
                 _metadata(textColor),
               ],
+            )
+          : Row(
+              children: <Widget>[
+                _folderIcon(textColor, bgColor),
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        folder.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: nameStyle,
+                      ),
+                      _metadata(textColor),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
