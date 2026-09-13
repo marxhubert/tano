@@ -132,9 +132,11 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   Future<void> _save(Folder folder) async {
-    await _foldersRepository?.upsertFolder(folder);
+    final Folder updated =
+        folder.copyWith(updatedAt: DateTime.now().toString());
+    await _foldersRepository?.upsertFolder(updated);
     if (!mounted) return;
-    setState(() => _folder = folder);
+    setState(() => _folder = updated);
   }
 
   void _onTitleFocusChanged() {

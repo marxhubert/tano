@@ -183,7 +183,10 @@ class HomeViewModel extends ChangeNotifier {
     final int noteIndex = _allNotes.indexWhere((Note note) => note.id == id);
     if (noteIndex != -1) {
       final Note note = _allNotes[noteIndex];
-      _allNotes[noteIndex] = note.copyWith(important: !note.important);
+      _allNotes[noteIndex] = note.copyWith(
+        important: !note.important,
+        updatedAt: DateTime.now().toString(),
+      );
       repository.upsertNote(_allNotes[noteIndex]);
       notifyListeners();
       return;
@@ -191,7 +194,10 @@ class HomeViewModel extends ChangeNotifier {
     final int folderIndex = _folders.indexWhere((Folder f) => f.id == id);
     if (folderIndex != -1) {
       final Folder folder = _folders[folderIndex];
-      _folders[folderIndex] = folder.copyWith(important: !folder.important);
+      _folders[folderIndex] = folder.copyWith(
+        important: !folder.important,
+        updatedAt: DateTime.now().toString(),
+      );
       _foldersRepository?.upsertFolder(_folders[folderIndex]);
       notifyListeners();
     }
@@ -309,9 +315,10 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> moveSelectedTo(String? folderId) async {
     for (int i = 0; i < _allNotes.length; i++) {
       if (!_selected.contains(_allNotes[i].id)) continue;
-      final Note moved = folderId == null
-          ? _allNotes[i].withoutFolder()
-          : _allNotes[i].copyWith(folderId: folderId);
+      final Note moved = (folderId == null
+              ? _allNotes[i].withoutFolder()
+              : _allNotes[i].copyWith(folderId: folderId))
+          .copyWith(updatedAt: DateTime.now().toString());
       _allNotes[i] = moved;
       await repository.upsertNote(moved);
     }
@@ -353,7 +360,10 @@ class HomeViewModel extends ChangeNotifier {
     if (folderIndex != -1) {
       await _foldersRepository?.toggleFolderPin(id);
       final Folder folder = _folders[folderIndex];
-      _folders[folderIndex] = folder.copyWith(isPinned: !folder.isPinned);
+      _folders[folderIndex] = folder.copyWith(
+        isPinned: !folder.isPinned,
+        updatedAt: DateTime.now().toString(),
+      );
       _sort();
       notifyListeners();
       return;
@@ -362,7 +372,10 @@ class HomeViewModel extends ChangeNotifier {
     if (index == -1) return;
     await repository.togglePin(id);
     final Note note = _allNotes[index];
-    _allNotes[index] = note.copyWith(isPinned: !note.isPinned);
+    _allNotes[index] = note.copyWith(
+      isPinned: !note.isPinned,
+      updatedAt: DateTime.now().toString(),
+    );
     _sort();
     notifyListeners();
   }
@@ -387,13 +400,15 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Persists a folder change (name, theme, cover, lock…).
   Future<void> saveFolder(Folder folder) async {
-    final int index = _folders.indexWhere((Folder f) => f.id == folder.id);
+    final Folder updated =
+        folder.copyWith(updatedAt: DateTime.now().toString());
+    final int index = _folders.indexWhere((Folder f) => f.id == updated.id);
     if (index != -1) {
-      _folders[index] = folder;
+      _folders[index] = updated;
     } else {
-      _folders.add(folder);
+      _folders.add(updated);
     }
-    await _foldersRepository?.upsertFolder(folder);
+    await _foldersRepository?.upsertFolder(updated);
     _sort();
     notifyListeners();
   }
@@ -502,6 +517,8 @@ class HomeViewModel extends ChangeNotifier {
         return note1.title.toLowerCase().compareTo(note2.title.toLowerCase());
       case 'date':
         return note2.date.compareTo(note1.date);
+      case 'updated':
+        return note2.updatedAt.compareTo(note1.updatedAt);
       case 'important':
         final int a = note1.important ? 1 : 0;
         final int b = note2.important ? 1 : 0;
@@ -521,6 +538,8 @@ class HomeViewModel extends ChangeNotifier {
         return folder1.name.toLowerCase().compareTo(folder2.name.toLowerCase());
       case 'date':
         return folder2.date.compareTo(folder1.date);
+      case 'updated':
+        return folder2.updatedAt.compareTo(folder1.updatedAt);
       case 'important':
         final int a = folder1.important ? 1 : 0;
         final int b = folder2.important ? 1 : 0;
