@@ -91,6 +91,8 @@ Note _note(
   String id, {
   String? title,
   String? date,
+  String? createdAt,
+  String? updatedAt,
   bool important = false,
   String? category,
 }) {
@@ -99,6 +101,8 @@ Note _note(
     title: title ?? 'Note $id',
     content: 'Content $id',
     date: date ?? '2026-08-01 10:00:00.000',
+    createdAt: createdAt,
+    updatedAt: updatedAt,
     important: important,
     category: category ?? 'none',
   );
@@ -166,6 +170,28 @@ void main() {
       );
 
       vm.setSortBy('alpha');
+
+      expect(vm.notes.first.id, '2');
+    });
+
+    test('sorts the notes by last modification', () {
+      final vm = HomeViewModel(
+        repository: _InMemoryNotesRepository(),
+        initialNotes: <Note>[
+          _note(
+            '1',
+            date: '2026-09-01 10:00:00.000',
+            updatedAt: '2026-09-02 10:00:00.000',
+          ),
+          _note(
+            '2',
+            date: '2026-08-01 10:00:00.000',
+            updatedAt: '2026-10-01 10:00:00.000',
+          ),
+        ],
+      );
+
+      vm.setSortBy('updated');
 
       expect(vm.notes.first.id, '2');
     });
