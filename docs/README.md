@@ -1,9 +1,9 @@
-# 📚 Documentation — Plans d'amélioration de TanoNote
+# Documentation — Plans d'amélioration de TanoNote
 
 Ce dossier regroupe l'analyse complète de l'application **TanoNote** et les plans
 d'amélioration proposés, organisés par catégorie.
 
-> ⚠️ Ces documents sont des **propositions** : rien n'est implémenté tant qu'une
+> Ces documents sont des **propositions** : rien n'est implémenté tant qu'une
 > décision n'a pas été validée. Ils servent de base de discussion et de feuille
 > de route.
 
@@ -21,6 +21,10 @@ d'amélioration proposés, organisés par catégorie.
 | [`08-charte-graphique.md`](./08-charte-graphique.md) | **Charte graphique** : couleurs, typographie, composants. |
 | [`09-securite-chiffrement.md`](./09-securite-chiffrement.md) | **Sécurité** : chiffrement du stockage au repos, clé d'installation, export/import chiffré. |
 | [`10-dossiers.md`](./10-dossiers.md) | **Dossiers** : modèle, cartes, groupes d'accueil, FAB, verrouillage, suppression, recherche. |
+| [`11-etat-et-reste-a-faire.md`](./11-etat-et-reste-a-faire.md) | **État du projet** : ce qui reste pour une sortie grand public (hors checklist et projets). |
+| [`12-plan-refactoring.md`](./12-plan-refactoring.md) | **Plan de refactoring** : suppression des doublons (cartes, sélection, listes, dialogues) avant checklist et projets. |
+| [`13-composants-et-contrats.md`](./13-composants-et-contrats.md) | **Contrats des composants** : AppBar, FAB, Page, TitleLine, Card, Section, Attention. |
+| [`14-modularite.md`](./14-modularite.md) | **Modularité** : squelette de base + services greffés (feature flags, gratuit/premium). |
 
 ## Résumé exécutif
 
