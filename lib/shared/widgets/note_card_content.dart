@@ -15,51 +15,82 @@ Widget buildNoteGridContent({
   required Color textColor,
   required Set<String> activeNoteIds,
 }) {
+  final bool hasCover = note.coverImage != null && !note.isLocked;
   return Container(
     padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 4.0,
       children: <Widget>[
-        Padding(
-          padding: note.isPinned
-              ? const EdgeInsets.only(left: 8.0)
-              : const EdgeInsets.only(left: 0.0),
-          child: Text(
-            formatNoteDate(note.date),
-            style: TextStyle(
-              fontWeight: FontWeight.normal,
-              fontSize: 8.0,
-              color: textColor.withValues(alpha: 0.6),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          note.title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 11.0,
-            color: textColor,
-          ),
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Flexible(
-          child: RichText(
-            text: LinkTextEditingController.buildMarkdownTextSpan(
-              note.content,
-              TextStyle(
-                fontSize: 10.0,
-                color: textColor.withValues(alpha: 0.8),
-                height: 1.4,
+        // The metadata is glued to the bottom of the card whatever the
+        // content above it.
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 4.0,
+            children: <Widget>[
+              Padding(
+                padding: note.isPinned
+                    ? const EdgeInsets.only(left: 8.0)
+                    : const EdgeInsets.only(left: 0.0),
+                child: Text(
+                  formatNoteDate(note.date),
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    fontSize: 8.0,
+                    color: textColor.withValues(alpha: 0.6),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              tanoAmber,
-              activeNoteIds,
-            ),
-            overflow: TextOverflow.clip,
+              if (hasCover)
+                // With a cover the title shares the lower half with the
+                // metadata.
+                Flexible(
+                  child: Text(
+                    note.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11.0,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )
+              else
+                Text(
+                  note.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.0,
+                    color: textColor,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              if (!hasCover)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: RichText(
+                      text: LinkTextEditingController.buildMarkdownTextSpan(
+                        note.content,
+                        TextStyle(
+                          fontSize: 10.0,
+                          color: textColor.withValues(alpha: 0.8),
+                          height: 1.4,
+                        ),
+                        tanoAmber,
+                        activeNoteIds,
+                      ),
+                      overflow: TextOverflow.clip,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         NoteCounts(
