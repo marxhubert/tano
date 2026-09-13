@@ -60,6 +60,7 @@ class NoteListView extends StatelessWidget {
           },
           child: NoteCard(
             note: note,
+            coverImage: note.coverImage,
             isListLayout: true,
             isSelected: isSelected,
             isInSelectionMode: viewModel.isInSelectionMode,

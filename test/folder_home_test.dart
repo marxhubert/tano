@@ -15,6 +15,7 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -1284,5 +1285,27 @@ void main() {
     await tester.tap(find.text('DELETE'));
     await tester.pumpAndSettle();
     expect(repo.trashed, contains('n1'));
+  });
+
+  testWidgets('cards show the cover except on locked items', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Covered', content: 'x', date: '2026-01-01 00:00:00.000', coverImage: 'cover.jpg'),
+          Note(id: 'n2', title: 'Locked cover', content: 'x', date: '2026-01-01 00:00:00.000', coverImage: 'cover.jpg', isLocked: true),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000', coverImage: 'folder.jpg'),
+          Folder(id: 'f2', name: 'Locked', date: '2026-01-01 00:00:00.000', coverImage: 'folder.jpg', isLocked: true),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Only the unlocked note and folder render a cover.
+    expect(find.byType(CoverImage), findsNWidgets(2));
   });
 }
