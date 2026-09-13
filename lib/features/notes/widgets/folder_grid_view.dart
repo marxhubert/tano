@@ -27,6 +27,7 @@ class FolderGridView extends StatelessWidget {
         final Folder folder = folders[index];
         return FolderCard(
           folder: folder,
+          coverImage: folder.coverImage,
           noteCount: viewModel.noteCountIn(folder.id),
           isSelected: viewModel.selected.contains(folder.id),
           isInSelectionMode: viewModel.isInSelectionMode,
