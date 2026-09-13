@@ -154,6 +154,8 @@ class EditNoteViewModel extends ChangeNotifier {
     return Note(
       id: id,
       date: selectedDate.toString(),
+      createdAt: _initialNote.createdAt,
+      updatedAt: DateTime.now().toString(),
       title: normalized.title,
       content: normalized.content,
       important: important,
@@ -214,6 +216,8 @@ class EditNoteViewModel extends ChangeNotifier {
     return Note(
       id: id,
       date: selectedDate.toString(),
+      createdAt: initialNote?.createdAt ?? selectedDate.toString(),
+      updatedAt: initialNote?.updatedAt ?? selectedDate.toString(),
       title: title,
       content: content,
       important: important,

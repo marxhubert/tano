@@ -48,7 +48,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     return _db!;
   }
 
-  static const int _schemaVersion = 6;
+  static const int _schemaVersion = 7;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -147,7 +147,9 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         deletedAt TEXT,
         attachments TEXT,
         coverImage TEXT,
-        folderId TEXT
+        folderId TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
       )
     ''');
     await db.execute('''
@@ -161,7 +163,9 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         isLocked INTEGER DEFAULT 0,
         isDeleted INTEGER DEFAULT 0,
         deletedAt TEXT,
-        coverImage TEXT
+        coverImage TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
       )
     ''');
   }
@@ -198,10 +202,51 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
           important INTEGER DEFAULT 0,
           category TEXT,
           isPinned INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
           isDeleted INTEGER DEFAULT 0,
-          deletedAt TEXT
+          deletedAt TEXT,
+          coverImage TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
         )
       ''');
+    }
+    if (oldVersion < 7) {
+      // `createdAt`/`updatedAt` back the "recently modified" sort and the
+      // future sync work. They default to `date` for existing rows.
+      await _addColumnIfMissing(db, 'notes', 'createdAt', 'TEXT');
+      await _addColumnIfMissing(db, 'notes', 'updatedAt', 'TEXT');
+      await _addColumnIfMissing(db, 'folders', 'createdAt', 'TEXT');
+      await _addColumnIfMissing(db, 'folders', 'updatedAt', 'TEXT');
+      // Covers and the lock flag reached the folders table without a schema
+      // bump, so databases upgraded to v6 may still miss the columns.
+      await _addColumnIfMissing(db, 'folders', 'coverImage', 'TEXT');
+      await _addColumnIfMissing(db, 'folders', 'isLocked', 'INTEGER DEFAULT 0');
+      await db.execute('UPDATE notes SET createdAt = date WHERE createdAt IS NULL');
+      await db.execute('UPDATE notes SET updatedAt = date WHERE updatedAt IS NULL');
+      await db.execute(
+          'UPDATE folders SET createdAt = date WHERE createdAt IS NULL');
+      await db.execute(
+          'UPDATE folders SET updatedAt = date WHERE updatedAt IS NULL');
+    }
+  }
+
+  /// Adds [column] to [table] only when it does not exist yet.
+  ///
+  /// `ALTER TABLE ... ADD COLUMN` fails on a duplicate column, and upgrade
+  /// paths differ (fresh v6 installs already carry `folders.coverImage`).
+  Future<void> _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String type,
+  ) async {
+    final List<Map<String, Object?>> columns =
+        await db.rawQuery('PRAGMA table_info($table)');
+    final bool exists =
+        columns.any((Map<String, Object?> c) => c['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
     }
   }
 
@@ -241,6 +286,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       <String, Object?>{
         'isDeleted': 1,
         'deletedAt': DateTime.now().toString(),
+        'updatedAt': DateTime.now().toString(),
       },
       where: 'id = ?',
       whereArgs: <Object?>[id],
@@ -260,7 +306,10 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       final int currentPin = result.first['isPinned'] as int;
       await db.update(
         'folders',
-        <String, Object?>{'isPinned': currentPin == 1 ? 0 : 1},
+        <String, Object?>{
+          'isPinned': currentPin == 1 ? 0 : 1,
+          'updatedAt': DateTime.now().toString(),
+        },
         where: 'id = ?',
         whereArgs: <Object?>[id],
       );
@@ -367,7 +416,10 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       final int currentPin = result.first['isPinned'] as int;
       await db.update(
         'notes',
-        {'isPinned': currentPin == 1 ? 0 : 1},
+        {
+          'isPinned': currentPin == 1 ? 0 : 1,
+          'updatedAt': DateTime.now().toString(),
+        },
         where: 'id = ?',
         whereArgs: [id],
       );
@@ -388,7 +440,10 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       final int currentLock = result.first['isLocked'] as int;
       await db.update(
         'notes',
-        {'isLocked': currentLock == 1 ? 0 : 1},
+        {
+          'isLocked': currentLock == 1 ? 0 : 1,
+          'updatedAt': DateTime.now().toString(),
+        },
         where: 'id = ?',
         whereArgs: [id],
       );

@@ -104,7 +104,7 @@ void main() {
       final vm = EditNoteViewModel(
         repository: _InMemoryNotesRepository(),
         add: true,
-        initialNote: const Note(folderId: 'f1', category: 'nuage'),
+        initialNote: Note(folderId: 'f1', category: 'nuage'),
       );
 
       expect(vm.buildNote(title: 'T', content: 'C').folderId, 'f1');
