@@ -31,6 +31,7 @@ class NoteGridView extends StatelessWidget {
 
         return NoteCard(
           note: note,
+          coverImage: note.coverImage,
           isSelected: isSelected,
           isInSelectionMode: viewModel.isInSelectionMode,
           onTap: () {
