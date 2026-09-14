@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/widgets/note_card.dart';
-import 'package:tano/shared/widgets/note_card_content.dart';
+import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid of note cards, one card per note.
@@ -29,9 +30,15 @@ class NoteGridView extends StatelessWidget {
         final Note note = notes[index];
         final bool isSelected = viewModel.selected.contains(note.id);
 
-        return NoteCard(
-          note: note,
+        return EntityCard(
+          kind: EntityKind.note,
+          category: note.category,
+          title: note.title,
+          subtitle: formatNoteDate(note.date),
           coverImage: note.coverImage,
+          isPinned: note.isPinned,
+          isImportant: note.important,
+          isLocked: note.isLocked,
           isSelected: isSelected,
           isInSelectionMode: viewModel.isInSelectionMode,
           onTap: () {
@@ -43,10 +50,11 @@ class NoteGridView extends StatelessWidget {
           },
           onLongPress: () => viewModel.enterSelectionMode(note.id),
           onSelectionToggle: () => viewModel.toggleSelection(note.id),
-          builder: (context, textColor) => buildNoteGridContent(
+          builder: (context, textColor, hasCover) => buildNoteGridContent(
             note: note,
             textColor: textColor,
             activeNoteIds: viewModel.activeNoteIds,
+            hasCover: hasCover,
           ),
         );
       }),

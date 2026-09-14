@@ -74,6 +74,11 @@ class EntityCard extends StatelessWidget {
   /// the bottom-right edges, so most of the glyph stays inside the card.
   static const double folderWatermarkSize = 72.0;
 
+  /// Vertical bearing of the bookmark glyph inside its em box (already
+  /// scaled by the 0.75 vertical squash), compensated so the icon reads flush
+  /// with the top edge.
+  static const double _bookmarkBearing = 1.5;
+
   final EntityKind kind;
   final String category;
   final EntityCardBodyBuilder builder;
@@ -113,8 +118,9 @@ class EntityCard extends StatelessWidget {
     final Color borderColor = isDark
         ? Colors.white.withValues(alpha: 0.22)
         : Colors.black.withValues(alpha: 0.16);
+    final bool showCover = coverImage != null && !isLocked;
 
-    return Container(
+    final Widget card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: bgColor,
@@ -122,7 +128,6 @@ class EntityCard extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool showCover = coverImage != null && !isLocked;
           final double coverHeight =
               showCover && !isListLayout ? constraints.maxHeight / 2 : 0.0;
           final double coverWidth =
@@ -150,36 +155,35 @@ class EntityCard extends StatelessWidget {
                   child: IgnorePointer(
                     child: CustomPaint(
                       key: const ValueKey<String>('entity-card-watermark'),
+                      // A bookmarked folder turns its watermark amber.
                       painter: _FolderWatermarkPainter(
-                        color: textColor.withValues(alpha: 0.10),
+                        color: isImportant
+                            ? tanoAmber.withValues(alpha: 0.45)
+                            : textColor.withValues(alpha: 0.10),
                       ),
                     ),
                   ),
                 ),
-              if (!isLocked && isPinned)
+              // The pin now lives in the metadata row; only a note keeps a
+              // floating bookmark, at the top of the card, or at the top of
+              // the content zone under a grid cover.
+              if (kind == EntityKind.note && !isLocked && isImportant)
                 Positioned(
-                  top: showCover && !isListLayout
-                      ? coverHeight + 2.0
-                      : contentInset * 0.25,
-                  left: showCover && isListLayout
-                      ? coverWidth + contentInset * 0.5
-                      : contentInset * 0.25,
-                  child: Icon(
-                    Icons.push_pin,
-                    size: 14.0,
-                    color: textColor.withValues(alpha: 0.5),
-                  ),
-                ),
-              if (!isLocked && isImportant)
-                Positioned(
-                  top: showCover && !isListLayout
-                      ? coverHeight - 2.0
-                      : contentInset * 0.25,
-                  right: contentInset * 0.5,
-                  child: Icon(
-                    Icons.bookmark,
-                    size: 16.0,
-                    color: tanoAmber.withValues(alpha: 0.8),
+                  // The glyph is inset inside its 16px em box; pull it up by
+                  // that bearing so its visible edge touches the top (or the
+                  // cover edge), not the box.
+                  top: (showCover && !isListLayout ? coverHeight : 0.0) -
+                      _bookmarkBearing,
+                  right: 2.0,
+                  // Full width, 25% shorter.
+                  child: Transform.scale(
+                    scaleY: 0.75,
+                    alignment: Alignment.topCenter,
+                    child: Icon(
+                      Icons.bookmark,
+                      size: 16.0,
+                      color: tanoAmber.withValues(alpha: 0.8),
+                    ),
                   ),
                 ),
               if (isLocked)
@@ -242,6 +246,16 @@ class EntityCard extends StatelessWidget {
         },
       ),
     );
+    // A list card is one of two fixed heights; a grid card fills its cell.
+    return isListLayout
+        ? SizedBox(
+            height: (showCover
+                    ? EntityCardHeight.normal
+                    : EntityCardHeight.compact)
+                .value,
+            child: card,
+          )
+        : card;
   }
 
   List<Widget> _lockedOverlay(Color bgColor, Color textColor, bool isDark) {

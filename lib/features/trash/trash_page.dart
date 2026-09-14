@@ -4,8 +4,8 @@ import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
-import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/date_format.dart';
 
@@ -117,9 +117,14 @@ class _TrashPageState extends State<TrashPage> {
                   childAspectRatio: 1.0,
                   children: List.generate(_viewModel.deletedNotes.length, (index) {
                     final note = _viewModel.deletedNotes[index];
-                    return NoteCard(
-                      note: note,
-                      builder: (context, textColor) => SizedBox.expand(
+                    return EntityCard(
+                      kind: EntityKind.note,
+                      category: note.category,
+                      title: note.title,
+                      subtitle: formatNoteDate(note.date),
+                      isPinned: note.isPinned,
+                      isImportant: note.important,
+                      builder: (context, textColor, hasCover) => SizedBox.expand(
                         child: Stack(
                           children: [
                             // Background Content (Date & Title only)

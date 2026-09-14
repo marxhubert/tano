@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/note_card.dart';
-import 'package:tano/shared/widgets/note_card_content.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// List of note rows with swipe-to-favorite and swipe-to-delete.
@@ -58,9 +59,15 @@ class NoteListView extends StatelessWidget {
             viewModel.removeNote(note.id);
             onShowUndoSnackBar();
           },
-          child: NoteCard(
-            note: note,
+          child: EntityCard(
+            kind: EntityKind.note,
+            category: note.category,
+            title: note.title,
+            subtitle: formatNoteDate(note.date),
             coverImage: note.coverImage,
+            isPinned: note.isPinned,
+            isImportant: note.important,
+            isLocked: note.isLocked,
             isListLayout: true,
             isSelected: isSelected,
             isInSelectionMode: viewModel.isInSelectionMode,
@@ -73,10 +80,11 @@ class NoteListView extends StatelessWidget {
             },
             onLongPress: () => viewModel.enterSelectionMode(note.id),
             onSelectionToggle: () => viewModel.toggleSelection(note.id),
-            builder: (context, textColor) => buildNoteListContent(
+            builder: (context, textColor, hasCover) => buildNoteListContent(
               note: note,
               textColor: textColor,
               activeNoteIds: viewModel.activeNoteIds,
+              hasCover: hasCover,
             ),
           ),
         );
