@@ -11,7 +11,7 @@ import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
 
 class _Repo implements NotesRepository, FoldersRepository {
   final List<Note> notes = <Note>[
@@ -112,7 +112,12 @@ void main() {
     expect(repository.folders, hasLength(1));
     // ...and shown on the home screen.
     expect(find.text('My folders'), findsWidgets);
-    expect(find.byType(FolderCard), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+      ),
+      findsWidgets,
+    );
     expect(find.text('Perso'), findsWidgets);
   });
 }

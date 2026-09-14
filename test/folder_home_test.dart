@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
@@ -16,10 +17,10 @@ import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
-import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
 
 class _Repo implements NotesRepository, FoldersRepository {
   _Repo({required this.notes, required this.folders});
@@ -100,6 +101,14 @@ class _FakeAuth extends AuthService {
   }
 }
 
+Finder _noteCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+    );
+
+Finder _folderCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+    );
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -143,7 +152,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My folders'), findsWidgets);
-    expect(find.byType(FolderCard), findsOneWidget);
+    expect(_folderCards(), findsOneWidget);
     expect(find.text('Perso'), findsOneWidget);
     // The filed note is not in the notes group.
     expect(find.text('Free note'), findsOneWidget);
@@ -212,7 +221,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My notes'), findsWidgets);
-    expect(find.byType(FolderCard), findsNothing);
+    expect(_folderCards(), findsNothing);
   });
 
   testWidgets('opening a folder shows its note count', (
@@ -246,7 +255,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
@@ -269,7 +278,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
@@ -302,7 +311,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
@@ -351,7 +360,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
@@ -382,7 +391,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder folderScaffold = find.descendant(
@@ -426,7 +435,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -479,7 +488,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // No metadata line: the count goes back to the right of the title.
@@ -506,7 +515,7 @@ void main() {
     // Grid card on the home page.
     expect(tester.widget<Text>(find.text('Perso')).maxLines, 3);
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
@@ -547,7 +556,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before entering selection.
@@ -598,7 +607,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.search));
@@ -646,7 +655,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('Filed'));
@@ -693,7 +702,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.search));
@@ -764,17 +773,17 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    final Finder card = find.byType(FolderCard);
+    final Finder card = _folderCards();
     // Pinned folder: the pin sits where a note's pin sits.
     expect(
-      find.descendant(of: card, matching: find.byIcon(Icons.push_pin)),
+      find.descendant(of: card, matching: find.byIcon(Symbols.push_pin)),
       findsOneWidget,
     );
     // [icon]xN note count.
     expect(
       find.descendant(
         of: card,
-        matching: find.byIcon(Icons.description_outlined),
+        matching: find.byIcon(Symbols.description),
       ),
       findsOneWidget,
     );
@@ -799,7 +808,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.longPress(find.byType(FolderCard));
+    await tester.longPress(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder align = find.ancestor(
@@ -811,7 +820,7 @@ void main() {
     // Selected folder shows the same white disc as a selected note.
     expect(
       find.descendant(
-        of: find.byType(FolderCard),
+        of: _folderCards(),
         matching: find.byType(CircleAvatar),
       ),
       findsOneWidget,
@@ -842,7 +851,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -887,7 +896,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // Long list: the FAB is reduced so it does not hide the last notes.
@@ -919,7 +928,7 @@ void main() {
     expect(find.text('1 single note selected'), findsOneWidget);
 
     // Adding the folder switches to the items wording, total = 2 notes + 1 folder.
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
     expect(find.text('2/3 items selected'), findsOneWidget);
 
@@ -964,7 +973,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Empty folder (no metadata) still gets 1.5x its natural row height.
-    expect(tester.getSize(find.byType(FolderCard)).height, greaterThanOrEqualTo(69.0));
+    expect(tester.getSize(_folderCards()).height, greaterThanOrEqualTo(69.0));
   });
 
   testWidgets('locked folders are not selectable but locked notes are', (
@@ -997,20 +1006,20 @@ void main() {
     await tester.pumpAndSettle();
 
     // Long-pressing a locked folder does not enter selection mode.
-    await tester.longPress(find.byType(FolderCard));
+    await tester.longPress(_folderCards());
     await tester.pumpAndSettle();
     expect(find.textContaining('selected'), findsNothing);
 
     // A locked note is still selectable (the locked placeholder sits on top
     // of the card content, so the title appears twice).
-    await tester.longPress(find.byType(NoteCard));
+    await tester.longPress(_noteCards());
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
     // The locked folder shows no selection circle.
     expect(
       find.descendant(
-        of: find.byType(FolderCard),
+        of: _folderCards(),
         matching: find.byIcon(Icons.panorama_fish_eye),
       ),
       findsNothing,
@@ -1079,7 +1088,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.search));
@@ -1092,14 +1101,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // The locked match is excluded, 6 results remain.
-    expect(find.byType(NoteCard), findsNWidgets(6));
+    expect(_noteCards(), findsNWidgets(6));
     expect(find.text('Match locked'), findsNothing);
 
     await tester.longPress(find.text('Match 0'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    await tester.tap(find.byType(NoteCard).at(1));
+    await tester.tap(_noteCards().at(1));
     await tester.pumpAndSettle();
     // Total is the number of results, not the whole folder.
     expect(find.text('2/6 notes selected'), findsOneWidget);
@@ -1143,18 +1152,18 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // Refused credential: the prompt runs but the editor stays closed.
-    await tester.tap(find.byType(NoteCard));
+    await tester.tap(_noteCards());
     await tester.pumpAndSettle();
     expect(auth.calls, 1);
     expect(find.byType(EditNote), findsNothing);
 
     // Accepted credential: the note opens.
     auth.authorized = true;
-    await tester.tap(find.byType(NoteCard));
+    await tester.tap(_noteCards());
     await tester.pumpAndSettle();
     expect(auth.calls, 2);
     expect(find.byType(EditNote), findsOneWidget);
@@ -1178,7 +1187,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard).first);
+    await tester.tap(_folderCards().first);
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('A'));
@@ -1270,7 +1279,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('A'));

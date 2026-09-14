@@ -15,7 +15,12 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
-import 'package:tano/shared/widgets/note_card.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+
+Finder _noteCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+    );
 
 /// Fakes the system credential prompt: no platform channel in tests.
 class _FakeAuthService extends AuthService {
@@ -363,8 +368,8 @@ void main() {
 
       expect(
         find.descendant(
-          of: find.byType(NoteCard),
-          matching: find.byIcon(Icons.lock_outline),
+          of: _noteCards(),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsOneWidget,
       );
@@ -381,8 +386,8 @@ void main() {
 
       expect(
         find.descendant(
-          of: find.byType(NoteCard),
-          matching: find.byIcon(Icons.lock_outline),
+          of: _noteCards(),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsNothing,
       );
@@ -400,7 +405,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(NoteCard).first);
+      await tester.tap(_noteCards().first);
       await tester.pumpAndSettle();
 
       expect(find.byType(EditNote), findsNothing);
@@ -418,7 +423,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(NoteCard).first);
+      await tester.tap(_noteCards().first);
       await tester.pumpAndSettle();
 
       expect(find.byType(EditNote), findsOneWidget);
@@ -560,7 +565,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.longPress(find.byType(NoteCard).first);
+      await tester.longPress(_noteCards().first);
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.delete));
       await tester.pumpAndSettle();
@@ -603,12 +608,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NoteCard(
-              note: _note(
-                title: 'A very long title that needs several lines to display',
-                isLocked: true,
-              ),
-              builder: (context, textColor) => const SizedBox(height: 80.0),
+            body: EntityCard(
+              kind: EntityKind.note,
+              category: 'menthe',
+              title: 'A very long title that needs several lines to display',
+              subtitle: '12/08/2026',
+              isLocked: true,
+              builder:
+                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -629,13 +636,15 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NoteCard(
-              note: _note(
-                title: 'A very long title that needs several lines to display',
-                isLocked: true,
-              ),
+            body: EntityCard(
+              kind: EntityKind.note,
+              category: 'menthe',
+              title: 'A very long title that needs several lines to display',
+              subtitle: '12/08/2026',
+              isLocked: true,
               isListLayout: true,
-              builder: (context, textColor) => const SizedBox(height: 80.0),
+              builder:
+                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -651,7 +660,7 @@ void main() {
 
       // Lock on the left, title then date stacked to its right.
       final Offset iconCenter = tester.getCenter(
-        find.byIcon(Icons.lock_outline),
+        find.byIcon(Symbols.lock),
       );
       final Offset titleCenter = tester.getCenter(
         find.textContaining('A very long title'),
