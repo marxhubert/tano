@@ -68,7 +68,6 @@ class NoteListView extends StatelessWidget {
         title: note.title,
         subtitle: formatNoteDate(note.date),
         coverImage: note.coverImage,
-        isPinned: note.isPinned,
         isImportant: note.important,
         isLocked: note.isLocked,
         isListLayout: true,

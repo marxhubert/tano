@@ -15,7 +15,6 @@ class Note {
     this.important = false,
     this.category = 'nuage',
     this.isDeleted = false,
-    this.isPinned = false,
     this.isLocked = false,
     this.deletedAt,
     this.attachments = const <String>[],
@@ -40,7 +39,6 @@ class Note {
   final bool important;
   final String category;
   final bool isDeleted;
-  final bool isPinned;
   final bool isLocked;
   final String? deletedAt;
   final String? coverImage;
@@ -62,7 +60,6 @@ class Note {
         important: json['important'] == 1,
         category: _normalizeCategory(json['category'] as String?),
         isDeleted: json['isDeleted'] == 1,
-        isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
         deletedAt: json['deletedAt'] as String?,
         attachments: _decodeAttachments(json['attachments']),
@@ -80,7 +77,6 @@ class Note {
         'important': important ? 1 : 0,
         'category': category,
         'isDeleted': isDeleted ? 1 : 0,
-        'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
         'deletedAt': deletedAt,
         'attachments': jsonEncode(attachments),
@@ -126,7 +122,6 @@ class Note {
         important: important,
         category: category,
         isDeleted: isDeleted,
-        isPinned: isPinned,
         isLocked: isLocked,
         deletedAt: deletedAt,
         attachments: attachments,
@@ -144,7 +139,6 @@ class Note {
     bool? important,
     String? category,
     bool? isDeleted,
-    bool? isPinned,
     bool? isLocked,
     String? deletedAt,
     List<String>? attachments,
@@ -161,7 +155,6 @@ class Note {
       important: important ?? this.important,
       category: category ?? this.category,
       isDeleted: isDeleted ?? this.isDeleted,
-      isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
       deletedAt: deletedAt ?? this.deletedAt,
       attachments: attachments ?? this.attachments,

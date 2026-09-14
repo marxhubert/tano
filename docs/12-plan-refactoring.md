@@ -25,7 +25,7 @@
 
 | Brique actuelle | Brique cible | Rôle |
 |---|---|---|
-| `NoteCard` + `FolderCard` | `EntityCard` | Conteneur unique (fond, couverture, pin/bookmark, verrou, sélection). Le contenu vient d'un builder. |
+| `NoteCard` + `FolderCard` | `EntityCard` | Conteneur unique (fond, couverture, bookmark, verrou, sélection). Le contenu vient d'un builder. |
 | 4 widgets de liste + `_buildNotes` | `EntitySliver<T>` | Grille/liste générique d'`EntityCard`. |
 | `_selected` dans 2 classes | `SelectionController` | Sélection partagée (entrer, toggle, tout, quitter, règle de sélectabilité). |
 | Dialogues épars | `showAdaptivePrompt` (dans `confirm.dart`) | Saisie texte adaptative iOS/Material. |
@@ -40,7 +40,7 @@
   `FolderCard` en grille **et** liste, dans les variantes : avec/sans couverture,
   épinglé, favori, verrouillé, sélectionné.
 - **Compléter** par des **tests de structure** (positions relatives : metadata en
-  bas, pin/bookmark après la couverture) plus robustes que des pixels.
+  bas, bookmark après la couverture) plus robustes que des pixels.
 - **Note CI** : les golden tests sont sensibles à la plateforme ; les exécuter sur
   l'image Linux de la CI avec une police figée, ou se limiter aux tests de
   structure si le bruit est trop grand.
@@ -55,7 +55,7 @@
   (défaut : `date`), dans le modèle, `fromJson`/`toJson` et `copyWith`.
 - **Schéma SQLite v7** : `ALTER TABLE notes ADD COLUMN createdAt/updatedAt`,
   idem `folders`, dans `_createSchema` et `_upgradeSchema`.
-- **Écriture** : `EditNoteViewModel.persistSavedNote`, `upsertFolder`, `togglePin`,
+- **Écriture** : `EditNoteViewModel.persistSavedNote`, `upsertFolder`,
   `toggleLock`, `toggleFavorite` mettent à jour `updatedAt = now`.
 - **Tri** : ajouter l'option « récemment modifié » dans `sorting_section.dart` et
   `HomeViewModel`.
@@ -82,7 +82,6 @@ class EntityCard extends StatelessWidget {
     required this.category,
     required this.builder,
     this.coverImage,
-    this.isPinned = false,
     this.isImportant = false,
     this.isLocked = false,
     this.isListLayout = false,
@@ -95,7 +94,7 @@ class EntityCard extends StatelessWidget {
 }
 ```
 
-- `EntityCard` possède : fond/bordure/ombre, couche couverture, pin/bookmark
+- `EntityCard` possède : fond/bordure/ombre, couche couverture, bookmark
   (positions « après la couverture »), overlay verrou (variante note/dossier via un
   `lockedBuilder` optionnel), overlay sélection, et empile le builder.
 - **Migrer** `note_grid_view`, `note_list_view`, `folder_grid_view`,
@@ -226,6 +225,9 @@ class SelectionController extends ChangeNotifier {
 - Retirer `sqflite` des dépendances s'il n'est plus utilisé.
 - Passer `AttachmentsStore` et `AuthService` par `getIt` (fin des singletons
   mutables et du top-level dans `cover_image.dart`).
+- ~~Retirer le pin~~ : **fait** — `isPinned` (modèle + colonne SQLite),
+  `togglePin`/`toggleFolderPin`, le marqueur `push_pin` et l'option FAB sont
+  supprimés ; le **bookmark** trie désormais l'élément en tête.
 - Trancher les TODO `analytics_service` et `about_page`.
 
 ## 13. Lot 9 — Accessibilité

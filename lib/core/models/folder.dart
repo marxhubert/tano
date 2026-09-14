@@ -1,7 +1,7 @@
 /// A folder grouping notes.
 ///
 /// It carries the same organisational attributes as a note (favourite, theme,
-/// pin, trash) but no content of its own.
+/// lock, trash) but no content of its own.
 class Folder {
   Folder({
     this.id = '',
@@ -11,7 +11,6 @@ class Folder {
     String? updatedAt,
     this.important = false,
     this.category = 'nuage',
-    this.isPinned = false,
     this.isLocked = false,
     this.isDeleted = false,
     this.deletedAt,
@@ -33,7 +32,6 @@ class Folder {
 
   final bool important;
   final String category;
-  final bool isPinned;
   final bool isLocked;
   final bool isDeleted;
   final String? deletedAt;
@@ -49,7 +47,6 @@ class Folder {
         updatedAt: json['updatedAt'] as String?,
         important: json['important'] == 1,
         category: _normalizeCategory(json['category'] as String?),
-        isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
         isDeleted: json['isDeleted'] == 1,
         deletedAt: json['deletedAt'] as String?,
@@ -64,7 +61,6 @@ class Folder {
         'updatedAt': updatedAt,
         'important': important ? 1 : 0,
         'category': category,
-        'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
         'isDeleted': isDeleted ? 1 : 0,
         'deletedAt': deletedAt,
@@ -88,7 +84,6 @@ class Folder {
     String? updatedAt,
     bool? important,
     String? category,
-    bool? isPinned,
     bool? isLocked,
     bool? isDeleted,
     String? deletedAt,
@@ -102,7 +97,6 @@ class Folder {
       updatedAt: updatedAt ?? this.updatedAt,
       important: important ?? this.important,
       category: category ?? this.category,
-      isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -123,7 +117,6 @@ class Folder {
       updatedAt: updatedAt,
       important: important,
       category: category,
-      isPinned: isPinned,
       isLocked: isLocked,
       isDeleted: isDeleted,
       deletedAt: deletedAt,

@@ -112,7 +112,15 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         onUpgrade: _upgradeSchema,
       ),
     );
-    final List<Map<String, Object?>> rows = await legacy.query('notes');
+    // `query` returns read-only rows; copy them so the dropped `isPinned`
+    // column (removed with the pin feature) can be stripped before the rows
+    // are copied into the new schema.
+    final List<Map<String, Object?>> rows = (await legacy.query('notes'))
+        .map((Map<String, Object?> row) => Map<String, Object?>.of(row))
+        .toList();
+    for (final Map<String, Object?> row in rows) {
+      row.remove('isPinned');
+    }
     await legacy.close();
     await file.rename('$path.plain.bak');
     return rows;
@@ -142,7 +150,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         important INTEGER,
         category TEXT,
         isDeleted INTEGER DEFAULT 0,
-        isPinned INTEGER DEFAULT 0,
         isLocked INTEGER DEFAULT 0,
         deletedAt TEXT,
         attachments TEXT,
@@ -159,7 +166,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         date TEXT,
         important INTEGER DEFAULT 0,
         category TEXT,
-        isPinned INTEGER DEFAULT 0,
         isLocked INTEGER DEFAULT 0,
         isDeleted INTEGER DEFAULT 0,
         deletedAt TEXT,
@@ -178,8 +184,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     if (oldVersion < 2) {
       await db.execute(
           'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0');
-      await db.execute(
-          'ALTER TABLE notes ADD COLUMN isPinned INTEGER DEFAULT 0');
       await db.execute(
           'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
     }
@@ -201,7 +205,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
           date TEXT,
           important INTEGER DEFAULT 0,
           category TEXT,
-          isPinned INTEGER DEFAULT 0,
           isLocked INTEGER DEFAULT 0,
           isDeleted INTEGER DEFAULT 0,
           deletedAt TEXT,
@@ -294,29 +297,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
-  Future<void> toggleFolderPin(String id) async {
-    final db = await _database;
-    final List<Map<String, dynamic>> result = await db.query(
-      'folders',
-      columns: <String>['isPinned'],
-      where: 'id = ?',
-      whereArgs: <Object?>[id],
-    );
-    if (result.isNotEmpty) {
-      final int currentPin = result.first['isPinned'] as int;
-      await db.update(
-        'folders',
-        <String, Object?>{
-          'isPinned': currentPin == 1 ? 0 : 1,
-          'updatedAt': DateTime.now().toString(),
-        },
-        where: 'id = ?',
-        whereArgs: <Object?>[id],
-      );
-    }
-  }
-
-  @override
   Future<String> nextFolderName() async {
     final Set<String> names =
         (await loadFolders()).map((Folder f) => f.name).toSet();
@@ -401,29 +381,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
-  }
-
-  @override
-  Future<void> togglePin(String id) async {
-    final db = await _database;
-    final List<Map<String, dynamic>> result = await db.query(
-      'notes',
-      columns: ['isPinned'],
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (result.isNotEmpty) {
-      final int currentPin = result.first['isPinned'] as int;
-      await db.update(
-        'notes',
-        {
-          'isPinned': currentPin == 1 ? 0 : 1,
-          'updatedAt': DateTime.now().toString(),
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-    }
   }
 
   @override

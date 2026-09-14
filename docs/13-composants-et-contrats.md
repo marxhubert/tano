@@ -128,14 +128,14 @@ Chaque forme peut avoir des comportements propres (ex. swipe en list).
 
 ### Slots de base
 
-Couverture · titre · extrait du contenu · metadata · date · pin · bookmark ·
+Couverture · titre · extrait du contenu · metadata · date · bookmark ·
 icônes d'indication (ex. `folder_open` pour un dossier).
 
 ### Templates par type
 
 Les cards représentent **tous** les éléments : folder, note, task, project.
 Un **`EntityCard` commun** est paramétré par un **template** par type : même
-anatomie (couverture, pin/bookmark, sélection, verrou), contenu et slots adaptés
+anatomie (couverture, bookmark, sélection, verrou), contenu et slots adaptés
 par le template.
 
 - **Template « verrouillé »** : identique pour **tous** les éléments.
@@ -146,10 +146,11 @@ par le template.
 
 Pour distinguer un dossier d'une note (les cartes se ressemblent), le dossier
 affiche un **filigrane** agissant comme un fond : le pictogramme dossier
-(tracé seul), en **72 px** (24 × 3), **décalé hors des bords bas / droit** de la
-carte (réglage actuel : **2 px** à droite, **20 px** en bas ; le pictogramme
-reste en grande partie visible). Le filigrane est absent des cartes
-**verrouillées** (template commun) et des notes.
+(tracé seul, épaisseur **0,6**), en **72 px** (24 × 3), **décalé hors des bords
+bas / droit** de la carte (réglage actuel : **2 px** à droite, **20 px** en bas ;
+le pictogramme reste en grande partie visible). Le filigrane est affiché sur
+**toutes** les cartes dossier, **verrouillées comprises** (visible à travers le
+template), et absent des notes.
 
 ### Anatomie (refonte, validée au labo)
 
@@ -171,7 +172,7 @@ reste en grande partie visible). Le filigrane est absent des cartes
   La grille est **subtilement plus haute que large** (pas un vrai 1:1).
 
 - **Marge de contenu** : `contentInset = 6`. Une **seule** marge sert au
-  contenu (hors couverture), aux marqueurs (pin / bookmark) et à la bordure des
+  contenu (hors couverture), au marqueur bookmark et à la bordure des
   cartes verrouillées.
 - **Verrouillé** : bordure **en points** (grise, discrète mais visible dans les
   deux thèmes), **en retrait** de `contentInset` par rapport aux bords ; elle
@@ -202,15 +203,14 @@ reste en grande partie visible). Le filigrane est absent des cartes
   Exception : le **dossier en list** centre verticalement son nom + sa metadata,
   comme le template verrouillé.
 - **Marqueurs** :
-  - **Épinglé** : le pin vit dans la **metadata**, en **première position** ;
-    Material Symbols `push_pin`, **rotation -90°**, **poids normal** (400).
-  - **Bookmark** : sur une **note**, marqueur flottant en haut du card
+  - **Bookmark** : trie l'élément **en tête** de son groupe, avant les autres.
+    Sur une **note**, marqueur flottant en haut du card
     (`top: 0`, `right: 2`, bearing du glyphe compensé, et **largeur conservée
     avec 25 % de hauteur en moins**), ou **au bas de la couverture** sur un
     grid-cover ; sur un **dossier**, pas de marqueur : le **filigrane passe en
     ambre**.
   - Les autres icônes de metadata sont en **Material Symbols**
-    (`done_all`, `sticky_note_2`, `attachment`, `description`).
+    (`check_box`, `sticky_note_2`, `attachment`).
 - **Dossier** : l'icône `folder_open` est **retirée** du contenu ; le dossier
   se distingue par le **filigrane** bas-droit (§ « Élément distinctif »).
 - **Bordure et couverture** : la bordure est **peinte au-dessus du contenu**
@@ -314,6 +314,8 @@ gratuit/premium, livraison partielle). Voir
     donc l'action est désactivée dès que la sélection contient un dossier
     (`canMove: !hasFolderInSelection`). Le dialogue de déplacement ne s'affiche
     donc jamais pour un dossier.
+28. Le **pin est supprimé** (modèle, base, UI et marqueur) : le **bookmark**
+    joue son rôle et **trie l'élément en tête** de son groupe.
 27. **Couverture de page (`ManageableCover`)** : une seule implémentation pour
     la couverture « gérable », partagée par le dossier et l'éditeur de note.
     Elle réutilise `CoverImage` (placeholder, dim, `onError`) ; appui long →

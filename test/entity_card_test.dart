@@ -117,7 +117,7 @@ void main() {
     expect(find.text('x3'), findsOneWidget);
   });
 
-  testWidgets('only an unlocked folder card shows the watermark',
+  testWidgets('a folder card shows the watermark, even locked; a note never',
       (tester) async {
     Future<void> pump(EntityKind kind, {bool locked = false}) async {
       await tester.pumpWidget(
@@ -147,10 +147,11 @@ void main() {
       findsNothing,
     );
 
+    // A locked folder keeps its watermark, visible through the lock overlay.
     await pump(EntityKind.folder, locked: true);
     expect(
       find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 

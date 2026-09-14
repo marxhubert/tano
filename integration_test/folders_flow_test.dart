@@ -40,8 +40,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> restoreNote(String id) async {}
   @override
-  Future<void> togglePin(String id) async {}
-  @override
   Future<void> toggleLock(String id, {String? password}) async {}
   @override
   Future<void> deleteNotePermanently(String id) async {}
@@ -64,8 +62,6 @@ class _Repo implements NotesRepository, FoldersRepository {
 
   @override
   Future<void> trashFolder(String id) async {}
-  @override
-  Future<void> toggleFolderPin(String id) async {}
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }

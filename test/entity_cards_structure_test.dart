@@ -22,14 +22,13 @@ Widget _host(Widget card, {double width = 160.0, double height = 200.0}) {
   );
 }
 
-Note _note({String? coverImage, bool isPinned = false, bool important = false}) {
+Note _note({String? coverImage, bool important = false}) {
   return Note(
     id: 'n1',
     title: 'Alpha title',
     content: 'Body text',
     date: '2026-01-01 00:00:00.000',
     coverImage: coverImage,
-    isPinned: isPinned,
     important: important,
     attachments: const <String>['a.txt'],
   );
@@ -47,7 +46,6 @@ Widget _noteCard(
     title: note.title,
     subtitle: formatNoteDate(note.date),
     coverImage: note.coverImage,
-    isPinned: note.isPinned,
     isImportant: note.important,
     isSelected: isSelected,
     isInSelectionMode: isInSelectionMode,
@@ -140,7 +138,7 @@ void main() {
     testWidgets('fills the left third with the cover', (tester) async {
       await tester.pumpWidget(
         _host(
-          _noteCard(_note(coverImage: 'cover.png', isPinned: true), isList: true),
+          _noteCard(_note(coverImage: 'cover.png'), isList: true),
           width: 300.0,
           height: 92.0,
         ),
@@ -148,11 +146,9 @@ void main() {
 
       final Rect card = tester.getRect(find.byType(EntityCard));
       final Rect cover = tester.getRect(find.byType(CoverImage));
-      final Rect pin = tester.getRect(find.byIcon(Symbols.push_pin));
 
       expect(cover.left, closeTo(card.left, 1.0));
       expect(cover.width, closeTo(card.width / 3, 1.0));
-      expect(pin.left, greaterThanOrEqualTo(cover.right));
     });
 
     testWidgets('stops the title at one line with a cover, two without',
@@ -194,7 +190,7 @@ void main() {
 
       final Rect card = tester.getRect(find.byType(EntityCard));
       final Rect name = tester.getRect(find.text('Studies'));
-      final Rect meta = tester.getRect(find.byIcon(Symbols.description));
+      final Rect meta = tester.getRect(find.byIcon(Symbols.sticky_note_2));
 
       expect(name.top, lessThan(meta.top));
       expect(card.bottom - meta.bottom, closeTo(4.0, 1.0));
@@ -213,7 +209,7 @@ void main() {
 
       final Rect card = tester.getRect(find.byType(EntityCard));
       final Rect name = tester.getRect(find.text('Studies'));
-      final Rect meta = tester.getRect(find.byIcon(Symbols.description));
+      final Rect meta = tester.getRect(find.byIcon(Symbols.sticky_note_2));
 
       expect(meta.top, greaterThanOrEqualTo(name.bottom - 1.0));
       // Centred block: it does not touch either edge.
@@ -222,35 +218,7 @@ void main() {
     });
   });
 
-  group('pin and bookmark', () {
-    testWidgets('a pinned note shows the pin first in the metadata',
-        (tester) async {
-      await tester.pumpWidget(_host(_noteCard(_note(isPinned: true))));
-
-      final Rect pin = tester.getRect(find.byIcon(Symbols.push_pin));
-      final Rect counts = tester.getRect(find.byIcon(Symbols.attachment));
-
-      expect(pin.center.dy, closeTo(counts.center.dy, 1.0));
-      expect(pin.left, lessThan(counts.left));
-    });
-
-    testWidgets('a pinned folder shows the pin first in the metadata',
-        (tester) async {
-      final Folder folder = Folder(
-        id: 'f1',
-        name: 'Studies',
-        date: '2026-01-01 00:00:00.000',
-        isPinned: true,
-      );
-      await tester.pumpWidget(_host(_folderCard(folder, noteCount: 3)));
-
-      final Rect pin = tester.getRect(find.byIcon(Symbols.push_pin));
-      final Rect count = tester.getRect(find.byIcon(Symbols.description));
-
-      expect(pin.center.dy, closeTo(count.center.dy, 1.0));
-      expect(pin.left, lessThan(count.left));
-    });
-
+  group('bookmark', () {
     testWidgets('a bookmarked note puts the bookmark at the top right',
         (tester) async {
       await tester.pumpWidget(_host(_noteCard(_note(important: true))));

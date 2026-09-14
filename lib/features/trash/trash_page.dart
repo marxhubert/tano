@@ -121,7 +121,6 @@ class _TrashPageState extends State<TrashPage> {
                       category: note.category,
                       title: note.title,
                       subtitle: formatNoteDate(note.date),
-                      isPinned: note.isPinned,
                       isImportant: note.important,
                       builder: (context, textColor, hasCover) => SizedBox.expand(
                         child: Stack(
@@ -134,20 +133,15 @@ class _TrashPageState extends State<TrashPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 spacing: 4.0,
                                 children: <Widget>[
-                                  Padding(
-                                    padding: note.isPinned 
-                                      ? const EdgeInsets.only(left: 8.0)
-                                      : const EdgeInsets.only(left: 0.0),
-                                    child: Text(
-                                      formatNoteDate(note.date),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.normal,
-                                        fontSize: 8.0,
-                                        color: textColor.withValues(alpha: 0.6),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  Text(
+                                    formatNoteDate(note.date),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: 8.0,
+                                      color: textColor.withValues(alpha: 0.6),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     note.title,
