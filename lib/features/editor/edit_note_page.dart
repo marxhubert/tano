@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -17,6 +16,7 @@ import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
+import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -62,7 +62,6 @@ class _EditNoteState extends State<EditNote>
   /// Set while the toggle handler intentionally unfocuses the field, so the
   /// focus-loss cleanup does not run for that spurious focus change.
   bool _suppressFocusLossCleanup = false;
-  bool _showRemoveCoverButton = false;
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
@@ -733,11 +732,6 @@ class _EditNoteState extends State<EditNote>
             onTap: () {
               FocusScope.of(context).unfocus();
               _fabKey.currentState?.closeVerticalMenu();
-              if (_showRemoveCoverButton) {
-                setState(() {
-                  _showRemoveCoverButton = false;
-                });
-              }
             },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
@@ -929,80 +923,17 @@ class _EditNoteState extends State<EditNote>
                 ),
                 if (_viewModel.coverImage != null)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: FutureBuilder<String>(
-                        future: _attachmentsStore.materialize(
-                          _viewModel.coverImage!,
-                        ),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox.shrink();
-                          return Stack(
-                            children: [
-                              GestureDetector(
-                                onLongPress: () {
-                                  setState(() {
-                                    _showRemoveCoverButton = !_showRemoveCoverButton;
-                                  });
-                                },
-                                child: Stack(
-                                  children: [
-                                    Image.file(
-                                      File(snapshot.data!),
-                                      width: double.infinity,
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                    if (isDark)
-                                      Positioned.fill(
-                                        child: Container(
-                                          color: Colors.black.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (_showRemoveCoverButton)
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final bool? confirm = await getConfirmation(
-                                        context: context,
-                                        actionTitle: AppText.tr('delete_photo'),
-                                        action: AppText.tr('delete'),
-                                      );
-                                      if (confirm == true) {
-                                        _removeCoverImage();
-                                        setState(() {
-                                          _showRemoveCoverButton = false;
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 4,
-                                            offset: Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                        size: 24.0,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
+                    child: ManageableCover(
+                      name: _viewModel.coverImage!,
+                      // Full image, full width: the whole picture, no crop.
+                      fit: BoxFit.fitWidth,
+                      lightDimAlpha: 0.0,
+                      // Tighter gap above, under the metadata line.
+                      padding: const EdgeInsets.only(
+                        top: appPaddingSmall,
+                        bottom: appPaddingMedium,
                       ),
+                      onRemove: _removeCoverImage,
                     ),
                   ),
                 SliverPadding(
