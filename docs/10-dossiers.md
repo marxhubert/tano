@@ -7,7 +7,7 @@ Ce document fait autorité sur l'organisation des notes en dossiers.
 ## 1. Modèle
 
 Un **dossier** (`Folder`) regroupe des notes. Il est traité **comme une note**
-pour la plupart des points (thème/couleur, épingle, favori, verrou, couverture,
+pour la plupart des points (thème/couleur, favori, verrou, couverture,
 corbeille, sélection), **sauf** ce qui est spécifique au contenu d'une note
 (`content`, `attachments`, checklists, liens, recherche plein texte).
 
@@ -18,7 +18,6 @@ corbeille, sélection), **sauf** ce qui est spécifique au contenu d'une note
 | `date` | date de création |
 | `important` | favori (bookmark), comme les notes |
 | `category` | thème de couleur, comme les notes |
-| `isPinned` | épinglé, remonte en tête de son groupe |
 | `isLocked` | dossier verrouillé (voir §7) |
 | `coverImage` | image de couverture, comme les notes |
 | `isDeleted` / `deletedAt` | corbeille |
@@ -63,11 +62,11 @@ Un dossier est une **carte** comme une note, dans les deux vues (grid et list) :
 - Dès qu'au moins un dossier existe, le titre de la page devient **« My folders »**.
 - Les dossiers sont **toujours avant** les notes.
 
-### Tri, épinglage, favoris
+### Tri et favoris
 - Le **système de tri actuel** s'applique aussi aux dossiers (alpha, date, thème…),
   mais chaque groupe reste à sa place.
-- **Épingler** un dossier se comporte exactement comme pour une note (il remonte en
-  tête **de son groupe**). **Bookmark** (important) : idem.
+- **Bookmark** (important) remonte l'élément en **tête de son groupe**, notes
+  comme dossiers.
 
 ### Sélection multiple
 La barre de sélection passe de **3 à 4 actions**, dans cet ordre :
@@ -95,7 +94,8 @@ La barre de sélection passe de **3 à 4 actions**, dans cet ordre :
   - **Add** : deux options — **Choose image** (couverture du dossier) et **Add note**
     (créer une nouvelle note dans le dossier).
   - **Color** : change le thème du dossier (inchangé).
-  - **More_vert** : **Pin**, **Bookmark**, **Lock**, **Delete**.
+  - **More_vert** : **Bookmark**, **Lock**, **Delete** (le bookmark remonte
+    l'élément en tête de son groupe).
   - **Chevron** : ferme/replie.
 - **App bar** : l'action **more_vert disparaît** au profit d'une action **Add**
   (icône `add`) qui crée une nouvelle note dans le dossier.

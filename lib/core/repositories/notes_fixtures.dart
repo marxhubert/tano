@@ -36,9 +36,8 @@ const List<String> _folderNames = <String>[
 ///
 /// - 5 folders, 4 of them holding 15 to 27 notes and one left empty;
 /// - 33 notes that are not filed in any folder;
-/// - random pin/bookmark/theme on every folder and note; exactly 2 folders
-///   are locked (never the empty one), and no pinned or bookmarked note is
-///   locked;
+/// - random bookmark/theme on every folder and note; exactly 2 folders
+///   are locked (never the empty one), and no bookmarked note is locked;
 /// - 3 to 12 inserted notes and 1 to 3 checklists (each with a title and 6 to
 ///   15 items) on the notes that are not deliberately "empty";
 /// - a 450 to 630 word text on every note.
@@ -61,7 +60,6 @@ TanoFixtures buildFixtures() {
         date: baseDate.subtract(Duration(minutes: i)).toString(),
         important: random.nextBool(),
         category: _themes[random.nextInt(_themes.length)],
-        isPinned: random.nextBool(),
         isLocked: i < 4 && folderLocks[i],
       ),
   ];
@@ -73,45 +71,40 @@ TanoFixtures buildFixtures() {
   final int folderNoteTotal = folderSizes.fold<int>(0, (int a, int b) => a + b);
 
   // --- Flag plans ----------------------------------------------------------
-  // Folders: 3 pinned (also bookmarked), 6 bookmarked in total, and only 3
-  // locked notes; a locked note never carries pin or bookmark. 10 notes have
-  // nothing but their text and theme.
+  // Folders: 6 bookmarked notes and only 3 locked notes; a locked note never
+  // carries a bookmark. 10 notes have nothing but their text and theme.
   final List<_Spec> folderSpecs = <_Spec>[
-    // The 3 pinned notes are also bookmarked and never locked.
-    ...List<_Spec>.generate(3, (_) => const _Spec(pin: true, lock: false, mark: true)),
-    // 3 more bookmarked notes, never locked.
-    ...List<_Spec>.generate(3, (_) => const _Spec(pin: false, lock: false, mark: true)),
-    // Only 3 locked notes, none of them pinned or bookmarked.
-    ...List<_Spec>.generate(3, (_) => const _Spec(pin: false, lock: true, mark: false)),
+    // 6 bookmarked notes, never locked.
+    ...List<_Spec>.generate(6, (_) => const _Spec(lock: false, mark: true)),
+    // Only 3 locked notes, none of them bookmarked.
+    ...List<_Spec>.generate(3, (_) => const _Spec(lock: true, mark: false)),
     // 10 notes with nothing but their text and theme.
     ...List<_Spec>.generate(
       10,
-      (_) => const _Spec(pin: false, lock: false, mark: false, empty: true),
+      (_) => const _Spec(lock: false, mark: false, empty: true),
     ),
     // The remaining folder notes are clean too.
     ...List<_Spec>.generate(
       folderNoteTotal - 19,
-      (_) => const _Spec(pin: false, lock: false, mark: false),
+      (_) => const _Spec(lock: false, mark: false),
     ),
   ]..shuffle(random);
 
-  // Unfiled: 6 pinned (also bookmarked), 9 bookmarked in total, and only 9
-  // locked notes; a locked note never carries pin or bookmark. 15 notes have
-  // no flag at all, 12 of them completely empty.
+  // Unfiled: 9 bookmarked notes and only 9 locked notes; a locked note never
+  // carries a bookmark. 15 notes have no flag at all, 12 of them completely
+  // empty.
   final List<_Spec> looseSpecs = <_Spec>[
-    // The 6 pinned notes are also bookmarked and never locked.
-    ...List<_Spec>.generate(6, (_) => const _Spec(pin: true, lock: false, mark: true)),
-    // 3 more bookmarked notes, never locked.
-    ...List<_Spec>.generate(3, (_) => const _Spec(pin: false, lock: false, mark: true)),
-    // Only 9 locked notes, none of them pinned or bookmarked.
-    ...List<_Spec>.generate(9, (_) => const _Spec(pin: false, lock: true, mark: false)),
+    // 9 bookmarked notes, never locked.
+    ...List<_Spec>.generate(9, (_) => const _Spec(lock: false, mark: true)),
+    // Only 9 locked notes, none of them bookmarked.
+    ...List<_Spec>.generate(9, (_) => const _Spec(lock: true, mark: false)),
     // 12 notes with nothing but their text and theme.
     ...List<_Spec>.generate(
       12,
-      (_) => const _Spec(pin: false, lock: false, mark: false, empty: true),
+      (_) => const _Spec(lock: false, mark: false, empty: true),
     ),
     // 3 more clean notes (with insertions/checklists, no flags).
-    ...List<_Spec>.generate(3, (_) => const _Spec(pin: false, lock: false, mark: false)),
+    ...List<_Spec>.generate(3, (_) => const _Spec(lock: false, mark: false)),
   ]..shuffle(random);
 
   // --- Plans ---------------------------------------------------------------
@@ -143,7 +136,6 @@ TanoFixtures buildFixtures() {
         date: plans[i].date,
         important: plans[i].spec.mark,
         category: plans[i].category,
-        isPinned: plans[i].spec.pin,
         isLocked: plans[i].spec.lock,
         folderId: plans[i].folderId,
       ),
@@ -236,13 +228,11 @@ String _generateText(Random random) {
 /// Flag combination of a generated note.
 class _Spec {
   const _Spec({
-    required this.pin,
     required this.lock,
     required this.mark,
     this.empty = false,
   });
 
-  final bool pin;
   final bool lock;
   final bool mark;
 

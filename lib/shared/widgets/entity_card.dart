@@ -48,7 +48,6 @@ class EntityCard extends StatelessWidget {
     this.subtitle,
     this.subtitleIcon,
     this.coverImage,
-    this.isPinned = false,
     this.isImportant = false,
     this.isLocked = false,
     this.isListLayout = false,
@@ -91,7 +90,6 @@ class EntityCard extends StatelessWidget {
   final IconData? subtitleIcon;
 
   final String? coverImage;
-  final bool isPinned;
   final bool isImportant;
   final bool isLocked;
   final bool isListLayout;
@@ -146,7 +144,7 @@ class EntityCard extends StatelessWidget {
                 ),
               // Folder watermark: the glyph bleeds off the bottom-right corner,
               // pushed 24px past both edges.
-              if (kind == EntityKind.folder && !isLocked)
+              if (kind == EntityKind.folder)
                 Positioned(
                   right: -2.0,
                   bottom: -20.0,
@@ -164,9 +162,8 @@ class EntityCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              // The pin now lives in the metadata row; only a note keeps a
-              // floating bookmark, at the top of the card, or at the top of
-              // the content zone under a grid cover.
+              // Only a note keeps a floating bookmark, at the top of the
+              // card, or at the top of the content zone under a grid cover.
               if (kind == EntityKind.note && !isLocked && isImportant)
                 Positioned(
                   // The glyph is inset inside its 16px em box; pull it up by
@@ -268,7 +265,9 @@ class EntityCard extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           child: Container(
-            color: bgColor,
+            // A locked folder keeps its watermark visible through the overlay;
+            // the card itself already paints [bgColor].
+            color: kind == EntityKind.folder ? Colors.transparent : bgColor,
             // Grid keeps contentInset x2 on every side; the locked list gets
             // wider left/right gutters.
             padding: isListLayout
@@ -461,7 +460,7 @@ class _FolderWatermarkPainter extends CustomPainter {
   final Color color;
 
   /// Native stroke width, in the 24x24 artwork space.
-  static const double _nativeStroke = 1.0;
+  static const double _nativeStroke = 0.6;
 
   @override
   void paint(Canvas canvas, Size size) {

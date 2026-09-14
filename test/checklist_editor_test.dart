@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/note.dart';
@@ -54,13 +55,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
-    }
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
@@ -142,10 +136,10 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    // The checklist counter appears (done_all icon + "x1"), no links.
-    expect(find.byIcon(Icons.done_all), findsOneWidget);
+    // The checklist counter appears (check_box icon + "x1"), no links.
+    expect(find.byIcon(Symbols.check_box), findsOneWidget);
     expect(find.text('x1'), findsOneWidget);
-    expect(find.byIcon(Icons.sticky_note_2), findsNothing);
+    expect(find.byIcon(Symbols.sticky_note_2), findsNothing);
 
     // Make the note dirty: undo/redo/save appear, but the app bar title is
     // still hidden because the note has not been scrolled yet.

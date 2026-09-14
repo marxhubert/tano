@@ -130,8 +130,7 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Liste — compact (sans couverture)'),
       _sized(
         EntityCardHeight.compact,
-        _folderCard(base, null,
-            isList: true, isPinned: true, important: true),
+        _folderCard(base, null, isList: true, important: true),
       ),
       const SizedBox(height: 12.0),
       _label('Liste — normal (avec couverture)'),
@@ -146,7 +145,7 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Grille — square, 3 par ligne : sans couverture, avec '
           'couverture, verrouillé'),
       _grid(<Widget>[
-        _folderCard(base, null, isList: false, isPinned: true, important: true),
+        _folderCard(base, null, isList: false, important: true),
         _folderCard(base, _cover, isList: false),
         _folderCard(base, _cover, isList: false, locked: true),
       ]),
@@ -178,8 +177,7 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Liste — compact (sans couverture)'),
       _sized(
         EntityCardHeight.compact,
-        _noteCard(base, null,
-            isList: true, isPinned: true, important: true),
+        _noteCard(base, null, isList: true, important: true),
       ),
       const SizedBox(height: 12.0),
       _label('Liste — normal (avec couverture)'),
@@ -194,7 +192,7 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Grille — square, 3 par ligne : sans couverture, avec '
           'couverture, verrouillé'),
       _grid(<Widget>[
-        _noteCard(base, null, isList: false, isPinned: true, important: true),
+        _noteCard(base, null, isList: false, important: true),
         _noteCard(base, _cover, isList: false, important: true),
         _noteCard(base, _cover, isList: false, locked: true),
       ]),
@@ -253,13 +251,11 @@ class _CardLabPageState extends State<CardLabPage> {
     String? cover, {
     required bool isList,
     bool locked = false,
-    bool isPinned = false,
     bool important = false,
   }) {
     final Folder shown = folder.copyWith(
       coverImage: cover,
       isLocked: locked,
-      isPinned: isPinned,
       important: important,
     );
     return EntityCard(
@@ -267,9 +263,8 @@ class _CardLabPageState extends State<CardLabPage> {
       category: shown.category,
       title: shown.name,
       subtitle: 'x3',
-      subtitleIcon: Symbols.description,
+      subtitleIcon: Symbols.sticky_note_2,
       coverImage: cover,
-      isPinned: shown.isPinned,
       isImportant: shown.important,
       isLocked: locked,
       isListLayout: isList,
@@ -296,13 +291,11 @@ class _CardLabPageState extends State<CardLabPage> {
     String? cover, {
     required bool isList,
     bool locked = false,
-    bool isPinned = false,
     bool important = false,
   }) {
     final Note shown = note.copyWith(
       coverImage: cover,
       isLocked: locked,
-      isPinned: isPinned,
       important: important,
     );
     return EntityCard(
@@ -311,7 +304,6 @@ class _CardLabPageState extends State<CardLabPage> {
       title: shown.title,
       subtitle: formatNoteDate(shown.date),
       coverImage: cover,
-      isPinned: shown.isPinned,
       isImportant: shown.important,
       isLocked: locked,
       isListLayout: isList,

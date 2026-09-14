@@ -54,13 +54,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
-    }
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {

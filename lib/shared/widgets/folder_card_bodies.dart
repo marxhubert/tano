@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/folder.dart';
-import 'package:tano/shared/widgets/card_metadata.dart';
 import 'package:tano/shared/widgets/card_typography.dart';
 
 /// Folder grid body: the name on top, the metadata at the bottom.
@@ -26,7 +25,7 @@ Widget buildFolderGridContent({
             style: cardTitleStyle(textColor),
           ),
           const Spacer(),
-          buildFolderMetadata(textColor, noteCount, isPinned: folder.isPinned),
+          buildFolderMetadata(textColor, noteCount),
         ],
       ),
     ),
@@ -54,29 +53,24 @@ Widget buildFolderListContent({
           overflow: TextOverflow.ellipsis,
           style: cardTitleStyle(textColor),
         ),
-        buildFolderMetadata(textColor, noteCount, isPinned: folder.isPinned),
+        buildFolderMetadata(textColor, noteCount),
       ],
     ),
   );
 }
 
-/// Folder metadata: the pin (when pinned) then a note-count glyph and value.
+/// Folder metadata: a note-count glyph and value.
 Widget buildFolderMetadata(
   Color textColor,
-  int noteCount, {
-  bool isPinned = false,
-}) {
+  int noteCount,
+) {
   final Color color = textColor.withValues(alpha: 0.6);
   return Padding(
     padding: const EdgeInsets.only(top: 2.0),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (isPinned) ...<Widget>[
-          buildPinnedMarker(color),
-          const SizedBox(width: 4.0),
-        ],
-        Icon(Symbols.description, size: cardMetaIconSize, color: color),
+        Icon(Symbols.sticky_note_2, size: cardMetaIconSize, color: color),
         Text('x$noteCount',
             style: TextStyle(fontSize: cardMetaSize, color: color)),
       ],

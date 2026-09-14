@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -26,7 +27,6 @@ class AppFab extends StatefulWidget {
     this.findCurrent = 0,
     this.findTotal = 0,
     this.isAddMode = false,
-    this.isPinned = false,
     this.isImportant = false,
     this.isLocked = false,
     this.controller,
@@ -49,7 +49,6 @@ class AppFab extends StatefulWidget {
     this.onLinkSelected,
     this.onNoteLinkSelected,
     this.onAttachmentSelected,
-    this.onPinSelected,
     this.onImportantSelected,
     this.onFindSelected,
     this.onFindPrev,
@@ -72,7 +71,7 @@ class AppFab extends StatefulWidget {
   final bool isEditorMode;
 
   /// Folder page: the add menu offers a cover and a new note, the more menu
-  /// offers pin, bookmark, lock and delete.
+  /// offers bookmark, edit, lock and delete.
   final bool isFolderMode;
 
   /// Folder page: the title is being renamed, so the FAB stays reduced.
@@ -88,7 +87,6 @@ class AppFab extends StatefulWidget {
   final int findCurrent;
   final int findTotal;
   final bool isAddMode;
-  final bool isPinned;
   final bool isImportant;
   final bool isLocked;
   final String? currentNoteId;
@@ -113,7 +111,6 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onLinkSelected;
   final ValueChanged<Note>? onNoteLinkSelected;
   final VoidCallback? onAttachmentSelected;
-  final VoidCallback? onPinSelected;
   final VoidCallback? onImportantSelected;
   final VoidCallback? onFindSelected;
   final VoidCallback? onFindPrev;
@@ -581,7 +578,7 @@ class AppFabState extends State<AppFab> {
       children: List.generate(sortedNotes.length, (index) {
         final note = sortedNotes[index];
         return _VerticalMenuItem(
-          icon: Icons.sticky_note_2,
+          icon: Symbols.sticky_note_2,
           iconSize: 20.0,
           fontSize: 17.0,
           maxLines: 2,
@@ -762,7 +759,7 @@ class AppFabState extends State<AppFab> {
         onTap: widget.onChecklistSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.sticky_note_2,
+        icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
@@ -786,12 +783,6 @@ class AppFabState extends State<AppFab> {
     // On the folder page only the folder-relevant actions are offered.
     if (widget.isFolderMode) {
       return _buildVerticalList([
-        _VerticalMenuItem(
-          icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-          label: AppText.tr('option_pin'),
-          iconColor: widget.isPinned ? tanoAmber : null,
-          onTap: widget.onPinSelected,
-        ),
         _VerticalMenuItem(
           icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
           label: AppText.tr('important'),
@@ -821,12 +812,6 @@ class AppFabState extends State<AppFab> {
     }
 
     return _buildVerticalList([
-      _VerticalMenuItem(
-        icon: widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-        label: AppText.tr('option_pin'),
-        iconColor: widget.isPinned ? tanoAmber : null,
-        onTap: widget.onPinSelected,
-      ),
       _VerticalMenuItem(
         icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
         label: AppText.tr('important'),

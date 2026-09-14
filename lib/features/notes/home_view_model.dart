@@ -205,6 +205,7 @@ class HomeViewModel extends ChangeNotifier {
         updatedAt: DateTime.now().toString(),
       );
       repository.upsertNote(_allNotes[noteIndex]);
+      _sort();
       notifyListeners();
       return;
     }
@@ -216,6 +217,7 @@ class HomeViewModel extends ChangeNotifier {
         updatedAt: DateTime.now().toString(),
       );
       _foldersRepository?.upsertFolder(_folders[folderIndex]);
+      _sort();
       notifyListeners();
     }
   }
@@ -342,31 +344,6 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> togglePin(String id) async {
-    final int folderIndex = _folders.indexWhere((Folder f) => f.id == id);
-    if (folderIndex != -1) {
-      await _foldersRepository?.toggleFolderPin(id);
-      final Folder folder = _folders[folderIndex];
-      _folders[folderIndex] = folder.copyWith(
-        isPinned: !folder.isPinned,
-        updatedAt: DateTime.now().toString(),
-      );
-      _sort();
-      notifyListeners();
-      return;
-    }
-    final int index = _allNotes.indexWhere((Note note) => note.id == id);
-    if (index == -1) return;
-    await repository.togglePin(id);
-    final Note note = _allNotes[index];
-    _allNotes[index] = note.copyWith(
-      isPinned: !note.isPinned,
-      updatedAt: DateTime.now().toString(),
-    );
-    _sort();
-    notifyListeners();
-  }
-
   /// Creates a folder. An empty [name] falls back to "Folder X".
   Future<Folder> addFolder(String name) async {
     final String trimmed = name.trim();
@@ -466,8 +443,8 @@ class HomeViewModel extends ChangeNotifier {
 
   int _compareFolders(Folder folder1, Folder folder2) {
     return compareCards(
-      pinned1: folder1.isPinned,
-      pinned2: folder2.isPinned,
+      important1: folder1.important,
+      important2: folder2.important,
       by: _sortBy,
       secondaryBy: _secondarySortBy,
       ascending: _sortAscending,

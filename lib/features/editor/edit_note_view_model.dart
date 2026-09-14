@@ -33,7 +33,6 @@ class EditNoteViewModel extends ChangeNotifier {
     important = initialNote?.important ?? false;
     category = initialNote?.category ?? Note.defaultCategory;
     isDeleted = initialNote?.isDeleted ?? false;
-    isPinned = initialNote?.isPinned ?? false;
     isLocked = initialNote?.isLocked ?? false;
     attachments = List<String>.of(initialNote?.attachments ?? const <String>[]);
     coverImage = initialNote?.coverImage;
@@ -53,7 +52,6 @@ class EditNoteViewModel extends ChangeNotifier {
   late bool important;
   late String category;
   late bool isDeleted;
-  late bool isPinned;
   late bool isLocked;
   late List<String> attachments;
   String? coverImage;
@@ -69,7 +67,6 @@ class EditNoteViewModel extends ChangeNotifier {
     _initialNote = note;
     category = note.category;
     important = note.important;
-    isPinned = note.isPinned;
     isLocked = note.isLocked;
     coverImage = note.coverImage;
     folderId = note.folderId;
@@ -79,11 +76,6 @@ class EditNoteViewModel extends ChangeNotifier {
 
   void toggleImportant() {
     important = !important;
-    notifyListeners();
-  }
-
-  void togglePin() {
-    isPinned = !isPinned;
     notifyListeners();
   }
 
@@ -161,7 +153,6 @@ class EditNoteViewModel extends ChangeNotifier {
       important: important,
       category: category,
       isDeleted: isDeleted,
-      isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,
@@ -185,7 +176,6 @@ class EditNoteViewModel extends ChangeNotifier {
           current.content != initial.content ||
           important != _initialNote.important ||
           category != _initialNote.category ||
-          isPinned != _initialNote.isPinned ||
           isLocked != _initialNote.isLocked ||
           coverImage != _initialNote.coverImage;
   }
@@ -223,7 +213,6 @@ class EditNoteViewModel extends ChangeNotifier {
       important: important,
       category: category,
       isDeleted: isDeleted,
-      isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,

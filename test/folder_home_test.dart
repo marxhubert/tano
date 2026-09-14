@@ -55,8 +55,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> restoreNote(String id) async {}
   @override
-  Future<void> togglePin(String id) async {}
-  @override
   Future<void> toggleLock(String id, {String? password}) async {}
   @override
   Future<void> deleteNotePermanently(String id) async {}
@@ -78,8 +76,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   }
   @override
   Future<void> trashFolder(String id) async {}
-  @override
-  Future<void> toggleFolderPin(String id) async {}
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
@@ -424,7 +420,6 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
             important: true,
           ),
         ],
@@ -451,10 +446,6 @@ void main() {
     );
     expect(
       find.descendant(of: page, matching: find.byIcon(Icons.bookmark)),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.push_pin)),
       findsOneWidget,
     );
     // Not locked, so no lock flag.
@@ -692,7 +683,7 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
+            important: true,
           ),
         ],
       ),
@@ -737,7 +728,7 @@ void main() {
     );
   });
 
-  testWidgets('folder card shows the pin and the [icon]xN count', (
+  testWidgets('folder card shows the [icon]xN count', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -763,7 +754,6 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
           ),
         ],
       ),
@@ -774,16 +764,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final Finder card = _folderCards();
-    // Pinned folder: the pin sits where a note's pin sits.
-    expect(
-      find.descendant(of: card, matching: find.byIcon(Symbols.push_pin)),
-      findsOneWidget,
-    );
     // [icon]xN note count.
     expect(
       find.descendant(
         of: card,
-        matching: find.byIcon(Symbols.description),
+        matching: find.byIcon(Symbols.sticky_note_2),
       ),
       findsOneWidget,
     );
@@ -838,7 +823,6 @@ void main() {
             content: '## Tasks\\n- [ ] one',
             date: date,
             folderId: 'f1',
-            isPinned: true,
           ),
         ],
         folders: <Folder>[
@@ -860,14 +844,13 @@ void main() {
       find.descendant(of: page, matching: find.byType(NoteCounts)),
       findsOneWidget,
     );
-    // No pin shift any more: the pin lives in the metadata.
     expect(
       find.descendant(of: page, matching: find.text(formatNoteDate(date))),
       findsOneWidget,
     );
   });
 
-  testWidgets('folder notes keep the pinned note before the others', (
+  testWidgets('folder notes keep the bookmarked note before the others', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -875,18 +858,18 @@ void main() {
         notes: <Note>[
           Note(
             id: 'n1',
-            title: 'Unpinned',
+            title: 'Plain',
             content: 'x',
             date: '2026-01-02 00:00:00.000',
             folderId: 'f1',
           ),
           Note(
             id: 'n2',
-            title: 'Pinned',
+            title: 'Bookmarked',
             content: 'x',
             date: '2026-01-01 00:00:00.000',
             folderId: 'f1',
-            isPinned: true,
+            important: true,
           ),
         ],
         folders: <Folder>[
@@ -901,19 +884,19 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    final Rect pinned = tester.getRect(
-      find.ancestor(of: find.text('Pinned'), matching: find.byType(EntityCard)),
-    );
-    final Rect unpinned = tester.getRect(
+    final Rect bookmarked = tester.getRect(
       find.ancestor(
-        of: find.text('Unpinned'),
+        of: find.text('Bookmarked'),
         matching: find.byType(EntityCard),
       ),
     );
+    final Rect plain = tester.getRect(
+      find.ancestor(of: find.text('Plain'), matching: find.byType(EntityCard)),
+    );
 
-    // Grid: the pinned card comes first, so it sits left of the other one.
-    expect(pinned.left, lessThan(unpinned.left));
-    expect(pinned.top, lessThanOrEqualTo(unpinned.top));
+    // Grid: the bookmarked card comes first, so it sits left of the other one.
+    expect(bookmarked.left, lessThan(plain.left));
+    expect(bookmarked.top, lessThanOrEqualTo(plain.top));
   });
 
   testWidgets('the FAB rests collapsed when the folder list scrolls', (

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Inline note-markdown helpers shared by the editor and the note cards.
 ///
@@ -745,10 +746,10 @@ class LinkTextEditingController extends TextEditingController {
     // Char 0 ('['): render as icon glyph.
     children.add(
       TextSpan(
-        text: String.fromCharCode(Icons.sticky_note_2.codePoint),
+        text: String.fromCharCode(Symbols.sticky_note_2.codePoint),
         style: linkStyle.copyWith(
-          fontFamily: Icons.sticky_note_2.fontFamily,
-          package: Icons.sticky_note_2.fontPackage,
+          fontFamily: Symbols.sticky_note_2.fontFamily,
+          package: Symbols.sticky_note_2.fontPackage,
           fontSize: (style.fontSize ?? 14.4) * 0.9,
         ),
       ),

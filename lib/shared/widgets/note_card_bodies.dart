@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/shared/config/date_format.dart';
-import 'package:tano/shared/widgets/card_metadata.dart';
 import 'package:tano/shared/widgets/card_typography.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -55,7 +54,6 @@ Widget buildNoteGridContent({
           content: note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
-          isPinned: note.isPinned,
         ),
       ],
     ),
@@ -108,7 +106,6 @@ Widget buildNoteListContent({
           content: note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
-          isPinned: note.isPinned,
         ),
       ],
     ),
@@ -145,21 +142,19 @@ Widget _noteExcerpt({
   );
 }
 
-/// Small muted row showing, in order, the pinned pin then how many checklists,
-/// note links and attachments a note contains (Material Symbols + xN).
+/// Small muted row showing, in order, how many checklists, note links and
+/// attachments a note contains (Material Symbols + xN).
 class NoteCounts extends StatelessWidget {
   const NoteCounts({
     super.key,
     required this.content,
     required this.color,
     this.attachmentCount = 0,
-    this.isPinned = false,
   });
 
   final String content;
   final Color color;
   final int attachmentCount;
-  final bool isPinned;
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +162,7 @@ class NoteCounts extends StatelessWidget {
     final int links = linkCountIn(content);
     final bool hasCounts =
         checklists > 0 || links > 0 || attachmentCount > 0;
-    if (!hasCounts && !isPinned) {
+    if (!hasCounts) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -175,13 +170,8 @@ class NoteCounts extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // The pin always comes first in the metadata.
-          if (isPinned) ...<Widget>[
-            buildPinnedMarker(color),
-            if (hasCounts) const SizedBox(width: 4.0),
-          ],
           if (checklists > 0) ...<Widget>[
-            Icon(Symbols.done_all, size: cardMetaIconSize, color: color),
+            Icon(Symbols.check_box, size: cardMetaIconSize, color: color),
             const SizedBox(width: 1.0),
             Text('x$checklists', style: cardMetaStyle(color)),
           ],
