@@ -144,9 +144,69 @@ par le template.
 
 ### Élément distinctif
 
-Pour distinguer un dossier d'une note (les cartes se ressemblent), l'icône
-`folder_open` actuelle est remplacée par un **filigrane** agissant comme un fond,
-placé au coin **bottom / right** (traitement détaillé ultérieurement).
+Pour distinguer un dossier d'une note (les cartes se ressemblent), le dossier
+affiche un **filigrane** agissant comme un fond : le pictogramme dossier
+(tracé seul), en **72 px** (24 × 3), **décalé hors des bords bas / droit** de la
+carte (réglage actuel : **2 px** à droite, **20 px** en bas ; le pictogramme
+reste en grande partie visible). Le filigrane est absent des cartes
+**verrouillées** (template commun) et des notes.
+
+### Anatomie (refonte, validée au labo)
+
+- **Radius** : formule **radius extérieur − marge = radius intérieur**.
+  Extérieur = `appBorderRadius` = **12** ; marge = `contentInset` = **6** ;
+  intérieur = **6**. Elle s'applique à la bordure, au contour en points et, si
+  un élément est en retrait, à la couverture.
+- **Ombre** : **aucune** (carte plate).
+- **Bordure** : **sombre en thème clair**, **claire en thème sombre** ; épaisseur
+  **1,0 en dark**, **0,5 en light**.
+- **Hauteurs** : **3 valeurs seulement**, identiques pour dossier et note :
+
+  | Classe | Cas | Valeur |
+  |---|---|---|
+  | `compact` | list, sans couverture | 80 |
+  | `normal` | list, avec couverture | 92 |
+  | `square` | grid | 128 |
+
+  La grille est **subtilement plus haute que large** (pas un vrai 1:1).
+
+- **Marge de contenu** : `contentInset = 6`. Une **seule** marge sert au
+  contenu (hors couverture), aux marqueurs (pin / bookmark) et à la bordure des
+  cartes verrouillées.
+- **Verrouillé** : bordure **en points** (grise, discrète mais visible dans les
+  deux thèmes), **en retrait** de `contentInset` par rapport aux bords ; elle
+  délimite la zone de contenu. Les points sont **répartis uniformément sur tout
+  le périmètre**, coins compris (ni tirets coupés, ni points trop espacés aux
+  coins). Le contenu verrouillé reçoit une marge de `contentInset × 2` (**12**),
+  portée à **24** de chaque côté en **list**. Le **template verrouillé est
+  identique** pour tous les éléments.
+- **Date** : format **jj/mm/aaaa** (`14/09/2026`) sur **toutes** les cartes.
+- **Typographie** (toutes les cartes ; référence = carte **grille** de la note) :
+  titre **11** gras · date **9** · contenu (extrait) **10** · metadata (compteurs)
+  texte **9**, icône **11**.
+- **Titres — lignes max** : grid **3** (**2** avec couverture) ; list **2**
+  (**1** avec couverture), **sauf** le dossier en list et les cartes
+  verrouillées en list, qui gardent **2** lignes même avec couverture. Le « … »
+  apparaît **automatiquement** dès que le titre dépasse.
+- **Contenu** : prend l'**espace restant** ; le nombre de lignes est calculé
+  d'après cette hauteur et le texte se termine par **« … » sur une ligne
+  complète** (jamais coupé en pleine ligne). Absent d'une carte grille avec
+  couverture.
+- **Paddings** (hors carte verrouillée) : **grid 8**, **list 12** ; sous une
+  couverture de grille, le **gap** couverture → contenu est de **4**.
+- **Metadata face au bas** : la ligne de metadata est à **4** du bord bas — sur
+  les cards de la **note** (grid et list) et sur le **dossier en grid**
+  uniquement (hors lock).
+- **Alignement** (hors verrouillé) : le **body** (tout le contenu) est **aligné
+  en haut** ; la **metadata** est toujours **en bas** et **alignée à gauche**.
+  Exception : le **dossier en list** centre verticalement son nom + sa metadata,
+  comme le template verrouillé.
+- **Dossier** : l'icône `folder_open` est **retirée** du contenu ; le dossier
+  se distingue par le **filigrane** bas-droit (§ « Élément distinctif »).
+- **Bordure et couverture** : la bordure est **peinte au-dessus du contenu**
+  (dernière couche du Stack), sinon la couverture masque les coins arrondis.
+- **Placeholder d'image** : le placeholder actuel sera décliné en **10
+  variantes** (plus tard).
 
 ### État actuel
 
@@ -222,9 +282,23 @@ gratuit/premium, livraison partielle). Voir
     apparaissent.
 18. Un **template « verrouillé »** commun à tous les éléments. Task et project
     se traitent comme note et folder (spécificités mises à part).
-19. L'icône `folder_open` est remplacée par un **filigrane** en bottom / right.
+19. L'icône `folder_open` est remplacée par un **filigrane** en bottom / right :
+    pictogramme dossier tracé seul, **72 px**, décalé hors des bords bas / droit
+    (réglage actuel : 2 px / 20 px).
+20. Rayon de carte : `appBorderRadius` (**12**).
+21. Carte **plate** : **sans ombre**.
+22. Bordure **sombre en thème clair**, **claire en thème sombre** ; épaisseur
+    **1,0 en dark**, **0,5 en light**.
+23. Hauteurs de carte limitées à **3 valeurs** : `compact` (list sans
+    couverture, 80), `normal` (list avec couverture, 92), `square` (grid, 128,
+    subtilement plus haute que large).
+24. Cartes verrouillées : contour **en points** en retrait de `contentInset`
+    (**4**), marge commune au contenu et aux marqueurs, points répartis
+    uniformément sur tout le périmètre (coins compris).
+25. Formule de radius : **extérieur − marge = intérieur** (12 − 6 = 6), pour la
+    bordure, le contour en points et la couverture si elle est en retrait.
 
 ## 13. Questions ouvertes
 
-Aucune pour l'instant : les trois questions précédentes sont tranchées (voir §9,
-points 12 à 14). Ce chapitre servira au fil des approfondissements.
+- **Placeholders d'image** : proposer **10 variantes** (le placeholder actuel
+  sert de base). À faire plus tard.

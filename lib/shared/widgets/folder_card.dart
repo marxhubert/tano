@@ -125,7 +125,7 @@ class FolderCard extends StatelessWidget {
                   padding: EdgeInsets.only(top: coverHeight),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 6.0),
-                    child: _buildGrid(textColor, bgColor),
+                    child: _buildGrid(textColor, bgColor, showCover),
                   ),
                 ),
               ),
@@ -183,8 +183,34 @@ class FolderCard extends StatelessWidget {
   /// A cover puts the icon above the text, so the row needs a bit more.
   static const double _listMinHeightWithCover = _listRowMinHeight + 16.0;
 
-  Widget _buildGrid(Color textColor, Color bgColor) {
+  Widget _buildGrid(Color textColor, Color bgColor, bool hasCover) {
     // Fill the whole card so every area (not just the text) stays tappable.
+    //
+    // With a cover the content only gets the lower half: the folder glyph is
+    // dropped and the name is limited to two lines, so the name and the
+    // metadata never overflow.
+    if (hasCover) {
+      return SizedBox(
+        width: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              folder.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.0,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            _metadata(textColor),
+          ],
+        ),
+      );
+    }
     return SizedBox(
       width: double.infinity,
       child: Column(

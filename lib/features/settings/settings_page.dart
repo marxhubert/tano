@@ -7,6 +7,8 @@ import 'widgets/sorting_section.dart';
 import 'widgets/language_section.dart';
 import 'widgets/about_section.dart';
 import 'widgets/data_management_section.dart';
+import 'widgets/settings_widgets.dart';
+import '../lab/card_lab_page.dart';
 
 import 'package:tano/shared/config/l10n.dart';
 
@@ -45,8 +47,37 @@ class _SettingsPageState extends State<SettingsPage> {
                 const LanguageSection(),
                 AboutSection(viewModel: _viewModel),
                 DataManagementSection(viewModel: _viewModel),
+                // TEMPORARY: entry to the card lab, removed with the lab page.
+                const _CardLabEntry(),
                 const SizedBox(height: 40.0),
               ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// TEMPORARY settings entry pointing at the card lab. Remove together with
+/// [CardLabPage] once the card refactoring is validated.
+class _CardLabEntry extends StatelessWidget {
+  const _CardLabEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: SettingsCard(
+        children: <Widget>[
+          SettingsTile(
+            title: 'Labo cartes',
+            selected: false,
+            trailing: Icon(Icons.chevron_right, color: mutedTextColor(context)),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const CardLabPage(),
+              ),
             ),
           ),
         ],
