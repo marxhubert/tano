@@ -9,7 +9,9 @@ import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -56,8 +58,10 @@ class _FolderPageState extends State<FolderPage> {
   Future<String>? _coverFuture;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
-  bool _isSelectionMode = false;
-  final Set<String> _selected = <String>{};
+  String _sortBy = 'date';
+  String _secondarySortBy = 'date';
+  bool _sortAscending = true;
+  final SelectionController _selection = SelectionController();
 
   FoldersRepository? get _foldersRepository {
     final NotesRepository repository = getIt<NotesRepository>();
@@ -82,6 +86,7 @@ class _FolderPageState extends State<FolderPage> {
     _searchFocusNode.dispose();
     _titleController.dispose();
     _titleFocusNode.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
@@ -90,8 +95,20 @@ class _FolderPageState extends State<FolderPage> {
     if (!mounted) return;
     setState(() {
       _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+      _sortBy = prefs.getString('sortBy') ?? 'date';
+      _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
+      _sortAscending = prefs.getBool('sortAscending') ?? true;
+      _notes = _sorted(_notes);
     });
   }
+
+  /// Notes sorted like the home screen: pinned first, then the chosen
+  /// criterion. Without this the folder kept the raw repository order.
+  List<Note> _sorted(List<Note> notes) => NoteSorting(
+        by: _sortBy,
+        secondaryBy: _secondarySortBy,
+        ascending: _sortAscending,
+      ).sort(notes);
 
   Future<void> _load() async {
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
@@ -101,7 +118,9 @@ class _FolderPageState extends State<FolderPage> {
           .where((Note note) => !note.isDeleted)
           .map((Note note) => note.id)
           .toSet();
-      _notes = all.where((Note note) => note.folderId == _folder.id).toList();
+      _notes = _sorted(
+        all.where((Note note) => note.folderId == _folder.id).toList(),
+      );
       _loading = false;
     });
   }
@@ -306,32 +325,22 @@ class _FolderPageState extends State<FolderPage> {
 
   void _enterSelection(String id) {
     // Keep the search active: the selection stays scoped to the results.
-    setState(() {
-      _selected.add(id);
-      _isSelectionMode = true;
-    });
+    setState(() => _selection.enter(id));
   }
 
   void _toggleSelection(String id) {
-    setState(() {
-      if (!_selected.remove(id)) {
-        _selected.add(id);
-      }
-    });
+    setState(() => _selection.toggle(id));
   }
 
   void _exitSelection() {
-    setState(() {
-      _selected.clear();
-      _isSelectionMode = false;
-    });
+    setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
   }
 
   /// Title of the delete confirmation, based on the current selection.
   String _deleteActionTitle() {
-    final int count = _selected.length;
+    final int count = _selection.count;
     final int total = _visibleNotes.length;
     if (count > 1) {
       return count == total
@@ -349,14 +358,13 @@ class _FolderPageState extends State<FolderPage> {
     );
     if (confirm != true || !mounted) return;
     final NotesRepository repository = getIt<NotesRepository>();
-    for (final String id in _selected.toList()) {
+    for (final String id in _selection.ids) {
       await repository.trashNote(id);
     }
     if (!mounted) return;
     setState(() {
-      _notes.removeWhere((Note note) => _selected.contains(note.id));
-      _selected.clear();
-      _isSelectionMode = false;
+      _notes.removeWhere((Note note) => _selection.contains(note.id));
+      _selection.exit();
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
@@ -380,7 +388,7 @@ class _FolderPageState extends State<FolderPage> {
     );
     if (target == null || !mounted) return;
     final List<Note> selected = _notes
-        .where((Note note) => _selected.contains(note.id))
+        .where((Note note) => _selection.contains(note.id))
         .toList();
     for (final Note note in selected) {
       await repository.upsertNote(
@@ -390,10 +398,7 @@ class _FolderPageState extends State<FolderPage> {
       );
     }
     if (!mounted) return;
-    setState(() {
-      _selected.clear();
-      _isSelectionMode = false;
-    });
+    setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
     await _load();
@@ -421,10 +426,10 @@ class _FolderPageState extends State<FolderPage> {
 
   /// Trailing text on the title line, mirroring the home page.
   Widget? _buildHeaderTrailing(BuildContext context) {
-    if (_isSelectionMode) {
+    if (_selection.isActive) {
       // Exactly the home page's wording: single, x/y or all selected. While
       // searching, the total is the number of results.
-      final int count = _selected.length;
+      final int count = _selection.count;
       final int total = _visibleNotes.length;
       final String label = count == 0
           ? AppText.tr('no_note_selected')
@@ -594,7 +599,7 @@ class _FolderPageState extends State<FolderPage> {
               ),
             )
           : null,
-      actions: _isSelectionMode
+      actions: _selection.isActive
           ? <Widget>[
               TextButton(
                 onPressed: _exitSelection,
@@ -645,7 +650,7 @@ class _FolderPageState extends State<FolderPage> {
         key: _fabKey,
         isEditorMode: true,
         isFolderMode: true,
-        isSelectionMode: _isSelectionMode,
+        isSelectionMode: _selection.isActive,
         isSearchMode: _isSearchMode,
         collapsedByDefault: true,
         controller: _searchController,
@@ -682,10 +687,10 @@ class _FolderPageState extends State<FolderPage> {
         onReset: _clearSearch,
         onDelete: _deleteSelected,
         onMoveSelected: _moveSelected,
-        onClearSelection: () => setState(() => _selected.clear()),
+        onClearSelection: () => setState(_selection.clear),
         onSelectAll: () => setState(
           // Only the notes currently shown (search results included).
-          () => _selected.addAll(_visibleNotes.map((Note note) => note.id)),
+          () => _selection.selectAll(_visibleNotes.map((Note note) => note.id)),
         ),
       ),
       slivers: <Widget>[
@@ -826,12 +831,12 @@ class _FolderPageState extends State<FolderPage> {
       isImportant: note.important,
       isLocked: note.isLocked,
       isListLayout: isList,
-      isSelected: _selected.contains(note.id),
-      isInSelectionMode: _isSelectionMode,
+      isSelected: _selection.contains(note.id),
+      isInSelectionMode: _selection.isActive,
       onSelectionToggle: () => _toggleSelection(note.id),
       onLongPress: () => _enterSelection(note.id),
       onTap: () {
-        if (_isSelectionMode) {
+        if (_selection.isActive) {
           _toggleSelection(note.id);
         } else {
           _openNote(add: false, note: note);
