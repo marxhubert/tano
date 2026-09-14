@@ -307,6 +307,26 @@ void main() {
       expect(name.bottom, lessThanOrEqualTo(meta.top + 1.0));
       expect(card.bottom - meta.bottom, lessThanOrEqualTo(8.0));
     });
+
+    testWidgets('keeps the metadata without overflowing when covered',
+        (tester) async {
+      await tester.pumpWidget(
+        _host(
+          _folderCard(_folder(coverImage: 'folder.png'), noteCount: 3),
+          // The real cell of the three-column grid on a regular phone.
+          width: 112.0,
+          height: 125.0,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+
+      final Rect card = tester.getRect(find.byType(FolderCard));
+      final Rect meta = tester.getRect(find.byIcon(Icons.description_outlined));
+      expect(meta.bottom, lessThanOrEqualTo(card.bottom));
+      // The folder glyph is dropped to leave the lower half to the metadata.
+      expect(find.byIcon(Icons.folder_open), findsNothing);
+    });
   });
 
   group('FolderCard list', () {

@@ -656,7 +656,7 @@ void main() {
       final Offset titleCenter = tester.getCenter(
         find.textContaining('A very long title'),
       );
-      final Offset dateCenter = tester.getCenter(find.text('12 Aug 2026'));
+      final Offset dateCenter = tester.getCenter(find.text('12/08/2026'));
       expect(iconCenter.dx, lessThan(titleCenter.dx));
       expect(dateCenter.dy, greaterThan(titleCenter.dy));
     });
