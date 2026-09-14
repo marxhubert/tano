@@ -170,6 +170,13 @@ class SelectionController extends ChangeNotifier {
 
 **Fait quand** : `_selected` n'existe plus qu'à un seul endroit.
 
+> **Fait** sur `refactor/core-stabilisation` : `SelectionController`
+> (`shared/controllers/selection_controller.dart`). Les getters publics de
+> `HomeViewModel` sont inchangés (il délègue et se synchronise via un listener) ;
+> `FolderPage` utilise le contrôleur à la place de ses champs. La règle « un
+> dossier locké n'est pas sélectionnable » est injectée à la construction du
+> contrôleur côté accueil.
+
 ## 9. Lot 5 — Dialogues adaptatifs
 
 - **Ajouter** `showAdaptivePrompt` dans `confirm.dart` (iOS : `CupertinoAlertDialog`

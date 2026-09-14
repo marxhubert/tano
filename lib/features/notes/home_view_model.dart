@@ -5,6 +5,8 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/action.dart';
+import 'package:tano/shared/config/card_sorting.dart';
+import 'package:tano/shared/controllers/selection_controller.dart';
 
 /// Owns the state and the actions of the home screen.
 ///
@@ -20,7 +22,23 @@ class HomeViewModel extends ChangeNotifier {
         _allNotes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[],
         _folders =
             initialFolders != null ? List<Folder>.of(initialFolders) : <Folder>[] {
+    _selection = SelectionController(
+      isSelectable: (String id) => !_isLockedFolder(id),
+    )..addListener(_onSelectionChanged);
     _sort();
+  }
+
+  @override
+  void dispose() {
+    _selection.removeListener(_onSelectionChanged);
+    _selection.dispose();
+    super.dispose();
+  }
+
+  /// Mirrors the selection into the FAB shape.
+  void _onSelectionChanged() {
+    _actionButtons = _selection.isActive ? 'multiple' : 'add';
+    notifyListeners();
   }
 
   final NotesRepository repository;
@@ -37,8 +55,7 @@ class HomeViewModel extends ChangeNotifier {
   String _secondarySortBy = 'date';
   bool _sortAscending = true;
   String _viewLayout = 'gridlist';
-  bool _isInSelectionMode = false;
-  final Set<String> _selected = <String>{};
+  late final SelectionController _selection;
   String _actionButtons = 'add';
   (List<Note>, List<int>)? _lastDeleted;
 
@@ -60,11 +77,11 @@ class HomeViewModel extends ChangeNotifier {
   String get secondarySortBy => _secondarySortBy;
   bool get sortAscending => _sortAscending;
   String get viewLayout => _viewLayout;
-  bool get isInSelectionMode => _isInSelectionMode;
+  bool get isInSelectionMode => _selection.isActive;
   String get actionButtons => _actionButtons;
-  bool get hasSelection => _selected.isNotEmpty;
-  int get selectedCount => _selected.length;
-  Set<String> get selected => _selected;
+  bool get hasSelection => _selection.isNotEmpty;
+  int get selectedCount => _selection.count;
+  Set<String> get selected => _selection.ids;
   bool get hasSearchQuery => _searchQuery.trim().isNotEmpty;
 
   /// l10n key of the page title: search results, folders or plain notes.
@@ -76,8 +93,8 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Whether any selected note or folder is locked.
   bool get hasLockedInSelection {
-    return _allNotes.any((n) => _selected.contains(n.id) && n.isLocked) ||
-        _folders.any((f) => _selected.contains(f.id) && f.isLocked);
+    return _allNotes.any((n) => _selection.contains(n.id) && n.isLocked) ||
+        _folders.any((f) => _selection.contains(f.id) && f.isLocked);
   }
 
   /// Whether [note] should prompt for authentication where it currently is.
@@ -207,56 +224,32 @@ class HomeViewModel extends ChangeNotifier {
   bool _isLockedFolder(String id) =>
       _folders.any((Folder f) => f.id == id && f.isLocked);
 
-  void enterSelectionMode(String id) {
-    if (_isLockedFolder(id)) return;
-    _selected.add(id);
-    _isInSelectionMode = true;
-    _actionButtons = 'multiple';
-    notifyListeners();
-  }
+  void enterSelectionMode(String id) => _selection.enter(id);
 
-  void toggleSelection(String id) {
-    if (_isLockedFolder(id)) return;
-    if (!_selected.remove(id)) {
-      _selected.add(id);
-    }
-    notifyListeners();
-  }
+  void toggleSelection(String id) => _selection.toggle(id);
 
   void selectAll() {
-    for (final Note note in _visibleNotes()) {
-      _selected.add(note.id);
-    }
-    // A locked folder is not selectable.
-    for (final Folder folder in folders) {
-      if (!folder.isLocked) _selected.add(folder.id);
-    }
-    notifyListeners();
+    _selection.selectAll(<String>[
+      for (final Note note in _visibleNotes()) note.id,
+      for (final Folder folder in folders) folder.id,
+    ]);
   }
 
-  void clearSelection() {
-    _selected.clear();
-    notifyListeners();
-  }
+  void clearSelection() => _selection.clear();
 
-  void exitSelectionMode() {
-    _selected.clear();
-    _isInSelectionMode = false;
-    _actionButtons = 'add';
-    notifyListeners();
-  }
+  void exitSelectionMode() => _selection.exit();
 
   /// Whether the selection contains a folder, which cannot be moved.
   bool get hasFolderInSelection =>
-      _folders.any((Folder f) => _selected.contains(f.id));
+      _folders.any((Folder f) => _selection.contains(f.id));
 
   /// Number of selected notes currently shown on the home page.
   int get selectedNotesCount =>
-      _visibleNotes().where((Note n) => _selected.contains(n.id)).length;
+      _visibleNotes().where((Note n) => _selection.contains(n.id)).length;
 
   /// Number of selected folders.
   int get selectedFoldersCount =>
-      folders.where((Folder f) => _selected.contains(f.id)).length;
+      folders.where((Folder f) => _selection.contains(f.id)).length;
 
   bool get hasNoteInSelection => selectedNotesCount > 0;
 
@@ -269,7 +262,7 @@ class HomeViewModel extends ChangeNotifier {
   int get selectedFoldersNoteCount {
     int count = 0;
     for (final Folder folder in _folders) {
-      if (_selected.contains(folder.id)) {
+      if (_selection.contains(folder.id)) {
         count += noteCountIn(folder.id);
       }
     }
@@ -280,7 +273,7 @@ class HomeViewModel extends ChangeNotifier {
     final List<Note> removed = <Note>[];
     final List<int> indexes = <int>[];
     final Set<String> folderIds = _folders
-        .where((Folder f) => _selected.contains(f.id))
+        .where((Folder f) => _selection.contains(f.id))
         .map((Folder f) => f.id)
         .toSet();
 
@@ -297,24 +290,21 @@ class HomeViewModel extends ChangeNotifier {
     _folders.removeWhere((Folder f) => folderIds.contains(f.id));
 
     for (int i = 0; i < _allNotes.length; i++) {
-      if (_selected.contains(_allNotes[i].id)) {
+      if (_selection.contains(_allNotes[i].id)) {
         removed.add(_allNotes[i]);
         indexes.add(i);
         await repository.trashNote(_allNotes[i].id);
       }
     }
-    _allNotes.removeWhere((Note note) => _selected.contains(note.id));
+    _allNotes.removeWhere((Note note) => _selection.contains(note.id));
     _lastDeleted = (removed, indexes);
-    _selected.clear();
-    _isInSelectionMode = false;
-    _actionButtons = 'add';
-    notifyListeners();
+    _selection.exit();
   }
 
   /// Moves the selected notes into [folderId], or unfiles them when null.
   Future<void> moveSelectedTo(String? folderId) async {
     for (int i = 0; i < _allNotes.length; i++) {
-      if (!_selected.contains(_allNotes[i].id)) continue;
+      if (!_selection.contains(_allNotes[i].id)) continue;
       final Note moved = (folderId == null
               ? _allNotes[i].withoutFolder()
               : _allNotes[i].copyWith(folderId: folderId))
@@ -323,10 +313,7 @@ class HomeViewModel extends ChangeNotifier {
       await repository.upsertNote(moved);
     }
     _sort();
-    _selected.clear();
-    _isInSelectionMode = false;
-    _actionButtons = 'add';
-    notifyListeners();
+    _selection.exit();
   }
 
   Future<void> removeNote(String id) async {
@@ -467,69 +454,27 @@ class HomeViewModel extends ChangeNotifier {
       _allNotes.where((Note note) => note.folderId == null).toList();
 
   void _sort() {
-    _allNotes.sort(_compareNotes);
+    _allNotes.sort(
+      NoteSorting(
+        by: _sortBy,
+        secondaryBy: _secondarySortBy,
+        ascending: _sortAscending,
+      ).compare,
+    );
     _folders.sort(_compareFolders);
   }
 
-  int _compareNotes(Note note1, Note note2) {
-    return _compareEntities(
-      pinned1: note1.isPinned,
-      pinned2: note2.isPinned,
-      compare: () => _compare(note1, note2, _sortBy),
-      fallbackCompare: () => _compare(note1, note2, _secondarySortBy),
-      dateCompare: () => _compare(note1, note2, 'date'),
-    );
-  }
-
   int _compareFolders(Folder folder1, Folder folder2) {
-    return _compareEntities(
+    return compareCards(
       pinned1: folder1.isPinned,
       pinned2: folder2.isPinned,
+      by: _sortBy,
+      secondaryBy: _secondarySortBy,
+      ascending: _sortAscending,
       compare: () => _compareFolder(folder1, folder2, _sortBy),
-      fallbackCompare: () => _compareFolder(folder1, folder2, _secondarySortBy),
+      fallback: () => _compareFolder(folder1, folder2, _secondarySortBy),
       dateCompare: () => _compareFolder(folder1, folder2, 'date'),
     );
-  }
-
-  int _compareEntities({
-    required bool pinned1,
-    required bool pinned2,
-    required int Function() compare,
-    required int Function() fallbackCompare,
-    required int Function() dateCompare,
-  }) {
-    if (pinned1 && !pinned2) return -1;
-    if (!pinned1 && pinned2) return 1;
-
-    int comparison = compare();
-    if (comparison == 0 && (_sortBy == 'important' || _sortBy == 'theme')) {
-      comparison = fallbackCompare();
-    }
-    if (comparison == 0 && _sortBy != 'date' && _secondarySortBy != 'date') {
-      comparison = dateCompare();
-    }
-    return _sortAscending ? comparison : -comparison;
-  }
-
-  int _compare(Note note1, Note note2, String criteria) {
-    switch (criteria) {
-      case 'alpha':
-        return note1.title.toLowerCase().compareTo(note2.title.toLowerCase());
-      case 'date':
-        return note2.date.compareTo(note1.date);
-      case 'updated':
-        return note2.updatedAt.compareTo(note1.updatedAt);
-      case 'important':
-        final int a = note1.important ? 1 : 0;
-        final int b = note2.important ? 1 : 0;
-        return b.compareTo(a);
-      case 'theme':
-      case 'category':
-        return _themeWeight(note1.category)
-            .compareTo(_themeWeight(note2.category));
-      default:
-        return 0;
-    }
   }
 
   int _compareFolder(Folder folder1, Folder folder2, String criteria) {
@@ -546,26 +491,10 @@ class HomeViewModel extends ChangeNotifier {
         return b.compareTo(a);
       case 'theme':
       case 'category':
-        return _themeWeight(folder1.category)
-            .compareTo(_themeWeight(folder2.category));
+        return cardThemeWeight(folder1.category)
+            .compareTo(cardThemeWeight(folder2.category));
       default:
         return 0;
-    }
-  }
-
-  int _themeWeight(String theme) {
-    switch (theme) {
-      case 'menthe': return 0;
-      case 'citron': return 1;
-      case 'peche': return 2;
-      case 'lavande': return 3;
-      case 'rose': return 4;
-      case 'azur': return 5;
-      case 'sable': return 6;
-      case 'sauge': return 7;
-      case 'bonbon': return 8;
-      case 'nuage':
-      default: return 9;
     }
   }
 }
