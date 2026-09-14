@@ -860,15 +860,11 @@ void main() {
       find.descendant(of: page, matching: find.byType(NoteCounts)),
       findsOneWidget,
     );
-    // The date shifts right when the note is pinned, like home.
-    final Finder dateText = find.descendant(
-      of: page,
-      matching: find.text(formatNoteDate(date)),
+    // No pin shift any more: the pin lives in the metadata.
+    expect(
+      find.descendant(of: page, matching: find.text(formatNoteDate(date))),
+      findsOneWidget,
     );
-    final Padding padding = tester.widget<Padding>(
-      find.ancestor(of: dateText, matching: find.byType(Padding)).first,
-    );
-    expect(padding.padding, const EdgeInsets.only(left: 8.0));
   });
 
   testWidgets('the FAB rests collapsed when the folder list scrolls', (
