@@ -21,9 +21,6 @@ abstract class NotesRepository {
   /// Restores a note from the trash.
   Future<void> restoreNote(String id);
 
-  /// Pins or unpins a note.
-  Future<void> togglePin(String id);
-
   /// Locks or unlocks a note.
   Future<void> toggleLock(String id, {String? password});
 

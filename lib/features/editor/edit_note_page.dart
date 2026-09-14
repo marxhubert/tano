@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
@@ -860,7 +861,7 @@ class _EditNoteState extends State<EditNote>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.done_all,
+                                    Symbols.check_box,
                                     size: 12.0,
                                     color: mutedTextColor(context),
                                   ),
@@ -881,7 +882,7 @@ class _EditNoteState extends State<EditNote>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.sticky_note_2,
+                                    Symbols.sticky_note_2,
                                     size: 12.0,
                                     color: mutedTextColor(context),
                                   ),
@@ -1023,7 +1024,6 @@ class _EditNoteState extends State<EditNote>
                 key: _fabKey,
                 isEditorMode: true,
                 isAddMode: widget.add,
-                isPinned: _viewModel.isPinned,
                 isImportant: _viewModel.important,
                 isLocked: _viewModel.isLocked,
                 currentCategory: _viewModel.category,
@@ -1092,13 +1092,6 @@ class _EditNoteState extends State<EditNote>
                   _fabKey.currentState?.closeVerticalMenu();
                   _addAttachment();
                 },
-                onPinSelected: () async {
-                  _viewModel.togglePin();
-                  await _viewModel.autoSaveThemeOrBookmark(
-                    title: _titleController.text,
-                    content: _contentController.text,
-                  );
-                },
                 onImportantSelected: () async {
                   _viewModel.toggleImportant();
                   await _viewModel.autoSaveThemeOrBookmark(
@@ -1139,8 +1132,8 @@ class _EditNoteState extends State<EditNote>
                   // user can retry.
                   if (result == LockToggleResult.cancelled) return;
 
-                  // Persist silently, exactly like pin and bookmark: the lock
-                  // is effective immediately, no explicit save is needed.
+                  // Persist silently, exactly like the bookmark: the lock is
+                  // effective immediately, no explicit save is needed.
                   await _viewModel.autoSaveThemeOrBookmark(
                     title: _titleController.text,
                     content: _contentController.text,

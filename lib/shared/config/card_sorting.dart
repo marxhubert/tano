@@ -1,6 +1,6 @@
 import 'package:tano/core/models/note.dart';
 
-/// Sorts notes the way every screen shows them: **pinned first**, then the
+/// Sorts notes the way every screen shows them: **bookmarked first**, then the
 /// chosen criterion, with the same fallbacks as the home screen.
 class NoteSorting {
   const NoteSorting({
@@ -18,8 +18,8 @@ class NoteSorting {
 
   int compare(Note note1, Note note2) {
     return compareCards(
-      pinned1: note1.isPinned,
-      pinned2: note2.isPinned,
+      important1: note1.important,
+      important2: note2.important,
       by: by,
       secondaryBy: secondaryBy,
       ascending: ascending,
@@ -51,14 +51,14 @@ class NoteSorting {
   }
 }
 
-/// The card ordering rule, in **one** place: pinned cards first, then the main
-/// criterion, then the fallback when the criterion ties on important/theme,
+/// The card ordering rule, in **one** place: bookmarked cards first, then the
+/// main criterion, then the fallback when the criterion ties on important/theme,
 /// then the date when neither criterion is the date, finally reversed when
 /// [ascending] is false. Shared by notes and folders; only the criterion
 /// comparison itself differs per type.
 int compareCards({
-  required bool pinned1,
-  required bool pinned2,
+  required bool important1,
+  required bool important2,
   required String by,
   required String secondaryBy,
   required bool ascending,
@@ -66,8 +66,8 @@ int compareCards({
   required int Function() fallback,
   required int Function() dateCompare,
 }) {
-  if (pinned1 && !pinned2) return -1;
-  if (!pinned1 && pinned2) return 1;
+  if (important1 && !important2) return -1;
+  if (!important1 && important2) return 1;
 
   int comparison = compare();
   if (comparison == 0 && (by == 'important' || by == 'theme')) {

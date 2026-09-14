@@ -426,11 +426,10 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   /// Whether the folder has any flag worth a dedicated metadata line.
-  bool get _hasFolderFlags =>
-      _folder.isLocked || _folder.important || _folder.isPinned;
+  bool get _hasFolderFlags => _folder.isLocked || _folder.important;
 
   /// Metadata line, mirroring a note's: the note count on the left and the
-  /// folder flags (lock, bookmark, pin) on the right, only when they are set.
+  /// folder flags (lock, bookmark) on the right, only when they are set.
   Widget _buildMetadata(BuildContext context) {
     return SliverPadding(
       key: const ValueKey<String>('folder_metadata'),
@@ -458,8 +457,6 @@ class _FolderPageState extends State<FolderPage> {
               if (_folder.isLocked) _metadataIcon(Icons.lock_outline, context),
               if (_folder.important)
                 _metadataIcon(Icons.bookmark, context, color: tanoAmber),
-              if (_folder.isPinned)
-                _metadataIcon(Icons.push_pin, context, size: 14.0, dy: 2.0),
             ],
           ),
         ),
@@ -467,25 +464,19 @@ class _FolderPageState extends State<FolderPage> {
     );
   }
 
-  /// One flag icon. [dy] shifts the glyph downward without moving its layout
-  /// box, so an icon with a foot (the pin) hangs below the others like the
-  /// descender of a "g" or "y" in a word.
+  /// One flag icon, spaced from the one before it.
   Widget _metadataIcon(
     IconData icon,
     BuildContext context, {
     Color? color,
     double size = 12.0,
-    double dy = 0.0,
   }) {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0),
-      child: Transform.translate(
-        offset: Offset(0.0, dy),
-        child: Icon(
-          icon,
-          size: size,
-          color: color ?? mutedTextColor(context),
-        ),
+      child: Icon(
+        icon,
+        size: size,
+        color: color ?? mutedTextColor(context),
       ),
     );
   }
@@ -597,7 +588,6 @@ class _FolderPageState extends State<FolderPage> {
         collapsedByDefault: true,
         controller: _searchController,
         focusNode: _searchFocusNode,
-        isPinned: _folder.isPinned,
         isImportant: _folder.important,
         isLocked: _folder.isLocked,
         isTitleEditing: _isEditingTitle,
@@ -609,8 +599,6 @@ class _FolderPageState extends State<FolderPage> {
         },
         onColorSelected: (String name) =>
             _save(_folder.copyWith(category: name)),
-        onPinSelected: () =>
-            _save(_folder.copyWith(isPinned: !_folder.isPinned)),
         onImportantSelected: () =>
             _save(_folder.copyWith(important: !_folder.important)),
         onLockSelected: _toggleLock,
@@ -700,7 +688,6 @@ class _FolderPageState extends State<FolderPage> {
       title: note.title,
       subtitle: formatNoteDate(note.date),
       coverImage: note.coverImage,
-      isPinned: note.isPinned,
       isImportant: note.important,
       isLocked: note.isLocked,
       isListLayout: isList,

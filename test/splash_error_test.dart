@@ -45,8 +45,6 @@ class _FlakyRepository implements NotesRepository {
   @override
   Future<void> restoreNote(String id) async {}
 
-  @override
-  Future<void> togglePin(String id) async {}
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {}

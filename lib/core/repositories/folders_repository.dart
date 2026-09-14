@@ -14,9 +14,6 @@ abstract class FoldersRepository {
   /// Moves a folder to the trash. Notes it contained are unfiled, not deleted.
   Future<void> trashFolder(String id);
 
-  /// Pins or unpins a folder.
-  Future<void> toggleFolderPin(String id);
-
   /// Smallest "Folder X" name that is not already used.
   Future<String> nextFolderName();
 }
