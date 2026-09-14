@@ -46,7 +46,6 @@ Widget _noteCard(
     title: note.title,
     subtitle: formatNoteDate(note.date),
     coverImage: note.coverImage,
-    isImportant: note.important,
     isSelected: isSelected,
     isInSelectionMode: isInSelectionMode,
     isListLayout: isList,
@@ -219,31 +218,16 @@ void main() {
   });
 
   group('bookmark', () {
-    testWidgets('a bookmarked note puts the bookmark at the top right',
+    testWidgets('a bookmarked note shows the marker first in the metadata',
         (tester) async {
       await tester.pumpWidget(_host(_noteCard(_note(important: true))));
 
-      final Rect card = tester.getRect(find.byType(EntityCard));
-      final Rect bookmark = tester.getRect(find.byIcon(Icons.bookmark));
+      final Rect mark = tester.getRect(find.byIcon(Symbols.label_important));
+      final Rect counts = tester.getRect(find.byIcon(Symbols.attachment));
 
-      // Flush with the top: the glyph bearing is compensated, so the icon box
-      // may sit a couple of pixels above the card edge.
-      expect(bookmark.top, lessThanOrEqualTo(card.top + 0.5));
-      expect(bookmark.top, greaterThanOrEqualTo(card.top - 3.0));
-      expect(card.right - bookmark.right, closeTo(2.0, 1.0));
+      expect(mark.center.dy, closeTo(counts.center.dy, 1.0));
+      expect(mark.left, lessThan(counts.left));
     });
 
-    testWidgets('a covered grid anchors the bookmark under the cover',
-        (tester) async {
-      await tester.pumpWidget(
-        _host(_noteCard(_note(coverImage: 'cover.png', important: true))),
-      );
-
-      final Rect cover = tester.getRect(find.byType(CoverImage));
-      final Rect bookmark = tester.getRect(find.byIcon(Icons.bookmark));
-
-      expect(bookmark.top, lessThanOrEqualTo(cover.bottom + 0.5));
-      expect(bookmark.top, greaterThanOrEqualTo(cover.bottom - 3.0));
-    });
   });
 }

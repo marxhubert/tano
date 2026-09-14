@@ -204,11 +204,11 @@ template), et absent des notes.
   comme le template verrouillé.
 - **Marqueurs** :
   - **Bookmark** : trie l'élément **en tête** de son groupe, avant les autres.
-    Sur une **note**, marqueur flottant en haut du card
-    (`top: 0`, `right: 2`, bearing du glyphe compensé, et **largeur conservée
-    avec 25 % de hauteur en moins**), ou **au bas de la couverture** sur un
-    grid-cover ; sur un **dossier**, pas de marqueur : le **filigrane passe en
-    ambre**.
+    Sur une **note**, il s'affiche **en première position** de la ligne de
+    metadata : `Symbols.label_important` **plein** (`fill: 1`) **ambre**
+    (`tanoAmber`), avant les
+    compteurs (plus de marqueur flottant). Sur un **dossier**, pas de marqueur
+    dans la metadata : le **filigrane passe en ambre**.
   - Les autres icônes de metadata sont en **Material Symbols**
     (`check_box`, `sticky_note_2`, `attachment`).
 - **Dossier** : l'icône `folder_open` est **retirée** du contenu ; le dossier
