@@ -867,6 +867,55 @@ void main() {
     );
   });
 
+  testWidgets('folder notes keep the pinned note before the others', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Unpinned',
+            content: 'x',
+            date: '2026-01-02 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Pinned',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            isPinned: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    final Rect pinned = tester.getRect(
+      find.ancestor(of: find.text('Pinned'), matching: find.byType(EntityCard)),
+    );
+    final Rect unpinned = tester.getRect(
+      find.ancestor(
+        of: find.text('Unpinned'),
+        matching: find.byType(EntityCard),
+      ),
+    );
+
+    // Grid: the pinned card comes first, so it sits left of the other one.
+    expect(pinned.left, lessThan(unpinned.left));
+    expect(pinned.top, lessThanOrEqualTo(unpinned.top));
+  });
+
   testWidgets('the FAB rests collapsed when the folder list scrolls', (
     tester,
   ) async {
