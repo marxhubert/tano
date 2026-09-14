@@ -73,11 +73,6 @@ class EntityCard extends StatelessWidget {
   /// the bottom-right edges, so most of the glyph stays inside the card.
   static const double folderWatermarkSize = 72.0;
 
-  /// Vertical bearing of the bookmark glyph inside its em box (already
-  /// scaled by the 0.75 vertical squash), compensated so the icon reads flush
-  /// with the top edge.
-  static const double _bookmarkBearing = 1.5;
-
   final EntityKind kind;
   final String category;
   final EntityCardBodyBuilder builder;
@@ -159,27 +154,6 @@ class EntityCard extends StatelessWidget {
                             ? tanoAmber.withValues(alpha: 0.45)
                             : textColor.withValues(alpha: 0.10),
                       ),
-                    ),
-                  ),
-                ),
-              // Only a note keeps a floating bookmark, at the top of the
-              // card, or at the top of the content zone under a grid cover.
-              if (kind == EntityKind.note && !isLocked && isImportant)
-                Positioned(
-                  // The glyph is inset inside its 16px em box; pull it up by
-                  // that bearing so its visible edge touches the top (or the
-                  // cover edge), not the box.
-                  top: (showCover && !isListLayout ? coverHeight : 0.0) -
-                      _bookmarkBearing,
-                  right: 2.0,
-                  // Full width, 25% shorter.
-                  child: Transform.scale(
-                    scaleY: 0.75,
-                    alignment: Alignment.topCenter,
-                    child: Icon(
-                      Icons.bookmark,
-                      size: 16.0,
-                      color: tanoAmber.withValues(alpha: 0.8),
                     ),
                   ),
                 ),

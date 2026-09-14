@@ -54,6 +54,7 @@ Widget buildNoteGridContent({
           content: note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
+          isImportant: note.important,
         ),
       ],
     ),
@@ -106,6 +107,7 @@ Widget buildNoteListContent({
           content: note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
+          isImportant: note.important,
         ),
       ],
     ),
@@ -142,19 +144,23 @@ Widget _noteExcerpt({
   );
 }
 
-/// Small muted row showing, in order, how many checklists, note links and
-/// attachments a note contains (Material Symbols + xN).
+/// Small muted row showing, in order, the bookmark marker, then how many
+/// checklists, note links and attachments a note contains (Symbols + xN).
 class NoteCounts extends StatelessWidget {
   const NoteCounts({
     super.key,
     required this.content,
     required this.color,
     this.attachmentCount = 0,
+    this.isImportant = false,
   });
 
   final String content;
   final Color color;
   final int attachmentCount;
+
+  /// Whether the note is bookmarked: shows the amber marker first.
+  final bool isImportant;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +168,7 @@ class NoteCounts extends StatelessWidget {
     final int links = linkCountIn(content);
     final bool hasCounts =
         checklists > 0 || links > 0 || attachmentCount > 0;
-    if (!hasCounts) {
+    if (!hasCounts && !isImportant) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -170,6 +176,16 @@ class NoteCounts extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          // The bookmark always comes first in the metadata.
+          if (isImportant) ...<Widget>[
+            const Icon(
+              Symbols.label_important,
+              size: cardMetaIconSize,
+              fill: 1.0,
+              color: tanoAmber,
+            ),
+            if (hasCounts) const SizedBox(width: 4.0),
+          ],
           if (checklists > 0) ...<Widget>[
             Icon(Symbols.check_box, size: cardMetaIconSize, color: color),
             const SizedBox(width: 1.0),

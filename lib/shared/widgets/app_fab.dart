@@ -784,7 +784,8 @@ class AppFabState extends State<AppFab> {
     if (widget.isFolderMode) {
       return _buildVerticalList([
         _VerticalMenuItem(
-          icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+          icon: Symbols.label_important,
+          fill: widget.isImportant ? 1.0 : 0.0,
           label: AppText.tr('important'),
           iconColor: widget.isImportant ? tanoAmber : null,
           onTap: widget.onImportantSelected,
@@ -813,7 +814,8 @@ class AppFabState extends State<AppFab> {
 
     return _buildVerticalList([
       _VerticalMenuItem(
-        icon: widget.isImportant ? Icons.bookmark : Icons.bookmark_border,
+        icon: Symbols.label_important,
+        fill: widget.isImportant ? 1.0 : 0.0,
         label: AppText.tr('important'),
         iconColor: widget.isImportant ? tanoAmber : null,
         onTap: widget.onImportantSelected,
@@ -1263,6 +1265,7 @@ class _VerticalMenuItem extends StatelessWidget {
     this.iconSize = 20.0,
     this.fontSize = 17.0,
     this.maxLines,
+    this.fill,
   });
 
   final IconData icon;
@@ -1273,6 +1276,9 @@ class _VerticalMenuItem extends StatelessWidget {
   final double iconSize;
   final double fontSize;
   final int? maxLines;
+
+  /// Material Symbols FILL axis: 0 = outlined, 1 = filled.
+  final double? fill;
 
   @override
   Widget build(BuildContext context) {
@@ -1285,7 +1291,7 @@ class _VerticalMenuItem extends StatelessWidget {
               ? CrossAxisAlignment.start
               : CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.white70, size: iconSize),
+            Icon(icon, color: iconColor ?? Colors.white70, size: iconSize, fill: fill),
             const SizedBox(width: 8.0),
             Expanded(
               child: Text(

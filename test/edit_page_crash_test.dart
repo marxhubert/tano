@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
@@ -156,12 +157,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+    Icon bookmarkIcon() =>
+        tester.widget<Icon>(find.byIcon(Symbols.label_important));
+    // Outlined while the note is not bookmarked.
+    expect(bookmarkIcon().fill, 0.0);
 
-    await tester.tap(find.byIcon(Icons.bookmark_border));
+    await tester.tap(find.byIcon(Symbols.label_important));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark_border), findsNothing);
+    // Filled (and amber) once bookmarked.
+    expect(bookmarkIcon().fill, 1.0);
   });
 }
