@@ -310,8 +310,14 @@ gratuit/premium, livraison partielle). Voir
     uniformément sur tout le périmètre (coins compris).
 25. Formule de radius : **extérieur − marge = intérieur** (12 − 6 = 6), pour la
     bordure, le contour en points et la couverture si elle est en retrait.
+26. **Déplacer ne concerne que les notes** : un dossier n'est jamais déplaçable,
+    donc l'action est désactivée dès que la sélection contient un dossier
+    (`canMove: !hasFolderInSelection`). Le dialogue de déplacement ne s'affiche
+    donc jamais pour un dossier.
 
 ## 13. Questions ouvertes
 
 - **Placeholders d'image** : proposer **10 variantes** (le placeholder actuel
   sert de base). À faire plus tard.
+- **Actions de swipe sur le card-list** : à revoir (les gestes et leurs effets
+  restent à définir).
