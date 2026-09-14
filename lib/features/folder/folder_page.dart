@@ -14,9 +14,10 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/note_card.dart';
-import 'package:tano/shared/widgets/note_card_content.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -829,9 +830,15 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   Widget _card(Note note, {required bool isList}) {
-    return NoteCard(
-      note: note,
+    return EntityCard(
+      kind: EntityKind.note,
+      category: note.category,
+      title: note.title,
+      subtitle: formatNoteDate(note.date),
       coverImage: note.coverImage,
+      isPinned: note.isPinned,
+      isImportant: note.important,
+      isLocked: note.isLocked,
       isListLayout: isList,
       isSelected: _selected.contains(note.id),
       isInSelectionMode: _isSelectionMode,
@@ -845,16 +852,18 @@ class _FolderPageState extends State<FolderPage> {
         }
       },
       // Same body as the home page cards.
-      builder: (BuildContext context, Color textColor) => isList
+      builder: (BuildContext context, Color textColor, bool hasCover) => isList
           ? buildNoteListContent(
               note: note,
               textColor: textColor,
               activeNoteIds: _activeNoteIds,
+              hasCover: hasCover,
             )
           : buildNoteGridContent(
               note: note,
               textColor: textColor,
               activeNoteIds: _activeNoteIds,
+              hasCover: hasCover,
             ),
     );
   }

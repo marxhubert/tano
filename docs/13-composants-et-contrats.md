@@ -201,6 +201,16 @@ reste en grande partie visible). Le filigrane est absent des cartes
   en haut** ; la **metadata** est toujours **en bas** et **alignée à gauche**.
   Exception : le **dossier en list** centre verticalement son nom + sa metadata,
   comme le template verrouillé.
+- **Marqueurs** :
+  - **Épinglé** : le pin vit dans la **metadata**, en **première position** ;
+    Material Symbols `push_pin`, **rotation -90°**, **poids normal** (400).
+  - **Bookmark** : sur une **note**, marqueur flottant en haut du card
+    (`top: 0`, `right: 2`, bearing du glyphe compensé, et **largeur conservée
+    avec 25 % de hauteur en moins**), ou **au bas de la couverture** sur un
+    grid-cover ; sur un **dossier**, pas de marqueur : le **filigrane passe en
+    ambre**.
+  - Les autres icônes de metadata sont en **Material Symbols**
+    (`done_all`, `sticky_note_2`, `attachment`, `description`).
 - **Dossier** : l'icône `folder_open` est **retirée** du contenu ; le dossier
   se distingue par le **filigrane** bas-droit (§ « Élément distinctif »).
 - **Bordure et couverture** : la bordure est **peinte au-dessus du contenu**
@@ -208,10 +218,13 @@ reste en grande partie visible). Le filigrane est absent des cartes
 - **Placeholder d'image** : le placeholder actuel sera décliné en **10
   variantes** (plus tard).
 
-### État actuel
+### État (refonte faite)
 
-Une **refonte totale du card est prévue** ; en attendant, on **garde l'état
-actuel** (cf. [12](./12-plan-refactoring.md), lot 2 : `EntityCard`).
+`EntityCard` est **la carte unique de l'app** : tous les écrans (accueil,
+dossier, corbeille) l'utilisent, les anciennes `NoteCard` / `FolderCard` sont
+**supprimées**. Les corps vivent dans `note_card_bodies.dart` et
+`folder_card_bodies.dart`, la typographie dans `card_typography.dart`
+(cf. [12](./12-plan-refactoring.md), lot 2).
 
 ## 7. Section
 

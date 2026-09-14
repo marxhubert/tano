@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/folder_card_bodies.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid of folder cards, one card per folder.
@@ -25,10 +26,18 @@ class FolderGridView extends StatelessWidget {
       childAspectRatio: 0.9,
       children: List<Widget>.generate(folders.length, (int index) {
         final Folder folder = folders[index];
-        return FolderCard(
-          folder: folder,
+        final int noteCount = viewModel.noteCountIn(folder.id);
+        return EntityCard(
+          kind: EntityKind.folder,
+          category: folder.category,
+          title: folder.name,
+          subtitle: 'x$noteCount',
+          subtitleIcon: Icons.description_outlined,
           coverImage: folder.coverImage,
-          noteCount: viewModel.noteCountIn(folder.id),
+          isPinned: folder.isPinned,
+          isImportant: folder.important,
+          isLocked: folder.isLocked,
+          isSelectable: !folder.isLocked,
           isSelected: viewModel.selected.contains(folder.id),
           isInSelectionMode: viewModel.isInSelectionMode,
           onTap: () {
@@ -40,6 +49,12 @@ class FolderGridView extends StatelessWidget {
           },
           onLongPress: () => viewModel.enterSelectionMode(folder.id),
           onSelectionToggle: () => viewModel.toggleSelection(folder.id),
+          builder: (context, textColor, hasCover) => buildFolderGridContent(
+            folder: folder,
+            noteCount: noteCount,
+            textColor: textColor,
+            hasCover: hasCover,
+          ),
         );
       }),
     );

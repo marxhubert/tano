@@ -105,6 +105,12 @@ class EntityCard extends StatelessWidget {
 
 **Fait quand** : plus aucune référence à `NoteCard`/`FolderCard` ; goldens verts.
 
+> **Fait** sur `refactor/core-stabilisation` : `EntityCard` est la carte unique,
+> les 6 écrans sont migrés, `NoteCard` / `FolderCard` / `note_card_content.dart`
+> sont supprimés. Les corps sont dans `note_card_bodies.dart` et
+> `folder_card_bodies.dart`, la typographie dans `card_typography.dart`. Le labo
+> (`features/lab/card_lab_page.dart`) est **conservé** comme banc d'essai.
+
 ## 7. Lot 3 — Slivers unifiés `EntitySliver<T>`
 
 **API cible**

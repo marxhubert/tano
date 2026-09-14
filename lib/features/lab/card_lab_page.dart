@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:tano/core/models/folder.dart';
@@ -10,8 +11,8 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
-import 'package:tano/shared/widgets/link_text_controller.dart';
-import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/folder_card_bodies.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -127,7 +128,11 @@ class _CardLabPageState extends State<CardLabPage> {
     return <Widget>[
       _section('Dossier'),
       _label('Liste — compact (sans couverture)'),
-      _sized(EntityCardHeight.compact, _folderCard(base, null, isList: true)),
+      _sized(
+        EntityCardHeight.compact,
+        _folderCard(base, null,
+            isList: true, isPinned: true, important: true),
+      ),
       const SizedBox(height: 12.0),
       _label('Liste — normal (avec couverture)'),
       _sized(EntityCardHeight.normal, _folderCard(base, _cover, isList: true)),
@@ -141,7 +146,7 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Grille — square, 3 par ligne : sans couverture, avec '
           'couverture, verrouillé'),
       _grid(<Widget>[
-        _folderCard(base, null, isList: false),
+        _folderCard(base, null, isList: false, isPinned: true, important: true),
         _folderCard(base, _cover, isList: false),
         _folderCard(base, _cover, isList: false, locked: true),
       ]),
@@ -171,7 +176,11 @@ class _CardLabPageState extends State<CardLabPage> {
     return <Widget>[
       _section('Note'),
       _label('Liste — compact (sans couverture)'),
-      _sized(EntityCardHeight.compact, _noteCard(base, null, isList: true)),
+      _sized(
+        EntityCardHeight.compact,
+        _noteCard(base, null,
+            isList: true, isPinned: true, important: true),
+      ),
       const SizedBox(height: 12.0),
       _label('Liste — normal (avec couverture)'),
       _sized(EntityCardHeight.normal, _noteCard(base, _cover, isList: true)),
@@ -185,8 +194,8 @@ class _CardLabPageState extends State<CardLabPage> {
       _label('Grille — square, 3 par ligne : sans couverture, avec '
           'couverture, verrouillé'),
       _grid(<Widget>[
-        _noteCard(base, null, isList: false),
-        _noteCard(base, _cover, isList: false),
+        _noteCard(base, null, isList: false, isPinned: true, important: true),
+        _noteCard(base, _cover, isList: false, important: true),
         _noteCard(base, _cover, isList: false, locked: true),
       ]),
     ];
@@ -244,22 +253,41 @@ class _CardLabPageState extends State<CardLabPage> {
     String? cover, {
     required bool isList,
     bool locked = false,
+    bool isPinned = false,
+    bool important = false,
   }) {
-    final Folder shown = folder.copyWith(coverImage: cover);
+    final Folder shown = folder.copyWith(
+      coverImage: cover,
+      isLocked: locked,
+      isPinned: isPinned,
+      important: important,
+    );
     return EntityCard(
       kind: EntityKind.folder,
       category: shown.category,
       title: shown.name,
       subtitle: 'x3',
-      subtitleIcon: Icons.description_outlined,
+      subtitleIcon: Symbols.description,
       coverImage: cover,
+      isPinned: shown.isPinned,
+      isImportant: shown.important,
       isLocked: locked,
       isListLayout: isList,
       isSelectable: !locked,
       onTap: () {},
       builder: (BuildContext context, Color textColor, bool hasCover) => isList
-          ? _folderListBody(context, shown, 3, textColor, hasCover)
-          : _folderGridBody(context, shown, 3, textColor, hasCover),
+          ? buildFolderListContent(
+              folder: shown,
+              noteCount: 3,
+              textColor: textColor,
+              hasCover: hasCover,
+            )
+          : buildFolderGridContent(
+              folder: shown,
+              noteCount: 3,
+              textColor: textColor,
+              hasCover: hasCover,
+            ),
     );
   }
 
@@ -268,223 +296,40 @@ class _CardLabPageState extends State<CardLabPage> {
     String? cover, {
     required bool isList,
     bool locked = false,
+    bool isPinned = false,
+    bool important = false,
   }) {
-    final Note shown = note.copyWith(coverImage: cover, isLocked: locked);
+    final Note shown = note.copyWith(
+      coverImage: cover,
+      isLocked: locked,
+      isPinned: isPinned,
+      important: important,
+    );
     return EntityCard(
       kind: EntityKind.note,
       category: shown.category,
       title: shown.title,
       subtitle: formatNoteDate(shown.date),
       coverImage: cover,
+      isPinned: shown.isPinned,
+      isImportant: shown.important,
       isLocked: locked,
       isListLayout: isList,
       onTap: () {},
       builder: (BuildContext context, Color textColor, bool hasCover) => isList
-          ? _noteListBody(shown, textColor, hasCover)
-          : _noteGridBody(shown, textColor, hasCover),
-    );
-  }
-
-  Widget _folderGridBody(
-    BuildContext context,
-    Folder folder,
-    int noteCount,
-    Color textColor,
-    bool hasCover,
-  ) {
-    return Padding(
-      // Grid padding 8, gap under a cover 4, metadata 4 from the bottom.
-      padding: EdgeInsets.fromLTRB(8.0, hasCover ? 4.0 : 8.0, 8.0, 4.0),
-      child: SizedBox(
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              folder.name,
-              maxLines: hasCover ? 2 : 3,
-              overflow: TextOverflow.ellipsis,
-              style: _titleStyle(textColor),
+          ? buildNoteListContent(
+              note: shown,
+              textColor: textColor,
+              activeNoteIds: const <String>{},
+              hasCover: hasCover,
+            )
+          : buildNoteGridContent(
+              note: shown,
+              textColor: textColor,
+              activeNoteIds: const <String>{},
+              hasCover: hasCover,
             ),
-            const Spacer(),
-            _folderMeta(textColor, noteCount),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _folderListBody(
-    BuildContext context,
-    Folder folder,
-    int noteCount,
-    Color textColor,
-    bool hasCover,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      // Like the locked list template: the name and its metadata are one
-      // block, centred vertically and left aligned.
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            folder.name,
-            // Folder list and locked list are the exception: two lines even
-            // with a cover.
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: _titleStyle(textColor),
-          ),
-          _folderMeta(textColor, noteCount),
-        ],
-      ),
-    );
-  }
-
-  Widget _folderMeta(Color textColor, int noteCount) {
-    final Color color = textColor.withValues(alpha: 0.6);
-    return Padding(
-      padding: const EdgeInsets.only(top: 2.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(Icons.description_outlined, size: _metaIconSize, color: color),
-          Text('x$noteCount',
-              style: TextStyle(fontSize: _metaSize, color: color)),
-        ],
-      ),
-    );
-  }
-
-  /// Note grid body. The excerpt takes the space left by the date and the
-  /// title, and shrinks when there is less of it (no excerpt with a cover,
-  /// where the lower half holds the title only).
-  Widget _noteGridBody(Note note, Color textColor, bool hasCover) {
-    return Container(
-      // Grid padding 8; gap under a cover 4; metadata 4 from the bottom.
-      padding: EdgeInsets.fromLTRB(8.0, hasCover ? 4.0 : 8.0, 8.0, 4.0),
-      child: Column(
-        // Metadata always left-aligned, body top-aligned.
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 4.0,
-              children: <Widget>[
-                Text(
-                  formatNoteDate(note.date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _dateStyle(textColor),
-                ),
-                Text(
-                  note.title,
-                  maxLines: hasCover ? 2 : 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: _titleStyle(textColor),
-                ),
-                if (!hasCover)
-                  Expanded(child: _noteExcerpt(note, textColor)),
-              ],
-            ),
-          ),
-          NoteCounts(
-            content: note.content,
-            color: textColor.withValues(alpha: 0.6),
-            attachmentCount: note.attachments.length,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Note list body. The excerpt fills the remaining height and clips when the
-  /// two-line title leaves it little room.
-  Widget _noteListBody(Note note, Color textColor, bool hasCover) {
-    return Padding(
-      // List padding 12, but the metadata sits 4 from the bottom.
-      padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  note.title,
-                  maxLines: hasCover ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: _titleStyle(textColor),
-                ),
-              ),
-              const SizedBox(width: 9.0),
-              Text(
-                formatNoteDate(note.date),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _dateStyle(textColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4.0),
-          Expanded(child: _noteExcerpt(note, textColor)),
-          NoteCounts(
-            content: note.content,
-            color: textColor.withValues(alpha: 0.6),
-            attachmentCount: note.attachments.length,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Excerpt that fills the remaining height. Its line count is computed from
-  /// that height so the text always ends on a full line with an ellipsis,
-  /// instead of being clipped in the middle of one.
-  Widget _noteExcerpt(Note note, Color textColor) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final double lineHeight = _contentSize * 1.4;
-        final int fit = (constraints.maxHeight / lineHeight).floor();
-        final int maxLines = fit < 1 ? 1 : fit;
-        return Align(
-          alignment: Alignment.topLeft,
-          child: RichText(
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
-            text: LinkTextEditingController.buildMarkdownTextSpan(
-              note.content,
-              TextStyle(
-                fontSize: _contentSize,
-                color: textColor.withValues(alpha: 0.8),
-                height: 1.4,
-              ),
-              tanoAmber,
-              const <String>{},
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Sizes all taken from the note grid card, the reference for every card.
-  static const double _titleSize = 11.0;
-  static const double _dateSize = 9.0;
-  static const double _contentSize = 10.0;
-  static const double _metaSize = 9.0;
-  static const double _metaIconSize = 11.0;
-
-  TextStyle _titleStyle(Color textColor) => TextStyle(
-        fontSize: _titleSize,
-        fontWeight: FontWeight.bold,
-        color: textColor,
-      );
-
-  TextStyle _dateStyle(Color textColor) =>
-      TextStyle(fontSize: _dateSize, color: textColor.withValues(alpha: 0.6));
 }
