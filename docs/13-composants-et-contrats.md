@@ -314,6 +314,15 @@ gratuit/premium, livraison partielle). Voir
     donc l'action est désactivée dès que la sélection contient un dossier
     (`canMove: !hasFolderInSelection`). Le dialogue de déplacement ne s'affiche
     donc jamais pour un dossier.
+27. **Couverture de page (`ManageableCover`)** : une seule implémentation pour
+    la couverture « gérable », partagée par le dossier et l'éditeur de note.
+    Elle réutilise `CoverImage` (placeholder, dim, `onError`) ; appui long →
+    bouton supprimer + confirmation ; **pleine largeur** ; règles **haut / bas**
+    identiques à la bordure de carte. Le **dossier** réserve une hauteur de
+    **160** (`BoxFit.cover`) ; l'**éditeur** garde le ratio de l'image
+    (`BoxFit.fitWidth`) et ne dimme pas en thème clair (`lightDimAlpha 0.0`).
+    Marges verticales **asymétriques** : le dossier resserre le **bas** (6), 
+    l'éditeur resserre le **haut** (6).
 
 ## 13. Questions ouvertes
 

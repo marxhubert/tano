@@ -201,6 +201,15 @@ class SelectionController extends ChangeNotifier {
 
 **Fait quand** : une seule implémentation de couverture « gérable ».
 
+> **Fait** sur `refactor/core-stabilisation` : `ManageableCover`
+> (`shared/widgets/manageable_cover.dart`) — hauteur réservée, appui long,
+> bouton supprimer + confirmation, état « Corrupted image ». Il réutilise
+> `CoverImage` (qui expose maintenant un `onError`). La page dossier **et**
+> l'éditeur de note s'y branchent : couverture **pleine largeur**, règles
+> **haut / bas** comme la bordure de carte. Dossier = hauteur **160**
+> (`BoxFit.cover`) ; éditeur = ratio naturel (`BoxFit.fitWidth`, pas de dim en
+> thème clair). Le cache du futur est géré par `CoverImage`.
+
 ## 11. Lot 7 — Découpage du FAB
 
 - Scinder `app_fab.dart` (~1300 lignes) en :
