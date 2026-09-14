@@ -28,17 +28,11 @@ Widget buildNoteGridContent({
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 4.0,
             children: <Widget>[
-              // The date shifts right when pinned so the pin never overlaps it.
-              Padding(
-                padding: note.isPinned
-                    ? const EdgeInsets.only(left: 8.0)
-                    : EdgeInsets.zero,
-                child: Text(
-                  formatNoteDate(note.date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: cardDateStyle(textColor),
-                ),
+              Text(
+                formatNoteDate(note.date),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: cardDateStyle(textColor),
               ),
               Text(
                 note.title,

@@ -137,6 +137,11 @@ class EntitySliver<T> extends StatelessWidget {
 **Fait quand** : `SliverGrid`/`SliverList` n'apparaissent plus que dans
 `entity_sliver.dart`.
 
+> **Fait** sur `refactor/core-stabilisation` : `EntitySliver<T>` créé et utilisé
+> par les 4 écrans de cartes, `folder_page` et la corbeille. API finale sans
+> `padding` (les écrans gardent leur `SliverPadding`), `cardBuilder(context, item)`.
+> La grille de la corbeille est passée à la config standard (8 px, ratio 0.9).
+
 ## 8. Lot 4 — Contrôleur de sélection
 
 **API cible**
