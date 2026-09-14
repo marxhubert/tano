@@ -12,10 +12,28 @@ final AttachmentsStore _store = AttachmentsStore();
 /// It is meant to sit behind the card content: it never intercepts taps and
 /// shows a neutral placeholder until the file has been read.
 class CoverImage extends StatefulWidget {
-  const CoverImage({super.key, required this.name, this.fit = BoxFit.cover});
+  const CoverImage({
+    super.key,
+    required this.name,
+    this.fit = BoxFit.cover,
+    this.onError,
+    this.expand = true,
+    this.lightDimAlpha = 0.12,
+  });
 
   final String name;
   final BoxFit fit;
+
+  /// Called once when the stored file cannot be read (corrupted or missing),
+  /// so a manageable cover can surface it.
+  final VoidCallback? onError;
+
+  /// When true (default) the image fills the box it is given. When false it
+  /// keeps its own aspect ratio at full width and sizes the box itself.
+  final bool expand;
+
+  /// Dim applied in the light theme; the dark theme always dims at 0.3.
+  final double lightDimAlpha;
 
   @override
   State<CoverImage> createState() => _CoverImageState();
@@ -23,49 +41,70 @@ class CoverImage extends StatefulWidget {
 
 class _CoverImageState extends State<CoverImage> {
   late Future<String> _path = _store.materialize(widget.name);
+  bool _errorReported = false;
 
   @override
   void didUpdateWidget(CoverImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.name != widget.name) {
       _path = _store.materialize(widget.name);
+      _errorReported = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return FutureBuilder<String>(
       future: _path,
       builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+        if (snapshot.hasError && !_errorReported) {
+          _errorReported = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onError?.call();
+          });
+        }
         // Fade the cover in so a card does not pop when it appears.
+        if (!snapshot.hasData) {
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: widget.expand
+                ? const _CoverPlaceholder(
+                    key: ValueKey<String>('cover-placeholder'),
+                  )
+                : const SizedBox.shrink(),
+          );
+        }
+
+        final Widget image = Image.file(
+          File(snapshot.data!),
+          fit: widget.fit,
+          width: widget.expand ? null : double.infinity,
+          // Decode at most a screen-wide bitmap: covers never show bigger,
+          // keeping many covers light.
+          cacheWidth:
+              (MediaQuery.sizeOf(context).width *
+                      MediaQuery.devicePixelRatioOf(context))
+                  .round(),
+        );
+        final Widget dim = ColoredBox(
+          color: Colors.black.withValues(
+            alpha: isDark ? 0.3 : widget.lightDimAlpha,
+          ),
+        );
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
-          child: snapshot.hasData
+          child: widget.expand
+              // Background: fill the box it is given.
               ? Stack(
                   key: const ValueKey<String>('cover'),
                   fit: StackFit.expand,
-                  children: <Widget>[
-                    Image.file(
-                      File(snapshot.data!),
-                      fit: widget.fit,
-                      // Decode at most a screen-wide bitmap: cards never show
-                      // the cover bigger, keeping many covers light.
-                      cacheWidth: (MediaQuery.sizeOf(context).width *
-                              MediaQuery.devicePixelRatioOf(context))
-                          .round(),
-                    ),
-                    // Dim the cover so the card content stays readable.
-                    ColoredBox(
-                      color: Colors.black.withValues(
-                        alpha: Theme.of(context).brightness == Brightness.dark
-                            ? 0.3
-                            : 0.12,
-                      ),
-                    ),
-                  ],
+                  children: <Widget>[image, dim],
                 )
-              : const _CoverPlaceholder(
-                  key: ValueKey<String>('cover-placeholder'),
+              // Full image: keep the aspect ratio and dim only the image.
+              : Stack(
+                  key: const ValueKey<String>('cover'),
+                  children: <Widget>[image, Positioned.fill(child: dim)],
                 ),
         );
       },

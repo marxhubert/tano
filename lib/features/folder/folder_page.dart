@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/action.dart';
@@ -20,6 +18,7 @@ import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
+import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -50,12 +49,6 @@ class _FolderPageState extends State<FolderPage> {
   bool _isSearchMode = false;
   bool _searchStarted = false;
   bool _isEditingTitle = false;
-  bool _showRemoveCoverButton = false;
-
-  /// Cached cover materialization, so rebuilding the page does not restart
-  /// the future and flash the placeholder.
-  String? _coverName;
-  Future<String>? _coverFuture;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
   String _sortBy = 'date';
@@ -226,57 +219,6 @@ class _FolderPageState extends State<FolderPage> {
     if (path == null) return;
     final String name = await _attachmentsStore.import(path, result!.name);
     await _save(_folder.copyWith(coverImage: name));
-  }
-
-  /// Removes the cover image, mirroring a note's cover removal.
-  Future<void> _removeCover() async {
-    if (_folder.coverImage == null) return;
-    await _save(_folder.withoutCover());
-    if (!mounted) return;
-    setState(() => _showRemoveCoverButton = false);
-  }
-
-  /// Red "remove cover" button, anchored to the cover's top right corner.
-  Widget _removeCoverButton(BuildContext context) {
-    return Positioned(
-      top: 8.0,
-      right: 8.0,
-      child: GestureDetector(
-        onTap: () async {
-          final bool? confirm = await getConfirmation(
-            context: context,
-            actionTitle: AppText.tr('delete_photo'),
-            action: AppText.tr('delete'),
-          );
-          if (confirm == true) {
-            await _removeCover();
-          }
-        },
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4.0,
-                offset: Offset(0.0, 2.0),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.cancel, color: Colors.red, size: 24.0),
-        ),
-      ),
-    );
-  }
-
-  /// Materializes the cover once per file name.
-  Future<String> _coverPath(String name) {
-    if (_coverName != name || _coverFuture == null) {
-      _coverName = name;
-      _coverFuture = _attachmentsStore.materialize(name);
-    }
-    return _coverFuture!;
   }
 
   Future<void> _toggleLock() async {
@@ -698,85 +640,16 @@ class _FolderPageState extends State<FolderPage> {
           _buildMetadata(context),
         if (_folder.coverImage != null && !_resultsVisible)
           SliverToBoxAdapter(
-            child: FutureBuilder<String>(
-              future: _coverPath(_folder.coverImage!),
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (!snapshot.hasData) {
-                  // Reserve the cover's height from the first frame so the page
-                  // does not jump when the image finishes loading. A file that
-                  // cannot be read is marked and can be removed right away.
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
-                    child: Stack(
-                      children: <Widget>[
-                        const _CoverPlaceholder(),
-                        if (snapshot.hasError) ...<Widget>[
-                          Center(
-                            child: Text(
-                              AppText.tr('corrupted_image'),
-                              style: TextStyle(
-                                color: mutedTextColor(context),
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ),
-                          _removeCoverButton(context),
-                        ],
-                      ],
-                    ),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
-                  child: TapRegion(
-                    // Tapping elsewhere hides the remove button.
-                    onTapOutside: (_) {
-                      if (_showRemoveCoverButton) {
-                        setState(() => _showRemoveCoverButton = false);
-                      }
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(appBorderRadius),
-                      child: Stack(
-                        children: <Widget>[
-                          GestureDetector(
-                            // Long press reveals the remove button, exactly
-                            // like a note's cover.
-                            onLongPress: () {
-                              setState(() {
-                                _showRemoveCoverButton =
-                                    !_showRemoveCoverButton;
-                              });
-                            },
-                            child: Stack(
-                              children: <Widget>[
-                                Image.file(
-                                  File(snapshot.data!),
-                                  height: 160.0,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                                // Dim the cover, stronger in dark mode.
-                                Positioned.fill(
-                                  child: Container(
-                                    color: Colors.black.withValues(
-                                      alpha: Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? 0.3
-                                          : 0.12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_showRemoveCoverButton)
-                            _removeCoverButton(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+            child: ManageableCover(
+              name: _folder.coverImage!,
+              height: 160.0,
+              // Tighter gap below, towards the notes grid / list.
+              padding: const EdgeInsets.only(
+                top: appPaddingMedium,
+                bottom: appPaddingSmall,
+              ),
+              onRemove: () async {
+                await _save(_folder.withoutCover());
               },
             ),
           ),
@@ -860,32 +733,3 @@ class _FolderPageState extends State<FolderPage> {
   }
 }
 
-/// Neutral block shown while a cover image is read from disk, so the page
-/// keeps its layout and does not jump when the image appears.
-class _CoverPlaceholder extends StatelessWidget {
-  const _CoverPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(appBorderRadius),
-      child: SizedBox(
-        height: 160.0,
-        width: double.infinity,
-        child: ColoredBox(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
-          child: Center(
-            child: Icon(
-              Icons.image_outlined,
-              size: 28.0,
-              color: mutedTextColor(context).withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
