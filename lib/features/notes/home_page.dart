@@ -298,62 +298,12 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Future<void> _promptAndCreateFolder() async {
-    final TextEditingController controller = TextEditingController();
-    final bool isApple = Theme.of(context).platform == TargetPlatform.iOS ||
-        Theme.of(context).platform == TargetPlatform.macOS;
-
-    final String? name = isApple
-        ? await showCupertinoDialog<String>(
-            context: context,
-            builder: (BuildContext context) => CupertinoAlertDialog(
-              title: Text(AppText.tr('add_folder')),
-              content: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: CupertinoTextField(
-                  controller: controller,
-                  autofocus: true,
-                  maxLength: 54,
-                  placeholder: AppText.tr('folder_name'),
-                  padding: const EdgeInsets.all(8.0),
-                ),
-              ),
-              actions: <Widget>[
-                CupertinoDialogAction(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppText.tr('cancel')),
-                ),
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  onPressed: () => Navigator.pop(context, controller.text),
-                  child: Text(AppText.tr('save')),
-                ),
-              ],
-            ),
-          )
-        : await showDialog<String>(
-            context: context,
-            builder: (BuildContext context) => AlertDialog(
-              title: Text(AppText.tr('add_folder')),
-              content: TextField(
-                controller: controller,
-                autofocus: true,
-                maxLength: 54,
-                decoration: InputDecoration(
-                  labelText: AppText.tr('folder_name'),
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppText.tr('cancel')),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, controller.text),
-                  child: Text(AppText.tr('save')),
-                ),
-              ],
-            ),
-          );
+    final String? name = await showAdaptivePrompt(
+      context: context,
+      title: AppText.tr('add_folder'),
+      hint: AppText.tr('folder_name'),
+      maxLength: 54,
+    );
 
     if (name == null || !mounted) return;
     await _viewModel.addFolder(name);

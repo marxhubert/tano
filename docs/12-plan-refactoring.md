@@ -186,6 +186,12 @@ class SelectionController extends ChangeNotifier {
 - **Fait quand** : `showDialog`/`showCupertinoDialog` n'apparaissent plus que dans
   `confirm.dart`.
 
+> **Fait** sur `refactor/core-stabilisation` : `showAdaptivePrompt` ajouté, plus
+> un `showPlatformDialog` générique pour les formulaires (utilisé par le
+> formulaire d'export). Migrés : le prompt « nouveau dossier » (`home_page`) et
+> le mot de passe d'import (`data_transfer`). Toutes les ouvertures de dialogue
+> passent désormais par `confirm.dart`.
+
 ## 10. Lot 6 — Champ couverture unifié
 
 - **Extraire** de `folder_page.dart` : `ManageableCover` (placeholder à hauteur
