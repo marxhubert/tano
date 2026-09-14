@@ -17,6 +17,7 @@ import 'package:tano/shared/widgets/app_fab.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -802,29 +803,14 @@ class _FolderPageState extends State<FolderPage> {
       );
     }
 
-    if (_viewLayout == 'list') {
-      return SliverPadding(
-        padding: const EdgeInsets.all(appPaddingMedium),
-        sliver: SliverList.separated(
-          itemCount: notes.length,
-          itemBuilder: (BuildContext context, int index) =>
-              _card(notes[index], isList: true),
-          separatorBuilder: (BuildContext context, int index) =>
-              const SizedBox(height: 8.0),
-        ),
-      );
-    }
-
+    final bool isList = _viewLayout == 'list';
     return SliverPadding(
       padding: const EdgeInsets.all(appPaddingMedium),
-      sliver: SliverGrid.count(
-        crossAxisCount: gridCrossAxisCount(context),
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
-        childAspectRatio: 0.9,
-        children: notes
-            .map((Note note) => _card(note, isList: false))
-            .toList(),
+      sliver: EntitySliver<Note>(
+        items: notes,
+        isList: isList,
+        cardBuilder: (BuildContext context, Note note) =>
+            _card(note, isList: isList),
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/date_format.dart';
@@ -110,13 +112,10 @@ class _TrashPageState extends State<TrashPage> {
             else
               SliverPadding(
                 padding: const EdgeInsets.all(appPaddingMedium),
-                sliver: SliverGrid.count(
-                  crossAxisCount: gridCrossAxisCount(context),
-                  crossAxisSpacing: 12.0,
-                  mainAxisSpacing: 12.0,
-                  childAspectRatio: 1.0,
-                  children: List.generate(_viewModel.deletedNotes.length, (index) {
-                    final note = _viewModel.deletedNotes[index];
+                sliver: EntitySliver<Note>(
+                  items: _viewModel.deletedNotes,
+                  isList: false,
+                  cardBuilder: (BuildContext context, Note note) {
                     return EntityCard(
                       kind: EntityKind.note,
                       category: note.category,
@@ -197,7 +196,7 @@ class _TrashPageState extends State<TrashPage> {
                         ),
                       ),
                     );
-                  }),
+                  },
                 ),
               ),
           ],
