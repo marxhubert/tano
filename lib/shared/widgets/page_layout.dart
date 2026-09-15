@@ -162,12 +162,10 @@ class _PageScaffoldState extends State<PageScaffold> {
         shadowColor: showAppBarTitle
             ? Colors.black.withValues(alpha: 0.05)
             : Colors.transparent,
+        // Same colour as the cards, with a hairline width.
         shape: showAppBarTitle
             ? Border(
-                bottom: BorderSide(
-                  color: getBorderColor(scaffoldBgColor, isDark: isDark),
-                  width: 0.5,
-                ),
+                bottom: BorderSide(color: cardBorderColor(isDark), width: 0.5),
               )
             : null,
         leading: !widget.isHome

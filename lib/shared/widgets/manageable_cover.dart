@@ -62,11 +62,9 @@ class _ManageableCoverState extends State<ManageableCover> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    // Same border as the card: light 1.0 in dark, dark 0.5 in light.
-    final Color borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.22)
-        : Colors.black.withValues(alpha: 0.16);
-    final double borderWidth = isDark ? 1.0 : 0.5;
+    // Same colour as the card border, at the cover's own hairline width.
+    final Color borderColor = cardBorderColor(isDark);
+    const double borderWidth = 0.5;
 
     final Widget image = CoverImage(
       name: widget.name,
