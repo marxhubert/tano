@@ -1,9 +1,8 @@
-# 13 — Composants et contrats
+# Composants et contrats
 
 > Référence de la refonte : anatomie et **contrat** de chaque brique d'écran
 > (AppBar, FAB, Page, TitleLine, Card, Section, Attention).
-> Compléments : [11 — État du projet](./11-etat-et-reste-a-faire.md) et
-> [12 — Plan de refactoring](./12-plan-refactoring.md).
+> Complément : [charte graphique](./charte-graphique.md).
 
 ## 1. Vue d'ensemble
 
@@ -237,8 +236,7 @@ template), et absent des notes.
 `EntityCard` est **la carte unique de l'app** : tous les écrans (accueil,
 dossier, corbeille) l'utilisent, les anciennes `NoteCard` / `FolderCard` sont
 **supprimées**. Les corps vivent dans `note_card_bodies.dart` et
-`folder_card_bodies.dart`, la typographie dans `card_typography.dart`
-(cf. [12](./12-plan-refactoring.md), lot 2).
+`folder_card_bodies.dart`, la typographie dans `card_typography.dart`.
 
 ## 7. Section
 
@@ -282,7 +280,7 @@ Utilisée principalement dans les réglages (`SettingsSection` actuel).
 
 Toute fonctionnalité doit être **modulaire** et **pilotable** (feature flags,
 gratuit/premium, livraison partielle). Voir
-[14 — Modularité et services](./14-modularite.md).
+[modularité](./modularite.md).
 
 ## 12. Décisions actées
 
