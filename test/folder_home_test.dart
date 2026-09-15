@@ -19,6 +19,8 @@ import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/page_header.dart';
+import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 
@@ -593,9 +595,22 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.bookmark)),
+      find.descendant(
+        of: page,
+        matching: find.byIcon(Symbols.label_important),
+      ),
       findsOneWidget,
     );
+    // The bookmark is the filled amber variant, at the shared metadata size.
+    final Icon bookmark = tester.widget<Icon>(
+      find.descendant(
+        of: page,
+        matching: find.byIcon(Symbols.label_important),
+      ),
+    );
+    expect(bookmark.fill, 1.0);
+    expect(bookmark.color, tanoAmber);
+    expect(bookmark.size, metadataIconSize);
     // Not locked, so no lock flag.
     expect(
       find.descendant(of: page, matching: find.byIcon(Icons.lock_outline)),
@@ -1098,15 +1113,16 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // One note selected: the note wording, total = unfiled notes.
+    // One note selected: the notes group speaks about notes.
     await tester.longPress(find.text('Free'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    // Adding the folder switches to the items wording, total = 2 notes + 1 folder.
+    // Adding the folder: each group speaks about its own type.
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
-    expect(find.text('2/3 items selected'), findsOneWidget);
+    expect(find.text('1 single folder selected'), findsOneWidget);
+    expect(find.text('1 single note selected'), findsOneWidget);
 
     // The move action is disabled when a folder is part of the selection.
     final IconButton moveButton = tester.widget<IconButton>(

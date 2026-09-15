@@ -46,10 +46,8 @@ class _TrashPageState extends State<TrashPage> {
       builder: (context, _) {
         return PageScaffold(
           title: AppText.tr('option_recycle_bin'),
-          headerTrailing: Text(
-            '${_viewModel.deletedNotes.length} ${_viewModel.deletedNotes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-            style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 13),
-          ),
+          headerMetadata:
+              '${_viewModel.deletedNotes.length} ${_viewModel.deletedNotes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
           actions: [
             if (!_viewModel.isEmpty)
               IconButton(
