@@ -17,6 +17,7 @@ import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
@@ -496,41 +497,13 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             )
           : null,
       actions: _selection.isActive
-          ? <Widget>[
-              TextButton(
-                onPressed: _exitSelection,
-                child: Text(
-                  AppText.tr('cancel'),
-                  style: const TextStyle(fontSize: 17.0),
-                ),
-              ),
-            ]
+          ? <Widget>[CancelButton(onPressed: _exitSelection)]
           : _isSearchMode
-          ? <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: TextButton(
-                  onPressed: _exitSearchMode,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    AppText.tr('cancel'),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 17.0,
-                      color: tanoTeal,
-                    ),
-                  ),
-                ),
-              ),
-            ]
+          ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
           : <Widget>[
               // Add first, as requested on the folder page.
               IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(Symbols.add_circle),
                 onPressed: () => _openNote(add: true, note: _newNote()),
               ),
               IconButton(

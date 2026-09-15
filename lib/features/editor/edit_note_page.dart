@@ -12,6 +12,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/action.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
@@ -731,7 +732,6 @@ class _EditNoteState extends State<EditNote>
               // Once the note is scrolled, show its title in the app bar and
               // slide it to the left while the undo/redo/save actions appear.
               alignAppBarTitleLeft: _hasEdits,
-              titlePaddingLeft: 12.0,
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,
@@ -755,49 +755,35 @@ class _EditNoteState extends State<EditNote>
                 // In find mode only "Cancel" is shown: every other app-bar
                 // action (edits, theme toggle) is hidden.
                 if (_isFindMode)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: TextButton(
-                      onPressed: _exitFindMode,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        AppText.tr('cancel'),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 17.0,
-                          color: tanoTeal,
-                        ),
-                      ),
-                    ),
-                  )
+                  CancelButton(onPressed: _exitFindMode)
                 else ...[
+                  // While undo/redo/save are visible, the theme toggle steps
+                  // aside to leave them the room.
                   if (_hasEdits) ...[
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.undo),
+                      icon: const Icon(Symbols.undo),
                       onPressed: _canUndo ? _undo : null,
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.redo),
+                      icon: const Icon(Symbols.redo),
                       onPressed: _canRedo ? _redo : null,
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.save, size: 21.0),
+                      icon: const Icon(Symbols.save, size: 21.0),
                       onPressed: isDirty ? _save : null,
                     ),
-                  ],
-                  const ThemeToggleButton(),
+                  ] else
+                    const ThemeToggleButton(),
                 ],
               ],
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: appPaddingLarge,
+                  ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),

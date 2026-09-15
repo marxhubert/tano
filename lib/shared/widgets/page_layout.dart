@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -37,7 +39,7 @@ class FlushEndFabLocation extends StandardFabLocation {
 
 /// A shared scaffold that handles:
 /// 1. A dynamic AppBar that shows the title only when scrolling down.
-/// 2. A back button (arrow_back_ios_new) for non-home pages.
+/// 2. A back button (arrow_back_ios) for non-home pages.
 /// 3. Unified horizontal padding for AppBar and titles.
 /// 4. Unified padding for the body content.
 class PageScaffold extends StatefulWidget {
@@ -169,13 +171,13 @@ class _PageScaffoldState extends State<PageScaffold> {
               )
             : null,
         leading: !widget.isHome
-            ? Padding(
-                padding: const EdgeInsets.only(left: appPaddingSmall),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new,
-                      size: 20.0, color: textColor),
-                  onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
+            ? IconButton(
+                icon: Icon(
+                  Symbols.arrow_back_ios,
+                  size: 20.0,
+                  color: textColor,
                 ),
+                onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
               )
             : null,
         title: showAppBarTitle
@@ -183,9 +185,10 @@ class _PageScaffoldState extends State<PageScaffold> {
                 Text(
                   appBarTitleText,
                   maxLines: 1,
+                  // Same size as the "Cancel" action.
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 17.0,
+                    fontSize: appBarTextSize,
                     letterSpacing: -0.41,
                     color: textColor,
                   ),
