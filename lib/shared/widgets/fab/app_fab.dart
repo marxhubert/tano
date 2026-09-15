@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -13,9 +15,9 @@ part 'fab_bars.dart';
 part 'fab_items.dart';
 part 'fab_menus.dart';
 
-enum FabVerticalMenu { none, add, color, more, link }
+enum FabVerticalMenu { none, add, color, more, link, move }
 
-enum LinkSortCriteria { date, title }
+enum ListSortCriteria { date, title }
 
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
@@ -51,6 +53,7 @@ class AppFab extends StatefulWidget {
     this.onColorSelected,
     this.currentCategory,
     this.currentNoteId,
+    this.currentFolderId,
     this.onImageSelected,
     this.onChecklistSelected,
     this.onLinkSelected,
@@ -61,7 +64,7 @@ class AppFab extends StatefulWidget {
     this.onFindPrev,
     this.onFindNext,
     this.onFindReset,
-    this.onMoveSelected,
+    this.onMoveTo,
     this.onLockSelected,
     this.onDeleteSelected,
     this.onEditTitle,
@@ -127,7 +130,13 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onFindPrev;
   final VoidCallback? onFindNext;
   final VoidCallback? onFindReset;
-  final VoidCallback? onMoveSelected;
+  /// The folder excluded from the move targets (the note's or the folder
+  /// page's own folder). Null on home.
+  final String? currentFolderId;
+
+  /// Called with the folder chosen in the move sub-menu, or null for "Home"
+  /// (no folder).
+  final ValueChanged<String?>? onMoveTo;
   final VoidCallback? onLockSelected;
   final VoidCallback? onDeleteSelected;
 
@@ -144,10 +153,12 @@ mixin _FabStateMixin on State<AppFab> {
   bool? _isManuallyExpanded;
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
+  FabVerticalMenu _moveReturnTo = FabVerticalMenu.none;
   List<Note> _availableNotes = [];
+  List<Folder> _availableFolders = [];
 
-  // Sorting state for links
-  LinkSortCriteria _sortCriteria = LinkSortCriteria.date;
+  // Sorting state for the link and move sub-menu lists.
+  ListSortCriteria _sortCriteria = ListSortCriteria.date;
   bool _isAscending = true;
 
   // Measurement keys for dynamic height calculation
@@ -155,11 +166,13 @@ mixin _FabStateMixin on State<AppFab> {
   final GlobalKey _addMenuKey = GlobalKey();
   final GlobalKey _moreMenuKey = GlobalKey();
   final GlobalKey _linkMenuKey = GlobalKey();
+  final GlobalKey _moveMenuKey = GlobalKey();
 
   double _colorMenuHeight = 0;
   double _addMenuHeight = 0;
   double _moreMenuHeight = 0;
   double _linkMenuHeight = 0;
+  double _moveMenuHeight = 0;
 
   @override
   void initState() {
@@ -178,6 +191,7 @@ mixin _FabStateMixin on State<AppFab> {
       _addMenuHeight = _addMenuKey.currentContext?.size?.height ?? 0;
       _moreMenuHeight = _moreMenuKey.currentContext?.size?.height ?? 0;
       _linkMenuHeight = _linkMenuKey.currentContext?.size?.height ?? 0;
+      _moveMenuHeight = _moveMenuKey.currentContext?.size?.height ?? 0;
     });
   }
 
@@ -213,6 +227,26 @@ mixin _FabStateMixin on State<AppFab> {
       if (_verticalMenu != FabVerticalMenu.none) {
         _isManuallyExpanded = true;
       }
+    });
+    // Re-measure after state change to ensure accuracy
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
+  }
+
+  /// Opens the "move to folder" sub-menu. [returnTo] is the menu the back
+  /// action goes back to (the more menu, or none from the selection bar).
+  Future<void> _openMoveMenu(FabVerticalMenu returnTo) async {
+    final NotesRepository repository = getIt<NotesRepository>();
+    final List<Folder> folders = repository is FoldersRepository
+        ? await (repository as FoldersRepository).loadFolders()
+        : const <Folder>[];
+    if (!mounted) return;
+    setState(() {
+      _availableFolders = folders
+          .where((Folder folder) => folder.id != widget.currentFolderId)
+          .toList();
+      _moveReturnTo = returnTo;
+      _verticalMenu = FabVerticalMenu.move;
+      _isManuallyExpanded = true;
     });
     // Re-measure after state change to ensure accuracy
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
@@ -293,6 +327,12 @@ class AppFabState extends State<AppFab>
     } else if (_verticalMenu == FabVerticalMenu.link) {
       final double maxMenuHeight = screenHeight * (2 / 3);
       verticalMenuHeight = _linkMenuHeight > 0 ? _linkMenuHeight : 300.0;
+      if (verticalMenuHeight > maxMenuHeight) {
+        verticalMenuHeight = maxMenuHeight;
+      }
+    } else if (_verticalMenu == FabVerticalMenu.move) {
+      final double maxMenuHeight = screenHeight * (2 / 3);
+      verticalMenuHeight = _moveMenuHeight > 0 ? _moveMenuHeight : 300.0;
       if (verticalMenuHeight > maxMenuHeight) {
         verticalMenuHeight = maxMenuHeight;
       }
@@ -389,6 +429,10 @@ class AppFabState extends State<AppFab>
                         key: _linkMenuKey,
                         child: _buildLinkMenu(context, isMeasurement: true),
                       ),
+                      Container(
+                        key: _moveMenuKey,
+                        child: _buildMoveMenu(context, isMeasurement: true),
+                      ),
                     ],
                   ),
                 ),
@@ -403,7 +447,11 @@ class AppFabState extends State<AppFab>
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 150),
-                    child: _buildVerticalMenuContent(context),
+                    child: _buildVerticalMenuContent(
+                      context,
+                      targetExpandedWidth,
+                      verticalMenuHeight,
+                    ),
                   ),
                 ),
 

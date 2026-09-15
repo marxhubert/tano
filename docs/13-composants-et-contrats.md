@@ -73,6 +73,17 @@ Vocabulaire partagé :
    - puis, si la page a l'action « réduire », replie en **circulaire** ;
    - sinon, revient à la forme de repos (**extended**).
 
+### Menus de 2nd degré
+
+- Un menu peut en ouvrir un autre (2nd degré) ; les deux partagent le **même
+  entête** : flèche retour, titre, puis les actions de **tri** (critère, sens)
+  quand la liste est triable.
+- La **liste de notes à insérer** (link) et la **liste de dossiers de
+  déplacement** (move) utilisent le **même entête** et la même `_SubMenuLayout`.
+- Le contenu est disposé à sa **taille finale** dès l'ouverture (`OverflowBox`) :
+  pendant l'animation de hauteur / largeur du FAB, le conteneur qui anime
+  **rogne** le débordement, donc le menu ne se déforme pas.
+
 ### Cas particulier : le FAB de recherche
 
 La recherche **transforme le FAB** en champ de saisie, avec ses actions propres
@@ -243,11 +254,13 @@ Utilisée principalement dans les réglages (`SettingsSection` actuel).
 
 | Niveau | Composant |
 |---|---|
-| **Majeure** (suppression, verrouillage, choix) | Popup **natif par OS** : `CupertinoAlertDialog` (iOS/macOS), `AlertDialog` (Android) |
+| **Majeure** (suppression, verrouillage) | Popup **natif par OS** : `CupertinoAlertDialog` (iOS/macOS), `AlertDialog` (Android) |
 | **Mineure** (confirmation discrète, undo) | **SnackBar** sur Android ; **toast** sur iOS, en **haut** de la page, **2 s** |
 
 - Le helper central reste `confirm.dart` (`getConfirmation`, `showAdaptiveAlert`,
-  `showAdaptiveNotice`, `showAdaptiveChoice`), complété par un **toast iOS**.
+  `showAdaptiveNotice`), complété par un **toast iOS**.
+- Les **choix** (dossier cible d'un déplacement) ne passent plus par un popup
+  natif : ils sont rendus dans un **menu de 2nd degré du FAB** (voir § 3).
 - Aucun dialogue ne doit être construit à la main dans les features.
 
 ## 9. Icônes
@@ -315,8 +328,9 @@ gratuit/premium, livraison partielle). Voir
     bordure, le contour en points et la couverture si elle est en retrait.
 26. **Déplacer ne concerne que les notes** : un dossier n'est jamais déplaçable,
     donc l'action est désactivée dès que la sélection contient un dossier
-    (`canMove: !hasFolderInSelection`). Le dialogue de déplacement ne s'affiche
-    donc jamais pour un dossier.
+    (`canMove: !hasFolderInSelection`). Le **dossier cible** se choisit dans un
+    **menu de 2nd degré du FAB** (entête identique à la liste de notes à
+    insérer) : plus de dialogue natif. Le dossier courant est exclu de la liste.
 28. Le **pin est supprimé** (modèle, base, UI et marqueur) : le **bookmark**
     joue son rôle et **trie l'élément en tête** de son groupe.
 27. **Couverture de page (`ManageableCover`)** : une seule implémentation pour

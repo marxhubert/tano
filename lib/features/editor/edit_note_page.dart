@@ -10,9 +10,7 @@ import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
-import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
@@ -312,26 +310,10 @@ class _EditNoteState extends State<EditNote>
     );
   }
 
-  /// Moves the note to another folder, or back home.
-  Future<void> _moveNote() async {
-    final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders = repository is FoldersRepository
-        ? await (repository as FoldersRepository).loadFolders()
-        : const <Folder>[];
+  /// Moves the note to [folderId], or back home when null.
+  Future<void> _moveTo(String? folderId) async {
     if (!mounted) return;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          if (folder.id != _viewModel.folderId)
-            AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
-    _fabKey.currentState?.closeVerticalMenu();
-    _viewModel.folderId = target.isEmpty ? null : target;
+    _viewModel.folderId = folderId;
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
@@ -1032,6 +1014,7 @@ class _EditNoteState extends State<EditNote>
                 isLocked: _viewModel.isLocked,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
+                currentFolderId: _viewModel.folderId,
                 isFindMode: _isFindMode,
                 findCurrent: _findCurrent,
                 findTotal: _findTotal,
@@ -1104,7 +1087,7 @@ class _EditNoteState extends State<EditNote>
                   );
                 },
                 onFindSelected: _enterFindMode,
-                onMoveSelected: _moveNote,
+                onMoveTo: _moveTo,
                 onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
                 onShareSelected: () {}, // TODO: Implement Share
                 onLockSelected: () async {
