@@ -10,15 +10,6 @@ import 'package:tano/shared/config/l10n.dart';
 class AuthService {
   AuthService();
 
-  static AuthService _instance = AuthService();
-
-  /// The app-wide instance.
-  static AuthService get instance => _instance;
-
-  /// Replaces the app-wide instance, so tests can fake the system prompt.
-  @visibleForTesting
-  static set instance(AuthService value) => _instance = value;
-
   final LocalAuthentication _auth = LocalAuthentication();
 
   /// Whether the device has a usable system credential (an enrolled biometric

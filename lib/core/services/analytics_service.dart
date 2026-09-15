@@ -11,24 +11,25 @@ class AnalyticsService {
 
   static const String _prefKey = 'firstLaunchAnalyticsSent';
 
-  /// Collects non-private device and app information on the very first launch.
+  /// Set once the user agrees to help improve the app (feedback).
+  static const String consentPrefKey = 'feedbackHelperConsent';
+
+  /// Collects non-private device and app information on the first launch, and
+  /// only when the user opted in to help. The payload is never sent by the app
+  /// itself: it stays local for the consented feedback channel.
   Future<void> collectFirstLaunchInfo() async {
     final SecurePreferences prefs = await SecurePreferences.getInstance();
-    
-    // Check if we already collected this info
-    if (prefs.getBool(_prefKey) ?? false) {
-      return;
-    }
+
+    // Opt-in only, and only once.
+    if (!(prefs.getBool(consentPrefKey) ?? false)) return;
+    if (prefs.getBool(_prefKey) ?? false) return;
 
     try {
       final Map<String, dynamic> data = await gatherData();
-      
-      // LOG for development/debug
+
+      // Kept local: a consented feedback channel picks it up.
       debugPrint('Analytics: Collecting first launch info: $data');
 
-      // TODO: In the future, send this data to a secure backend or a service like Sentry/Firebase
-      // For now, we just mark it as collected.
-      
       await prefs.setBool(_prefKey, true);
     } catch (e) {
       debugPrint('Analytics: Failed to collect info: $e');

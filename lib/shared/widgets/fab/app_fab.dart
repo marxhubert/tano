@@ -73,8 +73,6 @@ class AppFab extends StatefulWidget {
     this.onLockSelected,
     this.onDeleteSelected,
     this.onEditTitle,
-    this.onCollaboratorsSelected,
-    this.onShareSelected,
   });
 
   final bool isSearchMode;
@@ -147,8 +145,6 @@ class AppFab extends StatefulWidget {
 
   /// Folder page: renames the folder from the title line.
   final VoidCallback? onEditTitle;
-  final VoidCallback? onCollaboratorsSelected;
-  final VoidCallback? onShareSelected;
 
   @override
   State<AppFab> createState() => AppFabState();

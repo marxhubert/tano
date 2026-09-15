@@ -159,9 +159,15 @@ Future<void> _tapContentLink(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-void main() {
-  late AuthService originalAuth;
+/// Registers the app-wide authentication service, replacing any previous one.
+void _registerAuth(AuthService service) {
+  if (getIt.isRegistered<AuthService>()) {
+    getIt.unregister<AuthService>();
+  }
+  getIt.registerSingleton<AuthService>(service);
+}
 
+void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await LocaleController.instance.init();
@@ -173,14 +179,18 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
-    originalAuth = AuthService.instance;
+    // A plain (unavailable) service by default; tests needing a fake
+    // re-register it through [_registerAuth].
+    _registerAuth(AuthService());
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
     }
   });
 
-  tearDown(() {
-    AuthService.instance = originalAuth;
+  tearDown(() async {
+    if (getIt.isRegistered<AuthService>()) {
+      await getIt.unregister<AuthService>();
+    }
   });
 
   group('AuthService', () {
@@ -198,7 +208,7 @@ void main() {
   group('EditNoteViewModel.toggleLock', () {
     test('locking a note is immediate and never prompts', () async {
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -210,7 +220,7 @@ void main() {
 
     test('unlocking a locked note requires authentication', () async {
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -222,7 +232,7 @@ void main() {
 
     test('a cancelled authentication keeps the note locked', () async {
       final fake = _FakeAuthService(authorized: false);
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -232,7 +242,7 @@ void main() {
     });
 
     test('locking is refused when the device has no system credential', () async {
-      AuthService.instance = _FakeAuthService(available: false);
+      _registerAuth(_FakeAuthService(available: false));
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -241,7 +251,7 @@ void main() {
     });
 
     test('a lock change marks the editor dirty', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -251,7 +261,7 @@ void main() {
     });
 
     test('locking then auto-saving persists isLocked', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -263,7 +273,7 @@ void main() {
     });
 
     test('unlocking then auto-saving persists the unlocked state', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -389,7 +399,7 @@ void main() {
     testWidgets('a locked note is not opened when authentication fails', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService(authorized: false);
+      _registerAuth(_FakeAuthService(authorized: false));
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[_note(isLocked: true)]),
       );
@@ -407,7 +417,7 @@ void main() {
     testWidgets('a locked note opens once authentication succeeds', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[_note(isLocked: true)]),
       );
@@ -470,7 +480,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      AuthService.instance = _FakeAuthService(available: false);
+      _registerAuth(_FakeAuthService(available: false));
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       getIt.registerSingleton<NotesRepository>(repository);
 
@@ -572,7 +582,7 @@ void main() {
     testWidgets('locking a note persists without an explicit save', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       getIt.registerSingleton<NotesRepository>(repository);
 
@@ -671,7 +681,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
@@ -704,7 +714,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService(authorized: false);
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
@@ -738,7 +748,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),

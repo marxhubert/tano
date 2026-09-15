@@ -2,10 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
-
-/// Shared store so the materialized-path cache is reused across every card.
-final AttachmentsStore _store = AttachmentsStore();
 
 /// Cover image of a note or folder, materialized from the encrypted store.
 ///
@@ -40,6 +38,9 @@ class CoverImage extends StatefulWidget {
 }
 
 class _CoverImageState extends State<CoverImage> {
+  // Shared store so the materialized-path cache is reused across every card.
+  AttachmentsStore get _store => getIt<AttachmentsStore>();
+
   late Future<String> _path = _store.materialize(widget.name);
   bool _errorReported = false;
 
