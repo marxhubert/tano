@@ -147,6 +147,159 @@ void main() {
       expect(File('$path.plain.bak').existsSync(), isTrue);
     });
 
+    test('stores and reloads createdAt and updatedAt', () async {
+      await repository.upsertNote(
+        Note(
+          id: 'stamped',
+          title: 'Stamped',
+          date: '2026-01-10 00:00:00.000',
+          createdAt: '2026-01-01 00:00:00.000',
+          updatedAt: '2026-02-01 00:00:00.000',
+        ),
+      );
+
+      final notes = await repository.loadNotes();
+      final stored = notes.firstWhere((n) => n.id == 'stamped');
+
+      expect(stored.createdAt, '2026-01-01 00:00:00.000');
+      expect(stored.updatedAt, '2026-02-01 00:00:00.000');
+    });
+
+    test('migrates a v6 database and backfills the timestamps', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          content TEXT,
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isPinned INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT,
+          folderId TEXT
+        )
+      ''');
+      await legacy.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isPinned INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 6');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'n1',
+        'title': 'Kept',
+        'content': 'x',
+        'date': '2026-01-01 00:00:00.000',
+        'important': 0,
+        'category': 'note',
+        'isDeleted': 0,
+        'isPinned': 0,
+        'isLocked': 0,
+      });
+      await legacy.insert('folders', <String, Object?>{
+        'id': 'f1',
+        'name': 'Studies',
+        'date': '2026-01-02 00:00:00.000',
+        'important': 0,
+        'category': 'nuage',
+        'isPinned': 0,
+        'isDeleted': 0,
+      });
+      await legacy.close();
+
+      final notes = await repository.loadNotes();
+      final note = notes.firstWhere((n) => n.id == 'n1');
+      expect(note.createdAt, '2026-01-01 00:00:00.000');
+      expect(note.updatedAt, '2026-01-01 00:00:00.000');
+
+      final folders = await repository.loadFolders();
+      final folder = folders.firstWhere((f) => f.id == 'f1');
+      expect(folder.createdAt, '2026-01-02 00:00:00.000');
+      expect(folder.updatedAt, '2026-01-02 00:00:00.000');
+
+      // The cover column, missed by the v6 upgrade, is restored.
+      await repository.upsertFolder(folder.copyWith(coverImage: 'cover.png'));
+      final reloaded =
+          (await repository.loadFolders()).firstWhere((f) => f.id == 'f1');
+      expect(reloaded.coverImage, 'cover.png');
+    });
+
+    test('migrates a v6 database that already has folders.coverImage', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          content TEXT,
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isPinned INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT,
+          folderId TEXT
+        )
+      ''');
+      await legacy.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isPinned INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          coverImage TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 6');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'n1',
+        'title': 'Kept',
+        'date': '2026-01-01 00:00:00.000',
+        'important': 0,
+        'category': 'note',
+        'isDeleted': 0,
+        'isPinned': 0,
+        'isLocked': 0,
+      });
+      await legacy.insert('folders', <String, Object?>{
+        'id': 'f1',
+        'name': 'Studies',
+        'date': '2026-01-02 00:00:00.000',
+        'important': 0,
+        'category': 'nuage',
+        'isPinned': 0,
+        'isDeleted': 0,
+        'coverImage': 'kept.png',
+      });
+      await legacy.close();
+
+      final folders = await repository.loadFolders();
+      final folder = folders.firstWhere((f) => f.id == 'f1');
+
+      expect(folder.coverImage, 'kept.png');
+      expect(folder.createdAt, '2026-01-02 00:00:00.000');
+    });
+
     test('searchNotes escapes LIKE wildcards literally', () async {
       await repository.upsertNote(
         Note(id: 'pct', title: '100% done', content: 'x', date: '2026-01-01 00:00:00.000'),

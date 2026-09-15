@@ -1,4 +1,4 @@
-# 05 — Plan tests & qualité
+# Tests & qualité
 
 Objectif : renforcer la confiance dans le code, prévenir les régressions et
 automatiser la qualité.
@@ -89,6 +89,4 @@ combler les manques identifiés.
 | `flutter analyze` | 0 erreur, 0 warning |
 | Tests verts en CI | requis avant merge |
 
-> Ces actions s'appuient sur les refactorings du plan
-> [`04-plan-architecture-code.md`](./04-plan-architecture-code.md) (modèle `Note`
-> immuable, enums, singletons injectables).
+> Voir la [feuille de route](./roadmap.md) pour l'ordre de mise en œuvre.

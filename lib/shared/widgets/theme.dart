@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Tap group shared by the FAB and the theme toggle, so tapping the toggle does
+/// not dismiss an open FAB menu.
+const Object fabTapGroup = Object();
+
 // --- Identité Visuelle (30%) ---
 const Color tanoTeal = Color(0xFF009688);
 const Color tanoAmber = Color(0xFFFF9800);
@@ -89,6 +93,12 @@ Color getBorderColor(Color background, {bool isDark = false}) {
   // Dark mode: make the border slightly lighter
   return Color.lerp(background, isDark ? Colors.white : Colors.black, 0.12)!;
 }
+
+/// Border colour shared by the cards, the cover rules and the app bar:
+/// light in dark mode, dark in light mode.
+Color cardBorderColor(bool isDark) => isDark
+    ? Colors.white.withValues(alpha: 0.22)
+    : Colors.black.withValues(alpha: 0.16);
 
 /// Helper to get an even more subtle version of the note color for the page background.
 Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) {

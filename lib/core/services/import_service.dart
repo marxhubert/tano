@@ -9,6 +9,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/services/export_service.dart';
 import 'package:tano/core/services/local_cipher.dart';
+import 'package:tano/shared/config/service_locator.dart';
 
 /// Outcome of an import, for the user-facing summary.
 class ImportResult {
@@ -46,8 +47,8 @@ class ImportService {
     AuthService? auth,
     Argon2Params argon2 = const Argon2Params(),
   })  : _repository = repository,
-        _attachments = attachments ?? AttachmentsStore(),
-        _auth = auth ?? AuthService.instance,
+        _attachments = attachments ?? getIt<AttachmentsStore>(),
+        _auth = auth ?? getIt<AuthService>(),
         _argon2 = argon2;
 
   final NotesRepository _repository;

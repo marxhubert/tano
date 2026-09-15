@@ -4,6 +4,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
 
 /// Outcome of [EditNoteViewModel.toggleLock], so the UI can react to each case.
 enum LockToggleResult {
@@ -33,7 +34,6 @@ class EditNoteViewModel extends ChangeNotifier {
     important = initialNote?.important ?? false;
     category = initialNote?.category ?? Note.defaultCategory;
     isDeleted = initialNote?.isDeleted ?? false;
-    isPinned = initialNote?.isPinned ?? false;
     isLocked = initialNote?.isLocked ?? false;
     attachments = List<String>.of(initialNote?.attachments ?? const <String>[]);
     coverImage = initialNote?.coverImage;
@@ -53,7 +53,6 @@ class EditNoteViewModel extends ChangeNotifier {
   late bool important;
   late String category;
   late bool isDeleted;
-  late bool isPinned;
   late bool isLocked;
   late List<String> attachments;
   String? coverImage;
@@ -69,7 +68,6 @@ class EditNoteViewModel extends ChangeNotifier {
     _initialNote = note;
     category = note.category;
     important = note.important;
-    isPinned = note.isPinned;
     isLocked = note.isLocked;
     coverImage = note.coverImage;
     folderId = note.folderId;
@@ -82,11 +80,6 @@ class EditNoteViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void togglePin() {
-    isPinned = !isPinned;
-    notifyListeners();
-  }
-
   /// Locks or unlocks the note.
   ///
   /// Locking is immediate: there is nothing to protect yet. It is however
@@ -95,7 +88,7 @@ class EditNoteViewModel extends ChangeNotifier {
   /// credential.
   Future<LockToggleResult> toggleLock() async {
     if (isLocked) {
-      final bool authenticated = await AuthService.instance.authenticate(
+      final bool authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated) return LockToggleResult.cancelled;
@@ -104,7 +97,7 @@ class EditNoteViewModel extends ChangeNotifier {
       return LockToggleResult.unlocked;
     }
 
-    if (!await AuthService.instance.isAvailable()) {
+    if (!await getIt<AuthService>().isAvailable()) {
       return LockToggleResult.unavailable;
     }
     isLocked = true;
@@ -154,12 +147,13 @@ class EditNoteViewModel extends ChangeNotifier {
     return Note(
       id: id,
       date: selectedDate.toString(),
+      createdAt: _initialNote.createdAt,
+      updatedAt: DateTime.now().toString(),
       title: normalized.title,
       content: normalized.content,
       important: important,
       category: category,
       isDeleted: isDeleted,
-      isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,
@@ -183,7 +177,6 @@ class EditNoteViewModel extends ChangeNotifier {
           current.content != initial.content ||
           important != _initialNote.important ||
           category != _initialNote.category ||
-          isPinned != _initialNote.isPinned ||
           isLocked != _initialNote.isLocked ||
           coverImage != _initialNote.coverImage;
   }
@@ -214,12 +207,13 @@ class EditNoteViewModel extends ChangeNotifier {
     return Note(
       id: id,
       date: selectedDate.toString(),
+      createdAt: initialNote?.createdAt ?? selectedDate.toString(),
+      updatedAt: initialNote?.updatedAt ?? selectedDate.toString(),
       title: title,
       content: content,
       important: important,
       category: category,
       isDeleted: isDeleted,
-      isPinned: isPinned,
       isLocked: isLocked,
       attachments: attachments,
       coverImage: coverImage,

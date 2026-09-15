@@ -1,27 +1,37 @@
 /// A folder grouping notes.
 ///
 /// It carries the same organisational attributes as a note (favourite, theme,
-/// pin, trash) but no content of its own.
+/// lock, trash) but no content of its own.
 class Folder {
-  const Folder({
+  Folder({
     this.id = '',
     this.name = '',
     this.date = '',
+    String? createdAt,
+    String? updatedAt,
     this.important = false,
     this.category = 'nuage',
-    this.isPinned = false,
     this.isLocked = false,
     this.isDeleted = false,
     this.deletedAt,
     this.coverImage,
-  });
+  })  : createdAt = createdAt ?? date,
+        updatedAt = updatedAt ?? date;
 
   final String id;
   final String name;
   final String date;
+
+  /// When the folder was created. Older data has no such column, so it falls
+  /// back to [date].
+  final String createdAt;
+
+  /// When the folder was last modified. Older data has no such column, so it
+  /// falls back to [date].
+  final String updatedAt;
+
   final bool important;
   final String category;
-  final bool isPinned;
   final bool isLocked;
   final bool isDeleted;
   final String? deletedAt;
@@ -33,9 +43,10 @@ class Folder {
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         date: json['date'] as String? ?? '',
+        createdAt: json['createdAt'] as String?,
+        updatedAt: json['updatedAt'] as String?,
         important: json['important'] == 1,
         category: _normalizeCategory(json['category'] as String?),
-        isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
         isDeleted: json['isDeleted'] == 1,
         deletedAt: json['deletedAt'] as String?,
@@ -46,9 +57,10 @@ class Folder {
         'id': id,
         'name': name,
         'date': date,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
         'important': important ? 1 : 0,
         'category': category,
-        'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
         'isDeleted': isDeleted ? 1 : 0,
         'deletedAt': deletedAt,
@@ -68,9 +80,10 @@ class Folder {
     String? id,
     String? name,
     String? date,
+    String? createdAt,
+    String? updatedAt,
     bool? important,
     String? category,
-    bool? isPinned,
     bool? isLocked,
     bool? isDeleted,
     String? deletedAt,
@@ -80,9 +93,10 @@ class Folder {
       id: id ?? this.id,
       name: name ?? this.name,
       date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       important: important ?? this.important,
       category: category ?? this.category,
-      isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -99,9 +113,10 @@ class Folder {
       id: id,
       name: name,
       date: date,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       important: important,
       category: category,
-      isPinned: isPinned,
       isLocked: isLocked,
       isDeleted: isDeleted,
       deletedAt: deletedAt,

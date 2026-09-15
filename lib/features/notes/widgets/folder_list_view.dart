@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_sliver.dart';
+import 'package:tano/shared/widgets/folder_card_bodies.dart';
 
 /// List of folder rows.
 class FolderListView extends StatelessWidget {
@@ -16,31 +19,43 @@ class FolderListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Folder> folders = viewModel.folders;
-    return SliverList.separated(
-      itemCount: folders.length,
-      itemBuilder: (BuildContext context, int index) {
-        final Folder folder = folders[index];
-        return FolderCard(
-          folder: folder,
-          coverImage: folder.coverImage,
-          noteCount: viewModel.noteCountIn(folder.id),
-          isListLayout: true,
-          isSelected: viewModel.selected.contains(folder.id),
-          isInSelectionMode: viewModel.isInSelectionMode,
-          onTap: () {
-            if (viewModel.isInSelectionMode) {
-              viewModel.toggleSelection(folder.id);
-            } else {
-              onOpenFolder(folder);
-            }
-          },
-          onLongPress: () => viewModel.enterSelectionMode(folder.id),
-          onSelectionToggle: () => viewModel.toggleSelection(folder.id),
-        );
+    return EntitySliver<Folder>(
+      items: viewModel.folders,
+      isList: true,
+      cardBuilder: (BuildContext context, Folder folder) => _card(folder),
+    );
+  }
+
+  Widget _card(Folder folder) {
+    final int noteCount = viewModel.noteCountIn(folder.id);
+    return EntityCard(
+      kind: EntityKind.folder,
+      category: folder.category,
+      title: folder.name,
+      subtitle: 'x$noteCount',
+      subtitleIcon: Symbols.sticky_note_2,
+      coverImage: folder.coverImage,
+      isImportant: folder.important,
+      isLocked: folder.isLocked,
+      isSelectable: !folder.isLocked,
+      isListLayout: true,
+      isSelected: viewModel.selected.contains(folder.id),
+      isInSelectionMode: viewModel.isInSelectionMode,
+      onTap: () {
+        if (viewModel.isInSelectionMode) {
+          viewModel.toggleSelection(folder.id);
+        } else {
+          onOpenFolder(folder);
+        }
       },
-      separatorBuilder: (BuildContext context, int index) =>
-          const SizedBox(height: 8.0),
+      onLongPress: () => viewModel.enterSelectionMode(folder.id),
+      onSelectionToggle: () => viewModel.toggleSelection(folder.id),
+      builder: (context, textColor, hasCover) => buildFolderListContent(
+        folder: folder,
+        noteCount: noteCount,
+        textColor: textColor,
+        hasCover: hasCover,
+      ),
     );
   }
 }

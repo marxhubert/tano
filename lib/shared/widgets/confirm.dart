@@ -4,62 +4,6 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 
-/// One option of [showAdaptiveChoice].
-class AdaptiveChoice<T> {
-  const AdaptiveChoice({required this.label, required this.value});
-
-  final String label;
-  final T value;
-}
-
-/// Shows a list of choices: an iOS action sheet on iOS/macOS and a Material
-/// dialog elsewhere. Returns the chosen value, or null when dismissed.
-Future<T?> showAdaptiveChoice<T>({
-  required BuildContext context,
-  required String title,
-  required List<AdaptiveChoice<T>> choices,
-}) async {
-  final ThemeData theme = Theme.of(context);
-  final bool isApple =
-      theme.platform == TargetPlatform.iOS ||
-      theme.platform == TargetPlatform.macOS;
-
-  if (isApple) {
-    return showCupertinoModalPopup<T>(
-      context: context,
-      builder: (BuildContext popupContext) => CupertinoActionSheet(
-        title: Text(title),
-        actions: <Widget>[
-          for (final AdaptiveChoice<T> choice in choices)
-            CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(popupContext, choice.value),
-              child: Text(choice.label),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(popupContext),
-          child: Text(AppText.tr('cancel')),
-        ),
-      ),
-    );
-  }
-
-  return showDialog<T>(
-    context: context,
-    builder: (BuildContext dialogContext) => SimpleDialog(
-      title: Text(title),
-      children: <Widget>[
-        for (final AdaptiveChoice<T> choice in choices)
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(dialogContext, choice.value),
-            child: Text(choice.label),
-          ),
-      ],
-    ),
-  );
-}
-
 /// Shows an adaptive confirmation dialog (Material on Android, Cupertino on iOS).
 Future<bool?> getConfirmation({
   required BuildContext context,
@@ -241,5 +185,131 @@ Future<void> showAdaptiveNoticeWithAction({
       persist: false,
       action: SnackBarAction(label: actionLabel, onPressed: onAction),
     ),
+  );
+}
+
+/// Whether the current platform uses the Cupertino widgets.
+bool _isApple(BuildContext context) {
+  final TargetPlatform platform = Theme.of(context).platform;
+  return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+}
+
+/// Shows a platform-adaptive dialog. [builder] receives the dialog's own
+/// context and whether the platform is Apple, and returns the dialog widget
+/// (a CupertinoAlertDialog or an AlertDialog). Centralising the
+/// showDialog/showCupertinoDialog calls here keeps every feature on the right
+/// native widget.
+Future<T?> showPlatformDialog<T>({
+  required BuildContext context,
+  required Widget Function(BuildContext dialogContext, bool isApple) builder,
+  bool barrierDismissible = true,
+}) {
+  if (_isApple(context)) {
+    return showCupertinoDialog<T>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      builder: (BuildContext dialogContext) => builder(dialogContext, true),
+    );
+  }
+  return showDialog<T>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    builder: (BuildContext dialogContext) => builder(dialogContext, false),
+  );
+}
+
+/// Shows an adaptive single-field prompt (CupertinoTextField on iOS/macOS, a
+/// TextField in a Material dialog elsewhere). Returns the entered text
+/// (possibly empty) or null when cancelled.
+Future<String?> showAdaptivePrompt({
+  required BuildContext context,
+  required String title,
+  String? message,
+  String? hint,
+  String? initialValue,
+  int? maxLength,
+  bool obscureText = false,
+  TextInputType? keyboardType,
+  String? confirmLabel,
+}) async {
+  final TextEditingController controller =
+      TextEditingController(text: initialValue ?? '');
+  final String confirm = confirmLabel ?? AppText.tr('save');
+
+  return showPlatformDialog<String>(
+    context: context,
+    builder: (BuildContext dialogContext, bool isApple) {
+      final Widget field = isApple
+          ? CupertinoTextField(
+              controller: controller,
+              autofocus: true,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              maxLength: maxLength,
+              placeholder: hint,
+              padding: const EdgeInsets.all(8.0),
+            )
+          : TextField(
+              controller: controller,
+              autofocus: true,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              maxLength: maxLength,
+              decoration: InputDecoration(labelText: hint),
+            );
+      final Widget content = message == null
+          // A small gap between the title and the field, so they do not look
+          // glued together when there is no message.
+          ? Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: field,
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: isApple
+                  ? CrossAxisAlignment.stretch
+                  : CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(message),
+                const SizedBox(height: 12.0),
+                field,
+              ],
+            );
+      final List<Widget> actions = <Widget>[
+        isApple
+            ? CupertinoDialogAction(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(AppText.tr('cancel')),
+              )
+            : TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(AppText.tr('cancel')),
+              ),
+        isApple
+            ? CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text),
+                child: Text(confirm),
+              )
+            : TextButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text),
+                child: Text(confirm),
+              ),
+      ];
+      return isApple
+          ? CupertinoAlertDialog(
+              title: Text(title),
+              content: content,
+              actions: actions,
+            )
+          : AlertDialog(
+              scrollable: true,
+              title: Text(title),
+              content: content,
+              actions: actions,
+            );
+    },
   );
 }

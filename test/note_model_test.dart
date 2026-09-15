@@ -68,6 +68,36 @@ void main() {
       expect(restored.important, false);
       expect(restored.category, 'nuage');
     });
+
+    test('createdAt and updatedAt default to the date', () {
+      final note = Note(id: '1', date: '2026-08-12 10:00:00.000');
+      expect(note.createdAt, '2026-08-12 10:00:00.000');
+      expect(note.updatedAt, '2026-08-12 10:00:00.000');
+    });
+
+    test('serializes and deserializes createdAt and updatedAt', () {
+      final note = Note(
+        id: '1',
+        date: '2026-08-12 10:00:00.000',
+        createdAt: '2026-08-01 09:00:00.000',
+        updatedAt: '2026-08-13 11:00:00.000',
+      );
+
+      final restored = Note.fromJson(note.toJson());
+
+      expect(restored.createdAt, '2026-08-01 09:00:00.000');
+      expect(restored.updatedAt, '2026-08-13 11:00:00.000');
+    });
+
+    test('rows without createdAt/updatedAt fall back to the date', () {
+      final restored = Note.fromJson(<String, dynamic>{
+        'id': '1',
+        'date': '2026-08-12 10:00:00.000',
+      });
+
+      expect(restored.createdAt, '2026-08-12 10:00:00.000');
+      expect(restored.updatedAt, '2026-08-12 10:00:00.000');
+    });
   });
 
   group('notes JSON codec', () {

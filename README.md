@@ -1,102 +1,134 @@
-# 📝 TanoNote
+# TanoNote
 
 [![Version](https://img.shields.io/badge/version-0.8.4--beta-orange)](https://github.com/marxhubert/tano/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-brightgreen)](https://flutter.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%3E%3D3.8-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Stars](https://img.shields.io/github/stars/marxhubert/tano?style=social)](https://github.com/marxhubert/tano)
 
-**TanoNote** is a notes, tasks and projects management application built with [Flutter](https://flutter.dev) for Android and iOS. Fast, lightweight and **100 % offline**: all your data stays on your device, nothing is sent to a server.
+**TanoNote** is a notes, tasks and projects application built with
+[Flutter](https://flutter.dev) for Android and iOS. It is fast, lightweight and
+**100 % offline**: everything stays on your device, and the local database is
+encrypted at rest.
 
-## ✨ Features
+## Features
 
-- 📝 **Notes** — create, edit and delete notes with a title, content and date.
-- 🗂 **Colored categories** — organize your notes by theme, each with its own color.
-- ⭐ **Important notes** — highlight your notes with a single tap on the star.
-- 🔍 **Instant search** — case-insensitive, across titles and contents.
-- 🎛 **Three display modes** — list, compact and grid.
-- ↕️ **Flexible sorting** — by date, title, favorites or category.
-- ☑️ **Multiple selection** — long press to select, bulk delete, select all / deselect all.
-- 👆 **Swipe to delete** — swipe a note left or right to delete it.
-- 🔒 **100 % local** — stored in a JSON file on the device, no personal data is transmitted.
+### Notes
+- Create, edit and delete notes with a title and rich content.
+- Lightweight markdown: headings, checklists, bullet lists, bold, inline code
+  and `[[note links]]` to other notes.
+- Optional cover image per note.
+- Attachments (images, PDF, documents), opened with the system viewer.
 
-## 🗂 Categories
+### Organisation
+- Folders with their own colour theme, cover, pin, bookmark and lock.
+- Pin and bookmark notes and folders.
+- Search across notes and folders; locked notes never appear in the results.
+- Multi-selection of notes and folders: move, delete with confirmation. The home
+  list also offers an undo after a swipe-to-delete.
+- Sorting (date, title, favourites, colour theme) and grid or list layouts.
 
-| Category  | Color    |
-|-----------|----------|
-| Note      | 🟠 Orange |
-| Work      | 🔴 Red    |
-| Personal  | 🔵 Blue   |
-| Travel    | 🟢 Green  |
-| Life      | 🟣 Purple |
-| Project   | 🟡 Yellow |
-| Free      | ⚪ Gray   |
+### Security and privacy
+- The database is SQLite encrypted with SQLCipher. Its key lives in the OS
+  secure storage (`flutter_secure_storage`) and never leaves the device.
+- Locked notes and folders are gated by the device credential (biometrics, PIN
+  or passcode). The app never stores a password of its own.
+- Export is either a plain ZIP (cleartext) or an Argon2id + AES-GCM container.
+  Import merges: it never overwrites or deletes existing notes.
+- Deleted items go to a recycle bin before being permanently removed.
 
-## 🚀 Getting started
+### Interface
+- Light, dark and system themes.
+- Per-item pastel colour themes.
+- English, French and Malagasy.
 
-### Prerequisites
+## Requirements
 
-- [Flutter](https://docs.flutter.dev/get-started/install) **3.x** (Dart **≥ 3.8.0**)
-- Android Studio / Xcode depending on the target platform
+- [Flutter](https://docs.flutter.dev/get-started/install) **3.x**
+  (Dart **>= 3.8.0**)
+- Android Studio or Xcode, depending on the target platform
 
-### Installation
+## Getting started
 
 ```bash
 # Fetch the dependencies
 flutter pub get
 
-# Run the application (connected device or emulator)
+# Run the application (connected device or simulator)
 flutter run
 ```
 
-### Build a production version
+## Build
 
 ```bash
-# Android (APK)
-flutter build apk
+# Android (App Bundle for the Play Store)
+flutter build appbundle
 
 # iOS (requires macOS and Xcode)
-flutter build ios
+flutter build ipa
 ```
 
-## 🧪 Tests
+## Tests
 
 ```bash
+# Static analysis
+flutter analyze
+
+# Unit and widget tests
 flutter test
+
+# Integration tests (device or simulator required)
+flutter test integration_test
 ```
 
-## 🛠 Technologies used
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs `flutter analyze`
+and `flutter test` on every push to `master` and on every pull request.
 
-| Dependency          | Role                                            |
-|---------------------|-------------------------------------------------|
-| `path_provider`     | Access to the device's documents directory       |
-| `shared_preferences`| Persistence of preferences (display, sorting)    |
-| `package_info_plus` | Application version information                   |
-| `flutter_lints`     | Static code analysis                             |
+## Technologies
 
-## 📁 Project structure
+| Dependency | Role |
+|---|---|
+| `sqflite_sqlcipher` | Encrypted SQLite storage |
+| `flutter_secure_storage` | Installation key and preferences |
+| `cryptography` | AES-GCM and Argon2id (export/import) |
+| `local_auth` | Device credential for locked notes and folders |
+| `file_picker` / `open_filex` | Attachments |
+| `archive` | ZIP and `.tano` containers |
+| `path_provider` | Documents and cache directories |
+| `shared_preferences` | User preferences |
+| `get_it` | Dependency injection |
+| `uuid` | Identifiers |
+| `package_info_plus` / `device_info_plus` | Version and device information |
+| `material_symbols_icons` | Icon set |
+| `url_launcher` | External links |
+
+## Project structure
 
 ```
 lib/
-├── main.dart               # Application entry point
-├── models/
-│   └── note.dart           # Note data model
-├── pages/
-│   ├── home.dart           # Main screen (note list)
-│   ├── edit.dart           # Note editing
-│   ├── search.dart         # Search
-│   └── splash.dart         # Splash screen
-├── services/
-│   └── database.dart       # Local storage read / write
-├── utils/                  # Menus, actions, dialogs…
-└── widgets/                # Reusable components
+├── main.dart
+├── core/
+│   ├── models/          # Note, Folder, JSON codecs
+│   ├── repositories/    # Encrypted SQLite storage, attachments, fixtures
+│   └── services/        # Authentication, cipher, export / import
+├── features/
+│   ├── notes/           # Home: notes and folders, search, sorting
+│   ├── folder/          # Folder page
+│   ├── editor/          # Note editor
+│   ├── trash/           # Recycle bin
+│   ├── settings/        # Settings and sub-pages
+│   └── splash/          # Splash screen
+└── shared/
+    ├── config/          # Localisation, theme, service locator, preferences
+    └── widgets/         # Cards, floating action button, dialogs, layout
 ```
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Open an *issue* to report a bug or suggest a feature, or submit a *pull request* against the `develop` branch.
+Contributions are welcome. Open an *issue* to report a bug or suggest a feature,
+or submit a *pull request* against `master`. Please run `flutter analyze` and
+`flutter test` before opening a pull request.
 
-## 📄 License
+## License
 
-This project is distributed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for more details.
+This project is distributed under the **Apache License 2.0**. See the
+[LICENSE](LICENSE) file for more details.
