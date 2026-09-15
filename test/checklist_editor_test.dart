@@ -152,7 +152,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.undo), findsOneWidget);
+    expect(find.byIcon(Symbols.undo), findsOneWidget);
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Hello')),
       findsNothing,
@@ -203,7 +203,7 @@ void main() {
     expect(_contentText(tester), 'World\n## \n- [ ] ');
 
     // Saving removes the still-empty checklist (and its title line).
-    await tester.tap(find.byIcon(Icons.save));
+    await tester.tap(find.byIcon(Symbols.save));
     await tester.pumpAndSettle();
 
     expect(_contentText(tester), 'World');
@@ -240,7 +240,7 @@ void main() {
 
     // Leaving cleans the empty checklist first, so the note is not dirty
     // anymore and no confirmation dialog appears.
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);

@@ -432,7 +432,7 @@ void main() {
     expect(find.text('Edit'), findsOneWidget);
 
     // Toggling the theme from the app bar must not dismiss the FAB menu.
-    await tester.tap(find.byIcon(Icons.dark_mode));
+    await tester.tap(find.byIcon(Symbols.dark_mode));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsOneWidget);
@@ -469,7 +469,7 @@ void main() {
     // Finish the push and let the deferred fold run (Home is covered).
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     // Back on Home, the FAB is already reduced.
@@ -515,7 +515,7 @@ void main() {
     await tester.tap(find.text('A'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     // Back on the folder, the FAB is reduced again and its menu is closed.
@@ -545,7 +545,7 @@ void main() {
       matching: find.byType(Scaffold),
     );
     final Scaffold before = tester.widget<Scaffold>(folderScaffold);
-    await tester.tap(find.byIcon(Icons.dark_mode));
+    await tester.tap(find.byIcon(Symbols.dark_mode));
     await tester.pumpAndSettle();
     final Scaffold after = tester.widget<Scaffold>(folderScaffold);
     expect(after.backgroundColor, isNot(before.backgroundColor));
@@ -776,7 +776,7 @@ void main() {
 
     // The app bar only keeps the Cancel action.
     expect(find.text('Cancel'), findsOneWidget);
-    expect(find.byIcon(Icons.dark_mode), findsNothing);
+    expect(find.byIcon(Symbols.dark_mode), findsNothing);
     expect(find.byIcon(Symbols.add_2), findsNothing);
 
     // Typing switches the page title to "Results".
@@ -1284,7 +1284,7 @@ void main() {
     // Open the note from the results, then come back.
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
