@@ -475,6 +475,52 @@ void main() {
     expect(find.byIcon(Symbols.create_new_folder), findsNothing);
   });
 
+  testWidgets('returning from the editor folds the folder FAB back', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'A',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // The folder FAB rests reduced: expand it and open the more menu.
+    await tester.tap(find.byIcon(Symbols.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+
+    // Open a note straight from the folder, then come back.
+    await tester.tap(find.text('A'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+
+    // Back on the folder, the FAB is reduced again and its menu is closed.
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+    expect(find.text('Edit'), findsNothing);
+  });
+
   testWidgets('folder background follows the theme', (tester) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
