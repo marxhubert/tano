@@ -1,6 +1,6 @@
-# 09 — Sécurité : chiffrement du stockage et export
+# Sécurité
 
-> Statut : **validé**, implémentation en cours (branche `feature/encrypted-storage`).
+> Statut : **implémenté** (chiffrement au repos + export/import chiffré).
 
 Ce document décrit la politique de protection des données de TanoNote **au repos**
 et le format de partage/transfert. Il fait autorité : toute implémentation doit

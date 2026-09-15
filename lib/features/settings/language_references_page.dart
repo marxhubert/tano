@@ -29,14 +29,7 @@ class LanguageReferencesPage extends StatelessWidget {
 
     return PageScaffold(
       title: AppText.tr('language_references'),
-      headerTrailing: Text(
-        'Teny ${refs.length} isa',
-        style: TextStyle(
-          color: mutedTextColor(context),
-          fontSize: 14.0,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
+      headerMetadata: 'Teny ${refs.length} isa',
       actions: const [ThemeToggleButton()],
       slivers: [
         SliverPadding(

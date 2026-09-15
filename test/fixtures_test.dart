@@ -52,17 +52,16 @@ void main() {
       expect(empty.isLocked, isFalse);
     });
 
-    test('folder notes respect the pin/bookmark/lock constraints', () {
+    test('folder notes respect the bookmark/lock constraints', () {
       final List<Note> filed = fixtures.notes
           .where((Note n) => n.folderId != null)
           .toList();
 
-      expect(filed.where((Note n) => n.isPinned).length, lessThanOrEqualTo(3));
       expect(filed.where((Note n) => n.important).length, lessThanOrEqualTo(6));
       expect(filed.where((Note n) => n.isLocked), hasLength(3));
-      // No pinned or bookmarked note is locked.
+      // No bookmarked note is locked.
       expect(
-        filed.where((Note n) => n.isLocked && (n.isPinned || n.important)),
+        filed.where((Note n) => n.isLocked && n.important),
         isEmpty,
       );
       // 10 folder notes have nothing but their text and theme.
@@ -72,21 +71,20 @@ void main() {
       );
     });
 
-    test('unfiled notes respect the pin/bookmark/lock constraints', () {
+    test('unfiled notes respect the bookmark/lock constraints', () {
       final List<Note> loose = fixtures.notes
           .where((Note n) => n.folderId == null)
           .toList();
 
-      expect(loose.where((Note n) => n.isPinned).length, lessThanOrEqualTo(6));
       expect(loose.where((Note n) => n.important).length, lessThanOrEqualTo(12));
       expect(loose.where((Note n) => n.isLocked), hasLength(9));
-      // No pinned or bookmarked note is locked.
+      // No bookmarked note is locked.
       expect(
-        loose.where((Note n) => n.isLocked && (n.isPinned || n.important)),
+        loose.where((Note n) => n.isLocked && n.important),
         isEmpty,
       );
       expect(
-        loose.where((Note n) => !n.isPinned && !n.isLocked && !n.important),
+        loose.where((Note n) => !n.isLocked && !n.important),
         hasLength(15),
       );
       // 12 unfiled notes have nothing but their text and theme.

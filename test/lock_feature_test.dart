@@ -14,8 +14,13 @@ import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
-import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+
+Finder _noteCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+    );
 
 /// Fakes the system credential prompt: no platform channel in tests.
 class _FakeAuthService extends AuthService {
@@ -79,13 +84,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
-    }
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
@@ -161,9 +159,15 @@ Future<void> _tapContentLink(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-void main() {
-  late AuthService originalAuth;
+/// Registers the app-wide authentication service, replacing any previous one.
+void _registerAuth(AuthService service) {
+  if (getIt.isRegistered<AuthService>()) {
+    getIt.unregister<AuthService>();
+  }
+  getIt.registerSingleton<AuthService>(service);
+}
 
+void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await LocaleController.instance.init();
@@ -175,14 +179,18 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
-    originalAuth = AuthService.instance;
+    // A plain (unavailable) service by default; tests needing a fake
+    // re-register it through [_registerAuth].
+    _registerAuth(AuthService());
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
     }
   });
 
-  tearDown(() {
-    AuthService.instance = originalAuth;
+  tearDown(() async {
+    if (getIt.isRegistered<AuthService>()) {
+      await getIt.unregister<AuthService>();
+    }
   });
 
   group('AuthService', () {
@@ -200,7 +208,7 @@ void main() {
   group('EditNoteViewModel.toggleLock', () {
     test('locking a note is immediate and never prompts', () async {
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -212,7 +220,7 @@ void main() {
 
     test('unlocking a locked note requires authentication', () async {
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -224,7 +232,7 @@ void main() {
 
     test('a cancelled authentication keeps the note locked', () async {
       final fake = _FakeAuthService(authorized: false);
-      AuthService.instance = fake;
+      _registerAuth(fake);
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -234,7 +242,7 @@ void main() {
     });
 
     test('locking is refused when the device has no system credential', () async {
-      AuthService.instance = _FakeAuthService(available: false);
+      _registerAuth(_FakeAuthService(available: false));
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -243,7 +251,7 @@ void main() {
     });
 
     test('a lock change marks the editor dirty', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -253,7 +261,7 @@ void main() {
     });
 
     test('locking then auto-saving persists isLocked', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       final vm = _viewModelFor(repository);
 
@@ -265,7 +273,7 @@ void main() {
     });
 
     test('unlocking then auto-saving persists the unlocked state', () async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
       final vm = _viewModelFor(repository);
 
@@ -324,11 +332,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
 
       expect(find.text('Unlock'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_open), findsOneWidget);
+      expect(find.byIcon(Symbols.lock_open), findsOneWidget);
       expect(find.text('Lock'), findsNothing);
     });
 
@@ -344,11 +352,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
 
       expect(find.text('Lock'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+      expect(find.byIcon(Symbols.lock), findsOneWidget);
       expect(find.text('Unlock'), findsNothing);
     });
 
@@ -363,8 +371,8 @@ void main() {
 
       expect(
         find.descendant(
-          of: find.byType(NoteCard),
-          matching: find.byIcon(Icons.lock_outline),
+          of: _noteCards(),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsOneWidget,
       );
@@ -381,8 +389,8 @@ void main() {
 
       expect(
         find.descendant(
-          of: find.byType(NoteCard),
-          matching: find.byIcon(Icons.lock_outline),
+          of: _noteCards(),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsNothing,
       );
@@ -391,7 +399,7 @@ void main() {
     testWidgets('a locked note is not opened when authentication fails', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService(authorized: false);
+      _registerAuth(_FakeAuthService(authorized: false));
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[_note(isLocked: true)]),
       );
@@ -400,7 +408,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(NoteCard).first);
+      await tester.tap(_noteCards().first);
       await tester.pumpAndSettle();
 
       expect(find.byType(EditNote), findsNothing);
@@ -409,7 +417,7 @@ void main() {
     testWidgets('a locked note opens once authentication succeeds', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[_note(isLocked: true)]),
       );
@@ -418,7 +426,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(NoteCard).first);
+      await tester.tap(_noteCards().first);
       await tester.pumpAndSettle();
 
       expect(find.byType(EditNote), findsOneWidget);
@@ -472,7 +480,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      AuthService.instance = _FakeAuthService(available: false);
+      _registerAuth(_FakeAuthService(available: false));
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       getIt.registerSingleton<NotesRepository>(repository);
 
@@ -484,7 +492,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(EditNote), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lock'));
       await tester.pump();
@@ -560,9 +568,9 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.longPress(find.byType(NoteCard).first);
+      await tester.longPress(_noteCards().first);
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.delete));
+      await tester.tap(find.byIcon(Symbols.delete));
       await tester.pumpAndSettle();
 
       expect(find.text('Locked notes cannot be deleted'), findsOneWidget);
@@ -574,7 +582,7 @@ void main() {
     testWidgets('locking a note persists without an explicit save', (
       tester,
     ) async {
-      AuthService.instance = _FakeAuthService();
+      _registerAuth(_FakeAuthService());
       final repository = _InMemoryNotesRepository(<Note>[_note()]);
       getIt.registerSingleton<NotesRepository>(repository);
 
@@ -586,7 +594,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(EditNote), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lock'));
       await tester.pumpAndSettle();
@@ -603,12 +611,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NoteCard(
-              note: _note(
-                title: 'A very long title that needs several lines to display',
-                isLocked: true,
-              ),
-              builder: (context, textColor) => const SizedBox(height: 80.0),
+            body: EntityCard(
+              kind: EntityKind.note,
+              category: 'menthe',
+              title: 'A very long title that needs several lines to display',
+              subtitle: '12/08/2026',
+              isLocked: true,
+              builder:
+                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -629,13 +639,15 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NoteCard(
-              note: _note(
-                title: 'A very long title that needs several lines to display',
-                isLocked: true,
-              ),
+            body: EntityCard(
+              kind: EntityKind.note,
+              category: 'menthe',
+              title: 'A very long title that needs several lines to display',
+              subtitle: '12/08/2026',
+              isLocked: true,
               isListLayout: true,
-              builder: (context, textColor) => const SizedBox(height: 80.0),
+              builder:
+                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -651,12 +663,12 @@ void main() {
 
       // Lock on the left, title then date stacked to its right.
       final Offset iconCenter = tester.getCenter(
-        find.byIcon(Icons.lock_outline),
+        find.byIcon(Symbols.lock),
       );
       final Offset titleCenter = tester.getCenter(
         find.textContaining('A very long title'),
       );
-      final Offset dateCenter = tester.getCenter(find.text('12 Aug 2026'));
+      final Offset dateCenter = tester.getCenter(find.text('12/08/2026'));
       expect(iconCenter.dx, lessThan(titleCenter.dx));
       expect(dateCenter.dy, greaterThan(titleCenter.dy));
     });
@@ -669,7 +681,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
@@ -702,7 +714,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService(authorized: false);
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
@@ -736,7 +748,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final fake = _FakeAuthService();
-      AuthService.instance = fake;
+      _registerAuth(fake);
       getIt.registerSingleton<NotesRepository>(
         _InMemoryNotesRepository(<Note>[
           _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),

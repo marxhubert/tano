@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +12,7 @@ import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
 
 class _Repo implements NotesRepository, FoldersRepository {
   final List<Note> notes = <Note>[
@@ -40,8 +41,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> restoreNote(String id) async {}
   @override
-  Future<void> togglePin(String id) async {}
-  @override
   Future<void> toggleLock(String id, {String? password}) async {}
   @override
   Future<void> deleteNotePermanently(String id) async {}
@@ -64,8 +63,6 @@ class _Repo implements NotesRepository, FoldersRepository {
 
   @override
   Future<void> trashFolder(String id) async {}
-  @override
-  Future<void> toggleFolderPin(String id) async {}
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
@@ -97,10 +94,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('My notes'), findsWidgets);
 
-    // Create a folder from the home "+" menu.
-    await tester.tap(find.byIcon(Icons.add));
+    // Create a folder from the home FAB extended bar.
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.create_new_folder));
+    await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     // iOS uses a CupertinoTextField, Android a TextField: EditableText covers
     // both.
@@ -112,7 +109,12 @@ void main() {
     expect(repository.folders, hasLength(1));
     // ...and shown on the home screen.
     expect(find.text('My folders'), findsWidgets);
-    expect(find.byType(FolderCard), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+      ),
+      findsWidgets,
+    );
     expect(find.text('Perso'), findsWidgets);
   });
 }

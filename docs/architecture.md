@@ -1,16 +1,18 @@
-# 07 — Architecture cible : stockage, synchronisation et chiffrement
+# Architecture
 
-> **Document de référence** pour l'évolution majeure de TanoNote : passage du
-> JSON monofichier à une base **SQLite (Drift)**, ajout des entités (dossiers,
-> tâches/checklist, projets/tickets, pièces jointes) et de la **collaboration
-> temps réel pair-à-pair via internet** (expérience type Trello, sans serveur
-> central de données).
+> **Document de référence** : architecture technique de TanoNote — persistance,
+> entités (dossiers, checklist, projets/tickets, pièces jointes) et
+> **synchronisation temps réel pair-à-pair** (expérience type Trello, sans
+> serveur central de données).
+>
+> La migration JSON → **SQLite chiffré** est faite ; le schéma applicatif en est
+> à la **v7** (voir aussi [composants](./composants.md) et [sécurité](./securite.md)).
 
 ## 1. Décisions structurantes (validées)
 
 | Décision | Choix retenu |
 |---|---|
-| Stockage | **SQLite via Drift** (ORM réactif) — remplace le JSON monofichier |
+| Stockage | **SQLite chiffré** (`sqflite_sqlcipher`) — a remplacé le JSON monofichier |
 | Synchronisation | **Maillage WebRTC** (data channels), temps réel, **internet uniquement** |
 | Signalisation | Serveurs **publics** + mot de passe de salon (prototype), puis serveur **auto-hébergé** en premier endpoint (publics en secours) |
 | Serveur de données | **Aucun** : le serveur de signalisation est aveugle et ne stocke rien |
@@ -26,7 +28,7 @@ TURN transporte uniquement du trafic déjà chiffré E2E.
 
 | Besoin | Choix | Justification |
 |---|---|---|
-| Base de données | `drift` | ORM SQLite réactif, mature (1,12 M dl), type-safe, transactions, migrations, streams |
+| Base de données | `sqflite_sqlcipher` | SQLite chiffré (AES), migrations versionnées, mode transactionnel — retenu à la place de `drift` |
 | CRDT texte | `y_crdt` | Port Dart de Yjs (via WASM), référence pour la co-édition sans conflit |
 | Transport temps réel | `flutter_webrtc` | Data Channels sur Android/iOS/desktop/web (290 k dl), mature |
 | Crypto | `cryptography` / `pointycastle` | AES-GCM, Ed25519, PBKDF2 — pur Dart |
@@ -195,7 +197,7 @@ nature du payload (métadonnées vs binaire volumineux).
 ## 10. Migration depuis le JSON actuel
 
 - À la première ouverture post-migration : lire `local_persistence.json`,
-  créer la base Drift, insérer chaque note (`important`, `category` conservés),
+  créer la base SQLite chiffrée, insérer chaque note (`important`, `category` conservés),
   générer les UUID manquants, puis **sauvegarder l'ancien fichier** (renommage
   `.bak`) sans le supprimer.
 - Le format d'export chiffré JSON reste **importable** (compatibilité ascendante).
@@ -206,8 +208,8 @@ nature du payload (métadonnées vs binaire volumineux).
 
 | Phase | Contenu | Livrable |
 |---|---|---|
-| P0 | Drift + schéma v1 + migration JSON→SQLite | App fonctionne comme avant, en SQLite |
-| P1 | Dossiers + checklist + export/import chiffré | Organisation + sauvegarde |
+| P0 | SQLite chiffré + migration JSON→SQLite | **Fait** — schéma v7 |
+| P1 | Dossiers + checklist + export/import chiffré | **Fait** (checklist basique) |
 | P2 | **Prototype sync** : identités, chiffrement E2E, `WebRtcTransport` + signalisation publique | Une note partagée temps réel entre 2 appareils (France–Japon) |
 | P3 | Projets / tickets Kanban (colonnes, drag & drop) | Écran projet collaboratif |
 | P4 | Pièces jointes | Images/PDF/docx attachés + sync |
@@ -219,6 +221,6 @@ nature du payload (métadonnées vs binaire volumineux).
 >
 > Ce phasage est la **vue macro** de l'architecture ; la numérotation détaillée
 > et priorisée (incluant les fondations code et les quick wins UI/UX) se trouve
-> dans la feuille de route [`06-roadmap.md`](./06-roadmap.md).
+> dans la [feuille de route](./roadmap.md).
 
 

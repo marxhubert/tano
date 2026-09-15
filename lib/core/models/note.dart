@@ -2,32 +2,43 @@ import 'dart:convert';
 
 /// A note, stored locally and (when shared) synchronized peer-to-peer.
 ///
-/// All fields are non-nullable with safe defaults.
+/// All fields are non-nullable with safe defaults. [createdAt] and [updatedAt]
+/// fall back to [date] for data written before those columns existed.
 class Note {
-  const Note({
+  Note({
     this.id = '',
     this.title = '',
     this.content = '',
     this.date = '',
+    String? createdAt,
+    String? updatedAt,
     this.important = false,
     this.category = 'nuage',
     this.isDeleted = false,
-    this.isPinned = false,
     this.isLocked = false,
     this.deletedAt,
     this.attachments = const <String>[],
     this.coverImage,
     this.folderId,
-  });
+  })  : createdAt = createdAt ?? date,
+        updatedAt = updatedAt ?? date;
 
   final String id;
   final String title;
   final String content;
   final String date;
+
+  /// When the note was created. Older data has no such column, so it falls
+  /// back to [date].
+  final String createdAt;
+
+  /// When the note was last modified. Older data has no such column, so it
+  /// falls back to [date].
+  final String updatedAt;
+
   final bool important;
   final String category;
   final bool isDeleted;
-  final bool isPinned;
   final bool isLocked;
   final String? deletedAt;
   final String? coverImage;
@@ -44,10 +55,11 @@ class Note {
         title: json['title'] as String? ?? '',
         content: json['content'] as String? ?? '',
         date: json['date'] as String? ?? '',
+        createdAt: json['createdAt'] as String?,
+        updatedAt: json['updatedAt'] as String?,
         important: json['important'] == 1,
         category: _normalizeCategory(json['category'] as String?),
         isDeleted: json['isDeleted'] == 1,
-        isPinned: json['isPinned'] == 1,
         isLocked: json['isLocked'] == 1,
         deletedAt: json['deletedAt'] as String?,
         attachments: _decodeAttachments(json['attachments']),
@@ -60,10 +72,11 @@ class Note {
         'title': title,
         'content': content,
         'date': date,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
         'important': important ? 1 : 0,
         'category': category,
         'isDeleted': isDeleted ? 1 : 0,
-        'isPinned': isPinned ? 1 : 0,
         'isLocked': isLocked ? 1 : 0,
         'deletedAt': deletedAt,
         'attachments': jsonEncode(attachments),
@@ -104,10 +117,11 @@ class Note {
         title: title,
         content: content,
         date: date,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
         important: important,
         category: category,
         isDeleted: isDeleted,
-        isPinned: isPinned,
         isLocked: isLocked,
         deletedAt: deletedAt,
         attachments: attachments,
@@ -120,10 +134,11 @@ class Note {
     String? title,
     String? content,
     String? date,
+    String? createdAt,
+    String? updatedAt,
     bool? important,
     String? category,
     bool? isDeleted,
-    bool? isPinned,
     bool? isLocked,
     String? deletedAt,
     List<String>? attachments,
@@ -135,10 +150,11 @@ class Note {
       title: title ?? this.title,
       content: content ?? this.content,
       date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       important: important ?? this.important,
       category: category ?? this.category,
       isDeleted: isDeleted ?? this.isDeleted,
-      isPinned: isPinned ?? this.isPinned,
       isLocked: isLocked ?? this.isLocked,
       deletedAt: deletedAt ?? this.deletedAt,
       attachments: attachments ?? this.attachments,

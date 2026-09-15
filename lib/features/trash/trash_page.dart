@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
-import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/date_format.dart';
 
@@ -44,13 +46,12 @@ class _TrashPageState extends State<TrashPage> {
       builder: (context, _) {
         return PageScaffold(
           title: AppText.tr('option_recycle_bin'),
-          headerTrailing: Text(
-            '${_viewModel.deletedNotes.length} ${_viewModel.deletedNotes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-            style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 13),
-          ),
+          headerMetadata:
+              '${_viewModel.deletedNotes.length} ${_viewModel.deletedNotes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
           actions: [
             if (!_viewModel.isEmpty)
               IconButton(
+                tooltip: AppText.tr('empty_trash'),
                 icon: const Icon(
                   Icons.delete_sweep, 
                   color: Color(0xFFFF8A80),
@@ -110,16 +111,17 @@ class _TrashPageState extends State<TrashPage> {
             else
               SliverPadding(
                 padding: const EdgeInsets.all(appPaddingMedium),
-                sliver: SliverGrid.count(
-                  crossAxisCount: gridCrossAxisCount(context),
-                  crossAxisSpacing: 12.0,
-                  mainAxisSpacing: 12.0,
-                  childAspectRatio: 1.0,
-                  children: List.generate(_viewModel.deletedNotes.length, (index) {
-                    final note = _viewModel.deletedNotes[index];
-                    return NoteCard(
-                      note: note,
-                      builder: (context, textColor) => SizedBox.expand(
+                sliver: EntitySliver<Note>(
+                  items: _viewModel.deletedNotes,
+                  isList: false,
+                  cardBuilder: (BuildContext context, Note note) {
+                    return EntityCard(
+                      kind: EntityKind.note,
+                      category: note.category,
+                      title: note.title,
+                      subtitle: formatNoteDate(note.date),
+                      isImportant: note.important,
+                      builder: (context, textColor, hasCover) => SizedBox.expand(
                         child: Stack(
                           children: [
                             // Background Content (Date & Title only)
@@ -130,20 +132,15 @@ class _TrashPageState extends State<TrashPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 spacing: 4.0,
                                 children: <Widget>[
-                                  Padding(
-                                    padding: note.isPinned 
-                                      ? const EdgeInsets.only(left: 8.0)
-                                      : const EdgeInsets.only(left: 0.0),
-                                    child: Text(
-                                      formatNoteDate(note.date),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.normal,
-                                        fontSize: 8.0,
-                                        color: textColor.withValues(alpha: 0.6),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  Text(
+                                    formatNoteDate(note.date),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: 8.0,
+                                      color: textColor.withValues(alpha: 0.6),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     note.title,
@@ -192,7 +189,7 @@ class _TrashPageState extends State<TrashPage> {
                         ),
                       ),
                     );
-                  }),
+                  },
                 ),
               ),
           ],

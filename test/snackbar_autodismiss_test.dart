@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/note.dart';
@@ -53,13 +54,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
-    }
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
@@ -135,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Switch to list layout so swipe-to-delete is available.
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.tap(find.byIcon(Symbols.more_vert).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();
@@ -182,7 +176,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Switch to list layout so swipe-to-delete is available.
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.tap(find.byIcon(Symbols.more_vert).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();

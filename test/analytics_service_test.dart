@@ -33,10 +33,21 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
+    test('collectFirstLaunchInfo stays idle without consent', () async {
+      final service = TestAnalyticsService();
+      final prefs = await SecurePreferences.getInstance();
+
+      await service.collectFirstLaunchInfo();
+
+      expect(service.gatherDataCalled, isFalse);
+      expect(prefs.getBool(prefKey), isNull);
+    });
+
     test('collectFirstLaunchInfo calls gatherData and sets the flag on first run', () async {
       final service = TestAnalyticsService();
       final prefs = await SecurePreferences.getInstance();
-      
+      await prefs.setBool(AnalyticsService.consentPrefKey, true);
+
       expect(prefs.getBool(prefKey), isNull);
       expect(service.gatherDataCalled, isFalse);
 
@@ -51,6 +62,7 @@ void main() {
     test('collectFirstLaunchInfo does not call gatherData if already sent', () async {
       final service = TestAnalyticsService();
       final prefs = await SecurePreferences.getInstance();
+      await prefs.setBool(AnalyticsService.consentPrefKey, true);
       await prefs.setBool(prefKey, true);
 
       await service.collectFirstLaunchInfo();
