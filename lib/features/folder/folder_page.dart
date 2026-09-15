@@ -211,7 +211,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     // itself is locked: opening it already authenticated the user.
     bool authenticated = _folder.isLocked;
     if (note.isLocked && !authenticated) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;
@@ -247,7 +247,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
   Future<void> _toggleLock() async {
     if (!_folder.isLocked) {
-      if (!await AuthService.instance.isAvailable()) {
+      if (!await getIt<AuthService>().isAvailable()) {
         if (!mounted) return;
         await showAdaptiveAlert(
           context: context,
@@ -259,7 +259,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       await _save(_folder.copyWith(isLocked: true));
       return;
     }
-    final bool authenticated = await AuthService.instance.authenticate(
+    final bool authenticated = await getIt<AuthService>().authenticate(
       reason: AppText.tr('auth_reason'),
     );
     if (!authenticated || !mounted) return;

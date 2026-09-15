@@ -476,7 +476,7 @@ class _EditNoteState extends State<EditNote>
     // another locked note must not prompt again.
     bool authenticated = widget.authenticated;
     if (targetNote.isLocked && !authenticated) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;
@@ -1013,8 +1013,6 @@ class _EditNoteState extends State<EditNote>
                 },
                 onFindSelected: _enterFindMode,
                 onMoveTo: _moveTo,
-                onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
-                onShareSelected: () {}, // TODO: Implement Share
                 onLockSelected: () async {
                   // Locking takes effect immediately (there is no prompt).
                   // Unlocking shows the system prompt, so close the keyboard

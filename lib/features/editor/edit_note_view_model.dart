@@ -4,6 +4,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
 
 /// Outcome of [EditNoteViewModel.toggleLock], so the UI can react to each case.
 enum LockToggleResult {
@@ -87,7 +88,7 @@ class EditNoteViewModel extends ChangeNotifier {
   /// credential.
   Future<LockToggleResult> toggleLock() async {
     if (isLocked) {
-      final bool authenticated = await AuthService.instance.authenticate(
+      final bool authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated) return LockToggleResult.cancelled;
@@ -96,7 +97,7 @@ class EditNoteViewModel extends ChangeNotifier {
       return LockToggleResult.unlocked;
     }
 
-    if (!await AuthService.instance.isAvailable()) {
+    if (!await getIt<AuthService>().isAvailable()) {
       return LockToggleResult.unavailable;
     }
     isLocked = true;

@@ -160,7 +160,7 @@ class HomeState extends State<Home> with RouteAware {
     bool authenticated = false;
     // A locked note filed in a locked folder does not prompt again.
     if (_viewModel.isNoteEffectivelyLocked(note)) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       // The system prompt is awaited: the widget may be gone by now.
@@ -415,7 +415,7 @@ class HomeState extends State<Home> with RouteAware {
     // Opening a folder leaves the search: coming back shows the whole list.
     if (_isSearchMode) _exitSearchMode();
     if (folder.isLocked) {
-      final bool authenticated = await AuthService.instance.authenticate(
+      final bool authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;

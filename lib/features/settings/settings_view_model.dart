@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/services/analytics_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -69,13 +70,20 @@ class SettingsViewModel extends ChangeNotifier {
 
       if (deletePrefs) {
         final SecurePreferences prefs = await SecurePreferences.getInstance();
-        // Keep the analytics flag if we are NOT deleting data
+        // Keep the analytics flag and the helper consent when we are NOT
+        // deleting data.
         final bool? analyticsSent = prefs.getBool('firstLaunchAnalyticsSent');
-        
+        final bool? helperConsent = prefs.getBool(AnalyticsService.consentPrefKey);
+
         await prefs.clear();
-        
-        if (analyticsSent != null && !deleteData) {
-          await prefs.setBool('firstLaunchAnalyticsSent', analyticsSent);
+
+        if (!deleteData) {
+          if (analyticsSent != null) {
+            await prefs.setBool('firstLaunchAnalyticsSent', analyticsSent);
+          }
+          if (helperConsent != null) {
+            await prefs.setBool(AnalyticsService.consentPrefKey, helperConsent);
+          }
         }
 
         // Re-init core controllers to reflect default state
