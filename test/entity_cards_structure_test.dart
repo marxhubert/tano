@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/folder_card_bodies.dart';
@@ -101,6 +103,12 @@ Folder _folder({String? coverImage}) => Folder(
     );
 
 void main() {
+  setUp(() {
+    if (!getIt.isRegistered<AttachmentsStore>()) {
+      getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
+    }
+  });
+
   group('note grid', () {
     testWidgets('glues the metadata to the bottom, left aligned',
         (tester) async {

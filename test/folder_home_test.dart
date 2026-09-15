@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -24,6 +25,14 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+
+/// Registers the app-wide authentication service, replacing any previous one.
+void _registerAuth(AuthService service) {
+  if (getIt.isRegistered<AuthService>()) {
+    getIt.unregister<AuthService>();
+  }
+  getIt.registerSingleton<AuthService>(service);
+}
 
 class _Repo implements NotesRepository, FoldersRepository {
   _Repo({required this.notes, required this.folders});
@@ -122,6 +131,9 @@ void main() {
     );
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
+    }
+    if (!getIt.isRegistered<AttachmentsStore>()) {
+      getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
     }
   });
 
@@ -1358,9 +1370,12 @@ void main() {
     tester,
   ) async {
     final _FakeAuth auth = _FakeAuth(authorized: false);
-    final AuthService originalAuth = AuthService.instance;
-    AuthService.instance = auth;
-    addTearDown(() => AuthService.instance = originalAuth);
+    _registerAuth(auth);
+    addTearDown(() async {
+      if (getIt.isRegistered<AuthService>()) {
+        await getIt.unregister<AuthService>();
+      }
+    });
 
     getIt.registerSingleton<NotesRepository>(
       _Repo(

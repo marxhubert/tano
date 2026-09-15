@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
 
@@ -17,6 +19,12 @@ Widget _host(Future<void> Function() onRemove) {
 }
 
 void main() {
+  setUp(() {
+    if (!getIt.isRegistered<AttachmentsStore>()) {
+      getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
+    }
+  });
+
   testWidgets('long press reveals the remove button, confirming removes',
       (tester) async {
     bool removed = false;
