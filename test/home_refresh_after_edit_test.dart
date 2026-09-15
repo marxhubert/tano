@@ -140,7 +140,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Back -> "Save before leaving" dialog -> Save.
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     await tester.tap(find.text('SAVE').last);
@@ -172,9 +172,9 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Fresh note');
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.save), findsOneWidget);
+    expect(find.byIcon(Symbols.save), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.save));
+    await tester.tap(find.byIcon(Symbols.save));
     await tester.pumpAndSettle();
 
     // The save happens in place: the note is persisted but the editor stays.
@@ -183,7 +183,7 @@ void main() {
     expect(repository.notes.single.title, 'Fresh note');
 
     // Going back then reveals the note on home without any extra prompt.
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.byType(Home), findsOneWidget);
@@ -207,7 +207,7 @@ void main() {
     await tester.enterText(find.byType(TextField).last, 'Body only');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.save));
+    await tester.tap(find.byIcon(Symbols.save));
     await tester.pumpAndSettle();
 
     expect(repository.notes, hasLength(1));
@@ -215,14 +215,14 @@ void main() {
     // The save action is now disabled: there is nothing left to save.
     final IconButton saveButton = tester.widget<IconButton>(
       find.ancestor(
-        of: find.byIcon(Icons.save),
+        of: find.byIcon(Symbols.save),
         matching: find.byType(IconButton),
       ),
     );
     expect(saveButton.onPressed, isNull);
 
     // Leaving must not prompt, and home must show the saved note.
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.byType(Home), findsOneWidget);

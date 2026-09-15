@@ -8,6 +8,7 @@ import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -438,50 +439,10 @@ class HomeState extends State<Home> with RouteAware {
 
   List<Widget>? _buildAppBarActions() {
     if (_viewModel.isInSelectionMode) {
-      return <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 12.0),
-          child: TextButton(
-            onPressed: _viewModel.exitSelectionMode,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              AppText.tr('cancel'),
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 17.0,
-                color: tanoTeal,
-              ),
-            ),
-          ),
-        ),
-      ];
+      return <Widget>[CancelButton(onPressed: _viewModel.exitSelectionMode)];
     }
     if (_isSearchMode) {
-      return <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 12.0),
-          child: TextButton(
-            onPressed: _exitSearchMode,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              AppText.tr('cancel'),
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 17.0,
-                color: tanoTeal,
-              ),
-            ),
-          ),
-        ),
-      ];
+      return <Widget>[CancelButton(onPressed: _exitSearchMode)];
     }
     return <Widget>[
       IconButton(
@@ -497,13 +458,13 @@ class HomeState extends State<Home> with RouteAware {
     final ThemeData theme = Theme.of(context);
     if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
       return IconButton(
-        icon: const Icon(Icons.more_vert),
+        icon: const Icon(Symbols.more_vert, weight: 900.0),
         onPressed: () => _showCupertinoActionSheet(),
       );
     }
 
     return PopupMenuButton<PopupItem>(
-      icon: const Icon(Icons.more_vert),
+      icon: const Icon(Symbols.more_vert, weight: 900.0),
       offset: const Offset(0, 56),
       elevation: 4.0,
       constraints: const BoxConstraints(minWidth: 160.0),

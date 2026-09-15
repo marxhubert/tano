@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -156,7 +157,7 @@ void main() {
       
       // Opens the main menu (⋮): it must not crash even if the
       // sorting/language/about items have no icon.
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.more_vert));
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);
@@ -174,7 +175,7 @@ void main() {
       // The sorting items have no icon: only the icon of the Display group
       // (view_list/view_stream/view_module) is present.
       expect(find.byIcon(Icons.date_range), findsNothing);
-      expect(find.byIcon(Icons.arrow_back_ios), findsNothing);
+      expect(find.byIcon(Symbols.arrow_back_ios), findsNothing);
     },
   );
 }

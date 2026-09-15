@@ -133,7 +133,7 @@ Future<void> _pumpApp(
 }
 
 Future<void> _selectLayout(WidgetTester tester, String label) async {
-  await tester.tap(find.byIcon(Icons.more_vert).first);
+  await tester.tap(find.byIcon(Symbols.more_vert).first);
   await tester.pumpAndSettle();
   await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
@@ -182,7 +182,7 @@ void main() {
         }
 
         // Main menu expanded then closed.
-        await tester.tap(find.byIcon(Icons.more_vert).first);
+        await tester.tap(find.byIcon(Symbols.more_vert).first);
         await tester.pumpAndSettle();
         expect(find.text('Settings'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -222,7 +222,7 @@ void main() {
           'Freshly typed content',
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+        await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
         await tester.pumpAndSettle();
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
