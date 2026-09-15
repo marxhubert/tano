@@ -504,10 +504,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
               // Add first, as requested on the folder page.
               IconButton(
                 icon: const Icon(Symbols.add_notes),
+                tooltip: AppText.tr('add_note'),
                 onPressed: () => _openNote(add: true, note: _newNote()),
               ),
               IconButton(
                 icon: const Icon(Symbols.search),
+                tooltip: AppText.tr('search'),
                 onPressed: _enterSearchMode,
               ),
               const ThemeToggleButton(),

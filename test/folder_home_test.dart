@@ -1606,4 +1606,87 @@ void main() {
 
     expect(find.byType(TanoAppBarTitle), findsOneWidget);
   });
+
+  testWidgets('every icon action carries an accessibility label', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    // Every icon-only action must carry a tooltip, i.e. a semantic label.
+    void expectLabelled() {
+      final List<IconButton> buttons = tester
+          .widgetList<IconButton>(find.byType(IconButton))
+          .toList();
+      expect(buttons, isNotEmpty);
+      for (final IconButton button in buttons) {
+        expect(
+          button.tooltip,
+          isNotNull,
+          reason: 'IconButton without a tooltip: ${button.icon}',
+        );
+      }
+    }
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Home app bar and FAB.
+    expectLabelled();
+
+    // Editor app bar.
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    expectLabelled();
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.pumpAndSettle();
+
+    // Folder app bar.
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+    expectLabelled();
+  });
+
+  testWidgets('the interface survives a large system text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 }

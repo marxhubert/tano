@@ -90,6 +90,7 @@ class _SubMenuLayout extends StatelessWidget {
 class _EditorAction extends StatelessWidget {
   const _EditorAction({
     required this.icon,
+    required this.label,
     this.onTap,
     this.isActive = false,
     this.color,
@@ -97,6 +98,10 @@ class _EditorAction extends StatelessWidget {
   });
 
   final IconData icon;
+
+  /// Accessibility label (also the tooltip) of the icon-only action.
+  final String label;
+
   final VoidCallback? onTap;
   final bool isActive;
   final Color? color;
@@ -115,6 +120,7 @@ class _EditorAction extends StatelessWidget {
     // its own zone.
     final Widget button = IconButton(
       icon: Icon(icon, color: iconColor, size: size),
+      tooltip: label,
       onPressed: onTap,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
