@@ -16,6 +16,7 @@ import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -321,6 +322,14 @@ class _EditNoteState extends State<EditNote>
     await _viewModel.persistSavedNote(note);
     if (mounted) setState(() {});
   }
+
+  /// The thin "|" separating two metadata values.
+  Widget _metadataSeparator(BuildContext context) => Text(
+        '|',
+        style: metadataLineStyle(
+          context,
+        ).copyWith(color: mutedTextColor(context).withValues(alpha: 0.3)),
+      );
 
   void _getNoteContentLength(String content) {
     setState(() {
@@ -792,116 +801,46 @@ class _EditNoteState extends State<EditNote>
                   sliver: SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              alignment: WrapAlignment.start,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 8.0,
-                              runSpacing: 4.0,
-                              children: [
-                                if (_viewModel.isLocked) ...[
-                                  Icon(
-                                    Icons.lock_outline,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    '|',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context)
-                                          .withValues(alpha: 0.3),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                                Text(
-                                  formatNoteDate(_viewModel.selectedDate.toString()),
-                                  style: TextStyle(
-                                    color: mutedTextColor(context),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                                Text(
-                                  '|',
-                                  style: TextStyle(
-                                    color: mutedTextColor(context).withValues(alpha: 0.3),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                                Text(
-                                  '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
-                                  style: TextStyle(
-                                    color: mutedTextColor(context),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                              ],
+                      child: MetadataLine(
+                        leading: Wrap(
+                          alignment: WrapAlignment.start,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8.0,
+                          runSpacing: 4.0,
+                          children: [
+                            if (_viewModel.isLocked) ...[
+                              metadataGlyph(context, Icons.lock_outline),
+                              _metadataSeparator(context),
+                            ],
+                            Text(
+                              formatNoteDate(_viewModel.selectedDate.toString()),
+                              style: metadataLineStyle(context),
                             ),
-                          ),
+                            _metadataSeparator(context),
+                            Text(
+                              '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                              style: metadataLineStyle(context),
+                            ),
+                          ],
+                        ),
+                        trailing: <Widget>[
                           if (contentChecklistCount > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Symbols.check_box,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x$contentChecklistCount',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Symbols.check_box,
+                              'x$contentChecklistCount',
                             ),
                           if (_contentController.linkCount > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Symbols.sticky_note_2,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x${_contentController.linkCount}',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Symbols.sticky_note_2,
+                              'x${_contentController.linkCount}',
                             ),
                           if (_viewModel.attachments.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.attachment,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x${_viewModel.attachments.length}',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Icons.attachment,
+                              'x${_viewModel.attachments.length}',
                             ),
                         ],
                       ),
