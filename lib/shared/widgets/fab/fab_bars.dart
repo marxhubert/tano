@@ -28,6 +28,7 @@ mixin _FabBarsMixin on _FabStateMixin {
     return _buildHorizontalBar(targetWidth, [
       _EditorAction(
         icon: Symbols.create_new_folder,
+        label: AppText.tr('add_folder'),
         onTap: () {
           setState(() => _isManuallyExpanded = false);
           widget.onAddFolder?.call();
@@ -35,6 +36,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.add_notes,
+        label: AppText.tr('add_note'),
         onTap: () {
           setState(() => _isManuallyExpanded = false);
           widget.onAdd?.call();
@@ -42,6 +44,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.arrow_forward_ios,
+        label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 22.0,
         onTap: () => setState(() => _isManuallyExpanded = false),
@@ -61,6 +64,7 @@ mixin _FabBarsMixin on _FabStateMixin {
           color: Colors.white,
           weight: 900.0,
         ),
+        tooltip: AppText.tr('more'),
         onPressed: () => setState(() => _isManuallyExpanded = true),
       );
     }
@@ -68,6 +72,7 @@ mixin _FabBarsMixin on _FabStateMixin {
     return _buildHorizontalBar(targetWidth, [
       _EditorAction(
         icon: Symbols.add_circle,
+        label: AppText.tr('add'),
         // Stay amber while one of the add menu's sub-menus (link) is open.
         isActive: _verticalMenu == FabVerticalMenu.add ||
             _verticalMenu == FabVerticalMenu.link,
@@ -78,6 +83,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.palette,
+        label: AppText.tr('menu_theme'),
         isActive: _verticalMenu == FabVerticalMenu.color,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.color);
@@ -86,6 +92,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.build_circle,
+        label: AppText.tr('more'),
         // Stay amber while the move sub-menu, opened from "more", is shown.
         isActive: _verticalMenu == FabVerticalMenu.more ||
             _verticalMenu == FabVerticalMenu.move,
@@ -96,6 +103,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.arrow_forward_ios,
+        label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 20.0,
         onTap: () => setState(() {
@@ -110,14 +118,17 @@ mixin _FabBarsMixin on _FabStateMixin {
     return _buildHorizontalBar(targetWidth, [
       _EditorAction(
         icon: Symbols.check_circle,
+        label: AppText.tr('select_all'),
         onTap: widget.onSelectAll ?? () {},
       ),
       _EditorAction(
         icon: Symbols.circle,
+        label: AppText.tr('select_none'),
         onTap: widget.onClearSelection ?? () {},
       ),
       _EditorAction(
         icon: Symbols.drive_file_move,
+        label: AppText.tr('option_move'),
         isActive: _verticalMenu == FabVerticalMenu.move,
         // Moving is refused as soon as a folder is selected.
         onTap: widget.canMove
@@ -126,6 +137,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.delete,
+        label: AppText.tr('delete'),
         color: const Color(0xFFFF8A80),
         onTap: widget.canDelete ? (widget.onDelete ?? () {}) : null,
       ),
@@ -161,6 +173,7 @@ mixin _FabBarsMixin on _FabStateMixin {
             if (widget.controller?.text.isNotEmpty ?? false)
               IconButton(
                 icon: const Icon(Symbols.backspace, color: Colors.white),
+                tooltip: AppText.tr('clear'),
                 onPressed: () {
                   widget.onReset?.call();
                 },
@@ -175,6 +188,7 @@ mixin _FabBarsMixin on _FabStateMixin {
     // The "+" expands into the extended bar.
     return IconButton(
       icon: const Icon(Symbols.add_2, color: Colors.white, size: 22.0),
+      tooltip: AppText.tr('add'),
       onPressed: () => setState(() => _isManuallyExpanded = true),
     );
   }
@@ -196,7 +210,12 @@ mixin _FabBarsMixin on _FabStateMixin {
                 padding: const EdgeInsets.only(left: 4.0),
                 child: _buildCounterBox(),
               ),
-              _buildNavButton(Symbols.chevron_left, widget.onFindPrev, navColor),
+              _buildNavButton(
+                Symbols.chevron_left,
+                AppText.tr('previous'),
+                widget.onFindPrev,
+                navColor,
+              ),
             ] else
               Padding(
                 padding: const EdgeInsets.only(left: 8.0),
@@ -241,11 +260,17 @@ mixin _FabBarsMixin on _FabStateMixin {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (hasQuery) ...[
-              _buildNavButton(Symbols.chevron_right, widget.onFindNext, navColor),
+              _buildNavButton(
+                Symbols.chevron_right,
+                AppText.tr('next'),
+                widget.onFindNext,
+                navColor,
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 4.0),
                 child: IconButton(
                   icon: const Icon(Symbols.close, color: Colors.white),
+                  tooltip: AppText.tr('close_button'),
                   onPressed: () => widget.onFindReset?.call(),
                 ),
               ),
@@ -256,14 +281,23 @@ mixin _FabBarsMixin on _FabStateMixin {
     );
   }
 
-  Widget _buildNavButton(IconData icon, VoidCallback? onPressed, Color color) {
-    return SizedBox(
-      width: 44.0,
-      child: Material(
-        color: color,
-        child: InkWell(
-          onTap: onPressed,
-          child: Center(child: Icon(icon, color: Colors.white, size: 28.0)),
+  Widget _buildNavButton(
+    IconData icon,
+    String label,
+    VoidCallback? onPressed,
+    Color color,
+  ) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: SizedBox(
+        width: 44.0,
+        child: Material(
+          color: color,
+          child: InkWell(
+            onTap: onPressed,
+            child: Center(child: Icon(icon, color: Colors.white, size: 28.0)),
+          ),
         ),
       ),
     );

@@ -165,6 +165,7 @@ mixin _FabMenusMixin on _FabStateMixin {
   List<Widget> _buildSortActions() {
     return <Widget>[
       IconButton(
+        tooltip: AppText.tr('sort_by'),
         icon: Icon(
           _sortCriteria == ListSortCriteria.date
               ? Symbols.history_2
@@ -181,6 +182,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         constraints: const BoxConstraints(),
       ),
       IconButton(
+        tooltip: AppText.tr('sort_direction'),
         icon: Icon(
           _isAscending ? Symbols.arrow_downward : Symbols.arrow_upward,
           size: 20,
