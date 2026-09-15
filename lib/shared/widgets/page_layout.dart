@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Places the floating action button flush against the bottom-right corner
@@ -47,7 +48,7 @@ class PageScaffold extends StatefulWidget {
     this.actions,
     this.isHome = false,
     this.alignAppBarTitleLeft = false,
-    this.headerTrailing,
+    this.headerMetadata,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.scaffoldKey,
@@ -71,7 +72,8 @@ class PageScaffold extends StatefulWidget {
   /// slides to the left, right after the back button, instead of staying
   /// centered. Used by the editor while the undo/redo/save actions appear.
   final bool alignAppBarTitleLeft;
-  final Widget? headerTrailing;
+  /// Small metadata printed at the right of the body title line.
+  final String? headerMetadata;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final GlobalKey<ScaffoldState>? scaffoldKey;
@@ -202,24 +204,16 @@ class _PageScaffoldState extends State<PageScaffold> {
       body: CustomScrollView(
         controller: _scrollController,
         slivers: <Widget>[
-          // Big Title in the body
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              widget.titlePaddingLeft ?? appPaddingLarge,
-              appPaddingMedium,
-              appPaddingLarge,
-              0.0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Expanded(
-                    child: widget.titleWidget ?? _buildTitleField(textColor),
-                  ),
-                  if (widget.headerTrailing != null) widget.headerTrailing!,
-                ],
+          // Big title in the body.
+          SliverToBoxAdapter(
+            child: SectionTitleLine(
+              titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
+              metadata: widget.headerMetadata,
+              padding: EdgeInsets.fromLTRB(
+                widget.titlePaddingLeft ?? appPaddingLarge,
+                appPaddingMedium,
+                appPaddingLarge,
+                0.0,
               ),
             ),
           ),

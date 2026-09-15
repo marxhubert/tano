@@ -20,6 +20,7 @@ import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/no_record.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -224,48 +225,43 @@ class HomeState extends State<Home> with RouteAware {
     });
   }
 
-  /// Selection message on the home page: it speaks about notes, folders or
-  /// items depending on what is currently selected.
-  String _selectionMessage() {
-    if (!_viewModel.hasSelection) return AppText.tr('no_item_selected');
+  /// Metadata of the page title line: the folder group when folders exist,
+  /// the notes group otherwise (both groups never share one counter).
+  String get _pageMetadata =>
+      _viewModel.hasFolders
+          ? _groupMetadata(
+              count: _viewModel.selectedFoldersCount,
+              total: _viewModel.foldersCount,
+              noun: 'folder',
+              single: 'single_folder_selected',
+              many: 'folders_selected',
+              all: 'all_folders_selected',
+            )
+          : _notesMetadata;
 
-    final bool notes = _viewModel.hasNoteInSelection;
-    final bool folders = _viewModel.hasFolderInSelection;
-
-    if (notes && folders) {
-      return _selectionCountMessage(
-        count: _viewModel.selectedCount,
-        total: _viewModel.itemsCount,
-        single: 'single_item_selected',
-        many: 'items_selected',
-        all: 'all_items_selected',
+  /// Metadata of the notes group header.
+  String get _notesMetadata => _groupMetadata(
+        count: _viewModel.selectedNotesCount,
+        total: _viewModel.notesCount,
+        noun: 'note',
+        single: 'single_note_selected',
+        many: 'notes_selected',
+        all: 'all_notes_selected',
       );
-    }
-    if (folders) {
-      return _selectionCountMessage(
-        count: _viewModel.selectedFoldersCount,
-        total: _viewModel.foldersCount,
-        single: 'single_folder_selected',
-        many: 'folders_selected',
-        all: 'all_folders_selected',
-      );
-    }
-    return _selectionCountMessage(
-      count: _viewModel.selectedNotesCount,
-      total: _viewModel.notesCount,
-      single: 'single_note_selected',
-      many: 'notes_selected',
-      all: 'all_notes_selected',
-    );
-  }
 
-  String _selectionCountMessage({
+  /// One group's metadata: its own selection wording while selecting, its
+  /// plain count otherwise.
+  String _groupMetadata({
     required int count,
     required int total,
+    required String noun,
     required String single,
     required String many,
     required String all,
   }) {
+    if (!_viewModel.isInSelectionMode || count == 0) {
+      return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
+    }
     if (count > 1) {
       if (count == total) {
         return AppText.tr(all, <String, String>{'count': '$count'});
@@ -403,30 +399,12 @@ class HomeState extends State<Home> with RouteAware {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                AppText.tr('all_notes'),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 24.0,
-                  letterSpacing: -0.41,
-                  color: primaryTextColor(context),
-                ),
-              ),
-            ),
-            Text(
-              '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-              style: TextStyle(
-                color: mutedTextColor(context),
-                fontWeight: FontWeight.w400,
-                fontSize: 13.0,
-              ),
-            ),
-          ],
+        // The content sits in a 12px sliver padding: adding 6 lines the notes
+        // title up with the page title (18px).
+        child: SectionTitleLine(
+          title: AppText.tr('all_notes'),
+          metadata: _notesMetadata,
+          padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
         ),
       ),
     );
@@ -650,31 +628,7 @@ class HomeState extends State<Home> with RouteAware {
           isHome: true,
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerTrailing: _viewModel.isInSelectionMode
-              ? Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      _selectionMessage(),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12.0,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-              : Text(
-                  _viewModel.hasFolders
-                      ? '${_viewModel.folders.length} ${_viewModel.folders.length > 1 ? AppText.tr('folders') : AppText.tr('folder')}'
-                      : '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                  style: TextStyle(
-                    color: mutedTextColor(context),
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13.0,
-                  ),
-                ),
+          headerMetadata: _pageMetadata,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(appPaddingMedium),

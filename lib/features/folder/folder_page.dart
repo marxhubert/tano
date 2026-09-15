@@ -22,6 +22,7 @@ import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -374,63 +375,33 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
 
-  /// Trailing text on the title line, mirroring the home page.
-  Widget? _buildHeaderTrailing(BuildContext context) {
+  /// Metadata on the title line, mirroring the home page: the selection while
+  /// selecting, the result count while searching, the note count otherwise.
+  String? get _headerMetadata {
     if (_selection.isActive) {
-      // Exactly the home page's wording: single, x/y or all selected. While
-      // searching, the total is the number of results.
+      // While searching, the total is the number of results.
       final int count = _selection.count;
       final int total = _visibleNotes.length;
-      final String label = count == 0
-          ? AppText.tr('no_note_selected')
-          : (count > 1
-                ? (count == total
-                      ? AppText.tr('all_notes_selected', <String, String>{
-                          'count': '$count',
-                        })
-                      : AppText.tr('notes_selected', <String, String>{
-                          'count': '$count',
-                          'total': '$total',
-                        }))
-                : AppText.tr('single_note_selected', <String, String>{
-                    'count': '$count',
-                  }));
-      return Flexible(
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontWeight: FontWeight.w400,
-              fontSize: 12.0,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      );
+      if (count == 0) return AppText.tr('no_note_selected');
+      if (count > 1 && count == total) {
+        return AppText.tr('all_notes_selected', <String, String>{
+          'count': '$count',
+        });
+      }
+      if (count > 1) {
+        return AppText.tr('notes_selected', <String, String>{
+          'count': '$count',
+          'total': '$total',
+        });
+      }
+      return AppText.tr('single_note_selected', <String, String>{
+        'count': '$count',
+      });
     }
-    // While searching, show how many notes match.
-    if (_resultsVisible) {
-      return Text(
-        _noteCountLabel(_visibleNotes.length),
-        style: TextStyle(
-          color: mutedTextColor(context),
-          fontWeight: FontWeight.w400,
-          fontSize: 13.0,
-        ),
-      );
-    }
-    // With no flag to show, the count goes back to the right of the title.
+    if (_resultsVisible) return _noteCountLabel(_visibleNotes.length);
+    // With a flag line below, the count only lives there.
     if (_hasFolderFlags) return null;
-    return Text(
-      _noteCountLabel(_notes.length),
-      style: TextStyle(
-        color: mutedTextColor(context),
-        fontWeight: FontWeight.w400,
-        fontSize: 13.0,
-      ),
-    );
+    return _noteCountLabel(_notes.length);
   }
 
   /// Whether the folder has any flag worth a dedicated metadata line.
@@ -451,40 +422,24 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             top: appPaddingMedium,
             bottom: 6.0,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  '${_notes.length} ${_notes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                  style: TextStyle(
-                    color: mutedTextColor(context),
-                    fontSize: 11.0,
-                  ),
-                ),
-              ),
-              if (_folder.isLocked) _metadataIcon(Icons.lock_outline, context),
+          child: MetadataLine(
+            leading: Text(
+              _noteCountLabel(_notes.length),
+              style: metadataLineStyle(context),
+            ),
+            trailing: <Widget>[
+              if (_folder.isLocked)
+                metadataGlyph(context, Icons.lock_outline),
               if (_folder.important)
-                _metadataIcon(Icons.bookmark, context, color: tanoAmber),
+                metadataGlyph(
+                  context,
+                  Symbols.label_important,
+                  color: tanoAmber,
+                  fill: 1.0,
+                ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// One flag icon, spaced from the one before it.
-  Widget _metadataIcon(
-    IconData icon,
-    BuildContext context, {
-    Color? color,
-    double size = 12.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0),
-      child: Icon(
-        icon,
-        size: size,
-        color: color ?? mutedTextColor(context),
       ),
     );
   }
@@ -510,7 +465,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       title: _resultsVisible
           ? AppText.tr('search_results')
           : _folder.name,
-      headerTrailing: _buildHeaderTrailing(context),
+      headerMetadata: _headerMetadata,
       titleWidget: _isEditingTitle
           ? TapRegion(
               onTapOutside: (_) => _exitTitleEdit(),
