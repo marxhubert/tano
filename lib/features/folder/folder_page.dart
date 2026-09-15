@@ -503,7 +503,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           : <Widget>[
               // Add first, as requested on the folder page.
               IconButton(
-                icon: const Icon(Symbols.add_circle),
+                icon: const Icon(Symbols.add_notes),
                 onPressed: () => _openNote(add: true, note: _newNote()),
               ),
               IconButton(

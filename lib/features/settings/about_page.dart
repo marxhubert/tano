@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -90,31 +91,9 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
       ),
     );
 
-    final Widget appBarTanoTitle = RichText(
-      text: TextSpan(
-        text: AppConfig.appName,
-        style: TextStyle(
-          fontWeight: FontWeight.w900,
-          color: textColor,
-          fontSize: 17.0,
-          letterSpacing: -0.41,
-        ),
-        children: <TextSpan>[
-          TextSpan(
-            text: AppConfig.appNameSuffix,
-            style: const TextStyle(
-              fontWeight: FontWeight.w400,
-              fontSize: 17.0,
-              letterSpacing: -0.41,
-            ),
-          ),
-        ],
-      ),
-    );
-
     return PageScaffold(
       title: 'About',
-      appBarTitleWidget: appBarTanoTitle,
+      appBarTitleWidget: const TanoAppBarTitle(),
       titleWidget: Row(
         children: [
           const SizedBox(
