@@ -1,6 +1,6 @@
-# 10 — Dossiers et organisation
+# Dossiers
 
-> Statut : **validé**, implémentation en cours (branche `feature/folders`).
+> Statut : **implémenté**.
 
 Ce document fait autorité sur l'organisation des notes en dossiers.
 
