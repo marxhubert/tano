@@ -7,6 +7,7 @@ import 'widgets/sorting_section.dart';
 import 'widgets/language_section.dart';
 import 'widgets/about_section.dart';
 import 'widgets/data_management_section.dart';
+import 'widgets/settings_widgets.dart';
 
 import 'package:tano/shared/config/l10n.dart';
 
@@ -45,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const LanguageSection(),
                 AboutSection(viewModel: _viewModel),
                 DataManagementSection(viewModel: _viewModel),
-                const SizedBox(height: 24.0),
+                const SizedBox(height: SettingsGroup.topSpacing),
               ]),
             ),
           ),
