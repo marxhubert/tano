@@ -51,6 +51,7 @@ class _TrashPageState extends State<TrashPage> {
           actions: [
             if (!_viewModel.isEmpty)
               IconButton(
+                tooltip: AppText.tr('empty_trash'),
                 icon: const Icon(
                   Icons.delete_sweep, 
                   color: Color(0xFFFF8A80),

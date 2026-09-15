@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -21,6 +22,7 @@ class ThemeToggleButton extends StatelessWidget {
 
           return IconButton(
             visualDensity: VisualDensity.compact,
+            tooltip: AppText.tr('toggle_theme'),
             // Light mode shows the moon, dark mode the sun: switching is
             // explicit about what comes next.
             icon: Icon(

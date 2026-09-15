@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -175,6 +176,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                   size: 20.0,
                   color: textColor,
                 ),
+                tooltip: AppText.tr('back'),
                 onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
               )
             : null,

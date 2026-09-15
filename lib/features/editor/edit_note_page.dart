@@ -763,16 +763,19 @@ class _EditNoteState extends State<EditNote>
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Symbols.undo),
+                      tooltip: AppText.tr('undo'),
                       onPressed: _canUndo ? _undo : null,
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Symbols.redo),
+                      tooltip: AppText.tr('redo'),
                       onPressed: _canRedo ? _redo : null,
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Symbols.save, size: 21.0),
+                      tooltip: AppText.tr('save'),
                       onPressed: isDirty ? _save : null,
                     ),
                   ] else
@@ -1110,6 +1113,7 @@ class _AttachmentRow extends StatelessWidget {
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
+            tooltip: AppText.tr('delete'),
             icon: Icon(
               Icons.close,
               size: 16.0,

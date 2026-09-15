@@ -447,6 +447,7 @@ class HomeState extends State<Home> with RouteAware {
     return <Widget>[
       IconButton(
         icon: const Icon(Symbols.search),
+        tooltip: AppText.tr('search'),
         onPressed: _enterSearchMode,
       ),
       const ThemeToggleButton(),
@@ -459,6 +460,7 @@ class HomeState extends State<Home> with RouteAware {
     if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
       return IconButton(
         icon: const Icon(Symbols.more_vert, weight: 900.0),
+        tooltip: AppText.tr('more'),
         onPressed: () => _showCupertinoActionSheet(),
       );
     }
