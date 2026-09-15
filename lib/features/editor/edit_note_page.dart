@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
@@ -10,13 +10,14 @@ import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
-import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/action.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
+import 'package:tano/shared/widgets/manageable_cover.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -62,7 +63,6 @@ class _EditNoteState extends State<EditNote>
   /// Set while the toggle handler intentionally unfocuses the field, so the
   /// focus-loss cleanup does not run for that spurious focus change.
   bool _suppressFocusLossCleanup = false;
-  bool _showRemoveCoverButton = false;
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
@@ -312,26 +312,10 @@ class _EditNoteState extends State<EditNote>
     );
   }
 
-  /// Moves the note to another folder, or back home.
-  Future<void> _moveNote() async {
-    final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders = repository is FoldersRepository
-        ? await (repository as FoldersRepository).loadFolders()
-        : const <Folder>[];
+  /// Moves the note to [folderId], or back home when null.
+  Future<void> _moveTo(String? folderId) async {
     if (!mounted) return;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          if (folder.id != _viewModel.folderId)
-            AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
-    _fabKey.currentState?.closeVerticalMenu();
-    _viewModel.folderId = target.isEmpty ? null : target;
+    _viewModel.folderId = folderId;
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
@@ -339,6 +323,14 @@ class _EditNoteState extends State<EditNote>
     await _viewModel.persistSavedNote(note);
     if (mounted) setState(() {});
   }
+
+  /// The thin "|" separating two metadata values.
+  Widget _metadataSeparator(BuildContext context) => Text(
+        '|',
+        style: metadataLineStyle(
+          context,
+        ).copyWith(color: mutedTextColor(context).withValues(alpha: 0.3)),
+      );
 
   void _getNoteContentLength(String content) {
     setState(() {
@@ -484,7 +476,7 @@ class _EditNoteState extends State<EditNote>
     // another locked note must not prompt again.
     bool authenticated = widget.authenticated;
     if (targetNote.isLocked && !authenticated) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;
@@ -733,11 +725,6 @@ class _EditNoteState extends State<EditNote>
             onTap: () {
               FocusScope.of(context).unfocus();
               _fabKey.currentState?.closeVerticalMenu();
-              if (_showRemoveCoverButton) {
-                setState(() {
-                  _showRemoveCoverButton = false;
-                });
-              }
             },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
@@ -745,7 +732,6 @@ class _EditNoteState extends State<EditNote>
               // Once the note is scrolled, show its title in the app bar and
               // slide it to the left while the undo/redo/save actions appear.
               alignAppBarTitleLeft: _hasEdits,
-              titlePaddingLeft: 12.0,
               title:
                   widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
               titleController: _titleController,
@@ -766,161 +752,84 @@ class _EditNoteState extends State<EditNote>
                 }
               },
               actions: [
-                if (_hasEdits) ...[
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.undo),
-                    onPressed: _canUndo ? _undo : null,
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.redo),
-                    onPressed: _canRedo ? _redo : null,
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.save, size: 21.0),
-                    onPressed: isDirty ? _save : null,
-                  ),
-                ],
-                const ThemeToggleButton(),
+                // In find mode only "Cancel" is shown: every other app-bar
+                // action (edits, theme toggle) is hidden.
                 if (_isFindMode)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: TextButton(
-                      onPressed: _exitFindMode,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        AppText.tr('cancel'),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 17.0,
-                          color: tanoTeal,
-                        ),
-                      ),
+                  CancelButton(onPressed: _exitFindMode)
+                else ...[
+                  // While undo/redo/save are visible, the theme toggle steps
+                  // aside to leave them the room.
+                  if (_hasEdits) ...[
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Symbols.undo),
+                      tooltip: AppText.tr('undo'),
+                      onPressed: _canUndo ? _undo : null,
                     ),
-                  ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Symbols.redo),
+                      tooltip: AppText.tr('redo'),
+                      onPressed: _canRedo ? _redo : null,
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Symbols.save, size: 21.0),
+                      tooltip: AppText.tr('save'),
+                      onPressed: isDirty ? _save : null,
+                    ),
+                  ] else
+                    const ThemeToggleButton(),
+                ],
               ],
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: appPaddingLarge,
+                  ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              alignment: WrapAlignment.start,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 8.0,
-                              runSpacing: 4.0,
-                              children: [
-                                if (_viewModel.isLocked) ...[
-                                  Icon(
-                                    Icons.lock_outline,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    '|',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context)
-                                          .withValues(alpha: 0.3),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                                Text(
-                                  formatNoteDate(_viewModel.selectedDate.toString()),
-                                  style: TextStyle(
-                                    color: mutedTextColor(context),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                                Text(
-                                  '|',
-                                  style: TextStyle(
-                                    color: mutedTextColor(context).withValues(alpha: 0.3),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                                Text(
-                                  '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
-                                  style: TextStyle(
-                                    color: mutedTextColor(context),
-                                    fontSize: 11.0,
-                                  ),
-                                ),
-                              ],
+                      child: MetadataLine(
+                        leading: Wrap(
+                          alignment: WrapAlignment.start,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8.0,
+                          runSpacing: 4.0,
+                          children: [
+                            if (_viewModel.isLocked) ...[
+                              metadataGlyph(context, Icons.lock_outline),
+                              _metadataSeparator(context),
+                            ],
+                            Text(
+                              formatNoteDate(_viewModel.selectedDate.toString()),
+                              style: metadataLineStyle(context),
                             ),
-                          ),
+                            _metadataSeparator(context),
+                            Text(
+                              '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                              style: metadataLineStyle(context),
+                            ),
+                          ],
+                        ),
+                        trailing: <Widget>[
                           if (contentChecklistCount > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.done_all,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x$contentChecklistCount',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Symbols.check_box,
+                              'x$contentChecklistCount',
                             ),
                           if (_contentController.linkCount > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.sticky_note_2,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x${_contentController.linkCount}',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Symbols.sticky_note_2,
+                              'x${_contentController.linkCount}',
                             ),
                           if (_viewModel.attachments.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.attachment,
-                                    size: 12.0,
-                                    color: mutedTextColor(context),
-                                  ),
-                                  Text(
-                                    'x${_viewModel.attachments.length}',
-                                    style: TextStyle(
-                                      color: mutedTextColor(context),
-                                      fontSize: 11.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            metadataItem(
+                              context,
+                              Icons.attachment,
+                              'x${_viewModel.attachments.length}',
                             ),
                         ],
                       ),
@@ -929,80 +838,17 @@ class _EditNoteState extends State<EditNote>
                 ),
                 if (_viewModel.coverImage != null)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: FutureBuilder<String>(
-                        future: _attachmentsStore.materialize(
-                          _viewModel.coverImage!,
-                        ),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox.shrink();
-                          return Stack(
-                            children: [
-                              GestureDetector(
-                                onLongPress: () {
-                                  setState(() {
-                                    _showRemoveCoverButton = !_showRemoveCoverButton;
-                                  });
-                                },
-                                child: Stack(
-                                  children: [
-                                    Image.file(
-                                      File(snapshot.data!),
-                                      width: double.infinity,
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                    if (isDark)
-                                      Positioned.fill(
-                                        child: Container(
-                                          color: Colors.black.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (_showRemoveCoverButton)
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final bool? confirm = await getConfirmation(
-                                        context: context,
-                                        actionTitle: AppText.tr('delete_photo'),
-                                        action: AppText.tr('delete'),
-                                      );
-                                      if (confirm == true) {
-                                        _removeCoverImage();
-                                        setState(() {
-                                          _showRemoveCoverButton = false;
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 4,
-                                            offset: Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                        size: 24.0,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
+                    child: ManageableCover(
+                      name: _viewModel.coverImage!,
+                      // Full image, full width: the whole picture, no crop.
+                      fit: BoxFit.fitWidth,
+                      lightDimAlpha: 0.0,
+                      // Tighter gap above, under the metadata line.
+                      padding: const EdgeInsets.only(
+                        top: appPaddingSmall,
+                        bottom: appPaddingMedium,
                       ),
+                      onRemove: _removeCoverImage,
                     ),
                   ),
                 SliverPadding(
@@ -1092,11 +938,11 @@ class _EditNoteState extends State<EditNote>
                 key: _fabKey,
                 isEditorMode: true,
                 isAddMode: widget.add,
-                isPinned: _viewModel.isPinned,
                 isImportant: _viewModel.important,
                 isLocked: _viewModel.isLocked,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
+                currentFolderId: _viewModel.folderId,
                 isFindMode: _isFindMode,
                 findCurrent: _findCurrent,
                 findTotal: _findTotal,
@@ -1161,13 +1007,6 @@ class _EditNoteState extends State<EditNote>
                   _fabKey.currentState?.closeVerticalMenu();
                   _addAttachment();
                 },
-                onPinSelected: () async {
-                  _viewModel.togglePin();
-                  await _viewModel.autoSaveThemeOrBookmark(
-                    title: _titleController.text,
-                    content: _contentController.text,
-                  );
-                },
                 onImportantSelected: () async {
                   _viewModel.toggleImportant();
                   await _viewModel.autoSaveThemeOrBookmark(
@@ -1176,9 +1015,7 @@ class _EditNoteState extends State<EditNote>
                   );
                 },
                 onFindSelected: _enterFindMode,
-                onMoveSelected: _moveNote,
-                onCollaboratorsSelected: () {}, // TODO: Implement Collaborators
-                onShareSelected: () {}, // TODO: Implement Share
+                onMoveTo: _moveTo,
                 onLockSelected: () async {
                   // Locking takes effect immediately (there is no prompt).
                   // Unlocking shows the system prompt, so close the keyboard
@@ -1208,8 +1045,8 @@ class _EditNoteState extends State<EditNote>
                   // user can retry.
                   if (result == LockToggleResult.cancelled) return;
 
-                  // Persist silently, exactly like pin and bookmark: the lock
-                  // is effective immediately, no explicit save is needed.
+                  // Persist silently, exactly like the bookmark: the lock is
+                  // effective immediately, no explicit save is needed.
                   await _viewModel.autoSaveThemeOrBookmark(
                     title: _titleController.text,
                     content: _contentController.text,
@@ -1276,6 +1113,7 @@ class _AttachmentRow extends StatelessWidget {
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
+            tooltip: AppText.tr('delete'),
             icon: Icon(
               Icons.close,
               size: 16.0,

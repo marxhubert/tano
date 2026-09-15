@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/note.dart';
@@ -54,13 +55,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isPinned: !notes[index].isPinned);
-    }
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
@@ -142,10 +136,10 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    // The checklist counter appears (done_all icon + "x1"), no links.
-    expect(find.byIcon(Icons.done_all), findsOneWidget);
+    // The checklist counter appears (check_box icon + "x1"), no links.
+    expect(find.byIcon(Symbols.check_box), findsOneWidget);
     expect(find.text('x1'), findsOneWidget);
-    expect(find.byIcon(Icons.sticky_note_2), findsNothing);
+    expect(find.byIcon(Symbols.sticky_note_2), findsNothing);
 
     // Make the note dirty: undo/redo/save appear, but the app bar title is
     // still hidden because the note has not been scrolled yet.
@@ -158,7 +152,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.undo), findsOneWidget);
+    expect(find.byIcon(Symbols.undo), findsOneWidget);
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Hello')),
       findsNothing,
@@ -201,7 +195,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Open the editor FAB "add" menu and pick Checklist (no focus yet).
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -209,7 +203,7 @@ void main() {
     expect(_contentText(tester), 'World\n## \n- [ ] ');
 
     // Saving removes the still-empty checklist (and its title line).
-    await tester.tap(find.byIcon(Icons.save));
+    await tester.tap(find.byIcon(Symbols.save));
     await tester.pumpAndSettle();
 
     expect(_contentText(tester), 'World');
@@ -237,7 +231,7 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -246,7 +240,7 @@ void main() {
 
     // Leaving cleans the empty checklist first, so the note is not dirty
     // anymore and no confirmation dialog appears.
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
@@ -265,17 +259,17 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Create a new note: the home "+" opens the add menu.
-    await tester.tap(find.byIcon(Icons.add));
+    // Create a new note: the home "+" expands the FAB.
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.tap(find.byIcon(Symbols.add_notes));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
 
     // Insert a checklist through the editor FAB (collapsed in add mode).
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -323,13 +317,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Create a new note and insert a checklist.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.tap(find.byIcon(Symbols.add_notes));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -390,5 +384,43 @@ void main() {
 
     // The info-line counter shows the attachment count (last position).
     expect(find.text('x2'), findsOneWidget);
+  });
+
+  testWidgets('the add action stays white inside the link sub-menu',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+      ),
+      Note(
+        id: '2',
+        title: 'Other',
+        content: 'x',
+        date: '2026-08-13 10:00:00.000',
+      ),
+    ]));
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Hello'));
+    await tester.pumpAndSettle();
+
+    Icon addIcon() => tester.widget<Icon>(find.byIcon(Symbols.add_circle));
+
+    // Opening the add menu keeps the glyph plain white.
+    await tester.tap(find.byIcon(Symbols.add_circle));
+    await tester.pumpAndSettle();
+    expect(addIcon().color, Colors.white);
+
+    // Its link option opens a second-degree menu: the action stays white.
+    await tester.tap(find.byIcon(Symbols.sticky_note_2));
+    await tester.pumpAndSettle();
+    expect(find.text('Other'), findsOneWidget);
+    expect(addIcon().color, Colors.white);
   });
 }

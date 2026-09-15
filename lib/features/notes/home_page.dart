@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
@@ -7,7 +8,8 @@ import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -19,6 +21,7 @@ import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/no_record.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -41,6 +44,7 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> with RouteAware {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
+  final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
@@ -96,6 +100,11 @@ class HomeState extends State<Home> with RouteAware {
   @override
   void didPushNext() {
     ScaffoldMessenger.of(context).clearSnackBars();
+    // Fold the FAB once Home is fully covered, so it is already reduced when
+    // the user comes back, with no visible collapse during the push.
+    Future<void>.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _fabKey.currentState?.collapse();
+    });
   }
 
   void _onViewModelChanged() {
@@ -151,7 +160,7 @@ class HomeState extends State<Home> with RouteAware {
     bool authenticated = false;
     // A locked note filed in a locked folder does not prompt again.
     if (_viewModel.isNoteEffectivelyLocked(note)) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       // The system prompt is awaited: the widget may be gone by now.
@@ -217,48 +226,43 @@ class HomeState extends State<Home> with RouteAware {
     });
   }
 
-  /// Selection message on the home page: it speaks about notes, folders or
-  /// items depending on what is currently selected.
-  String _selectionMessage() {
-    if (!_viewModel.hasSelection) return AppText.tr('no_item_selected');
+  /// Metadata of the page title line: the folder group when folders exist,
+  /// the notes group otherwise (both groups never share one counter).
+  String get _pageMetadata =>
+      _viewModel.hasFolders
+          ? _groupMetadata(
+              count: _viewModel.selectedFoldersCount,
+              total: _viewModel.foldersCount,
+              noun: 'folder',
+              single: 'single_folder_selected',
+              many: 'folders_selected',
+              all: 'all_folders_selected',
+            )
+          : _notesMetadata;
 
-    final bool notes = _viewModel.hasNoteInSelection;
-    final bool folders = _viewModel.hasFolderInSelection;
-
-    if (notes && folders) {
-      return _selectionCountMessage(
-        count: _viewModel.selectedCount,
-        total: _viewModel.itemsCount,
-        single: 'single_item_selected',
-        many: 'items_selected',
-        all: 'all_items_selected',
+  /// Metadata of the notes group header.
+  String get _notesMetadata => _groupMetadata(
+        count: _viewModel.selectedNotesCount,
+        total: _viewModel.notesCount,
+        noun: 'note',
+        single: 'single_note_selected',
+        many: 'notes_selected',
+        all: 'all_notes_selected',
       );
-    }
-    if (folders) {
-      return _selectionCountMessage(
-        count: _viewModel.selectedFoldersCount,
-        total: _viewModel.foldersCount,
-        single: 'single_folder_selected',
-        many: 'folders_selected',
-        all: 'all_folders_selected',
-      );
-    }
-    return _selectionCountMessage(
-      count: _viewModel.selectedNotesCount,
-      total: _viewModel.notesCount,
-      single: 'single_note_selected',
-      many: 'notes_selected',
-      all: 'all_notes_selected',
-    );
-  }
 
-  String _selectionCountMessage({
+  /// One group's metadata: its own selection wording while selecting, its
+  /// plain count otherwise.
+  String _groupMetadata({
     required int count,
     required int total,
+    required String noun,
     required String single,
     required String many,
     required String all,
   }) {
+    if (!_viewModel.isInSelectionMode || count == 0) {
+      return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
+    }
     if (count > 1) {
       if (count == total) {
         return AppText.tr(all, <String, String>{'count': '$count'});
@@ -298,85 +302,15 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Future<void> _promptAndCreateFolder() async {
-    final TextEditingController controller = TextEditingController();
-    final bool isApple = Theme.of(context).platform == TargetPlatform.iOS ||
-        Theme.of(context).platform == TargetPlatform.macOS;
-
-    final String? name = isApple
-        ? await showCupertinoDialog<String>(
-            context: context,
-            builder: (BuildContext context) => CupertinoAlertDialog(
-              title: Text(AppText.tr('add_folder')),
-              content: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: CupertinoTextField(
-                  controller: controller,
-                  autofocus: true,
-                  maxLength: 54,
-                  placeholder: AppText.tr('folder_name'),
-                  padding: const EdgeInsets.all(8.0),
-                ),
-              ),
-              actions: <Widget>[
-                CupertinoDialogAction(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppText.tr('cancel')),
-                ),
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  onPressed: () => Navigator.pop(context, controller.text),
-                  child: Text(AppText.tr('save')),
-                ),
-              ],
-            ),
-          )
-        : await showDialog<String>(
-            context: context,
-            builder: (BuildContext context) => AlertDialog(
-              title: Text(AppText.tr('add_folder')),
-              content: TextField(
-                controller: controller,
-                autofocus: true,
-                maxLength: 54,
-                decoration: InputDecoration(
-                  labelText: AppText.tr('folder_name'),
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppText.tr('cancel')),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, controller.text),
-                  child: Text(AppText.tr('save')),
-                ),
-              ],
-            ),
-          );
+    final String? name = await showAdaptivePrompt(
+      context: context,
+      title: AppText.tr('add_folder'),
+      hint: AppText.tr('folder_name'),
+      maxLength: 54,
+    );
 
     if (name == null || !mounted) return;
     await _viewModel.addFolder(name);
-  }
-
-  /// Moves the selected notes into a folder (or unfiles them).
-  Future<void> _moveSelected() async {
-    if (_viewModel.hasFolderInSelection) {
-      showAdaptiveNotice(context, AppText.tr('move_folders_error'));
-      return;
-    }
-    final List<Folder> folders = _viewModel.folders;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
-    await _viewModel.moveSelectedTo(target.isEmpty ? null : target);
   }
 
   void _showUndoSnackBar() {
@@ -466,30 +400,12 @@ class HomeState extends State<Home> with RouteAware {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                AppText.tr('all_notes'),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 24.0,
-                  letterSpacing: -0.41,
-                  color: primaryTextColor(context),
-                ),
-              ),
-            ),
-            Text(
-              '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-              style: TextStyle(
-                color: mutedTextColor(context),
-                fontWeight: FontWeight.w400,
-                fontSize: 13.0,
-              ),
-            ),
-          ],
+        // The content sits in a 12px sliver padding: adding 6 lines the notes
+        // title up with the page title (18px).
+        child: SectionTitleLine(
+          title: AppText.tr('all_notes'),
+          metadata: _notesMetadata,
+          padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
         ),
       ),
     );
@@ -499,7 +415,7 @@ class HomeState extends State<Home> with RouteAware {
     // Opening a folder leaves the search: coming back shows the whole list.
     if (_isSearchMode) _exitSearchMode();
     if (folder.isLocked) {
-      final bool authenticated = await AuthService.instance.authenticate(
+      final bool authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;
@@ -523,54 +439,15 @@ class HomeState extends State<Home> with RouteAware {
 
   List<Widget>? _buildAppBarActions() {
     if (_viewModel.isInSelectionMode) {
-      return <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 12.0),
-          child: TextButton(
-            onPressed: _viewModel.exitSelectionMode,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              AppText.tr('cancel'),
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 17.0,
-                color: tanoTeal,
-              ),
-            ),
-          ),
-        ),
-      ];
+      return <Widget>[CancelButton(onPressed: _viewModel.exitSelectionMode)];
     }
     if (_isSearchMode) {
-      return <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 12.0),
-          child: TextButton(
-            onPressed: _exitSearchMode,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              AppText.tr('cancel'),
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 17.0,
-                color: tanoTeal,
-              ),
-            ),
-          ),
-        ),
-      ];
+      return <Widget>[CancelButton(onPressed: _exitSearchMode)];
     }
     return <Widget>[
       IconButton(
-        icon: const Icon(Icons.search),
+        icon: const Icon(Symbols.search),
+        tooltip: AppText.tr('search'),
         onPressed: _enterSearchMode,
       ),
       const ThemeToggleButton(),
@@ -582,13 +459,14 @@ class HomeState extends State<Home> with RouteAware {
     final ThemeData theme = Theme.of(context);
     if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
       return IconButton(
-        icon: const Icon(Icons.more_vert),
+        icon: const Icon(Symbols.more_vert, weight: 900.0),
+        tooltip: AppText.tr('more'),
         onPressed: () => _showCupertinoActionSheet(),
       );
     }
 
     return PopupMenuButton<PopupItem>(
-      icon: const Icon(Icons.more_vert),
+      icon: const Icon(Symbols.more_vert, weight: 900.0),
       offset: const Offset(0, 56),
       elevation: 4.0,
       constraints: const BoxConstraints(minWidth: 160.0),
@@ -711,33 +589,11 @@ class HomeState extends State<Home> with RouteAware {
         return PageScaffold(
           title: AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
+          // Scrolled in, the reduced title is the app's name.
+          appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerTrailing: _viewModel.isInSelectionMode
-              ? Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      _selectionMessage(),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12.0,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-              : Text(
-                  _viewModel.hasFolders
-                      ? '${_viewModel.folders.length} ${_viewModel.folders.length > 1 ? AppText.tr('folders') : AppText.tr('folder')}'
-                      : '${_viewModel.notesCount} ${_viewModel.notesCount > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                  style: TextStyle(
-                    color: mutedTextColor(context),
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13.0,
-                  ),
-                ),
+          headerMetadata: _pageMetadata,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(appPaddingMedium),
@@ -746,9 +602,14 @@ class HomeState extends State<Home> with RouteAware {
           ],
           floatingActionButtonLocation: const FlushEndFabLocation(),
           floatingActionButton: AppFab(
+            key: _fabKey,
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
-            canMove: !_viewModel.hasFolderInSelection,
+            // Moving needs a selection and never applies to a folder.
+            canMove: _viewModel.hasSelection &&
+                !_viewModel.hasFolderInSelection,
+            // Deleting needs a selection too.
+            canDelete: _viewModel.hasSelection,
             controller: _searchController,
             focusNode: _searchFocusNode,
             onAdd: () {
@@ -781,7 +642,7 @@ class HomeState extends State<Home> with RouteAware {
                 }
               }
             },
-            onMoveSelected: _moveSelected,
+            onMoveTo: _viewModel.moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

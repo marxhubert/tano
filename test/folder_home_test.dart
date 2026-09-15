@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -14,12 +16,23 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
-import 'package:tano/shared/widgets/note_card.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/page_header.dart';
+import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/folder_card.dart';
+
+/// Registers the app-wide authentication service, replacing any previous one.
+void _registerAuth(AuthService service) {
+  if (getIt.isRegistered<AuthService>()) {
+    getIt.unregister<AuthService>();
+  }
+  getIt.registerSingleton<AuthService>(service);
+}
 
 class _Repo implements NotesRepository, FoldersRepository {
   _Repo({required this.notes, required this.folders});
@@ -54,8 +67,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> restoreNote(String id) async {}
   @override
-  Future<void> togglePin(String id) async {}
-  @override
   Future<void> toggleLock(String id, {String? password}) async {}
   @override
   Future<void> deleteNotePermanently(String id) async {}
@@ -78,8 +89,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> trashFolder(String id) async {}
   @override
-  Future<void> toggleFolderPin(String id) async {}
-  @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
 
@@ -100,6 +109,14 @@ class _FakeAuth extends AuthService {
   }
 }
 
+Finder _noteCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+    );
+
+Finder _folderCards() => find.byWidgetPredicate(
+      (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+    );
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -114,6 +131,9 @@ void main() {
     );
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
+    }
+    if (!getIt.isRegistered<AttachmentsStore>()) {
+      getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
     }
   });
 
@@ -143,7 +163,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My folders'), findsWidgets);
-    expect(find.byType(FolderCard), findsOneWidget);
+    expect(_folderCards(), findsOneWidget);
     expect(find.text('Perso'), findsOneWidget);
     // The filed note is not in the notes group.
     expect(find.text('Free note'), findsOneWidget);
@@ -160,9 +180,9 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.create_new_folder));
+    await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Perso');
     await tester.tap(find.text('Save'));
@@ -172,7 +192,7 @@ void main() {
     expect(repo.folders.single.name, 'Perso');
   });
 
-  testWidgets('tapping elsewhere folds the home add menu back to "+"', (
+  testWidgets('tapping elsewhere folds the home FAB extended bar back to "+"', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -183,18 +203,45 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.create_new_folder), findsOneWidget);
-    expect(find.byIcon(Icons.note_add), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_notes), findsOneWidget);
 
     // Tapping on the page background folds the FAB back.
     await tester.tapAt(const Offset(20.0, 200.0));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
-    expect(find.byIcon(Icons.create_new_folder), findsNothing);
-    expect(find.byIcon(Icons.note_add), findsNothing);
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+    expect(find.byIcon(Symbols.add_notes), findsNothing);
+  });
+
+  testWidgets('the home FAB reduce chevron folds the extended bar', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(notes: <Note>[], folders: <Folder>[]),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.add_2));
+    await tester.pumpAndSettle();
+
+    // Extended bar: two creation actions plus the reduce chevron.
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_notes), findsOneWidget);
+    expect(find.byIcon(Symbols.arrow_forward_ios), findsOneWidget);
+
+    await tester.tap(find.byIcon(Symbols.arrow_forward_ios));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+    expect(find.byIcon(Symbols.add_notes), findsNothing);
   });
 
   testWidgets('without folders the page stays "My notes"', (tester) async {
@@ -212,7 +259,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My notes'), findsWidgets);
-    expect(find.byType(FolderCard), findsNothing);
+    expect(_folderCards(), findsNothing);
   });
 
   testWidgets('opening a folder shows its note count', (
@@ -246,7 +293,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
@@ -269,13 +316,13 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsOneWidget);
@@ -302,13 +349,13 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -335,7 +382,7 @@ void main() {
     expect(repo.folders.single.name, 'Travail');
   });
 
-  testWidgets('tapping outside folds the folder FAB menu back', (
+  testWidgets('tapping outside closes the folder FAB menu and collapses it', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -351,21 +398,142 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
 
     await tester.tapAt(const Offset(20.0, 80.0));
     await tester.pumpAndSettle();
 
+    // Tap outside closes the menu first, then folds the FAB back to its
+    // reduced (circular) form.
     expect(find.text('Edit'), findsNothing);
-    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+  });
+
+  testWidgets('tapping the theme toggle keeps the folder FAB menu open', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // Expand the FAB and open its more menu.
+    await tester.tap(find.byIcon(Symbols.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+
+    // Toggling the theme from the app bar must not dismiss the FAB menu.
+    await tester.tap(find.byIcon(Symbols.dark_mode));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsOneWidget);
+  });
+
+  testWidgets('opening a note keeps the home FAB extended until the page changes',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Open the home FAB.
+    await tester.tap(find.byIcon(Symbols.add_2));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+
+    // Tapping a card navigates: the FAB must not fold back to "+" on the way.
+    await tester.tap(find.text('Alpha'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_2), findsNothing);
+
+    // Finish the push and let the deferred fold run (Home is covered).
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.pumpAndSettle();
+
+    // Back on Home, the FAB is already reduced.
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+  });
+
+  testWidgets('returning from the editor folds the folder FAB back', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'A',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // The folder FAB rests reduced: expand it and open the more menu.
+    await tester.tap(find.byIcon(Symbols.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+
+    // Open a note straight from the folder, then come back.
+    await tester.tap(find.text('A'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.pumpAndSettle();
+
+    // Back on the folder, the FAB is reduced again and its menu is closed.
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+    expect(find.text('Edit'), findsNothing);
   });
 
   testWidgets('folder background follows the theme', (tester) async {
@@ -382,7 +550,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder folderScaffold = find.descendant(
@@ -390,7 +558,7 @@ void main() {
       matching: find.byType(Scaffold),
     );
     final Scaffold before = tester.widget<Scaffold>(folderScaffold);
-    await tester.tap(find.byIcon(Icons.dark_mode));
+    await tester.tap(find.byIcon(Symbols.dark_mode));
     await tester.pumpAndSettle();
     final Scaffold after = tester.widget<Scaffold>(folderScaffold);
     expect(after.backgroundColor, isNot(before.backgroundColor));
@@ -415,7 +583,6 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
             important: true,
           ),
         ],
@@ -426,7 +593,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -441,13 +608,22 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.bookmark)),
+      find.descendant(
+        of: page,
+        matching: find.byIcon(Symbols.label_important),
+      ),
       findsOneWidget,
     );
-    expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.push_pin)),
-      findsOneWidget,
+    // The bookmark is the filled amber variant, at the shared metadata size.
+    final Icon bookmark = tester.widget<Icon>(
+      find.descendant(
+        of: page,
+        matching: find.byIcon(Symbols.label_important),
+      ),
     );
+    expect(bookmark.fill, 1.0);
+    expect(bookmark.color, tanoAmber);
+    expect(bookmark.size, metadataIconSize);
     // Not locked, so no lock flag.
     expect(
       find.descendant(of: page, matching: find.byIcon(Icons.lock_outline)),
@@ -479,7 +655,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // No metadata line: the count goes back to the right of the title.
@@ -506,13 +682,13 @@ void main() {
     // Grid card on the home page.
     expect(tester.widget<Text>(find.text('Perso')).maxLines, 3);
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -547,11 +723,11 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before entering selection.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
 
     final Finder fabBox = find.descendant(
@@ -571,8 +747,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Selection icons replaced the editor ones, same box.
-    expect(find.byIcon(Icons.select_all), findsOneWidget);
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    expect(find.byIcon(Symbols.check_circle), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
     expect(tester.getSize(fabBox), before);
   });
 
@@ -598,10 +774,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
 
     // The FAB became the search input.
@@ -613,8 +789,8 @@ void main() {
 
     // The app bar only keeps the Cancel action.
     expect(find.text('Cancel'), findsOneWidget);
-    expect(find.byIcon(Icons.dark_mode), findsNothing);
-    expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.byIcon(Symbols.dark_mode), findsNothing);
+    expect(find.byIcon(Symbols.add_2), findsNothing);
 
     // Typing switches the page title to "Results".
     await tester.enterText(searchField, 'Fil');
@@ -646,7 +822,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('Filed'));
@@ -683,7 +859,7 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
+            important: true,
           ),
         ],
       ),
@@ -693,10 +869,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -728,7 +904,7 @@ void main() {
     );
   });
 
-  testWidgets('folder card shows the pin and the [icon]xN count', (
+  testWidgets('folder card shows the [icon]xN count', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -754,7 +930,6 @@ void main() {
             id: 'f1',
             name: 'Perso',
             date: '2026-01-01 00:00:00.000',
-            isPinned: true,
           ),
         ],
       ),
@@ -764,17 +939,12 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    final Finder card = find.byType(FolderCard);
-    // Pinned folder: the pin sits where a note's pin sits.
-    expect(
-      find.descendant(of: card, matching: find.byIcon(Icons.push_pin)),
-      findsOneWidget,
-    );
+    final Finder card = _folderCards();
     // [icon]xN note count.
     expect(
       find.descendant(
         of: card,
-        matching: find.byIcon(Icons.description_outlined),
+        matching: find.byIcon(Symbols.sticky_note_2),
       ),
       findsOneWidget,
     );
@@ -799,7 +969,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.longPress(find.byType(FolderCard));
+    await tester.longPress(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder align = find.ancestor(
@@ -811,7 +981,7 @@ void main() {
     // Selected folder shows the same white disc as a selected note.
     expect(
       find.descendant(
-        of: find.byType(FolderCard),
+        of: _folderCards(),
         matching: find.byType(CircleAvatar),
       ),
       findsOneWidget,
@@ -829,7 +999,6 @@ void main() {
             content: '## Tasks\\n- [ ] one',
             date: date,
             folderId: 'f1',
-            isPinned: true,
           ),
         ],
         folders: <Folder>[
@@ -842,7 +1011,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -851,15 +1020,59 @@ void main() {
       find.descendant(of: page, matching: find.byType(NoteCounts)),
       findsOneWidget,
     );
-    // The date shifts right when the note is pinned, like home.
-    final Finder dateText = find.descendant(
-      of: page,
-      matching: find.text(formatNoteDate(date)),
+    expect(
+      find.descendant(of: page, matching: find.text(formatNoteDate(date))),
+      findsOneWidget,
     );
-    final Padding padding = tester.widget<Padding>(
-      find.ancestor(of: dateText, matching: find.byType(Padding)).first,
+  });
+
+  testWidgets('folder notes keep the bookmarked note before the others', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Plain',
+            content: 'x',
+            date: '2026-01-02 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Bookmarked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            important: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
     );
-    expect(padding.padding, const EdgeInsets.only(left: 8.0));
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    final Rect bookmarked = tester.getRect(
+      find.ancestor(
+        of: find.text('Bookmarked'),
+        matching: find.byType(EntityCard),
+      ),
+    );
+    final Rect plain = tester.getRect(
+      find.ancestor(of: find.text('Plain'), matching: find.byType(EntityCard)),
+    );
+
+    // Grid: the bookmarked card comes first, so it sits left of the other one.
+    expect(bookmarked.left, lessThan(plain.left));
+    expect(bookmarked.top, lessThanOrEqualTo(plain.top));
   });
 
   testWidgets('the FAB rests collapsed when the folder list scrolls', (
@@ -887,12 +1100,12 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // Long list: the FAB is reduced so it does not hide the last notes.
-    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
   });
 
   testWidgets('home selection counts notes, folders and items', (tester) async {
@@ -913,37 +1126,77 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // One note selected: the note wording, total = unfiled notes.
+    // One note selected: the notes group speaks about notes.
     await tester.longPress(find.text('Free'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    // Adding the folder switches to the items wording, total = 2 notes + 1 folder.
-    await tester.tap(find.byType(FolderCard));
+    // Adding the folder: each group speaks about its own type.
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
-    expect(find.text('2/3 items selected'), findsOneWidget);
+    expect(find.text('1 single folder selected'), findsOneWidget);
+    expect(find.text('1 single note selected'), findsOneWidget);
 
     // The move action is disabled when a folder is part of the selection.
-    final InkWell moveButton = tester.widget<InkWell>(
+    final IconButton moveButton = tester.widget<IconButton>(
       find.ancestor(
-        of: find.byIcon(Icons.drive_file_move_outline),
-        matching: find.byType(InkWell),
+        of: find.byIcon(Symbols.drive_file_move),
+        matching: find.byType(IconButton),
       ).first,
     );
-    expect(moveButton.onTap, isNull);
+    expect(moveButton.onPressed, isNull);
 
     // FAB order: all, none, move, delete.
-    final double all = tester.getCenter(find.byIcon(Icons.select_all)).dx;
+    final double all = tester.getCenter(find.byIcon(Symbols.check_circle)).dx;
     final double none = tester
-        .getCenter(find.byIcon(Icons.check_box_outline_blank))
+        .getCenter(find.byIcon(Symbols.circle))
         .dx;
     final double move = tester
-        .getCenter(find.byIcon(Icons.drive_file_move_outline))
+        .getCenter(find.byIcon(Symbols.drive_file_move))
         .dx;
-    final double delete = tester.getCenter(find.byIcon(Icons.delete)).dx;
+    final double delete = tester.getCenter(find.byIcon(Symbols.delete)).dx;
     expect(all, lessThan(none));
     expect(none, lessThan(move));
     expect(move, lessThan(delete));
+  });
+
+  testWidgets('move and delete are disabled when nothing is selected',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Free2', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Free'));
+    await tester.pumpAndSettle();
+
+    IconButton actionButton(IconData icon) => tester.widget<IconButton>(
+          find
+              .ancestor(
+                of: find.byIcon(icon),
+                matching: find.byType(IconButton),
+              )
+              .first,
+        );
+
+    // One note selected: both actions are available.
+    expect(actionButton(Symbols.drive_file_move).onPressed, isNotNull);
+    expect(actionButton(Symbols.delete).onPressed, isNotNull);
+
+    // Clearing the selection keeps selection mode but disables both.
+    await tester.tap(find.byIcon(Symbols.circle));
+    await tester.pumpAndSettle();
+    expect(actionButton(Symbols.drive_file_move).onPressed, isNull);
+    expect(actionButton(Symbols.delete).onPressed, isNull);
   });
 
   testWidgets('folder list rows have a minimum height', (tester) async {
@@ -964,7 +1217,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Empty folder (no metadata) still gets 1.5x its natural row height.
-    expect(tester.getSize(find.byType(FolderCard)).height, greaterThanOrEqualTo(69.0));
+    expect(tester.getSize(_folderCards()).height, greaterThanOrEqualTo(69.0));
   });
 
   testWidgets('locked folders are not selectable but locked notes are', (
@@ -997,20 +1250,20 @@ void main() {
     await tester.pumpAndSettle();
 
     // Long-pressing a locked folder does not enter selection mode.
-    await tester.longPress(find.byType(FolderCard));
+    await tester.longPress(_folderCards());
     await tester.pumpAndSettle();
     expect(find.textContaining('selected'), findsNothing);
 
     // A locked note is still selectable (the locked placeholder sits on top
     // of the card content, so the title appears twice).
-    await tester.longPress(find.byType(NoteCard));
+    await tester.longPress(_noteCards());
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
     // The locked folder shows no selection circle.
     expect(
       find.descendant(
-        of: find.byType(FolderCard),
+        of: _folderCards(),
         matching: find.byIcon(Icons.panorama_fish_eye),
       ),
       findsNothing,
@@ -1031,7 +1284,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1044,7 +1297,7 @@ void main() {
     // Open the note from the results, then come back.
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
@@ -1079,10 +1332,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1092,14 +1345,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // The locked match is excluded, 6 results remain.
-    expect(find.byType(NoteCard), findsNWidgets(6));
+    expect(_noteCards(), findsNWidgets(6));
     expect(find.text('Match locked'), findsNothing);
 
     await tester.longPress(find.text('Match 0'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    await tester.tap(find.byType(NoteCard).at(1));
+    await tester.tap(_noteCards().at(1));
     await tester.pumpAndSettle();
     // Total is the number of results, not the whole folder.
     expect(find.text('2/6 notes selected'), findsOneWidget);
@@ -1109,7 +1362,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Results'), findsNothing);
     // Back to the normal folder view: the search action is available again.
-    expect(find.byIcon(Icons.search), findsOneWidget);
+    expect(find.byIcon(Symbols.search), findsOneWidget);
     expect(find.text('Perso'), findsWidgets);
   });
 
@@ -1117,9 +1370,12 @@ void main() {
     tester,
   ) async {
     final _FakeAuth auth = _FakeAuth(authorized: false);
-    final AuthService originalAuth = AuthService.instance;
-    AuthService.instance = auth;
-    addTearDown(() => AuthService.instance = originalAuth);
+    _registerAuth(auth);
+    addTearDown(() async {
+      if (getIt.isRegistered<AuthService>()) {
+        await getIt.unregister<AuthService>();
+      }
+    });
 
     getIt.registerSingleton<NotesRepository>(
       _Repo(
@@ -1143,18 +1399,18 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     // Refused credential: the prompt runs but the editor stays closed.
-    await tester.tap(find.byType(NoteCard));
+    await tester.tap(_noteCards());
     await tester.pumpAndSettle();
     expect(auth.calls, 1);
     expect(find.byType(EditNote), findsNothing);
 
     // Accepted credential: the note opens.
     auth.authorized = true;
-    await tester.tap(find.byType(NoteCard));
+    await tester.tap(_noteCards());
     await tester.pumpAndSettle();
     expect(auth.calls, 2);
     expect(find.byType(EditNote), findsOneWidget);
@@ -1178,13 +1434,13 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard).first);
+    await tester.tap(_folderCards().first);
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('A'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
+    await tester.tap(find.byIcon(Symbols.drive_file_move));
     await tester.pumpAndSettle();
 
     // The current folder is not offered; Work is.
@@ -1213,7 +1469,7 @@ void main() {
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Move to'));
     await tester.pumpAndSettle();
@@ -1223,31 +1479,41 @@ void main() {
     expect(repo.notes.firstWhere((Note n) => n.id == 'n1').folderId, 'f1');
   });
 
-  testWidgets('the move picker is an iOS action sheet on iOS', (tester) async {
+  testWidgets('the move picker is a FAB sub-menu, not a native sheet', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
-    final _Repo repo = _Repo(
-      notes: <Note>[
-        Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
-      ],
-      folders: <Folder>[
-        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
-      ],
-    );
-    getIt.registerSingleton<NotesRepository>(repo);
+      final _Repo repo = _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      );
+      getIt.registerSingleton<NotesRepository>(repo);
 
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const Tano());
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
 
-    // Select the note on the home page, then open the move picker.
-    await tester.longPress(find.text('Alpha'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
-    await tester.pumpAndSettle();
+      // Select the note on the home page, then open the move picker.
+      await tester.longPress(find.text('Alpha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Symbols.drive_file_move));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CupertinoActionSheet), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
+      // No iOS action sheet: the folder list lives in the FAB sub-menu.
+      expect(find.byType(CupertinoActionSheet), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AppFab),
+          matching: find.text('Perso'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Home'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
@@ -1270,12 +1536,12 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FolderCard));
+    await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
     await tester.longPress(find.text('A'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.delete));
+    await tester.tap(find.byIcon(Symbols.delete));
     await tester.pumpAndSettle();
 
     // Nothing is deleted before the confirmation.
@@ -1307,5 +1573,120 @@ void main() {
 
     // Only the unlocked note and folder render a cover.
     expect(find.byType(CoverImage), findsNWidgets(2));
+  });
+
+  testWidgets('scrolling home shows the TanoNote app bar title', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: List<Note>.generate(
+          20,
+          (int i) => Note(
+            id: 'n$i',
+            title: 'Note $i',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ),
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // The reduced title only appears once the page is scrolled.
+    expect(find.byType(TanoAppBarTitle), findsNothing);
+
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0.0, -400.0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TanoAppBarTitle), findsOneWidget);
+  });
+
+  testWidgets('every icon action carries an accessibility label', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    // Every icon-only action must carry a tooltip, i.e. a semantic label.
+    void expectLabelled() {
+      final List<IconButton> buttons = tester
+          .widgetList<IconButton>(find.byType(IconButton))
+          .toList();
+      expect(buttons, isNotEmpty);
+      for (final IconButton button in buttons) {
+        expect(
+          button.tooltip,
+          isNotNull,
+          reason: 'IconButton without a tooltip: ${button.icon}',
+        );
+      }
+    }
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Home app bar and FAB.
+    expectLabelled();
+
+    // Editor app bar.
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    expectLabelled();
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.pumpAndSettle();
+
+    // Folder app bar.
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+    expectLabelled();
+  });
+
+  testWidgets('the interface survives a large system text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
   });
 }

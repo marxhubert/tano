@@ -1,50 +1,28 @@
-# 📚 Documentation — Plans d'amélioration de TanoNote
+# Documentation TanoNote
 
-Ce dossier regroupe l'analyse complète de l'application **TanoNote** et les plans
-d'amélioration proposés, organisés par catégorie.
+Deux familles de documents.
 
-> ⚠️ Ces documents sont des **propositions** : rien n'est implémenté tant qu'une
-> décision n'a pas été validée. Ils servent de base de discussion et de feuille
-> de route.
+## Référence — font autorité
 
-## Contenu du dossier
-
-| Fichier | Contenu |
+| Document | Contenu |
 |---|---|
-| [`01-analyse-etat-actuel.md`](./01-analyse-etat-actuel.md) | Analyse complète : architecture, ce qui fonctionne bien, les problèmes constatés. |
-| [`02-plan-ui-ux.md`](./02-plan-ui-ux.md) | Améliorations **UI/UX** : design, navigation, accessibilité, ergonomie. |
-| [`03-plan-fonctionnalites.md`](./03-plan-fonctionnalites.md) | Nouvelles **fonctionnalités** métier : catégories personnalisées, undo, export, recherche, etc. |
-| [`04-plan-architecture-code.md`](./04-plan-architecture-code.md) | Améliorations **architecture & qualité du code** : modèle, state management, persistance. |
-| [`05-plan-tests-qualite.md`](./05-plan-tests-qualite.md) | Plan **tests & qualité** : couverture, intégration, automatisation. |
-| [`06-roadmap.md`](./06-roadmap.md) | **Feuille de route** priorisée par phases. |
-| [`07-architecture-cible.md`](./07-architecture-cible.md) | **Architecture cible** : stockage SQLite/Drift, synchronisation P2P WebRTC, chiffrement E2E. |
-| [`08-charte-graphique.md`](./08-charte-graphique.md) | **Charte graphique** : couleurs, typographie, composants. |
-| [`09-securite-chiffrement.md`](./09-securite-chiffrement.md) | **Sécurité** : chiffrement du stockage au repos, clé d'installation, export/import chiffré. |
-| [`10-dossiers.md`](./10-dossiers.md) | **Dossiers** : modèle, cartes, groupes d'accueil, FAB, verrouillage, suppression, recherche. |
+| [Charte graphique](./charte-graphique.md) | Identité visuelle, palettes, design tokens |
+| [Architecture](./architecture.md) | Couches, persistance, synchronisation, données |
+| [Composants](./composants.md) | Anatomie et **contrats** des briques d'écran |
+| [Sécurité](./securite.md) | Chiffrement au repos, export / import, verrou |
+| [Modularité](./modularite.md) | Services et découpage gratuit / premium |
+| [Dossiers](./dossiers.md) | Contrat de l'organisation en dossiers |
 
-## Résumé exécutif
+## Pilotage
 
-**TanoNote** est une application de notes Flutter, rapide, légère et 100 % hors-ligne
-(Android/iOS). Son architecture en *vertical slices* avec ViewModels purs Dart, son
-repository abstrait et ses tests unitaires constituent une excellente base.
+| Document | Contenu |
+|---|---|
+| [Feuille de route](./roadmap.md) | Où on en est, ce qui vient ensuite |
+| [Backlog](./backlog.md) | Idées non planifiées |
 
-**Évolution stratégique validée** : TanoNote s'oriente vers un gestionnaire
-« notes, tâches et projets » avec dossiers, checklists, Kanban (tickets) et
-pièces jointes, ainsi qu'une **collaboration temps réel pair-à-pair via internet**
-(sans serveur central de données). Cela implique le passage du JSON monofichier à
-**SQLite (Drift)** — voir [`07-architecture-cible.md`](./07-architecture-cible.md).
+## Conventions
 
-Les principaux axes d'amélioration sont :
-
-1. **UI/UX** — moderniser l'interface (coins arrondis, typographie système,
-   animations, vrais champs de recherche, barre d'outils d'édition), rendre la
-   langue réactive, améliorer l'accessibilité.
-2. **Fonctionnalités** — dossiers hiérarchiques, checklist, projets Kanban,
-   pièces jointes, export/import chiffré, collaboration P2P temps réel.
-3. **Architecture / code** — migration SQLite/Drift, modèle `Note` enrichi,
-   enums, découpage de `home_page.dart`, UUID, chiffrement E2E.
-4. **Tests / qualité** — tests d'intégration (Drift, sync, export), golden tests,
-   CI, singletons isolés.
-
-La **feuille de route** ([`06-roadmap.md`](./06-roadmap.md)) classe ces actions par
-phases et par effort afin de permettre une implémentation incrémentale.
+- Une valeur ne s'invente pas : elle vient du code (`theme.dart`,
+  `page_header.dart`, `card_typography.dart`) et de la charte graphique.
+- `flutter analyze` 0 issue et tests verts avant tout merge.
+- La documentation est en français ; le code et les commits en anglais.

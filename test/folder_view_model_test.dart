@@ -41,11 +41,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
     if (i != -1) notes[i] = notes[i].copyWith(isDeleted: false, deletedAt: null);
   }
 
-  @override
-  Future<void> togglePin(String id) async {
-    final int i = notes.indexWhere((Note n) => n.id == id);
-    if (i != -1) notes[i] = notes[i].copyWith(isPinned: !notes[i].isPinned);
-  }
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {}
@@ -85,13 +80,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
     }
   }
 
-  @override
-  Future<void> toggleFolderPin(String id) async {
-    final int i = folders.indexWhere((Folder f) => f.id == id);
-    if (i != -1) {
-      folders[i] = folders[i].copyWith(isPinned: !folders[i].isPinned);
-    }
-  }
 
   @override
   Future<String> nextFolderName() async {
@@ -173,7 +161,7 @@ void main() {
       expect(vm.pageTitleKey, 'all_notes');
     });
 
-    test('a pinned folder stays first in its group', () async {
+    test('a bookmarked folder stays first in its group', () async {
       final _FakeRepo repo = _FakeRepo(
         folders: <Folder>[
           _folder(id: 'a', name: 'Alpha'),
@@ -181,7 +169,7 @@ void main() {
         ],
       );
       final HomeViewModel vm = _vm(repo);
-      await vm.togglePin('b');
+      vm.toggleFavorite('b');
       expect(vm.folders.first.name, 'Beta');
     });
   });

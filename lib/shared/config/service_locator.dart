@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/repositories/sqlite_notes_repository.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/services/installation_key.dart';
 
 final getIt = GetIt.instance;
@@ -13,4 +15,7 @@ Future<void> setupServiceLocator() async {
       passwordProvider: InstallationKey.instance.databasePassphrase,
     ),
   );
+  // Shared stores and services: a single instance for the whole app.
+  getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
 }

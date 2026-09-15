@@ -46,6 +46,14 @@ class _SortingSectionState extends State<SortingSection> {
                   },
                 ),
                 SettingsTile(
+                  title: AppText.tr('menu_modified'),
+                  selected: currentSort == 'updated',
+                  onTap: () async {
+                    await widget.viewModel.setSorting('updated');
+                    setState(() {});
+                  },
+                ),
+                SettingsTile(
                   title: AppText.tr('menu_favorites'),
                   selected: currentSort == 'important',
                   onTap: () async {

@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
@@ -9,14 +8,22 @@ import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
+import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/note_card.dart';
-import 'package:tano/shared/widgets/note_card_content.dart';
+import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_sliver.dart';
+import 'package:tano/shared/widgets/manageable_cover.dart';
+import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -31,7 +38,7 @@ class FolderPage extends StatefulWidget {
   State<FolderPage> createState() => _FolderPageState();
 }
 
-class _FolderPageState extends State<FolderPage> {
+class _FolderPageState extends State<FolderPage> with RouteAware {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _searchController = TextEditingController();
@@ -46,16 +53,12 @@ class _FolderPageState extends State<FolderPage> {
   bool _isSearchMode = false;
   bool _searchStarted = false;
   bool _isEditingTitle = false;
-  bool _showRemoveCoverButton = false;
-
-  /// Cached cover materialization, so rebuilding the page does not restart
-  /// the future and flash the placeholder.
-  String? _coverName;
-  Future<String>? _coverFuture;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
-  bool _isSelectionMode = false;
-  final Set<String> _selected = <String>{};
+  String _sortBy = 'date';
+  String _secondarySortBy = 'date';
+  bool _sortAscending = true;
+  final SelectionController _selection = SelectionController();
 
   FoldersRepository? get _foldersRepository {
     final NotesRepository repository = getIt<NotesRepository>();
@@ -74,12 +77,33 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<void>? route = ModalRoute.of<void>(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  /// Called when another route (the editor, ...) is pushed on top of this page.
+  /// Fold the FAB once the page is fully covered, so it is already back in its
+  /// resting form when the user returns.
+  @override
+  void didPushNext() {
+    Future<void>.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _fabKey.currentState?.collapse();
+    });
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _titleController.dispose();
     _titleFocusNode.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
@@ -88,8 +112,20 @@ class _FolderPageState extends State<FolderPage> {
     if (!mounted) return;
     setState(() {
       _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+      _sortBy = prefs.getString('sortBy') ?? 'date';
+      _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
+      _sortAscending = prefs.getBool('sortAscending') ?? true;
+      _notes = _sorted(_notes);
     });
   }
+
+  /// Notes sorted like the home screen: pinned first, then the chosen
+  /// criterion. Without this the folder kept the raw repository order.
+  List<Note> _sorted(List<Note> notes) => NoteSorting(
+        by: _sortBy,
+        secondaryBy: _secondarySortBy,
+        ascending: _sortAscending,
+      ).sort(notes);
 
   Future<void> _load() async {
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
@@ -99,7 +135,9 @@ class _FolderPageState extends State<FolderPage> {
           .where((Note note) => !note.isDeleted)
           .map((Note note) => note.id)
           .toSet();
-      _notes = all.where((Note note) => note.folderId == _folder.id).toList();
+      _notes = _sorted(
+        all.where((Note note) => note.folderId == _folder.id).toList(),
+      );
       _loading = false;
     });
   }
@@ -132,9 +170,11 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   Future<void> _save(Folder folder) async {
-    await _foldersRepository?.upsertFolder(folder);
+    final Folder updated =
+        folder.copyWith(updatedAt: DateTime.now().toString());
+    await _foldersRepository?.upsertFolder(updated);
     if (!mounted) return;
-    setState(() => _folder = folder);
+    setState(() => _folder = updated);
   }
 
   void _onTitleFocusChanged() {
@@ -171,7 +211,7 @@ class _FolderPageState extends State<FolderPage> {
     // itself is locked: opening it already authenticated the user.
     bool authenticated = _folder.isLocked;
     if (note.isLocked && !authenticated) {
-      authenticated = await AuthService.instance.authenticate(
+      authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
       if (!authenticated || !mounted) return;
@@ -205,60 +245,9 @@ class _FolderPageState extends State<FolderPage> {
     await _save(_folder.copyWith(coverImage: name));
   }
 
-  /// Removes the cover image, mirroring a note's cover removal.
-  Future<void> _removeCover() async {
-    if (_folder.coverImage == null) return;
-    await _save(_folder.withoutCover());
-    if (!mounted) return;
-    setState(() => _showRemoveCoverButton = false);
-  }
-
-  /// Red "remove cover" button, anchored to the cover's top right corner.
-  Widget _removeCoverButton(BuildContext context) {
-    return Positioned(
-      top: 8.0,
-      right: 8.0,
-      child: GestureDetector(
-        onTap: () async {
-          final bool? confirm = await getConfirmation(
-            context: context,
-            actionTitle: AppText.tr('delete_photo'),
-            action: AppText.tr('delete'),
-          );
-          if (confirm == true) {
-            await _removeCover();
-          }
-        },
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4.0,
-                offset: Offset(0.0, 2.0),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.cancel, color: Colors.red, size: 24.0),
-        ),
-      ),
-    );
-  }
-
-  /// Materializes the cover once per file name.
-  Future<String> _coverPath(String name) {
-    if (_coverName != name || _coverFuture == null) {
-      _coverName = name;
-      _coverFuture = _attachmentsStore.materialize(name);
-    }
-    return _coverFuture!;
-  }
-
   Future<void> _toggleLock() async {
     if (!_folder.isLocked) {
-      if (!await AuthService.instance.isAvailable()) {
+      if (!await getIt<AuthService>().isAvailable()) {
         if (!mounted) return;
         await showAdaptiveAlert(
           context: context,
@@ -270,7 +259,7 @@ class _FolderPageState extends State<FolderPage> {
       await _save(_folder.copyWith(isLocked: true));
       return;
     }
-    final bool authenticated = await AuthService.instance.authenticate(
+    final bool authenticated = await getIt<AuthService>().authenticate(
       reason: AppText.tr('auth_reason'),
     );
     if (!authenticated || !mounted) return;
@@ -302,32 +291,22 @@ class _FolderPageState extends State<FolderPage> {
 
   void _enterSelection(String id) {
     // Keep the search active: the selection stays scoped to the results.
-    setState(() {
-      _selected.add(id);
-      _isSelectionMode = true;
-    });
+    setState(() => _selection.enter(id));
   }
 
   void _toggleSelection(String id) {
-    setState(() {
-      if (!_selected.remove(id)) {
-        _selected.add(id);
-      }
-    });
+    setState(() => _selection.toggle(id));
   }
 
   void _exitSelection() {
-    setState(() {
-      _selected.clear();
-      _isSelectionMode = false;
-    });
+    setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
   }
 
   /// Title of the delete confirmation, based on the current selection.
   String _deleteActionTitle() {
-    final int count = _selected.length;
+    final int count = _selection.count;
     final int total = _visibleNotes.length;
     if (count > 1) {
       return count == total
@@ -345,51 +324,33 @@ class _FolderPageState extends State<FolderPage> {
     );
     if (confirm != true || !mounted) return;
     final NotesRepository repository = getIt<NotesRepository>();
-    for (final String id in _selected.toList()) {
+    for (final String id in _selection.ids) {
       await repository.trashNote(id);
     }
     if (!mounted) return;
     setState(() {
-      _notes.removeWhere((Note note) => _selected.contains(note.id));
-      _selected.clear();
-      _isSelectionMode = false;
+      _notes.removeWhere((Note note) => _selection.contains(note.id));
+      _selection.exit();
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
   }
 
-  /// Moves the selected notes to another folder, or back home.
-  Future<void> _moveSelected() async {
+  /// Moves the selected notes to [folderId], or back home when null.
+  Future<void> _moveTo(String? folderId) async {
     final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders =
-        await _foldersRepository?.loadFolders() ?? const <Folder>[];
-    if (!mounted) return;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          if (folder.id != _folder.id)
-            AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
     final List<Note> selected = _notes
-        .where((Note note) => _selected.contains(note.id))
+        .where((Note note) => _selection.contains(note.id))
         .toList();
     for (final Note note in selected) {
       await repository.upsertNote(
-        target.isEmpty
+        folderId == null
             ? note.withoutFolder()
-            : note.copyWith(folderId: target),
+            : note.copyWith(folderId: folderId),
       );
     }
     if (!mounted) return;
-    setState(() {
-      _selected.clear();
-      _isSelectionMode = false;
-    });
+    setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
     await _load();
@@ -415,71 +376,40 @@ class _FolderPageState extends State<FolderPage> {
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
 
-  /// Trailing text on the title line, mirroring the home page.
-  Widget? _buildHeaderTrailing(BuildContext context) {
-    if (_isSelectionMode) {
-      // Exactly the home page's wording: single, x/y or all selected. While
-      // searching, the total is the number of results.
-      final int count = _selected.length;
+  /// Metadata on the title line, mirroring the home page: the selection while
+  /// selecting, the result count while searching, the note count otherwise.
+  String? get _headerMetadata {
+    if (_selection.isActive) {
+      // While searching, the total is the number of results.
+      final int count = _selection.count;
       final int total = _visibleNotes.length;
-      final String label = count == 0
-          ? AppText.tr('no_note_selected')
-          : (count > 1
-                ? (count == total
-                      ? AppText.tr('all_notes_selected', <String, String>{
-                          'count': '$count',
-                        })
-                      : AppText.tr('notes_selected', <String, String>{
-                          'count': '$count',
-                          'total': '$total',
-                        }))
-                : AppText.tr('single_note_selected', <String, String>{
-                    'count': '$count',
-                  }));
-      return Flexible(
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontWeight: FontWeight.w400,
-              fontSize: 12.0,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      );
+      if (count == 0) return AppText.tr('no_note_selected');
+      if (count > 1 && count == total) {
+        return AppText.tr('all_notes_selected', <String, String>{
+          'count': '$count',
+        });
+      }
+      if (count > 1) {
+        return AppText.tr('notes_selected', <String, String>{
+          'count': '$count',
+          'total': '$total',
+        });
+      }
+      return AppText.tr('single_note_selected', <String, String>{
+        'count': '$count',
+      });
     }
-    // While searching, show how many notes match.
-    if (_resultsVisible) {
-      return Text(
-        _noteCountLabel(_visibleNotes.length),
-        style: TextStyle(
-          color: mutedTextColor(context),
-          fontWeight: FontWeight.w400,
-          fontSize: 13.0,
-        ),
-      );
-    }
-    // With no flag to show, the count goes back to the right of the title.
+    if (_resultsVisible) return _noteCountLabel(_visibleNotes.length);
+    // With a flag line below, the count only lives there.
     if (_hasFolderFlags) return null;
-    return Text(
-      _noteCountLabel(_notes.length),
-      style: TextStyle(
-        color: mutedTextColor(context),
-        fontWeight: FontWeight.w400,
-        fontSize: 13.0,
-      ),
-    );
+    return _noteCountLabel(_notes.length);
   }
 
   /// Whether the folder has any flag worth a dedicated metadata line.
-  bool get _hasFolderFlags =>
-      _folder.isLocked || _folder.important || _folder.isPinned;
+  bool get _hasFolderFlags => _folder.isLocked || _folder.important;
 
   /// Metadata line, mirroring a note's: the note count on the left and the
-  /// folder flags (lock, bookmark, pin) on the right, only when they are set.
+  /// folder flags (lock, bookmark) on the right, only when they are set.
   Widget _buildMetadata(BuildContext context) {
     return SliverPadding(
       key: const ValueKey<String>('folder_metadata'),
@@ -493,47 +423,23 @@ class _FolderPageState extends State<FolderPage> {
             top: appPaddingMedium,
             bottom: 6.0,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  '${_notes.length} ${_notes.length > 1 ? AppText.tr('notes') : AppText.tr('note')}',
-                  style: TextStyle(
-                    color: mutedTextColor(context),
-                    fontSize: 11.0,
-                  ),
-                ),
-              ),
-              if (_folder.isLocked) _metadataIcon(Icons.lock_outline, context),
+          child: MetadataLine(
+            leading: Text(
+              _noteCountLabel(_notes.length),
+              style: metadataLineStyle(context),
+            ),
+            trailing: <Widget>[
+              if (_folder.isLocked)
+                metadataGlyph(context, Icons.lock_outline),
               if (_folder.important)
-                _metadataIcon(Icons.bookmark, context, color: tanoAmber),
-              if (_folder.isPinned)
-                _metadataIcon(Icons.push_pin, context, size: 14.0, dy: 2.0),
+                metadataGlyph(
+                  context,
+                  Symbols.label_important,
+                  color: tanoAmber,
+                  fill: 1.0,
+                ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  /// One flag icon. [dy] shifts the glyph downward without moving its layout
-  /// box, so an icon with a foot (the pin) hangs below the others like the
-  /// descender of a "g" or "y" in a word.
-  Widget _metadataIcon(
-    IconData icon,
-    BuildContext context, {
-    Color? color,
-    double size = 12.0,
-    double dy = 0.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0),
-      child: Transform.translate(
-        offset: Offset(0.0, dy),
-        child: Icon(
-          icon,
-          size: size,
-          color: color ?? mutedTextColor(context),
         ),
       ),
     );
@@ -560,7 +466,7 @@ class _FolderPageState extends State<FolderPage> {
       title: _resultsVisible
           ? AppText.tr('search_results')
           : _folder.name,
-      headerTrailing: _buildHeaderTrailing(context),
+      headerMetadata: _headerMetadata,
       titleWidget: _isEditingTitle
           ? TapRegion(
               onTapOutside: (_) => _exitTitleEdit(),
@@ -590,46 +496,20 @@ class _FolderPageState extends State<FolderPage> {
               ),
             )
           : null,
-      actions: _isSelectionMode
-          ? <Widget>[
-              TextButton(
-                onPressed: _exitSelection,
-                child: Text(
-                  AppText.tr('cancel'),
-                  style: const TextStyle(fontSize: 17.0),
-                ),
-              ),
-            ]
+      actions: _selection.isActive
+          ? <Widget>[CancelButton(onPressed: _exitSelection)]
           : _isSearchMode
-          ? <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: TextButton(
-                  onPressed: _exitSearchMode,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    AppText.tr('cancel'),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 17.0,
-                      color: tanoTeal,
-                    ),
-                  ),
-                ),
-              ),
-            ]
+          ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
           : <Widget>[
               // Add first, as requested on the folder page.
               IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(Symbols.add_notes),
+                tooltip: AppText.tr('add_note'),
                 onPressed: () => _openNote(add: true, note: _newNote()),
               ),
               IconButton(
-                icon: const Icon(Icons.search),
+                icon: const Icon(Symbols.search),
+                tooltip: AppText.tr('search'),
                 onPressed: _enterSearchMode,
               ),
               const ThemeToggleButton(),
@@ -641,16 +521,19 @@ class _FolderPageState extends State<FolderPage> {
         key: _fabKey,
         isEditorMode: true,
         isFolderMode: true,
-        isSelectionMode: _isSelectionMode,
+        isSelectionMode: _selection.isActive,
+        // Moving needs at least one selected note.
+        canMove: _selection.isNotEmpty,
+        canDelete: _selection.isNotEmpty,
         isSearchMode: _isSearchMode,
         collapsedByDefault: true,
         controller: _searchController,
         focusNode: _searchFocusNode,
-        isPinned: _folder.isPinned,
         isImportant: _folder.important,
         isLocked: _folder.isLocked,
         isTitleEditing: _isEditingTitle,
         currentCategory: _folder.category,
+        currentFolderId: _folder.id,
         onAddNote: () => _openNote(add: true, note: _newNote()),
         onImageSelected: () {
           _fabKey.currentState?.closeVerticalMenu();
@@ -658,8 +541,6 @@ class _FolderPageState extends State<FolderPage> {
         },
         onColorSelected: (String name) =>
             _save(_folder.copyWith(category: name)),
-        onPinSelected: () =>
-            _save(_folder.copyWith(isPinned: !_folder.isPinned)),
         onImportantSelected: () =>
             _save(_folder.copyWith(important: !_folder.important)),
         onLockSelected: _toggleLock,
@@ -677,11 +558,11 @@ class _FolderPageState extends State<FolderPage> {
         },
         onReset: _clearSearch,
         onDelete: _deleteSelected,
-        onMoveSelected: _moveSelected,
-        onClearSelection: () => setState(() => _selected.clear()),
+        onMoveTo: _moveTo,
+        onClearSelection: () => setState(_selection.clear),
         onSelectAll: () => setState(
           // Only the notes currently shown (search results included).
-          () => _selected.addAll(_visibleNotes.map((Note note) => note.id)),
+          () => _selection.selectAll(_visibleNotes.map((Note note) => note.id)),
         ),
       ),
       slivers: <Widget>[
@@ -689,85 +570,16 @@ class _FolderPageState extends State<FolderPage> {
           _buildMetadata(context),
         if (_folder.coverImage != null && !_resultsVisible)
           SliverToBoxAdapter(
-            child: FutureBuilder<String>(
-              future: _coverPath(_folder.coverImage!),
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (!snapshot.hasData) {
-                  // Reserve the cover's height from the first frame so the page
-                  // does not jump when the image finishes loading. A file that
-                  // cannot be read is marked and can be removed right away.
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
-                    child: Stack(
-                      children: <Widget>[
-                        const _CoverPlaceholder(),
-                        if (snapshot.hasError) ...<Widget>[
-                          Center(
-                            child: Text(
-                              AppText.tr('corrupted_image'),
-                              style: TextStyle(
-                                color: mutedTextColor(context),
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ),
-                          _removeCoverButton(context),
-                        ],
-                      ],
-                    ),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
-                  child: TapRegion(
-                    // Tapping elsewhere hides the remove button.
-                    onTapOutside: (_) {
-                      if (_showRemoveCoverButton) {
-                        setState(() => _showRemoveCoverButton = false);
-                      }
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(appBorderRadius),
-                      child: Stack(
-                        children: <Widget>[
-                          GestureDetector(
-                            // Long press reveals the remove button, exactly
-                            // like a note's cover.
-                            onLongPress: () {
-                              setState(() {
-                                _showRemoveCoverButton =
-                                    !_showRemoveCoverButton;
-                              });
-                            },
-                            child: Stack(
-                              children: <Widget>[
-                                Image.file(
-                                  File(snapshot.data!),
-                                  height: 160.0,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                                // Dim the cover, stronger in dark mode.
-                                Positioned.fill(
-                                  child: Container(
-                                    color: Colors.black.withValues(
-                                      alpha: Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? 0.3
-                                          : 0.12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_showRemoveCoverButton)
-                            _removeCoverButton(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+            child: ManageableCover(
+              name: _folder.coverImage!,
+              height: 160.0,
+              // Tighter gap below, towards the notes grid / list.
+              padding: const EdgeInsets.only(
+                top: appPaddingMedium,
+                bottom: appPaddingSmall,
+              ),
+              onRemove: () async {
+                await _save(_folder.withoutCover());
               },
             ),
           ),
@@ -799,91 +611,54 @@ class _FolderPageState extends State<FolderPage> {
       );
     }
 
-    if (_viewLayout == 'list') {
-      return SliverPadding(
-        padding: const EdgeInsets.all(appPaddingMedium),
-        sliver: SliverList.separated(
-          itemCount: notes.length,
-          itemBuilder: (BuildContext context, int index) =>
-              _card(notes[index], isList: true),
-          separatorBuilder: (BuildContext context, int index) =>
-              const SizedBox(height: 8.0),
-        ),
-      );
-    }
-
+    final bool isList = _viewLayout == 'list';
     return SliverPadding(
       padding: const EdgeInsets.all(appPaddingMedium),
-      sliver: SliverGrid.count(
-        crossAxisCount: gridCrossAxisCount(context),
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
-        childAspectRatio: 0.9,
-        children: notes
-            .map((Note note) => _card(note, isList: false))
-            .toList(),
+      sliver: EntitySliver<Note>(
+        items: notes,
+        isList: isList,
+        cardBuilder: (BuildContext context, Note note) =>
+            _card(note, isList: isList),
       ),
     );
   }
 
   Widget _card(Note note, {required bool isList}) {
-    return NoteCard(
-      note: note,
+    return EntityCard(
+      kind: EntityKind.note,
+      category: note.category,
+      title: note.title,
+      subtitle: formatNoteDate(note.date),
       coverImage: note.coverImage,
+      isImportant: note.important,
+      isLocked: note.isLocked,
       isListLayout: isList,
-      isSelected: _selected.contains(note.id),
-      isInSelectionMode: _isSelectionMode,
+      isSelected: _selection.contains(note.id),
+      isInSelectionMode: _selection.isActive,
       onSelectionToggle: () => _toggleSelection(note.id),
       onLongPress: () => _enterSelection(note.id),
       onTap: () {
-        if (_isSelectionMode) {
+        if (_selection.isActive) {
           _toggleSelection(note.id);
         } else {
           _openNote(add: false, note: note);
         }
       },
       // Same body as the home page cards.
-      builder: (BuildContext context, Color textColor) => isList
+      builder: (BuildContext context, Color textColor, bool hasCover) => isList
           ? buildNoteListContent(
               note: note,
               textColor: textColor,
               activeNoteIds: _activeNoteIds,
+              hasCover: hasCover,
             )
           : buildNoteGridContent(
               note: note,
               textColor: textColor,
               activeNoteIds: _activeNoteIds,
+              hasCover: hasCover,
             ),
     );
   }
 }
 
-/// Neutral block shown while a cover image is read from disk, so the page
-/// keeps its layout and does not jump when the image appears.
-class _CoverPlaceholder extends StatelessWidget {
-  const _CoverPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(appBorderRadius),
-      child: SizedBox(
-        height: 160.0,
-        width: double.infinity,
-        child: ColoredBox(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
-          child: Center(
-            child: Icon(
-              Icons.image_outlined,
-              size: 28.0,
-              color: mutedTextColor(context).withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

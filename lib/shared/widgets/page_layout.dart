@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Places the floating action button flush against the bottom-right corner
@@ -36,7 +40,7 @@ class FlushEndFabLocation extends StandardFabLocation {
 
 /// A shared scaffold that handles:
 /// 1. A dynamic AppBar that shows the title only when scrolling down.
-/// 2. A back button (arrow_back_ios_new) for non-home pages.
+/// 2. A back button (arrow_back_ios) for non-home pages.
 /// 3. Unified horizontal padding for AppBar and titles.
 /// 4. Unified padding for the body content.
 class PageScaffold extends StatefulWidget {
@@ -47,7 +51,7 @@ class PageScaffold extends StatefulWidget {
     this.actions,
     this.isHome = false,
     this.alignAppBarTitleLeft = false,
-    this.headerTrailing,
+    this.headerMetadata,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.scaffoldKey,
@@ -71,7 +75,8 @@ class PageScaffold extends StatefulWidget {
   /// slides to the left, right after the back button, instead of staying
   /// centered. Used by the editor while the undo/redo/save actions appear.
   final bool alignAppBarTitleLeft;
-  final Widget? headerTrailing;
+  /// Small metadata printed at the right of the body title line.
+  final String? headerMetadata;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final GlobalKey<ScaffoldState>? scaffoldKey;
@@ -158,22 +163,21 @@ class _PageScaffoldState extends State<PageScaffold> {
         shadowColor: showAppBarTitle
             ? Colors.black.withValues(alpha: 0.05)
             : Colors.transparent,
+        // Same colour as the cards, with a hairline width.
         shape: showAppBarTitle
             ? Border(
-                bottom: BorderSide(
-                  color: getBorderColor(scaffoldBgColor, isDark: isDark),
-                  width: 0.5,
-                ),
+                bottom: BorderSide(color: cardBorderColor(isDark), width: 0.5),
               )
             : null,
         leading: !widget.isHome
-            ? Padding(
-                padding: const EdgeInsets.only(left: appPaddingSmall),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new,
-                      size: 20.0, color: textColor),
-                  onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
+            ? IconButton(
+                icon: Icon(
+                  Symbols.arrow_back_ios,
+                  size: 20.0,
+                  color: textColor,
                 ),
+                tooltip: AppText.tr('back'),
+                onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
               )
             : null,
         title: showAppBarTitle
@@ -181,9 +185,10 @@ class _PageScaffoldState extends State<PageScaffold> {
                 Text(
                   appBarTitleText,
                   maxLines: 1,
+                  // Same size as the "Cancel" action.
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 17.0,
+                    fontSize: appBarTextSize,
                     letterSpacing: -0.41,
                     color: textColor,
                   ),
@@ -202,24 +207,16 @@ class _PageScaffoldState extends State<PageScaffold> {
       body: CustomScrollView(
         controller: _scrollController,
         slivers: <Widget>[
-          // Big Title in the body
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              widget.titlePaddingLeft ?? appPaddingLarge,
-              appPaddingMedium,
-              appPaddingLarge,
-              0.0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Expanded(
-                    child: widget.titleWidget ?? _buildTitleField(textColor),
-                  ),
-                  if (widget.headerTrailing != null) widget.headerTrailing!,
-                ],
+          // Big title in the body.
+          SliverToBoxAdapter(
+            child: SectionTitleLine(
+              titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
+              metadata: widget.headerMetadata,
+              padding: EdgeInsets.fromLTRB(
+                widget.titlePaddingLeft ?? appPaddingLarge,
+                appPaddingMedium,
+                appPaddingLarge,
+                0.0,
               ),
             ),
           ),
