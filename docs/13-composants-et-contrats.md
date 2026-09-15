@@ -56,6 +56,9 @@ Vocabulaire partagé :
 ### Actions
 
 - **Au plus 3 actions + l'action « réduire » = 4 au total.**
+- **Exception — barre de sélection** : elle garde **4 actions** (`select all`,
+  `select none`, `move`, `delete`) **sans** « réduire », car la sélection est un
+  mode temporaire qui ne se replie pas tant que des éléments sont choisis.
 - L'action « réduire » (chevron) **replie** vers la forme circulaire.
 - Une page **sans** action « réduire » a la forme **extended comme forme de repos**.
 - Une action peut **ouvrir un menu** (vertical) au lieu d'agir directement.
@@ -271,7 +274,7 @@ gratuit/premium, livraison partielle). Voir
 ## 12. Décisions actées
 
 1. La **quatrième** forme du FAB est **supprimée** ; le « + » ouvre la forme extended.
-2. Limite : **3 actions + réduire = 4**.
+2. Limite : **3 actions + réduire = 4** (exception : la barre de sélection, §3).
 3. La forme de repos est **circulaire** par défaut, **étendue** sur les pages
    sans action « réduire ».
 4. **Taper ailleurs** ferme le menu puis replie (règle du §3).
