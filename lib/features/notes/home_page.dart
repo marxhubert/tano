@@ -587,6 +587,8 @@ class HomeState extends State<Home> with RouteAware {
         return PageScaffold(
           title: AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
+          // Scrolled in, the reduced title is the app's name.
+          appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
           headerMetadata: _pageMetadata,

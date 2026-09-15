@@ -18,6 +18,7 @@ import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -1557,5 +1558,37 @@ void main() {
 
     // Only the unlocked note and folder render a cover.
     expect(find.byType(CoverImage), findsNWidgets(2));
+  });
+
+  testWidgets('scrolling home shows the TanoNote app bar title', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: List<Note>.generate(
+          20,
+          (int i) => Note(
+            id: 'n$i',
+            title: 'Note $i',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ),
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // The reduced title only appears once the page is scrolled.
+    expect(find.byType(TanoAppBarTitle), findsNothing);
+
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0.0, -400.0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TanoAppBarTitle), findsOneWidget);
   });
 }

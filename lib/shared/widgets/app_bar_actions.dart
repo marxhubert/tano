@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -31,6 +32,40 @@ class CancelButton extends StatelessWidget {
             color: tanoTeal,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The "TanoNote" app-bar title: "Tano" bold, "Note" light.
+class TanoAppBarTitle extends StatelessWidget {
+  const TanoAppBarTitle({super.key, this.color});
+
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color resolved = color ?? primaryTextColor(context);
+    return RichText(
+      text: TextSpan(
+        text: AppConfig.appName,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: resolved,
+          fontSize: appBarTextSize,
+          letterSpacing: -0.41,
+        ),
+        children: <TextSpan>[
+          TextSpan(
+            text: AppConfig.appNameSuffix,
+            style: TextStyle(
+              fontWeight: FontWeight.w300,
+              color: resolved,
+              fontSize: appBarTextSize,
+              letterSpacing: -0.41,
+            ),
+          ),
+        ],
       ),
     );
   }

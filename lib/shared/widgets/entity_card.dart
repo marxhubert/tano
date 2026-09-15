@@ -107,10 +107,7 @@ class EntityCard extends StatelessWidget {
       brightness: Theme.of(context).brightness,
     );
     final Color textColor = getTextColor(bgColor);
-    // Dark theme: light border. Light theme: dark border.
-    final Color borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.22)
-        : Colors.black.withValues(alpha: 0.16);
+    final Color borderColor = cardBorderColor(isDark);
     final bool showCover = coverImage != null && !isLocked;
 
     final Widget card = Container(
@@ -135,7 +132,20 @@ class EntityCard extends StatelessWidget {
                   bottom: isListLayout ? 0.0 : null,
                   width: isListLayout ? coverWidth : null,
                   height: isListLayout ? null : coverHeight,
-                  child: CoverImage(name: coverImage!),
+                  // Hairline under the cover, like the cover rules of the managed
+                  // cover; drawn on top of the image.
+                  child: DecoratedBox(
+                    position: DecorationPosition.foreground,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: cardBorderColor(isDark),
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: CoverImage(name: coverImage!),
+                  ),
                 ),
               // Folder watermark: the glyph bleeds off the bottom-right corner,
               // pushed 24px past both edges.
