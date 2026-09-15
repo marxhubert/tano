@@ -15,7 +15,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/page_layout.dart';

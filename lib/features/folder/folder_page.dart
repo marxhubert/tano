@@ -13,7 +13,7 @@ import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';

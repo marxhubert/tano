@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('My notes'), findsWidgets);
 
-    // Create a folder from the home "+" menu.
+    // Create a folder from the home FAB extended bar.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.create_new_folder));

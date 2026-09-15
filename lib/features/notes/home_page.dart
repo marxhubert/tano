@@ -7,7 +7,7 @@ import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/folders_repository.dart';

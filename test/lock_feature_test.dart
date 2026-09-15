@@ -14,7 +14,7 @@ import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 
