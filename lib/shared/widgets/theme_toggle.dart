@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   const ThemeToggleButton({super.key, this.color});
@@ -8,25 +9,30 @@ class ThemeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: ThemeController.instance,
-      builder: (context, _) {
-        final bool isDark = Theme.of(context).brightness == Brightness.dark;
-        
-        return IconButton(
-          visualDensity: VisualDensity.compact,
-          icon: Icon(
-            isDark ? Icons.sunny : Icons.dark_mode,
-            color: color,
-            size: 22.0,
-          ),
-          onPressed: () {
-            ThemeController.instance.setThemeMode(
-              isDark ? ThemeMode.light : ThemeMode.dark,
-            );
-          },
-        );
-      },
+    // Sharing the FAB's tap group keeps an open FAB menu open when the theme
+    // is toggled from the app bar.
+    return TapRegion(
+      groupId: fabTapGroup,
+      child: ListenableBuilder(
+        listenable: ThemeController.instance,
+        builder: (context, _) {
+          final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              isDark ? Icons.sunny : Icons.dark_mode,
+              color: color,
+              size: 22.0,
+            ),
+            onPressed: () {
+              ThemeController.instance.setThemeMode(
+                isDark ? ThemeMode.light : ThemeMode.dark,
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

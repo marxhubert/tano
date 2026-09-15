@@ -761,24 +761,8 @@ class _EditNoteState extends State<EditNote>
                 }
               },
               actions: [
-                if (_hasEdits) ...[
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.undo),
-                    onPressed: _canUndo ? _undo : null,
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.redo),
-                    onPressed: _canRedo ? _redo : null,
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.save, size: 21.0),
-                    onPressed: isDirty ? _save : null,
-                  ),
-                ],
-                const ThemeToggleButton(),
+                // In find mode only "Cancel" is shown: every other app-bar
+                // action (edits, theme toggle) is hidden.
                 if (_isFindMode)
                   Padding(
                     padding: const EdgeInsets.only(right: 12.0),
@@ -798,7 +782,27 @@ class _EditNoteState extends State<EditNote>
                         ),
                       ),
                     ),
-                  ),
+                  )
+                else ...[
+                  if (_hasEdits) ...[
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.undo),
+                      onPressed: _canUndo ? _undo : null,
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.redo),
+                      onPressed: _canRedo ? _redo : null,
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.save, size: 21.0),
+                      onPressed: isDirty ? _save : null,
+                    ),
+                  ],
+                  const ThemeToggleButton(),
+                ],
               ],
               slivers: [
                 SliverPadding(

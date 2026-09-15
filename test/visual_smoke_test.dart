@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
@@ -172,7 +173,7 @@ void main() {
         );
 
         // The add action is a floating button when not in selection mode.
-        expect(find.byIcon(Icons.add), findsOneWidget);
+        expect(find.byIcon(Symbols.add_2), findsOneWidget);
 
         // The three layouts.
         for (final String label in <String>['List', 'Grid']) {
@@ -192,7 +193,7 @@ void main() {
         await tester.longPress(find.textContaining('Note number').first);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        await tester.tap(find.byIcon(Icons.delete).first);
+        await tester.tap(find.byIcon(Symbols.delete).first);
         await tester.pumpAndSettle();
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);

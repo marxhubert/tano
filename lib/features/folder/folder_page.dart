@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
@@ -571,7 +572,7 @@ class _FolderPageState extends State<FolderPage> {
                 onPressed: () => _openNote(add: true, note: _newNote()),
               ),
               IconButton(
-                icon: const Icon(Icons.search),
+                icon: const Icon(Symbols.search),
                 onPressed: _enterSearchMode,
               ),
               const ThemeToggleButton(),
@@ -584,6 +585,9 @@ class _FolderPageState extends State<FolderPage> {
         isEditorMode: true,
         isFolderMode: true,
         isSelectionMode: _selection.isActive,
+        // Moving needs at least one selected note.
+        canMove: _selection.isNotEmpty,
+        canDelete: _selection.isNotEmpty,
         isSearchMode: _isSearchMode,
         collapsedByDefault: true,
         controller: _searchController,

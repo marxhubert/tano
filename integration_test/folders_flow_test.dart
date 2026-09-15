@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,9 +95,9 @@ void main() {
     expect(find.text('My notes'), findsWidgets);
 
     // Create a folder from the home FAB extended bar.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.create_new_folder));
+    await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     // iOS uses a CupertinoTextField, Android a TextField: EditableText covers
     // both.

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
@@ -41,6 +42,7 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> with RouteAware {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
+  final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
@@ -96,6 +98,11 @@ class HomeState extends State<Home> with RouteAware {
   @override
   void didPushNext() {
     ScaffoldMessenger.of(context).clearSnackBars();
+    // Fold the FAB once Home is fully covered, so it is already reduced when
+    // the user comes back, with no visible collapse during the push.
+    Future<void>.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _fabKey.currentState?.collapse();
+    });
   }
 
   void _onViewModelChanged() {
@@ -520,7 +527,7 @@ class HomeState extends State<Home> with RouteAware {
     }
     return <Widget>[
       IconButton(
-        icon: const Icon(Icons.search),
+        icon: const Icon(Symbols.search),
         onPressed: _enterSearchMode,
       ),
       const ThemeToggleButton(),
@@ -696,9 +703,14 @@ class HomeState extends State<Home> with RouteAware {
           ],
           floatingActionButtonLocation: const FlushEndFabLocation(),
           floatingActionButton: AppFab(
+            key: _fabKey,
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
-            canMove: !_viewModel.hasFolderInSelection,
+            // Moving needs a selection and never applies to a folder.
+            canMove: _viewModel.hasSelection &&
+                !_viewModel.hasFolderInSelection,
+            // Deleting needs a selection too.
+            canDelete: _viewModel.hasSelection,
             controller: _searchController,
             focusNode: _searchFocusNode,
             onAdd: () {

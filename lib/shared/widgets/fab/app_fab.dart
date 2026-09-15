@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -22,6 +24,7 @@ class AppFab extends StatefulWidget {
     this.isSearchMode = false,
     this.isSelectionMode = false,
     this.canMove = true,
+    this.canDelete = true,
     this.isEditorMode = false,
     this.isFolderMode = false,
     this.isTitleEditing = false,
@@ -72,6 +75,10 @@ class AppFab extends StatefulWidget {
   /// Selection mode: whether the "move" action is available. It is refused as
   /// soon as a folder is part of the selection.
   final bool canMove;
+
+  /// Selection mode: whether the "delete" action is available. It is refused
+  /// when nothing is selected.
+  final bool canDelete;
   final bool isEditorMode;
 
   /// Folder page: the add menu offers a cover and a new note, the more menu
@@ -304,6 +311,8 @@ class AppFabState extends State<AppFab>
     }
 
     return TapRegion(
+      // The theme toggle shares this group, so tapping it keeps the menu open.
+      groupId: fabTapGroup,
       // Tapping anywhere else closes the menu, then folds the FAB back to its
       // resting form (circular when the page has a reduce action).
       onTapOutside: (_) => collapse(),
@@ -322,12 +331,12 @@ class AppFabState extends State<AppFab>
               bottom: Radius.circular(borderRadiusValue),
             )
           : BorderRadius.circular(borderRadiusValue),
+        // Light rule in dark, dark rule in light; width 1.0 in both themes.
         border: Border.all(
-          color: getBorderColor(
-            Theme.of(context).colorScheme.primary,
-            isDark: Theme.of(context).brightness == Brightness.dark,
-          ),
-          width: 0.5,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.22)
+              : Colors.black.withValues(alpha: 0.08),
+          width: 1.0,
         ),
         boxShadow: const [
           BoxShadow(
@@ -394,10 +403,7 @@ class AppFabState extends State<AppFab>
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 150),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _buildVerticalMenuContent(context),
-                    ),
+                    child: _buildVerticalMenuContent(context),
                   ),
                 ),
 

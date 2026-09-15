@@ -18,9 +18,11 @@ class _SubMenuLayout extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Fixed Header
+        // Fixed Header. The action buttons keep a 48px tap target, so their
+        // glyph sits ~10px inside their box: the right padding is reduced to
+        // line the last icon up with the back action on the left.
         Container(
-          padding: const EdgeInsets.fromLTRB(20.0, 2.0, 20.0, 2.0),
+          padding: const EdgeInsets.fromLTRB(20.0, 2.0, 10.0, 2.0),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary,
             border: Border(
@@ -35,13 +37,13 @@ class _SubMenuLayout extends StatelessWidget {
               TextButton.icon(
                 onPressed: onBack,
                 icon: const Icon(
-                  Icons.arrow_back_ios,
+                  Symbols.arrow_back_ios,
                   size: 20,
-                  color: Colors.white70,
+                  color: Colors.white,
                 ),
                 label: Text(
                   title,
-                  style: TextStyle(color: Colors.white70, fontSize: 17.0),
+                  style: TextStyle(color: Colors.white, fontSize: 17.0),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -54,19 +56,14 @@ class _SubMenuLayout extends StatelessWidget {
             ],
           ),
         ),
-        // Scrollable Body
+        // Scrollable Body. The dark surface comes from the menu area itself.
         Flexible(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.15),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: child,
-            ),
+            child: child,
           ),
         ),
       ],
@@ -74,21 +71,32 @@ class _SubMenuLayout extends StatelessWidget {
   }
 }
 
+/// One action of a horizontal FAB bar: icon only, one shared size, with an
+/// optional accent colour and a disabled (dimmed) state.
 class _EditorAction extends StatelessWidget {
   const _EditorAction({
     required this.icon,
-    required this.onTap,
+    this.onTap,
     this.isActive = false,
+    this.color,
+    this.size,
   });
 
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isActive;
+  final Color? color;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
+    final Color base = color ?? (isActive ? tanoAmber : Colors.white);
+    // When disabled, every action borrows the neutral dimmed colour: a red
+    // "delete" at 35% would be invisible on the teal FAB.
+    final Color iconColor =
+        onTap == null ? Colors.white.withValues(alpha: 0.35) : base;
     return IconButton(
-      icon: Icon(icon, color: isActive ? tanoAmber : Colors.white),
+      icon: Icon(icon, color: iconColor, size: size),
       onPressed: onTap,
     );
   }
@@ -124,13 +132,13 @@ class _VerticalMenuItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
         child: Row(
           crossAxisAlignment: maxLines != null
               ? CrossAxisAlignment.start
               : CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.white70, size: iconSize, fill: fill),
+            Icon(icon, color: iconColor ?? Colors.white, size: iconSize, fill: fill),
             const SizedBox(width: 8.0),
             Expanded(
               child: Text(
@@ -150,45 +158,3 @@ class _VerticalMenuItem extends StatelessWidget {
   }
 }
 
-class _SelectionFabButton extends StatelessWidget {
-  const _SelectionFabButton({
-    required this.icon,
-    required this.label,
-    this.onPressed,
-    this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color base = color ?? Colors.white;
-    // A null callback means the action is disabled: dim it and ignore taps.
-    final Color effectiveColor = onPressed == null
-        ? base.withValues(alpha: 0.35)
-        : base;
-    return Expanded(
-      child: InkWell(
-        onTap: onPressed,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(icon, size: 20.0, color: effectiveColor),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.0,
-                color: effectiveColor,
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
