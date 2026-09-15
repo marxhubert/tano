@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/note.dart';
@@ -83,9 +84,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Open the add-note editor: the home "+" expands to folder + note.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.tap(find.byIcon(Symbols.add_notes));
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsNWidgets(2));

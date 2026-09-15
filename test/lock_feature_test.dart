@@ -322,11 +322,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
 
       expect(find.text('Unlock'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_open), findsOneWidget);
+      expect(find.byIcon(Symbols.lock_open), findsOneWidget);
       expect(find.text('Lock'), findsNothing);
     });
 
@@ -342,11 +342,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
 
       expect(find.text('Lock'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+      expect(find.byIcon(Symbols.lock), findsOneWidget);
       expect(find.text('Unlock'), findsNothing);
     });
 
@@ -482,7 +482,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(EditNote), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lock'));
       await tester.pump();
@@ -560,7 +560,7 @@ void main() {
 
       await tester.longPress(_noteCards().first);
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.delete));
+      await tester.tap(find.byIcon(Symbols.delete));
       await tester.pumpAndSettle();
 
       expect(find.text('Locked notes cannot be deleted'), findsOneWidget);
@@ -584,7 +584,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(EditNote), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(Symbols.build_circle));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lock'));
       await tester.pumpAndSettle();

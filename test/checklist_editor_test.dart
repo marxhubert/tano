@@ -8,6 +8,7 @@ import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
@@ -195,7 +196,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Open the editor FAB "add" menu and pick Checklist (no focus yet).
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -231,7 +232,7 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -260,16 +261,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // Create a new note: the home "+" expands the FAB.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.tap(find.byIcon(Symbols.add_notes));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(2));
 
     // Insert a checklist through the editor FAB (collapsed in add mode).
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -317,13 +318,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Create a new note and insert a checklist.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.note_add));
+    await tester.tap(find.byIcon(Symbols.add_notes));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Checklist'));
     await tester.pumpAndSettle();
@@ -384,5 +385,43 @@ void main() {
 
     // The info-line counter shows the attachment count (last position).
     expect(find.text('x2'), findsOneWidget);
+  });
+
+  testWidgets('the add action stays amber inside the link sub-menu',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+      ),
+      Note(
+        id: '2',
+        title: 'Other',
+        content: 'x',
+        date: '2026-08-13 10:00:00.000',
+      ),
+    ]));
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Hello'));
+    await tester.pumpAndSettle();
+
+    Icon addIcon() => tester.widget<Icon>(find.byIcon(Symbols.add_circle));
+
+    // Opening the add menu turns its action amber.
+    await tester.tap(find.byIcon(Symbols.add_circle));
+    await tester.pumpAndSettle();
+    expect(addIcon().color, tanoAmber);
+
+    // Its link option opens a second-degree menu: the action stays amber.
+    await tester.tap(find.byIcon(Symbols.sticky_note_2));
+    await tester.pumpAndSettle();
+    expect(find.text('Other'), findsOneWidget);
+    expect(addIcon().color, tanoAmber);
   });
 }

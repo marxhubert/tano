@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Tap group shared by the FAB and the theme toggle, so tapping the toggle does
+/// not dismiss an open FAB menu.
+const Object fabTapGroup = Object();
+
 // --- Identité Visuelle (30%) ---
 const Color tanoTeal = Color(0xFF009688);
 const Color tanoAmber = Color(0xFFFF9800);

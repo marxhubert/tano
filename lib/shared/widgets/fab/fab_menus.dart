@@ -29,9 +29,15 @@ mixin _FabMenusMixin on _FabStateMixin {
         content = const SizedBox.shrink();
     }
 
+    // The dark surface fills the whole menu area (the animating height), while
+    // the content stays anchored at the bottom: the colour and the height then
+    // resize together when switching menus, with no lagging band.
     return Container(
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.15)),
-      child: content,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: content,
+      ),
     );
   }
 
@@ -92,10 +98,10 @@ mixin _FabMenusMixin on _FabStateMixin {
         IconButton(
           icon: Icon(
             _sortCriteria == LinkSortCriteria.date
-                ? Icons.sort
-                : Icons.sort_by_alpha,
+                ? Symbols.history_2
+                : Symbols.sort_by_alpha,
             size: 20,
-            color: Colors.white70,
+            color: Colors.white,
           ),
           onPressed: () => setState(() {
             _sortCriteria = _sortCriteria == LinkSortCriteria.date
@@ -108,10 +114,10 @@ mixin _FabMenusMixin on _FabStateMixin {
         IconButton(
           icon: Icon(
             _isAscending
-                ? Icons.keyboard_double_arrow_down
-                : Icons.keyboard_double_arrow_up,
+                ? Symbols.arrow_downward
+                : Symbols.arrow_upward,
             size: 20,
-            color: Colors.white70,
+            color: Colors.white,
           ),
           onPressed: () => setState(() => _isAscending = !_isAscending),
           padding: const EdgeInsets.all(8.0),
@@ -134,48 +140,120 @@ mixin _FabMenusMixin on _FabStateMixin {
             style: const TextStyle(color: Colors.white, fontSize: 17),
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 16.0,
-              crossAxisSpacing: 16.0,
-              childAspectRatio: 1.8,
-            ),
-            itemCount: TanoPastels.all.length,
-            itemBuilder: (context, index) {
-              final pair = TanoPastels.all[index];
-              final bool isSelected =
-                  pair.name == (widget.currentCategory ?? 'nuage');
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              // The couplet keeps its height; it becomes a circle. Five fit per
+              // row, and the selected one gets a soft halo 25% larger.
+              const double spacing = 16.0;
+              final double currentWidth =
+                  (constraints.maxWidth - spacing * 3.0) / 4.0;
+              final double diameter = currentWidth / 1.8;
+              final double halo = diameter * 1.36;
+              return GridView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  mainAxisSpacing: spacing,
+                  crossAxisSpacing: spacing,
+                  mainAxisExtent: diameter,
+                ),
+                itemCount: TanoPastels.all.length,
+                itemBuilder: (context, index) {
+                  final pair = TanoPastels.all[index];
+                  final bool isSelected =
+                      pair.name == (widget.currentCategory ?? 'nuage');
 
-              return GestureDetector(
-                onTap: () => widget.onColorSelected?.call(pair.name),
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white30, width: 1.0),
-                  ),
-                  child: Stack(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: Container(color: pair.light)),
-                          Expanded(child: Container(color: pair.dark)),
-                        ],
-                      ),
-                      if (isSelected)
-                        const Center(
-                          child: Icon(
-                            Icons.check_circle,
-                            color: tanoAmber,
-                            size: 20.0,
+                  return GestureDetector(
+                    onTap: () => widget.onColorSelected?.call(pair.name),
+                    child: Center(
+                      child: OverflowBox(
+                        maxWidth: halo,
+                        maxHeight: halo,
+                        child: SizedBox(
+                          width: halo,
+                          height: halo,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              // Very soft white disc behind the selected couplet.
+                              if (isSelected)
+                                Container(
+                                  width: halo,
+                                  height: halo,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              Container(
+                                width: diameter,
+                                height: diameter,
+                                clipBehavior: Clip.antiAlias,
+                                // The border must sit above the two colours:
+                                // under the clipped content it only left a
+                                // fuzzy, partial edge.
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                ),
+                                foregroundDecoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white30,
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: <Widget>[
+                                    // Rotated 45°: the split becomes diagonal.
+                                    Transform.rotate(
+                                      angle: math.pi / 4,
+                                      child: Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Container(color: pair.light),
+                                          ),
+                                          Expanded(
+                                            child: Container(color: pair.dark),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Center(
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: <Widget>[
+                                            // White disc behind the check.
+                                            Container(
+                                              width: diameter * 0.40,
+                                              height: diameter * 0.40,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            // Full amber disc...
+                                            Icon(
+                                              Symbols.check_circle,
+                                              color: tanoAmber,
+                                              fill: 1.0,
+                                              size: diameter * 0.53,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -189,12 +267,12 @@ mixin _FabMenusMixin on _FabStateMixin {
     if (widget.isFolderMode) {
       return _buildVerticalList([
         _VerticalMenuItem(
-          icon: Icons.crop_original,
+          icon: Symbols.imagesmode,
           label: AppText.tr('option_image'),
           onTap: widget.onImageSelected,
         ),
         _VerticalMenuItem(
-          icon: Icons.note_add,
+          icon: Symbols.add_notes,
           label: AppText.tr('add_note'),
           onTap: () {
             _toggleVerticalMenu(FabVerticalMenu.add);
@@ -205,12 +283,12 @@ mixin _FabMenusMixin on _FabStateMixin {
     }
     return _buildVerticalList([
       _VerticalMenuItem(
-        icon: Icons.crop_original,
+        icon: Symbols.image,
         label: AppText.tr('option_image'),
         onTap: widget.onImageSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.checklist,
+        icon: Symbols.checklist,
         label: AppText.tr('option_checklist'),
         onTap: widget.onChecklistSelected,
       ),
@@ -223,7 +301,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         },
       ),
       _VerticalMenuItem(
-        icon: Icons.attachment,
+        icon: Symbols.attachment,
         label: AppText.tr('option_attachment'),
         onTap: widget.onAttachmentSelected,
       ),
@@ -247,19 +325,19 @@ mixin _FabMenusMixin on _FabStateMixin {
           onTap: widget.onImportantSelected,
         ),
         _VerticalMenuItem(
-          icon: Icons.edit_outlined,
+          icon: Symbols.edit_square,
           label: AppText.tr('edit'),
           onTap: widget.onEditTitle,
         ),
         _VerticalMenuItem(
-          icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
+          icon: widget.isLocked ? Symbols.lock_open : Symbols.lock,
           label: widget.isLocked
               ? AppText.tr('option_unlock')
               : AppText.tr('option_lock'),
           onTap: widget.onLockSelected,
         ),
         _VerticalMenuItem(
-          icon: Icons.delete_outline,
+          icon: Symbols.delete,
           label: capitalizedDelete,
           iconColor: const Color(0xFFFF8A80),
           textColor: const Color(0xFFFF8A80),
@@ -277,22 +355,22 @@ mixin _FabMenusMixin on _FabStateMixin {
         onTap: widget.onImportantSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.search,
+        icon: Symbols.search,
         label: AppText.tr('option_find'),
         onTap: widget.onFindSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.drive_file_move_outlined,
+        icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
         onTap: widget.onMoveSelected,
       ),
       _VerticalMenuItem(
-        icon: widget.isLocked ? Icons.lock_open : Icons.lock_outline,
+        icon: widget.isLocked ? Symbols.lock_open : Symbols.lock,
         label: widget.isLocked ? AppText.tr('option_unlock') : AppText.tr('option_lock'),
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(
-        icon: Icons.delete_outline,
+        icon: Symbols.delete,
         label: capitalizedDelete,
         iconColor: const Color(0xFFFF8A80),
         textColor: const Color(0xFFFF8A80),

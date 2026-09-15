@@ -165,9 +165,9 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.create_new_folder));
+    await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Perso');
     await tester.tap(find.text('Save'));
@@ -188,18 +188,18 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.create_new_folder), findsOneWidget);
-    expect(find.byIcon(Icons.note_add), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_notes), findsOneWidget);
 
     // Tapping on the page background folds the FAB back.
     await tester.tapAt(const Offset(20.0, 200.0));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
-    expect(find.byIcon(Icons.create_new_folder), findsNothing);
-    expect(find.byIcon(Icons.note_add), findsNothing);
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+    expect(find.byIcon(Symbols.add_notes), findsNothing);
   });
 
   testWidgets('the home FAB reduce chevron folds the extended bar', (
@@ -213,20 +213,20 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Symbols.add_2));
     await tester.pumpAndSettle();
 
     // Extended bar: two creation actions plus the reduce chevron.
-    expect(find.byIcon(Icons.create_new_folder), findsOneWidget);
-    expect(find.byIcon(Icons.note_add), findsOneWidget);
-    expect(find.byIcon(Icons.arrow_forward_ios), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_notes), findsOneWidget);
+    expect(find.byIcon(Symbols.arrow_forward_ios), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.arrow_forward_ios));
+    await tester.tap(find.byIcon(Symbols.arrow_forward_ios));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.add), findsOneWidget);
-    expect(find.byIcon(Icons.create_new_folder), findsNothing);
-    expect(find.byIcon(Icons.note_add), findsNothing);
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+    expect(find.byIcon(Symbols.add_notes), findsNothing);
   });
 
   testWidgets('without folders the page stays "My notes"', (tester) async {
@@ -305,9 +305,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsOneWidget);
@@ -338,9 +338,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -387,9 +387,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
 
@@ -399,8 +399,80 @@ void main() {
     // Tap outside closes the menu first, then folds the FAB back to its
     // reduced (circular) form.
     expect(find.text('Edit'), findsNothing);
-    expect(find.byIcon(Icons.more_vert), findsNothing);
-    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+  });
+
+  testWidgets('tapping the theme toggle keeps the folder FAB menu open', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // Expand the FAB and open its more menu.
+    await tester.tap(find.byIcon(Symbols.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+
+    // Toggling the theme from the app bar must not dismiss the FAB menu.
+    await tester.tap(find.byIcon(Icons.dark_mode));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsOneWidget);
+  });
+
+  testWidgets('opening a note keeps the home FAB extended until the page changes',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Open the home FAB.
+    await tester.tap(find.byIcon(Symbols.add_2));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+
+    // Tapping a card navigates: the FAB must not fold back to "+" on the way.
+    await tester.tap(find.text('Alpha'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Symbols.add_2), findsNothing);
+
+    // Finish the push and let the deferred fold run (Home is covered).
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new).first);
+    await tester.pumpAndSettle();
+
+    // Back on Home, the FAB is already reduced.
+    expect(find.byIcon(Symbols.add_2), findsOneWidget);
+    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
   });
 
   testWidgets('folder background follows the theme', (tester) async {
@@ -540,9 +612,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before using the more menu.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -581,7 +653,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The folder FAB rests reduced: expand it before entering selection.
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Symbols.more_horiz));
     await tester.pumpAndSettle();
 
     final Finder fabBox = find.descendant(
@@ -601,8 +673,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Selection icons replaced the editor ones, same box.
-    expect(find.byIcon(Icons.select_all), findsOneWidget);
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    expect(find.byIcon(Symbols.check_circle), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
     expect(tester.getSize(fabBox), before);
   });
 
@@ -631,7 +703,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
 
     // The FAB became the search input.
@@ -644,7 +716,7 @@ void main() {
     // The app bar only keeps the Cancel action.
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.byIcon(Icons.dark_mode), findsNothing);
-    expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.byIcon(Symbols.add_2), findsNothing);
 
     // Typing switches the page title to "Results".
     await tester.enterText(searchField, 'Fil');
@@ -726,7 +798,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -958,8 +1030,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Long list: the FAB is reduced so it does not hide the last notes.
-    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    expect(find.byIcon(Symbols.more_horiz), findsOneWidget);
+    expect(find.byIcon(Symbols.build_circle), findsNothing);
   });
 
   testWidgets('home selection counts notes, folders and items', (tester) async {
@@ -991,26 +1063,65 @@ void main() {
     expect(find.text('2/3 items selected'), findsOneWidget);
 
     // The move action is disabled when a folder is part of the selection.
-    final InkWell moveButton = tester.widget<InkWell>(
+    final IconButton moveButton = tester.widget<IconButton>(
       find.ancestor(
-        of: find.byIcon(Icons.drive_file_move_outline),
-        matching: find.byType(InkWell),
+        of: find.byIcon(Symbols.drive_file_move),
+        matching: find.byType(IconButton),
       ).first,
     );
-    expect(moveButton.onTap, isNull);
+    expect(moveButton.onPressed, isNull);
 
     // FAB order: all, none, move, delete.
-    final double all = tester.getCenter(find.byIcon(Icons.select_all)).dx;
+    final double all = tester.getCenter(find.byIcon(Symbols.check_circle)).dx;
     final double none = tester
-        .getCenter(find.byIcon(Icons.check_box_outline_blank))
+        .getCenter(find.byIcon(Symbols.circle))
         .dx;
     final double move = tester
-        .getCenter(find.byIcon(Icons.drive_file_move_outline))
+        .getCenter(find.byIcon(Symbols.drive_file_move))
         .dx;
-    final double delete = tester.getCenter(find.byIcon(Icons.delete)).dx;
+    final double delete = tester.getCenter(find.byIcon(Symbols.delete)).dx;
     expect(all, lessThan(none));
     expect(none, lessThan(move));
     expect(move, lessThan(delete));
+  });
+
+  testWidgets('move and delete are disabled when nothing is selected',
+      (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Free2', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Free'));
+    await tester.pumpAndSettle();
+
+    IconButton actionButton(IconData icon) => tester.widget<IconButton>(
+          find
+              .ancestor(
+                of: find.byIcon(icon),
+                matching: find.byType(IconButton),
+              )
+              .first,
+        );
+
+    // One note selected: both actions are available.
+    expect(actionButton(Symbols.drive_file_move).onPressed, isNotNull);
+    expect(actionButton(Symbols.delete).onPressed, isNotNull);
+
+    // Clearing the selection keeps selection mode but disables both.
+    await tester.tap(find.byIcon(Symbols.circle));
+    await tester.pumpAndSettle();
+    expect(actionButton(Symbols.drive_file_move).onPressed, isNull);
+    expect(actionButton(Symbols.delete).onPressed, isNull);
   });
 
   testWidgets('folder list rows have a minimum height', (tester) async {
@@ -1098,7 +1209,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1149,7 +1260,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
+    await tester.tap(find.byIcon(Symbols.search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1176,7 +1287,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Results'), findsNothing);
     // Back to the normal folder view: the search action is available again.
-    expect(find.byIcon(Icons.search), findsOneWidget);
+    expect(find.byIcon(Symbols.search), findsOneWidget);
     expect(find.text('Perso'), findsWidgets);
   });
 
@@ -1251,7 +1362,7 @@ void main() {
     await tester.longPress(find.text('A'));
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
+    await tester.tap(find.byIcon(Symbols.drive_file_move));
     await tester.pumpAndSettle();
 
     // The current folder is not offered; Work is.
@@ -1280,7 +1391,7 @@ void main() {
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Move to'));
     await tester.pumpAndSettle();
@@ -1310,7 +1421,7 @@ void main() {
     // Select the note on the home page, then open the move picker.
     await tester.longPress(find.text('Alpha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.drive_file_move_outline));
+    await tester.tap(find.byIcon(Symbols.drive_file_move));
     await tester.pumpAndSettle();
 
     expect(find.byType(CupertinoActionSheet), findsOneWidget);
@@ -1342,7 +1453,7 @@ void main() {
 
     await tester.longPress(find.text('A'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.delete));
+    await tester.tap(find.byIcon(Symbols.delete));
     await tester.pumpAndSettle();
 
     // Nothing is deleted before the confirmation.
