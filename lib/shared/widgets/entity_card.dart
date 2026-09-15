@@ -26,11 +26,8 @@ enum EntityCardHeight {
   final double value;
 }
 
-typedef EntityCardBodyBuilder = Widget Function(
-  BuildContext context,
-  Color textColor,
-  bool hasCover,
-);
+typedef EntityCardBodyBuilder =
+    Widget Function(BuildContext context, Color textColor, bool hasCover);
 
 /// The single card container (note, folder, later task/project).
 ///
@@ -118,10 +115,12 @@ class EntityCard extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final double coverHeight =
-              showCover && !isListLayout ? constraints.maxHeight / 2 : 0.0;
-          final double coverWidth =
-              showCover && isListLayout ? constraints.maxWidth / 3 : 0.0;
+          final double coverHeight = showCover && !isListLayout
+              ? constraints.maxHeight / 2
+              : 0.0;
+          final double coverWidth = showCover && isListLayout
+              ? constraints.maxWidth / 3
+              : 0.0;
           return Stack(
             children: <Widget>[
               if (showCover)
@@ -132,17 +131,26 @@ class EntityCard extends StatelessWidget {
                   bottom: isListLayout ? 0.0 : null,
                   width: isListLayout ? coverWidth : null,
                   height: isListLayout ? null : coverHeight,
-                  // Hairline under the cover, like the cover rules of the managed
-                  // cover; drawn on top of the image.
+                  // Hairline between the cover and the content, like the cover
+                  // rules of the managed cover; drawn on top of the image. It
+                  // faces the content: bottom in the grid (cover on top),
+                  // right in the list (cover on the left).
                   child: DecoratedBox(
                     position: DecorationPosition.foreground,
                     decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: cardBorderColor(isDark),
-                          width: 0.5,
-                        ),
-                      ),
+                      border: isListLayout
+                          ? Border(
+                              right: BorderSide(
+                                color: cardBorderColor(isDark),
+                                width: 0.5,
+                              ),
+                            )
+                          : Border(
+                              bottom: BorderSide(
+                                color: cardBorderColor(isDark),
+                                width: 0.5,
+                              ),
+                            ),
                     ),
                     child: CoverImage(name: coverImage!),
                   ),
@@ -234,10 +242,11 @@ class EntityCard extends StatelessWidget {
       groupId: fabTapGroup,
       child: isListLayout
           ? SizedBox(
-              height: (showCover
-                      ? EntityCardHeight.normal
-                      : EntityCardHeight.compact)
-                  .value,
+              height:
+                  (showCover
+                          ? EntityCardHeight.normal
+                          : EntityCardHeight.compact)
+                      .value,
               child: card,
             )
           : card,
@@ -362,10 +371,7 @@ class EntityCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: titleStyle,
           ),
-          if (meta != null) ...<Widget>[
-            const SizedBox(height: 2.0),
-            meta,
-          ],
+          if (meta != null) ...<Widget>[const SizedBox(height: 2.0), meta],
         ],
       ),
     );
@@ -468,10 +474,7 @@ class _FolderWatermarkPainter extends CustomPainter {
       // Open flap.
       ..moveTo(2.25, 12.75)
       ..lineTo(2.25, 12.0)
-      ..arcToPoint(
-        const Offset(4.5, 9.75),
-        radius: const Radius.circular(2.25),
-      )
+      ..arcToPoint(const Offset(4.5, 9.75), radius: const Radius.circular(2.25))
       ..lineTo(19.5, 9.75)
       ..arcToPoint(
         const Offset(21.75, 12.0),

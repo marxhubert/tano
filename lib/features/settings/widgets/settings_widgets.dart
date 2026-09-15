@@ -1,6 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
+/// One settings section: an optional title, a card of tiles and an optional
+/// footer. Every section of the settings tree is built from this.
+class SettingsGroup extends StatelessWidget {
+  const SettingsGroup({
+    super.key,
+    this.title,
+    required this.tiles,
+    this.footer = const <Widget>[],
+    this.color,
+  });
+
+  /// Section title; when null the group starts directly with its card.
+  final String? title;
+
+  /// Card content, wrapped in a [SettingsCard].
+  final List<Widget> tiles;
+
+  final List<Widget> footer;
+  final Color? color;
+
+  /// Vertical space above a group, so consecutive sections never touch.
+  static const double topSpacing = 24.0;
+
+  /// Space between the title, the card and the footer of one group.
+  static const double contentSpacing = 4.0;
+
+  /// Space between the lines of one footer.
+  static const double footerLineSpacing = 6.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: topSpacing),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (title != null) SettingsSection(title: title!),
+          SettingsCard(color: color, children: tiles),
+          if (footer.isNotEmpty) SettingsFooter(children: footer),
+        ],
+      ),
+    );
+  }
+}
+
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.title});
   final String title;
@@ -8,7 +53,12 @@ class SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 4.0),
+      padding: const EdgeInsets.fromLTRB(
+        20.0,
+        0.0,
+        20.0,
+        SettingsGroup.contentSpacing,
+      ),
       child: Text(
         title,
         style: TextStyle(
@@ -29,7 +79,12 @@ class SettingsFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(
+        20.0,
+        SettingsGroup.contentSpacing,
+        20.0,
+        0.0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
@@ -45,7 +100,7 @@ class SettingsFooterText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: SettingsGroup.footerLineSpacing),
       child: Text(
         text,
         style: TextStyle(
@@ -85,13 +140,12 @@ class SettingsCard extends StatelessWidget {
 
     return Card(
       elevation: 0.0,
-      color: color ??
+      color:
+          color ??
           (Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withValues(alpha: 0.06)
               : Colors.black.withValues(alpha: 0.06)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
       child: Column(children: dividedChildren),
     );
   }
@@ -118,19 +172,23 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      visualDensity: const VisualDensity(vertical: -1.0),
+      visualDensity: const VisualDensity(vertical: -2.0),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
       dense: false,
       title: Text(
         title,
         style: TextStyle(
           color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
-          fontWeight: fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
+          fontWeight:
+              fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
           fontSize: 17.0,
         ),
       ),
-      trailing: trailing ??
-          (selected ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0) : null),
+      trailing:
+          trailing ??
+          (selected
+              ? const Icon(Icons.check_circle, color: tanoTeal, size: 20.0)
+              : null),
       onTap: onTap,
     );
   }
@@ -151,15 +209,12 @@ class SettingsSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      visualDensity: const VisualDensity(vertical: -1.0),
+      visualDensity: const VisualDensity(vertical: -2.0),
       contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
       dense: false,
       title: Text(
         title,
-        style: TextStyle(
-          color: primaryTextColor(context),
-          fontSize: 17.0,
-        ),
+        style: TextStyle(color: primaryTextColor(context), fontSize: 17.0),
       ),
       trailing: Transform.scale(
         scale: 0.8,

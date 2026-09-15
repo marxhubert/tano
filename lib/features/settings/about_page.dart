@@ -18,7 +18,8 @@ class AboutPage extends StatefulWidget {
   State<AboutPage> createState() => _AboutPageState();
 }
 
-class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMixin {
+class _AboutPageState extends State<AboutPage>
+    with SingleTickerProviderStateMixin {
   bool _isCheckingUpdate = false;
   late AnimationController _rotationController;
   final SettingsViewModel _viewModel = SettingsViewModel();
@@ -45,10 +46,10 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
       _isCheckingUpdate = true;
     });
     _rotationController.repeat();
-    
+
     // TODO: Implement real update check later
     await Future.delayed(const Duration(seconds: 3));
-    
+
     if (mounted) {
       _rotationController.stop();
       setState(() {
@@ -101,7 +102,11 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
             height: 40.0,
             child: CircleAvatar(
               backgroundColor: Colors.black87,
-              child: Icon(Icons.bookmark_border, size: 24.0, color: Colors.white),
+              child: Icon(
+                Icons.bookmark_border,
+                size: 24.0,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 6.0),
@@ -117,10 +122,7 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
               children: [
                 const Text(
                   'Version 1.0',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14.0,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 14.0),
                 ),
                 TextButton.icon(
                   onPressed: _checkUpdate,
@@ -183,35 +185,53 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
+          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 24.0),
           sliver: SliverToBoxAdapter(
-            child: SettingsCard(
-              children: [
+            child: SettingsGroup(
+              tiles: [
                 SettingsTile(
                   title: AppText.tr('about_premium'),
                   selected: false,
                   onTap: () {
                     // TODO: Implement Premium
                   },
-                  trailing: const Icon(Icons.star_outline, color: tanoAmber, size: 20),
+                  trailing: const Icon(
+                    Icons.star_outline,
+                    color: tanoAmber,
+                    size: 20,
+                  ),
                 ),
                 SettingsTile(
                   title: 'Buy Me a Coffee',
                   selected: false,
-                  onTap: () => _launchUrl('https://www.buymeacoffee.com/marxhubert'),
-                  trailing: const Icon(Icons.coffee_outlined, color: Colors.grey, size: 20),
+                  onTap: () =>
+                      _launchUrl('https://www.buymeacoffee.com/marxhubert'),
+                  trailing: const Icon(
+                    Icons.coffee_outlined,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
                 ),
                 SettingsTile(
                   title: 'GitHub Sponsors',
                   selected: false,
-                  onTap: () => _launchUrl('https://github.com/sponsors/shikamarx'),
-                  trailing: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
+                  onTap: () =>
+                      _launchUrl('https://github.com/sponsors/shikamarx'),
+                  trailing: const Icon(
+                    Icons.favorite_border,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
                 ),
                 SettingsTile(
                   title: 'PayPal',
                   selected: false,
                   onTap: () => _launchUrl('https://paypal.me/marxhubert'),
-                  trailing: const Icon(Icons.payment, color: Colors.grey, size: 20),
+                  trailing: const Icon(
+                    Icons.payment,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -222,22 +242,18 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
           sliver: SliverToBoxAdapter(
             child: Text(
               AppText.tr('about_more'),
-              style: TextStyle(
-                color: textColor,
-                fontSize: 16.0,
-                height: 1.6,
-              ),
+              style: TextStyle(color: textColor, fontSize: 16.0, height: 1.6),
             ),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 0.0),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
               builder: (context, _) {
-                return SettingsCard(
-                  children: [
+                return SettingsGroup(
+                  tiles: [
                     SettingsTile(
                       title: AppText.tr('option_feedback'),
                       selected: false,
@@ -255,17 +271,19 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 24.0, 12.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 0.0),
           sliver: SliverToBoxAdapter(
-            child: SettingsCard(
-              children: [
+            child: SettingsGroup(
+              tiles: [
                 SettingsTile(
                   title: AppText.tr('licenses'),
                   selected: false,
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LicensesPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const LicensesPage(),
+                      ),
                     );
                   },
                 ),
@@ -280,10 +298,7 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
             alignment: Alignment.bottomCenter,
             child: Text(
               '© 2026, Marx Hubert',
-              style: TextStyle(
-                color: mutedTextColor(context),
-                fontSize: 12.0,
-              ),
+              style: TextStyle(color: mutedTextColor(context), fontSize: 12.0),
             ),
           ),
         ),

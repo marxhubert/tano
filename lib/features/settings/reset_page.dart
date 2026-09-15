@@ -36,56 +36,44 @@ class _ResetPageState extends State<ResetPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 24.0),
-                  // --- SECTION 1: DATA ---
-                  SettingsCard(
-                    children: [
+                  SettingsGroup(
+                    tiles: [
                       SettingsSwitchTile(
                         title: AppText.tr('option_delete_data'),
                         value: _deleteData,
                         onChanged: (val) => setState(() => _deleteData = val),
                       ),
                     ],
-                  ),
-                  SettingsFooter(
-                    children: [
+                    footer: [
                       SettingsFooterText(text: AppText.tr('desc_delete_data')),
                     ],
                   ),
 
-                  const SizedBox(height: 12.0),
-
-                  // --- SECTION 2: PREFERENCES ---
-                  SettingsCard(
-                    children: [
+                  SettingsGroup(
+                    tiles: [
                       SettingsSwitchTile(
                         title: AppText.tr('option_delete_prefs'),
                         value: _deletePrefs,
                         onChanged: (val) => setState(() => _deletePrefs = val),
                       ),
                     ],
-                  ),
-                  SettingsFooter(
-                    children: [
+                    footer: [
                       SettingsFooterText(text: AppText.tr('desc_delete_prefs')),
                     ],
                   ),
 
                   // --- SECTION 3: EXPORT (only when data will be deleted) ---
                   if (_deleteData) ...<Widget>[
-                    const SizedBox(height: 12.0),
-                    SettingsCard(
+                    SettingsGroup(
                       color: Colors.red.withValues(alpha: 0.12),
-                      children: [
+                      tiles: [
                         SettingsTile(
                           title: AppText.tr('option_export_before_reset'),
                           selected: false,
                           onTap: () => exportData(context),
                         ),
                       ],
-                    ),
-                    SettingsFooter(
-                      children: [
+                      footer: [
                         SettingsFooterText(
                           text: AppText.tr('desc_export_before_reset'),
                         ),
@@ -93,7 +81,7 @@ class _ResetPageState extends State<ResetPage> {
                     ),
                   ],
 
-                  const SizedBox(height: 12.0),
+                  const SizedBox(height: SettingsGroup.topSpacing),
                 ]),
               ),
             ),
@@ -105,47 +93,54 @@ class _ResetPageState extends State<ResetPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     // Developer reset: same shape as the reset button, grey.
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54.0,
-                      child: ElevatedButton(
-                        onPressed: _viewModel.isResetting
-                            ? null
-                            : _handleDeveloperReset,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              Colors.grey.withValues(alpha: 0.4),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(55.0),
+                    // Its bottom space belongs to the button, so removing the
+                    // button removes the gap with the real reset too.
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 54.0,
+                        child: ElevatedButton(
+                          onPressed: _viewModel.isResetting
+                              ? null
+                              : _handleDeveloperReset,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.withValues(
+                              alpha: 0.4,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(55.0),
+                            ),
+                            elevation: 0,
                           ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          AppText.tr('developer_reset').toUpperCase(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            letterSpacing: 1.1,
+                          child: Text(
+                            AppText.tr('developer_reset').toUpperCase(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                              letterSpacing: 1.1,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12.0),
                     SizedBox(
                       width: double.infinity,
                       height: 54.0,
                       child: ElevatedButton(
                         onPressed:
-                            (_deleteData || _deletePrefs) && !_viewModel.isResetting
-                                ? _handleReset
-                                : null,
+                            (_deleteData || _deletePrefs) &&
+                                !_viewModel.isResetting
+                            ? _handleReset
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              Colors.red.withValues(alpha: 0.3),
+                          disabledBackgroundColor: Colors.red.withValues(
+                            alpha: 0.3,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(55.0),
                           ),
@@ -157,8 +152,9 @@ class _ResetPageState extends State<ResetPage> {
                                 height: 20,
                                 child: CircularProgressIndicator.adaptive(
                                   strokeWidth: 2.0,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : Text(
@@ -194,7 +190,9 @@ class _ResetPageState extends State<ResetPage> {
         deletePrefs: _deletePrefs,
       );
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     }
   }
@@ -208,7 +206,9 @@ class _ResetPageState extends State<ResetPage> {
     if (confirm == true) {
       await _viewModel.developerReset();
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     }
   }

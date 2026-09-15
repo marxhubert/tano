@@ -15,54 +15,47 @@ class AboutSection extends StatelessWidget {
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SettingsSection(title: AppText.tr('about')),
-            SettingsCard(
-              children: [
-                SettingsTile(
-                  title: AppText.tr('about'),
-                  selected: false,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AboutPage()),
-                    );
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('option_check_update'),
-                  selected: false,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const UpdatePage()),
-                    );
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('option_feedback'),
-                  selected: false,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const FeedbackPage()),
-                    );
-                  },
-                ),
-                SettingsSwitchTile(
-                  title: AppText.tr('option_bug_report'),
-                  value: viewModel.bugReportEnabled,
-                  onChanged: (val) => viewModel.setBugReportEnabled(val),
-                ),
-              ],
+        return SettingsGroup(
+          title: AppText.tr('about'),
+          tiles: <Widget>[
+            SettingsTile(
+              title: AppText.tr('about'),
+              selected: false,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutPage()),
+                );
+              },
             ),
-            SettingsFooter(
-              children: [
-                SettingsFooterText(text: AppText.tr('desc_bug_report')),
-              ],
+            SettingsTile(
+              title: AppText.tr('option_check_update'),
+              selected: false,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UpdatePage()),
+                );
+              },
             ),
+            SettingsTile(
+              title: AppText.tr('option_feedback'),
+              selected: false,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FeedbackPage()),
+                );
+              },
+            ),
+            SettingsSwitchTile(
+              title: AppText.tr('option_bug_report'),
+              value: viewModel.bugReportEnabled,
+              onChanged: (val) => viewModel.setBugReportEnabled(val),
+            ),
+          ],
+          footer: <Widget>[
+            SettingsFooterText(text: AppText.tr('desc_bug_report')),
           ],
         );
       },
