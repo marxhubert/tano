@@ -19,6 +19,11 @@ enum FabVerticalMenu { none, add, color, more, link, move }
 
 enum ListSortCriteria { date, title }
 
+/// The surface colour of an open FAB menu: the FAB primary darkened, so the
+/// menu and the action cell that opened it can share the exact same tone.
+Color _fabMenuSurface(BuildContext context) =>
+    Color.lerp(Theme.of(context).colorScheme.primary, Colors.black, 0.15)!;
+
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
   const AppFab({

@@ -41,7 +41,7 @@ mixin _FabMenusMixin on _FabStateMixin {
     // while the FAB animates: the animating container clips it, so it never
     // wraps or squashes into a half-grown menu area.
     return Container(
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.15)),
+      decoration: BoxDecoration(color: _fabMenuSurface(context)),
       child: Align(
         alignment: Alignment.bottomCenter,
         child: OverflowBox(

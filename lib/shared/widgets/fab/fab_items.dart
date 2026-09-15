@@ -104,16 +104,102 @@ class _EditorAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color base = color ?? (isActive ? tanoAmber : Colors.white);
+    // The open action keeps a plain white glyph: the darker menu surface
+    // behind it already signals the active state.
+    final Color base = color ?? Colors.white;
     // When disabled, every action borrows the neutral dimmed colour: a red
     // "delete" at 35% would be invisible on the teal FAB.
     final Color iconColor =
         onTap == null ? Colors.white.withValues(alpha: 0.35) : base;
-    return IconButton(
+    // The bar splits into equal, gapless full-height zones: each action fills
+    // its own zone.
+    final Widget button = IconButton(
       icon: Icon(icon, color: iconColor, size: size),
       onPressed: onTap,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: const RoundedRectangleBorder(),
+      ),
+    );
+    if (!isActive) return button;
+    // The open action's zone flows into the menu through concave fillets at the
+    // top, then tapers inwards towards a rounded bottom.
+    return CustomPaint(
+      painter: _ActiveZonePainter(color: _fabMenuSurface(context)),
+      child: button,
     );
   }
+}
+
+/// Paints the open action's zone. Its top flares past the zone into the menu
+/// (concave fillets that overlap the neighbouring zones), the sides taper
+/// slightly inwards, and the bottom is rounded.
+class _ActiveZonePainter extends CustomPainter {
+  const _ActiveZonePainter({required this.color});
+
+  final Color color;
+
+  static const double _spill = 12.0;
+  static const double _drop = 12.0;
+  static const double _radius = 12.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    if (w <= 0 || h <= 0) return;
+
+    final double radius = _radius
+        .clamp(0.0, w / 2)
+        .clamp(0.0, h / 2)
+        .toDouble();
+    final double drop = _drop.clamp(0.0, h - radius).toDouble();
+
+    final Path path = Path()
+      ..moveTo(-_spill, 0)
+
+      // Top-left: opening outwards.
+      ..quadraticBezierTo(0, 0, 0, drop)
+      ..lineTo(0, h - radius)
+
+      // Bottom-left: rounded corner.
+      ..arcToPoint(
+        Offset(radius, h),
+        radius: Radius.circular(radius),
+        clockwise: false,
+      )
+
+      // Bottom edge.
+      ..lineTo(w - radius, h)
+
+      // Bottom-right: rounded corner.
+      ..arcToPoint(
+        Offset(w, h - radius),
+        radius: Radius.circular(radius),
+        clockwise: false,
+      )
+
+      ..lineTo(w, drop)
+
+      // Top-right: opening outwards.
+      ..quadraticBezierTo(w, 0, w + _spill, 0)
+      ..close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ActiveZonePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _VerticalMenuItem extends StatelessWidget {

@@ -338,8 +338,12 @@ mixin _FabBarsMixin on _FabStateMixin {
       child: SizedBox(
         width: width,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: children,
+          // Split the bar into N equal, gapless, full-height zones, one per
+          // action: no spacing, padding or margin between them.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final Widget child in children) Expanded(child: child),
+          ],
         ),
       ),
     );

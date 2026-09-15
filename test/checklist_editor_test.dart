@@ -8,7 +8,6 @@ import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/shared/widgets/theme.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
@@ -387,7 +386,7 @@ void main() {
     expect(find.text('x2'), findsOneWidget);
   });
 
-  testWidgets('the add action stays amber inside the link sub-menu',
+  testWidgets('the add action stays white inside the link sub-menu',
       (tester) async {
     getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
       Note(
@@ -413,15 +412,15 @@ void main() {
 
     Icon addIcon() => tester.widget<Icon>(find.byIcon(Symbols.add_circle));
 
-    // Opening the add menu turns its action amber.
+    // Opening the add menu keeps the glyph plain white.
     await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
-    expect(addIcon().color, tanoAmber);
+    expect(addIcon().color, Colors.white);
 
-    // Its link option opens a second-degree menu: the action stays amber.
+    // Its link option opens a second-degree menu: the action stays white.
     await tester.tap(find.byIcon(Symbols.sticky_note_2));
     await tester.pumpAndSettle();
     expect(find.text('Other'), findsOneWidget);
-    expect(addIcon().color, tanoAmber);
+    expect(addIcon().color, Colors.white);
   });
 }

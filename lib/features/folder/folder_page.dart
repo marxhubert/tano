@@ -13,6 +13,7 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/config/date_format.dart';
@@ -35,7 +36,7 @@ class FolderPage extends StatefulWidget {
   State<FolderPage> createState() => _FolderPageState();
 }
 
-class _FolderPageState extends State<FolderPage> {
+class _FolderPageState extends State<FolderPage> with RouteAware {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _searchController = TextEditingController();
@@ -74,7 +75,27 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<void>? route = ModalRoute.of<void>(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  /// Called when another route (the editor, ...) is pushed on top of this page.
+  /// Fold the FAB once the page is fully covered, so it is already back in its
+  /// resting form when the user returns.
+  @override
+  void didPushNext() {
+    Future<void>.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _fabKey.currentState?.collapse();
+    });
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
