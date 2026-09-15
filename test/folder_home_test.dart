@@ -1401,31 +1401,41 @@ void main() {
     expect(repo.notes.firstWhere((Note n) => n.id == 'n1').folderId, 'f1');
   });
 
-  testWidgets('the move picker is an iOS action sheet on iOS', (tester) async {
+  testWidgets('the move picker is a FAB sub-menu, not a native sheet', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
-    final _Repo repo = _Repo(
-      notes: <Note>[
-        Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
-      ],
-      folders: <Folder>[
-        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
-      ],
-    );
-    getIt.registerSingleton<NotesRepository>(repo);
+      final _Repo repo = _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      );
+      getIt.registerSingleton<NotesRepository>(repo);
 
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const Tano());
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
 
-    // Select the note on the home page, then open the move picker.
-    await tester.longPress(find.text('Alpha'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.drive_file_move));
-    await tester.pumpAndSettle();
+      // Select the note on the home page, then open the move picker.
+      await tester.longPress(find.text('Alpha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Symbols.drive_file_move));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CupertinoActionSheet), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
+      // No iOS action sheet: the folder list lives in the FAB sub-menu.
+      expect(find.byType(CupertinoActionSheet), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AppFab),
+          matching: find.text('Perso'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Home'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }

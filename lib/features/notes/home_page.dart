@@ -316,26 +316,6 @@ class HomeState extends State<Home> with RouteAware {
     await _viewModel.addFolder(name);
   }
 
-  /// Moves the selected notes into a folder (or unfiles them).
-  Future<void> _moveSelected() async {
-    if (_viewModel.hasFolderInSelection) {
-      showAdaptiveNotice(context, AppText.tr('move_folders_error'));
-      return;
-    }
-    final List<Folder> folders = _viewModel.folders;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
-    await _viewModel.moveSelectedTo(target.isEmpty ? null : target);
-  }
-
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
     showAdaptiveNoticeWithAction(
@@ -743,7 +723,7 @@ class HomeState extends State<Home> with RouteAware {
                 }
               }
             },
-            onMoveSelected: _moveSelected,
+            onMoveTo: _viewModel.moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

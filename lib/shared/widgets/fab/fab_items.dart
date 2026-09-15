@@ -6,12 +6,17 @@ class _SubMenuLayout extends StatelessWidget {
     required this.onBack,
     required this.child,
     this.actions = const [],
+    this.isMeasurement = false,
   });
 
   final String title;
   final VoidCallback onBack;
   final Widget child;
   final List<Widget> actions;
+
+  /// In the offstage measurement pass the body is laid out at its natural
+  /// height (no scroll view), so the reported height matches the real menu.
+  final bool isMeasurement;
 
   @override
   Widget build(BuildContext context) {
@@ -57,15 +62,24 @@ class _SubMenuLayout extends StatelessWidget {
           ),
         ),
         // Scrollable Body. The dark surface comes from the menu area itself.
-        Flexible(
-          child: SingleChildScrollView(
+        if (isMeasurement)
+          Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
               vertical: 8.0,
             ),
             child: child,
+          )
+        else
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: child,
+            ),
           ),
-        ),
       ],
     );
   }

@@ -313,31 +313,17 @@ class _FolderPageState extends State<FolderPage> {
     if (_isSearchMode) _exitSearchMode();
   }
 
-  /// Moves the selected notes to another folder, or back home.
-  Future<void> _moveSelected() async {
+  /// Moves the selected notes to [folderId], or back home when null.
+  Future<void> _moveTo(String? folderId) async {
     final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders =
-        await _foldersRepository?.loadFolders() ?? const <Folder>[];
-    if (!mounted) return;
-    final String? target = await showAdaptiveChoice<String>(
-      context: context,
-      title: AppText.tr('option_move'),
-      choices: <AdaptiveChoice<String>>[
-        AdaptiveChoice<String>(label: AppText.tr('no_folder'), value: ''),
-        for (final Folder folder in folders)
-          if (folder.id != _folder.id)
-            AdaptiveChoice<String>(label: folder.name, value: folder.id),
-      ],
-    );
-    if (target == null || !mounted) return;
     final List<Note> selected = _notes
         .where((Note note) => _selection.contains(note.id))
         .toList();
     for (final Note note in selected) {
       await repository.upsertNote(
-        target.isEmpty
+        folderId == null
             ? note.withoutFolder()
-            : note.copyWith(folderId: target),
+            : note.copyWith(folderId: folderId),
       );
     }
     if (!mounted) return;
@@ -596,6 +582,7 @@ class _FolderPageState extends State<FolderPage> {
         isLocked: _folder.isLocked,
         isTitleEditing: _isEditingTitle,
         currentCategory: _folder.category,
+        currentFolderId: _folder.id,
         onAddNote: () => _openNote(add: true, note: _newNote()),
         onImageSelected: () {
           _fabKey.currentState?.closeVerticalMenu();
@@ -620,7 +607,7 @@ class _FolderPageState extends State<FolderPage> {
         },
         onReset: _clearSearch,
         onDelete: _deleteSelected,
-        onMoveSelected: _moveSelected,
+        onMoveTo: _moveTo,
         onClearSelection: () => setState(_selection.clear),
         onSelectAll: () => setState(
           // Only the notes currently shown (search results included).
