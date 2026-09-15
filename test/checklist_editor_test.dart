@@ -259,7 +259,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Create a new note: the home "+" opens the add menu.
+    // Create a new note: the home "+" expands the FAB.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.note_add));

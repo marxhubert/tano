@@ -15,7 +15,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
-import 'package:tano/shared/widgets/app_fab.dart';
+import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
@@ -177,7 +177,7 @@ void main() {
     expect(repo.folders.single.name, 'Perso');
   });
 
-  testWidgets('tapping elsewhere folds the home add menu back to "+"', (
+  testWidgets('tapping elsewhere folds the home FAB extended bar back to "+"', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -195,6 +195,33 @@ void main() {
 
     // Tapping on the page background folds the FAB back.
     await tester.tapAt(const Offset(20.0, 200.0));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byIcon(Icons.create_new_folder), findsNothing);
+    expect(find.byIcon(Icons.note_add), findsNothing);
+  });
+
+  testWidgets('the home FAB reduce chevron folds the extended bar', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(notes: <Note>[], folders: <Folder>[]),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    // Extended bar: two creation actions plus the reduce chevron.
+    expect(find.byIcon(Icons.create_new_folder), findsOneWidget);
+    expect(find.byIcon(Icons.note_add), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_forward_ios), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_forward_ios));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.add), findsOneWidget);
@@ -340,7 +367,7 @@ void main() {
     expect(repo.folders.single.name, 'Travail');
   });
 
-  testWidgets('tapping outside folds the folder FAB menu back', (
+  testWidgets('tapping outside closes the folder FAB menu and collapses it', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -369,8 +396,11 @@ void main() {
     await tester.tapAt(const Offset(20.0, 80.0));
     await tester.pumpAndSettle();
 
+    // Tap outside closes the menu first, then folds the FAB back to its
+    // reduced (circular) form.
     expect(find.text('Edit'), findsNothing);
-    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    expect(find.byIcon(Icons.more_vert), findsNothing);
+    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
   });
 
   testWidgets('folder background follows the theme', (tester) async {

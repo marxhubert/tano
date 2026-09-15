@@ -107,8 +107,7 @@ class EntityCard extends StatelessWidget {
 > **Fait** sur `refactor/core-stabilisation` : `EntityCard` est la carte unique,
 > les 6 écrans sont migrés, `NoteCard` / `FolderCard` / `note_card_content.dart`
 > sont supprimés. Les corps sont dans `note_card_bodies.dart` et
-> `folder_card_bodies.dart`, la typographie dans `card_typography.dart`. Le labo
-> (`features/lab/card_lab_page.dart`) est **conservé** comme banc d'essai.
+> `folder_card_bodies.dart`, la typographie dans `card_typography.dart`.
 
 ## 7. Lot 3 — Slivers unifiés `EntitySliver<T>`
 
@@ -217,6 +216,18 @@ class SelectionController extends ChangeNotifier {
   - `fab/fab_bars.dart` (barres éditeur/sélection/recherche/find) ;
   - `fab/fab_items.dart` (`_VerticalMenuItem`, `_EditorAction`, `_SelectionFabButton`).
 - **Refactor pur** : aucune API publique ne change.
+
+> **Fait** sur `refactor/core-stabilisation` : `app_fab.dart` éclaté en
+> `shared/widgets/fab/{app_fab,fab_bars,fab_menus,fab_items}.dart` via
+> `part`/`part of` + mixins (`_FabStateMixin`, `_FabBarsMixin`,
+> `_FabMenusMixin`). L'API publique et les membres privés sont inchangés, les
+> 4 fichiers font partie de la même librairie.
+>
+> **Refonte** appliquée en même temps (contrat `13` §3) : la 4e forme du « + »
+> d'accueil est supprimée (`homeAddOpen`, `_buildHomeAddIcons`) ; le « + » ouvre
+> la forme **extended dossier + note + réduire** ; taper ailleurs ferme le menu
+> **puis** replie. Reste à trancher : la **barre de sélection** (4 actions sans
+> « réduire »).
 
 ## 12. Lot 8 — Nettoyage
 
