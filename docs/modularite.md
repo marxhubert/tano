@@ -1,9 +1,9 @@
-# 14 — Modularité et services
+# Modularité et services
 
 > Principe transversal : un **squelette de base** stable, et des **services** qui
 > viennent s'y greffer selon des paramètres et des contextes (gratuit/premium,
 > livraison partielle, configuration).
-> Complément : [13 — Composants et contrats](./13-composants-et-contrats.md).
+> Complément : [composants](./composants.md).
 
 ## 1. Objectif
 
