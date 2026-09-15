@@ -154,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Bookmark now lives in the FAB's "more" menu, not the app bar.
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
 
     Icon bookmarkIcon() =>

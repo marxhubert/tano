@@ -218,15 +218,20 @@ class EntityCard extends StatelessWidget {
       ),
     );
     // A list card is one of two fixed heights; a grid card fills its cell.
-    return isListLayout
-        ? SizedBox(
-            height: (showCover
-                    ? EntityCardHeight.normal
-                    : EntityCardHeight.compact)
-                .value,
-            child: card,
-          )
-        : card;
+    // Cards share the FAB's tap group: tapping one to open the entity must not
+    // fold an open FAB while the page navigates away.
+    return TapRegion(
+      groupId: fabTapGroup,
+      child: isListLayout
+          ? SizedBox(
+              height: (showCover
+                      ? EntityCardHeight.normal
+                      : EntityCardHeight.compact)
+                  .value,
+              child: card,
+            )
+          : card,
+    );
   }
 
   List<Widget> _lockedOverlay(Color bgColor, Color textColor, bool isDark) {

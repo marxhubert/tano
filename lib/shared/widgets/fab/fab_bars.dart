@@ -27,26 +27,24 @@ mixin _FabBarsMixin on _FabStateMixin {
     }
     return _buildHorizontalBar(targetWidth, [
       _EditorAction(
-        icon: Icons.create_new_folder,
+        icon: Symbols.create_new_folder,
         onTap: () {
           setState(() => _isManuallyExpanded = false);
           widget.onAddFolder?.call();
         },
       ),
       _EditorAction(
-        icon: Icons.note_add,
+        icon: Symbols.add_notes,
         onTap: () {
           setState(() => _isManuallyExpanded = false);
           widget.onAdd?.call();
         },
       ),
-      IconButton(
-        icon: const Icon(
-          Icons.arrow_forward_ios,
-          size: 20.0,
-          color: Colors.white,
-        ),
-        onPressed: () => setState(() => _isManuallyExpanded = false),
+      _EditorAction(
+        icon: Symbols.arrow_forward_ios,
+        // The chevron fills its box more than the other glyphs: a hair smaller.
+        size: 22.0,
+        onTap: () => setState(() => _isManuallyExpanded = false),
       ),
     ]);
   }
@@ -58,22 +56,28 @@ mixin _FabBarsMixin on _FabStateMixin {
   ) {
     if (!isExpanded) {
       return IconButton(
-        icon: const Icon(Icons.more_horiz, color: Colors.white),
+        icon: Icon(
+          Symbols.more_horiz,
+          color: Colors.white,
+          weight: 900.0,
+        ),
         onPressed: () => setState(() => _isManuallyExpanded = true),
       );
     }
 
     return _buildHorizontalBar(targetWidth, [
       _EditorAction(
-        icon: Icons.add,
-        isActive: _verticalMenu == FabVerticalMenu.add,
+        icon: Symbols.add_circle,
+        // Stay amber while one of the add menu's sub-menus (link) is open.
+        isActive: _verticalMenu == FabVerticalMenu.add ||
+            _verticalMenu == FabVerticalMenu.link,
         onTap: () {
           // Keep focus so checklist insertion can use the current caret.
           _toggleVerticalMenu(FabVerticalMenu.add);
         },
       ),
       _EditorAction(
-        icon: Icons.color_lens_outlined,
+        icon: Symbols.palette,
         isActive: _verticalMenu == FabVerticalMenu.color,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.color);
@@ -81,20 +85,18 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: Icons.more_vert,
+        icon: Symbols.build_circle,
         isActive: _verticalMenu == FabVerticalMenu.more,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.more);
           widget.onMore?.call();
         },
       ),
-      IconButton(
-        icon: const Icon(
-          Icons.arrow_forward_ios,
-          size: 20.0,
-          color: Colors.white,
-        ),
-        onPressed: () => setState(() {
+      _EditorAction(
+        icon: Symbols.arrow_forward_ios,
+        // The chevron fills its box more than the other glyphs: a hair smaller.
+        size: 20.0,
+        onTap: () => setState(() {
           _verticalMenu = FabVerticalMenu.none;
           _isManuallyExpanded = false;
         }),
@@ -103,34 +105,24 @@ mixin _FabBarsMixin on _FabStateMixin {
   }
 
   Widget _buildSelectionBar(BuildContext context, double targetWidth) {
-    final String deleteLabel = AppText.tr('delete');
-    final String capitalizedDelete = deleteLabel.isNotEmpty
-        ? deleteLabel[0].toUpperCase() + deleteLabel.substring(1)
-        : deleteLabel;
-
     return _buildHorizontalBar(targetWidth, [
-      _SelectionFabButton(
-        icon: Icons.select_all,
-        label: AppText.tr('select_all'),
-        onPressed: widget.onSelectAll ?? () {},
+      _EditorAction(
+        icon: Symbols.check_circle,
+        onTap: widget.onSelectAll ?? () {},
       ),
-      _SelectionFabButton(
-        icon: Icons.check_box_outline_blank,
-        label: AppText.tr('select_none'),
-        onPressed: widget.onClearSelection ?? () {},
+      _EditorAction(
+        icon: Symbols.circle,
+        onTap: widget.onClearSelection ?? () {},
       ),
-      _SelectionFabButton(
-        icon: Icons.drive_file_move_outline,
-        label: AppText.tr('move'),
-        color: Colors.white,
+      _EditorAction(
+        icon: Symbols.drive_file_move,
         // Moving is refused as soon as a folder is selected.
-        onPressed: widget.canMove ? (widget.onMoveSelected ?? () {}) : null,
+        onTap: widget.canMove ? (widget.onMoveSelected ?? () {}) : null,
       ),
-      _SelectionFabButton(
-        icon: Icons.delete,
-        label: capitalizedDelete,
+      _EditorAction(
+        icon: Symbols.delete,
         color: const Color(0xFFFF8A80),
-        onPressed: widget.onDelete ?? () {},
+        onTap: widget.canDelete ? (widget.onDelete ?? () {}) : null,
       ),
     ]);
   }
@@ -139,18 +131,21 @@ mixin _FabBarsMixin on _FabStateMixin {
     return TapRegion(
       onTapOutside: (_) => widget.focusNode?.unfocus(),
       child: Container(
-        padding: const EdgeInsets.only(left: 12.0),
+        padding: const EdgeInsets.only(left: 16.0, right: 8.0),
         child: Row(
           spacing: 8.0,
           children: <Widget>[
-            const Icon(Icons.search, color: Colors.white, size: 24.0),
+            const Icon(Symbols.search, color: Colors.white, size: 24.0),
             Expanded(
               child: TextField(
                 controller: widget.controller,
                 focusNode: widget.focusNode,
+                cursorColor: Colors.white,
+                cursorWidth: 1.0, 
+                cursorHeight: 16.0,
                 style: const TextStyle(color: Colors.white, fontSize: 16.0),
                 decoration: InputDecoration(
-                  hintText: AppText.tr('search'),
+                  hintText: ' ${AppText.tr('search')}',
                   hintStyle: const TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                   isDense: true,
@@ -160,7 +155,7 @@ mixin _FabBarsMixin on _FabStateMixin {
             ),
             if (widget.controller?.text.isNotEmpty ?? false)
               IconButton(
-                icon: const Icon(Icons.clear, color: Colors.white),
+                icon: const Icon(Symbols.backspace, color: Colors.white),
                 onPressed: () {
                   widget.onReset?.call();
                 },
@@ -174,7 +169,7 @@ mixin _FabBarsMixin on _FabStateMixin {
   Widget _buildDefaultAddButton() {
     // The "+" expands into the extended bar.
     return IconButton(
-      icon: const Icon(Icons.add, color: Colors.white),
+      icon: const Icon(Symbols.add_2, color: Colors.white, size: 22.0),
       onPressed: () => setState(() => _isManuallyExpanded = true),
     );
   }
@@ -196,12 +191,15 @@ mixin _FabBarsMixin on _FabStateMixin {
                 padding: const EdgeInsets.only(left: 4.0),
                 child: _buildCounterBox(),
               ),
-              _buildNavButton(Icons.chevron_left, widget.onFindPrev, navColor),
+              _buildNavButton(Symbols.chevron_left, widget.onFindPrev, navColor),
             ] else
-              SizedBox(
-                width: 44.0,
-                child: const Center(
-                  child: Icon(Icons.search, color: Colors.white, size: 26.0),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: SizedBox(
+                  width: 44.0,
+                  child: const Center(
+                    child: Icon(Symbols.search, color: Colors.white, size: 26.0),
+                  ),
                 ),
               ),
           ],
@@ -210,20 +208,21 @@ mixin _FabBarsMixin on _FabStateMixin {
           child: Container(
             color: fieldColor,
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            alignment: Alignment.center,
             child: TextField(
               controller: widget.controller,
               focusNode: widget.focusNode,
-              expands: true,
-              maxLines: null,
-              minLines: null,
+              cursorColor: Colors.white,
+              // One line, centred, scrolled horizontally when it overflows.
+              maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
               textInputAction: TextInputAction.search,
               style: const TextStyle(color: Colors.white, fontSize: 16.0),
               decoration: InputDecoration(
+                isCollapsed: true,
                 hintText: AppText.tr('find_in_note'),
                 hintStyle: const TextStyle(color: Colors.white70),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
               ),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.deny('\n'),
@@ -237,11 +236,11 @@ mixin _FabBarsMixin on _FabStateMixin {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (hasQuery) ...[
-              _buildNavButton(Icons.chevron_right, widget.onFindNext, navColor),
+              _buildNavButton(Symbols.chevron_right, widget.onFindNext, navColor),
               Padding(
                 padding: const EdgeInsets.only(right: 4.0),
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: const Icon(Symbols.close, color: Colors.white),
                   onPressed: () => widget.onFindReset?.call(),
                 ),
               ),
