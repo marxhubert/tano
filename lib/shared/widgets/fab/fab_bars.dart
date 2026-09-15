@@ -86,7 +86,9 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.build_circle,
-        isActive: _verticalMenu == FabVerticalMenu.more,
+        // Stay amber while the move sub-menu, opened from "more", is shown.
+        isActive: _verticalMenu == FabVerticalMenu.more ||
+            _verticalMenu == FabVerticalMenu.move,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.more);
           widget.onMore?.call();
@@ -116,8 +118,11 @@ mixin _FabBarsMixin on _FabStateMixin {
       ),
       _EditorAction(
         icon: Symbols.drive_file_move,
+        isActive: _verticalMenu == FabVerticalMenu.move,
         // Moving is refused as soon as a folder is selected.
-        onTap: widget.canMove ? (widget.onMoveSelected ?? () {}) : null,
+        onTap: widget.canMove
+            ? () => _openMoveMenu(FabVerticalMenu.none)
+            : null,
       ),
       _EditorAction(
         icon: Symbols.delete,

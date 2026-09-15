@@ -1,7 +1,11 @@
 part of 'app_fab.dart';
 
 mixin _FabMenusMixin on _FabStateMixin {
-  Widget _buildVerticalMenuContent(BuildContext context) {
+  Widget _buildVerticalMenuContent(
+    BuildContext context,
+    double width,
+    double height,
+  ) {
     Widget content;
     switch (_verticalMenu) {
       case FabVerticalMenu.color:
@@ -25,18 +29,29 @@ mixin _FabMenusMixin on _FabStateMixin {
       case FabVerticalMenu.link:
         content = _buildLinkMenu(context);
         break;
+      case FabVerticalMenu.move:
+        content = _buildMoveMenu(context);
+        break;
       default:
         content = const SizedBox.shrink();
     }
 
-    // The dark surface fills the whole menu area (the animating height), while
-    // the content stays anchored at the bottom: the colour and the height then
-    // resize together when switching menus, with no lagging band.
+    // The dark surface fills the whole menu area while the content stays
+    // anchored at the bottom. The content is laid out at its final size even
+    // while the FAB animates: the animating container clips it, so it never
+    // wraps or squashes into a half-grown menu area.
     return Container(
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.15)),
       child: Align(
         alignment: Alignment.bottomCenter,
-        child: content,
+        child: OverflowBox(
+          minWidth: width,
+          maxWidth: width,
+          minHeight: height,
+          maxHeight: height,
+          alignment: Alignment.bottomCenter,
+          child: content,
+        ),
       ),
     );
   }
@@ -46,7 +61,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     sorted.sort((a, b) {
       int cmp;
-      if (_sortCriteria == LinkSortCriteria.date) {
+      if (_sortCriteria == ListSortCriteria.date) {
         // Date sort: Default Ascending = Newest first
         cmp = b.date.compareTo(a.date);
       } else {
@@ -80,52 +95,102 @@ mixin _FabMenusMixin on _FabStateMixin {
       }),
     );
 
-    if (isMeasurement) {
-      // Simplified layout for stable measurement
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 36), // Fixed header approximate height
-          content,
-        ],
-      );
-    }
-
     return _SubMenuLayout(
       title: AppText.tr('back'),
       onBack: () => setState(() => _verticalMenu = FabVerticalMenu.add),
-      actions: [
-        IconButton(
-          icon: Icon(
-            _sortCriteria == LinkSortCriteria.date
-                ? Symbols.history_2
-                : Symbols.sort_by_alpha,
-            size: 20,
-            color: Colors.white,
-          ),
-          onPressed: () => setState(() {
-            _sortCriteria = _sortCriteria == LinkSortCriteria.date
-                ? LinkSortCriteria.title
-                : LinkSortCriteria.date;
-          }),
-          padding: const EdgeInsets.all(8.0),
-          constraints: const BoxConstraints(),
-        ),
-        IconButton(
-          icon: Icon(
-            _isAscending
-                ? Symbols.arrow_downward
-                : Symbols.arrow_upward,
-            size: 20,
-            color: Colors.white,
-          ),
-          onPressed: () => setState(() => _isAscending = !_isAscending),
-          padding: const EdgeInsets.all(8.0),
-          constraints: const BoxConstraints(),
-        ),
-      ],
+      actions: _buildSortActions(),
+      isMeasurement: isMeasurement,
       child: content,
     );
+  }
+
+  List<Folder> _getSortedFolders() {
+    final List<Folder> sorted = List.from(_availableFolders);
+    sorted.sort((a, b) {
+      int cmp;
+      if (_sortCriteria == ListSortCriteria.date) {
+        cmp = b.date.compareTo(a.date);
+      } else {
+        cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      }
+      return _isAscending ? cmp : -cmp;
+    });
+    return sorted;
+  }
+
+  /// The folder list offered by the "move to" action. It mirrors the note-link
+  /// list, header included, so both second-degree menus feel the same.
+  Widget _buildMoveMenu(BuildContext context, {bool isMeasurement = false}) {
+    final List<Folder> folders = _getSortedFolders();
+
+    final Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _VerticalMenuItem(
+          icon: Symbols.home,
+          iconSize: 20.0,
+          fontSize: 17.0,
+          maxLines: 2,
+          label: AppText.tr('no_folder'),
+          onTap: () {
+            widget.onMoveTo?.call(null);
+            setState(() => _verticalMenu = FabVerticalMenu.none);
+          },
+        ),
+        for (final Folder folder in folders)
+          _VerticalMenuItem(
+            icon: Symbols.folder,
+            iconSize: 20.0,
+            fontSize: 17.0,
+            maxLines: 2,
+            label: folder.name,
+            onTap: () {
+              widget.onMoveTo?.call(folder.id);
+              setState(() => _verticalMenu = FabVerticalMenu.none);
+            },
+          ),
+      ],
+    );
+
+    return _SubMenuLayout(
+      title: AppText.tr('back'),
+      onBack: () => setState(() => _verticalMenu = _moveReturnTo),
+      actions: _buildSortActions(),
+      isMeasurement: isMeasurement,
+      child: content,
+    );
+  }
+
+  /// The two sort switches shared by the link and move sub-menu headers.
+  List<Widget> _buildSortActions() {
+    return <Widget>[
+      IconButton(
+        icon: Icon(
+          _sortCriteria == ListSortCriteria.date
+              ? Symbols.history_2
+              : Symbols.sort_by_alpha,
+          size: 20,
+          color: Colors.white,
+        ),
+        onPressed: () => setState(() {
+          _sortCriteria = _sortCriteria == ListSortCriteria.date
+              ? ListSortCriteria.title
+              : ListSortCriteria.date;
+        }),
+        padding: const EdgeInsets.all(8.0),
+        constraints: const BoxConstraints(),
+      ),
+      IconButton(
+        icon: Icon(
+          _isAscending ? Symbols.arrow_downward : Symbols.arrow_upward,
+          size: 20,
+          color: Colors.white,
+        ),
+        onPressed: () => setState(() => _isAscending = !_isAscending),
+        padding: const EdgeInsets.all(8.0),
+        constraints: const BoxConstraints(),
+      ),
+    ];
   }
 
   Widget _buildColorMenu(BuildContext context) {
@@ -362,7 +427,7 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
-        onTap: widget.onMoveSelected,
+        onTap: () => _openMoveMenu(FabVerticalMenu.more),
       ),
       _VerticalMenuItem(
         icon: widget.isLocked ? Symbols.lock_open : Symbols.lock,
