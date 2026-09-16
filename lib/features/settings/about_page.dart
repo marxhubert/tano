@@ -10,6 +10,7 @@ import 'package:tano/shared/widgets/theme.dart';
 
 import 'package:tano/features/settings/widgets/settings_widgets.dart';
 import 'package:tano/features/settings/licenses_page.dart';
+import 'package:tano/features/settings/privacy_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatefulWidget {
@@ -200,10 +201,17 @@ class _AboutPageState extends State<AboutPage> {
                 return SettingsGroup(
                   topSpacing: 12.0,
                   tiles: [
-                    SettingsSwitchTile(
-                      title: AppText.tr('option_bug_report'),
-                      value: _viewModel.bugReportEnabled,
-                      onChanged: (val) => _viewModel.setBugReportEnabled(val),
+                    SettingsTile(
+                      title: AppText.tr('privacy'),
+                      selected: false,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PrivacyPage(),
+                          ),
+                        );
+                      },
                     ),
                     SettingsTile(
                       title: AppText.tr('licenses'),
@@ -216,6 +224,11 @@ class _AboutPageState extends State<AboutPage> {
                           ),
                         );
                       },
+                    ),
+                    SettingsSwitchTile(
+                      title: AppText.tr('option_bug_report'),
+                      value: _viewModel.bugReportEnabled,
+                      onChanged: (val) => _viewModel.setBugReportEnabled(val),
                     ),
                   ],
                 );

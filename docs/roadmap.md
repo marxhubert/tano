@@ -22,9 +22,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 - [ ] **Permissions iOS** : `NSPhotoLibraryUsageDescription` (voire
   `NSCameraUsageDescription`) dans `Info.plist`.
-- [ ] **Confidentialité** : `PrivacyInfo.xcprivacy`, politique de
-  confidentialité in-app, « Data safety » Play. App hors-ligne → contenu simple
-  mais **obligatoire**. Voir [observabilité](./observabilite.md).
+- [x] **Confidentialité in-app** : politique FR / EN / MG (`PrivacyPage`),
+  accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
+- [ ] **Confidentialité store** : `PrivacyInfo.xcprivacy`, politique de
+  confidentialité App Store, « Data safety » Play. App hors-ligne → contenu
+  simple mais **obligatoire**.
 - [ ] **Rapports de crash** : Sentry **derrière le consentement**, sans IP ni
   identifiant stable (voir [observabilité](./observabilite.md)).
 - [ ] **Mises à jour** : store-native (Play In-App Updates + lookup App Store).

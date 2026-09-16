@@ -11,6 +11,7 @@ Deux familles de documents.
 | [Composants](./composants.md) | Anatomie et **contrats** des briques d'écran |
 | [Sécurité](./securite.md) | Chiffrement au repos, export / import, verrou |
 | [Observabilité](./observabilite.md) | Rapports de crash (Sentry) et mises à jour stores |
+| [Confidentialité](./confidentialite.md) | Politique in-app, déclarations Play / App Store |
 | [Modularité](./modularite.md) | Services et découpage gratuit / premium |
 | [Dossiers](./dossiers.md) | Contrat de l'organisation en dossiers |
 
