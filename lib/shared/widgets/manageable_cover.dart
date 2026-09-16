@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
@@ -144,7 +145,7 @@ class _ManageableCoverState extends State<ManageableCover> {
                         ],
                       ),
                       child: const Icon(
-                        Icons.cancel,
+                        Symbols.cancel,
                         color: Colors.red,
                         size: 24.0,
                       ),

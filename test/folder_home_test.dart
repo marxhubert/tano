@@ -137,6 +137,13 @@ Finder _folderCards() => find.byWidgetPredicate(
       (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
     );
 
+/// An icon inside the FAB only: card selection markers share `check_circle`
+/// and `circle` with the FAB's select-all / select-none actions.
+Finder _fabIcon(IconData icon) => find.descendant(
+      of: find.byType(AppFab),
+      matching: find.byIcon(icon),
+    );
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -646,7 +653,7 @@ void main() {
     expect(bookmark.size, metadataIconSize);
     // Not locked, so no lock flag.
     expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.lock_outline)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.lock)),
       findsNothing,
     );
   });
@@ -767,7 +774,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Selection icons replaced the editor ones, same box.
-    expect(find.byIcon(Symbols.check_circle), findsOneWidget);
+    expect(_fabIcon(Symbols.check_circle), findsOneWidget);
     expect(find.byIcon(Symbols.build_circle), findsNothing);
     expect(tester.getSize(fabBox), before);
   });
@@ -993,7 +1000,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final Finder align = find.ancestor(
-      of: find.byIcon(Icons.check_circle),
+      of: find.byIcon(Symbols.check_circle),
       matching: find.byType(Align),
     );
     expect(align, findsWidgets);
@@ -1167,10 +1174,8 @@ void main() {
     expect(moveButton.onPressed, isNull);
 
     // FAB order: all, none, move, delete.
-    final double all = tester.getCenter(find.byIcon(Symbols.check_circle)).dx;
-    final double none = tester
-        .getCenter(find.byIcon(Symbols.circle))
-        .dx;
+    final double all = tester.getCenter(_fabIcon(Symbols.check_circle)).dx;
+    final double none = tester.getCenter(_fabIcon(Symbols.circle)).dx;
     final double move = tester
         .getCenter(find.byIcon(Symbols.drive_file_move))
         .dx;
@@ -1213,7 +1218,7 @@ void main() {
     expect(actionButton(Symbols.delete).onPressed, isNotNull);
 
     // Clearing the selection keeps selection mode but disables both.
-    await tester.tap(find.byIcon(Symbols.circle));
+    await tester.tap(_fabIcon(Symbols.circle));
     await tester.pumpAndSettle();
     expect(actionButton(Symbols.drive_file_move).onPressed, isNull);
     expect(actionButton(Symbols.delete).onPressed, isNull);
@@ -1284,7 +1289,7 @@ void main() {
     expect(
       find.descendant(
         of: _folderCards(),
-        matching: find.byIcon(Icons.panorama_fish_eye),
+        matching: find.byIcon(Symbols.circle),
       ),
       findsNothing,
     );

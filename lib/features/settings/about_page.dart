@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -103,7 +104,7 @@ class _AboutPageState extends State<AboutPage>
             child: CircleAvatar(
               backgroundColor: Colors.black87,
               child: Icon(
-                Icons.bookmark_border,
+                Symbols.bookmark,
                 size: 24.0,
                 color: Colors.white,
               ),
@@ -135,7 +136,7 @@ class _AboutPageState extends State<AboutPage>
                       );
                     },
                     child: Icon(
-                      Icons.update,
+                      Symbols.update,
                       size: 16.0,
                       color: _isCheckingUpdate ? tanoTeal : Colors.grey,
                     ),
@@ -196,7 +197,7 @@ class _AboutPageState extends State<AboutPage>
                     // TODO: Implement Premium
                   },
                   trailing: const Icon(
-                    Icons.star_outline,
+                    Symbols.star,
                     color: tanoAmber,
                     size: 20,
                   ),
@@ -207,7 +208,7 @@ class _AboutPageState extends State<AboutPage>
                   onTap: () =>
                       _launchUrl('https://www.buymeacoffee.com/marxhubert'),
                   trailing: const Icon(
-                    Icons.coffee_outlined,
+                    Symbols.coffee,
                     color: Colors.grey,
                     size: 20,
                   ),
@@ -218,7 +219,7 @@ class _AboutPageState extends State<AboutPage>
                   onTap: () =>
                       _launchUrl('https://github.com/sponsors/shikamarx'),
                   trailing: const Icon(
-                    Icons.favorite_border,
+                    Symbols.favorite,
                     color: Colors.grey,
                     size: 20,
                   ),
@@ -228,7 +229,7 @@ class _AboutPageState extends State<AboutPage>
                   selected: false,
                   onTap: () => _launchUrl('https://paypal.me/marxhubert'),
                   trailing: const Icon(
-                    Icons.payment,
+                    Symbols.credit_card,
                     color: Colors.grey,
                     size: 20,
                   ),

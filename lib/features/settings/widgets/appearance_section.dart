@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -180,7 +181,7 @@ class _ThemePreview extends StatelessWidget {
                       color: tanoTeal,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.add, size: 8, color: Colors.white),
+                    child: const Icon(Symbols.add, size: 8, color: Colors.white),
                   ),
                 ),
               ],
@@ -197,7 +198,7 @@ class _ThemePreview extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Icon(
-            isSelected ? Icons.check_circle : Icons.panorama_fish_eye,
+            isSelected ? Symbols.check_circle : Symbols.circle,
             color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.5),
             size: 20,
           ),

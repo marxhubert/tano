@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
@@ -40,12 +41,15 @@ class NoteListView extends StatelessWidget {
       background: _DismissibleBackground(
         color: tanoAmber,
         alignment: Alignment.centerLeft,
-        icon: note.important ? Icons.bookmark_border : Icons.bookmark,
+        icon: Symbols.label_important,
+        // Full while the note is not important yet: the swipe adds the
+        // bookmark, so the target state is the filled one.
+        fill: note.important ? 0.0 : 1.0,
       ),
       secondaryBackground: const _DismissibleBackground(
         color: Colors.red,
         alignment: Alignment.centerRight,
-        icon: Icons.delete_forever,
+        icon: Symbols.delete_forever,
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -98,11 +102,15 @@ class _DismissibleBackground extends StatelessWidget {
     required this.color,
     required this.alignment,
     required this.icon,
+    this.fill = 0.0,
   });
 
   final Color color;
   final Alignment alignment;
   final IconData icon;
+
+  /// Variable-font fill of the glyph (1.0 for the filled variant).
+  final double fill;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +121,7 @@ class _DismissibleBackground extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(appBorderRadius),
       ),
-      child: Icon(icon, color: Colors.white, size: 27.0),
+      child: Icon(icon, color: Colors.white, size: 27.0, fill: fill),
     );
   }
 }
