@@ -5,9 +5,17 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
+import 'package:tano/core/services/crash_reports.dart';
 import 'package:tano/shared/config/service_locator.dart';
 
 class SettingsViewModel extends ChangeNotifier {
+  /// [applyConsent] hands the new consent to the crash reporting SDK. It is
+  /// injected so that tests never reach the network nor the SDK.
+  SettingsViewModel({Future<void> Function(bool consent)? applyConsent})
+    : _applyConsent = applyConsent ?? CrashReports.apply;
+
+  final Future<void> Function(bool consent) _applyConsent;
+
   PackageInfo? _packageInfo;
   bool _bugReportEnabled = false;
   bool _isResetting = false;
@@ -18,12 +26,28 @@ class SettingsViewModel extends ChangeNotifier {
 
   Future<void> init() async {
     _packageInfo = await PackageInfo.fromPlatform();
+    _bugReportEnabled = await CrashReports.hasConsent();
     notifyListeners();
   }
 
-  void setBugReportEnabled(bool value) {
+  /// The switch is the one and only consent gate: it is persisted here and
+  /// applied to the SDK straight away.
+  Future<void> setBugReportEnabled(bool value) async {
+    if (_bugReportEnabled == value) return;
     _bugReportEnabled = value;
     notifyListeners();
+
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    await prefs.setBool(CrashReports.preferenceKey, value);
+    await _applyConsent(value);
+  }
+
+  /// Forgets the consent and stops the SDK when the preferences are wiped.
+  Future<void> _revokeConsent() async {
+    if (!_bugReportEnabled) return;
+    _bugReportEnabled = false;
+    notifyListeners();
+    await _applyConsent(false);
   }
 
   Future<void> setSorting(String sortBy) async {
@@ -67,6 +91,8 @@ class SettingsViewModel extends ChangeNotifier {
       if (deletePrefs) {
         final SecurePreferences prefs = await SecurePreferences.getInstance();
         await prefs.clear();
+        // The consent lived in those preferences: it goes with them.
+        await _revokeConsent();
 
         // Re-init core controllers to reflect default state
         await Future.wait([
@@ -103,6 +129,7 @@ class SettingsViewModel extends ChangeNotifier {
       // 2. Clear all preferences (theme, language, sorting, etc.)
       final SecurePreferences prefs = await SecurePreferences.getInstance();
       await prefs.clear();
+      await _revokeConsent();
 
       // 3. Re-seed fixtures
       await getIt<NotesRepository>().seedFixtures();
