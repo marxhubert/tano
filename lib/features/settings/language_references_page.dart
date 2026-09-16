@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -90,7 +91,7 @@ class LanguageReferencesPage extends StatelessWidget {
                           GestureDetector(
                             onTap: () => _launchUrl(ref.word),
                             child: const Icon(
-                              Icons.open_in_new,
+                              Symbols.open_in_new,
                               size: 14.0,
                               color: tanoAmber,
                             ),

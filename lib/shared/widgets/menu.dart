@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -24,13 +25,13 @@ Map<String, PopupItem> get menuItems {
   return <String, PopupItem>{
     'gridlist': PopupItem(
       title: AppText.tr('menu_grid'),
-      icon: const Icon(Icons.view_module, size: 24.0),
+      icon: const Icon(Symbols.grid_view, size: 24.0),
       value: 'gridlist',
       trailingIcon: true,
     ),
     'list': PopupItem(
       title: AppText.tr('menu_list'),
-      icon: const Icon(Icons.view_stream, size: 24.0),
+      icon: const Icon(Symbols.view_agenda, size: 24.0),
       value: 'list',
       trailingIcon: true,
     ),
@@ -42,7 +43,7 @@ Map<String, PopupItem> get menuItems {
     'settings': PopupItem(
       title: AppText.tr('settings'),
       value: 'settings',
-      icon: const Icon(Icons.settings_outlined, size: 24.0),
+      icon: const Icon(Symbols.settings_applications, size: 24.0),
       trailingIcon: true,
     ),
   };

@@ -425,7 +425,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             ),
             trailing: <Widget>[
               if (_folder.isLocked)
-                metadataGlyph(context, Icons.lock_outline),
+                metadataGlyph(context, Symbols.lock),
               if (_folder.important)
                 metadataGlyph(
                   context,

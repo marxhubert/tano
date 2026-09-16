@@ -104,7 +104,7 @@ void main() {
           category: 'azur',
           title: 'Dossier',
           subtitle: 'x3',
-          subtitleIcon: Icons.description_outlined,
+          subtitleIcon: Symbols.description,
           isLocked: true,
           builder: (BuildContext context, Color textColor, bool hasCover) =>
               const SizedBox.expand(),
@@ -113,7 +113,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.description_outlined), findsOneWidget);
+    expect(find.byIcon(Symbols.description), findsOneWidget);
     expect(find.text('x3'), findsOneWidget);
   });
 

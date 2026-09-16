@@ -386,7 +386,7 @@ class EntityCard extends StatelessWidget {
     if (!isSelectable) return const SizedBox.shrink();
     final Color color = isDark ? TanoStates.action.dark : tanoTeal;
     if (!isSelected) {
-      return Icon(Icons.panorama_fish_eye, size: 24.0, color: color);
+      return Icon(Symbols.circle, size: 24.0, color: color);
     }
     return Stack(
       alignment: Alignment.center,
@@ -396,7 +396,7 @@ class EntityCard extends StatelessWidget {
           height: 18.0,
           child: CircleAvatar(backgroundColor: Colors.white, radius: 100.0),
         ),
-        Icon(Icons.check_circle, size: 24.0, color: color),
+        Icon(Symbols.check_circle, size: 24.0, color: color),
       ],
     );
   }

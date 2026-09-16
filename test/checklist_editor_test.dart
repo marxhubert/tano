@@ -380,7 +380,7 @@ void main() {
     expect(find.text('Attachments'), findsOneWidget);
     expect(find.text('doc.pdf'), findsOneWidget);
     expect(find.text('fichier.txt'), findsOneWidget);
-    expect(find.byIcon(Icons.insert_drive_file), findsNWidgets(2));
+    expect(find.byIcon(Symbols.file_present), findsNWidgets(2));
 
     // The info-line counter shows the attachment count (last position).
     expect(find.text('x2'), findsOneWidget);

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// One-shot generator for the native splash assets.
@@ -82,7 +83,7 @@ void main() {
           radius: diameter / 2,
           backgroundColor: Colors.black87,
           child: Icon(
-            Icons.turned_in_not,
+            Symbols.bookmark,
             color: Colors.white,
             size: diameter / 2,
           ),
