@@ -251,8 +251,6 @@ class AppText {
     'lock_unavailable_title': 'Cannot lock this note',
     'lock_requires_device_lock':
         'Set up a screen lock (passcode or biometrics) to lock notes',
-    'option_check_update': 'Check for update',
-    'option_feedback': 'Give feedback',
     'option_bug_report': 'Allow bug report',
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
@@ -446,8 +444,6 @@ class AppText {
     'lock_unavailable_title': 'Impossible de verrouiller la note',
     'lock_requires_device_lock':
         'Configurez un verrou d\'écran (code ou biométrie) pour verrouiller une note',
-    'option_check_update': 'Mise à jour',
-    'option_feedback': 'Donner un avis',
     'option_bug_report': 'Autoriser les rapports de bug',
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
@@ -641,8 +637,6 @@ class AppText {
     'lock_unavailable_title': 'Tsy azo hidiana ny naoty',
     'lock_requires_device_lock':
         'Mametraha hidy efijery (kaody na biometrika) vao afaka manidy naoty',
-    'option_check_update': 'Hizaha vao',
-    'option_feedback': 'Hanome hevitra',
     'option_bug_report': 'Hamela ny tatitra bug',
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',

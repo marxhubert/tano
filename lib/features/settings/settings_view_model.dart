@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
-import 'package:tano/core/services/analytics_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -61,30 +59,14 @@ class SettingsViewModel extends ChangeNotifier {
     try {
       if (deleteData) {
         await getIt<NotesRepository>().deleteAllNotes();
-        // Also clear analytics flag so it re-collects on next "first" launch
-        final SecurePreferences prefs = await SecurePreferences.getInstance();
-        await prefs.remove('firstLaunchAnalyticsSent');
         // Ensure we don't auto-seed fixtures on next load
+        final SecurePreferences prefs = await SecurePreferences.getInstance();
         await prefs.setBool('database_initial_seed_done', true);
       }
 
       if (deletePrefs) {
         final SecurePreferences prefs = await SecurePreferences.getInstance();
-        // Keep the analytics flag and the helper consent when we are NOT
-        // deleting data.
-        final bool? analyticsSent = prefs.getBool('firstLaunchAnalyticsSent');
-        final bool? helperConsent = prefs.getBool(AnalyticsService.consentPrefKey);
-
         await prefs.clear();
-
-        if (!deleteData) {
-          if (analyticsSent != null) {
-            await prefs.setBool('firstLaunchAnalyticsSent', analyticsSent);
-          }
-          if (helperConsent != null) {
-            await prefs.setBool(AnalyticsService.consentPrefKey, helperConsent);
-          }
-        }
 
         // Re-init core controllers to reflect default state
         await Future.wait([
@@ -141,20 +123,6 @@ class SettingsViewModel extends ChangeNotifier {
     } finally {
       _isResetting = false;
       notifyListeners();
-    }
-  }
-
-  Future<void> checkForUpdates() async {
-    final Uri url = Uri.parse('https://github.com/shikamarx/tano'); // Placeholder
-    if (!await launchUrl(url)) {
-      throw Exception('Could not launch $url');
-    }
-  }
-
-  Future<void> sendFeedback() async {
-    final Uri url = Uri.parse('mailto:feedback@tano.app'); // Placeholder
-    if (!await launchUrl(url)) {
-      throw Exception('Could not launch $url');
     }
   }
 }

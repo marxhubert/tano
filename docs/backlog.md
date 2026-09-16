@@ -31,6 +31,7 @@
 
 ## À trancher
 
-- **À propos** : vérification de mise à jour et « Premium » (implémenter ou masquer).
+- **À propos** : « Premium » (implémenter ou masquer). La vérification de mise
+  à jour est planifiée : voir [observabilité](./observabilite.md).
 - **Accueil** : comportement quand aucune sélection n'est active.
 - **Branche `develop`** : supprimer ou resynchroniser sur `master`.
