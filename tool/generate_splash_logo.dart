@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -7,42 +8,74 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Absolute path of the Material Symbols outline font.
+///
+/// Resolved from the package config so it follows the version actually
+/// resolved by `flutter pub get`.
+String _symbolsFontPath() {
+  final Map<String, dynamic> config =
+      jsonDecode(File('.dart_tool/package_config.json').readAsStringSync())
+          as Map<String, dynamic>;
+  final List<dynamic> packages = config['packages'] as List<dynamic>;
+  final Map<String, dynamic> entry =
+      packages.firstWhere(
+            (dynamic p) =>
+                (p as Map<String, dynamic>)['name'] == 'material_symbols_icons',
+          )
+          as Map<String, dynamic>;
+  // rootUri has no trailing slash, and `resolve` on a slashless URI replaces
+  // its last segment: rebuild the base explicitly.
+  final String root = entry['rootUri'] as String;
+  final String packageUri = entry['packageUri'] as String? ?? 'lib/';
+  return Uri.parse(
+    '$root/$packageUri',
+  ).resolve('fonts/MaterialSymbolsOutlined.ttf').toFilePath();
+}
+
 /// One-shot generator for the native splash assets.
 ///
 /// Replicates the design of `lib/features/splash/splash_page.dart`:
-///  - black87 circle with the white `turned_in_not` bookmark (icon/circle =
-///    45/90, i.e. half the diameter);
+///  - black87 circle with the white bookmark glyph (icon/circle = 45/90, i.e.
+///    half the diameter);
 ///  - the app name below, "Tano" w900 + "Note" w400 at the app's 21 dp,
 ///    centered in a 90 dp slot at the bottom (mirroring the
 ///    Column(Expanded(circle), SizedBox(height: 90, text)) of splash_page).
 ///
 /// The source images are 4x (xxxhdpi), so dp values are multiplied by 4.
-/// Run with:
-///   flutter test test/generate_splash_logo_test.dart
+///
+/// It lives outside `test/` on purpose: it rewrites `assets/`, so a normal
+/// `flutter test` must not pick it up. Run it explicitly with:
+///   flutter test tool/generate_splash_logo.dart
 void main() {
   testWidgets('generate native splash assets', (tester) async {
     // Widget tests do not load the real fonts by default, which would render
     // the glyphs as fallback boxes. Load them from the Flutter SDK cache.
     final String? flutterRoot = Platform.environment['FLUTTER_ROOT'];
+    Future<void> load(String family, List<String> paths) async {
+      final FontLoader loader = FontLoader(family);
+      for (final String path in paths) {
+        final Uint8List data = File(path).readAsBytesSync();
+        loader.addFont(Future<ByteData>.value(ByteData.view(data.buffer)));
+      }
+      await loader.load();
+    }
+
     if (flutterRoot != null) {
       final String fontsDir =
           '$flutterRoot/bin/cache/artifacts/material_fonts/';
-      Future<void> load(String family, List<String> files) async {
-        final FontLoader loader = FontLoader(family);
-        for (final String file in files) {
-          final Uint8List data = File('$fontsDir$file').readAsBytesSync();
-          loader.addFont(Future<ByteData>.value(ByteData.view(data.buffer)));
-        }
-        await loader.load();
-      }
-
-      await load('MaterialIcons', <String>['MaterialIcons-Regular.otf']);
       await load('Roboto', <String>[
-        'Roboto-Regular.ttf',
-        'Roboto-Bold.ttf',
-        'Roboto-Black.ttf',
+        '${fontsDir}Roboto-Regular.ttf',
+        '${fontsDir}Roboto-Bold.ttf',
+        '${fontsDir}Roboto-Black.ttf',
       ]);
     }
+    // The Symbols glyphs live in the material_symbols_icons package, not in
+    // the SDK's MaterialIcons: without that font they render as boxes. A
+    // package font family is prefixed with `packages/<package>/`.
+    await load(
+      'packages/material_symbols_icons/MaterialSymbolsOutlined',
+      <String>[_symbolsFontPath()],
+    );
 
     tester.view.physicalSize = const Size(1152, 1536);
     tester.view.devicePixelRatio = 1.0;
@@ -63,11 +96,13 @@ void main() {
       // Image capture performs real async engine work that the fake-async
       // test zone cannot complete, so run it inside runAsync.
       await tester.runAsync(() async {
-        final RenderRepaintBoundary boundary = boundaryKey.currentContext!
-            .findRenderObject()! as RenderRepaintBoundary;
+        final RenderRepaintBoundary boundary =
+            boundaryKey.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
         final ui.Image image = await boundary.toImage();
-        final ByteData? byteData =
-            await image.toByteData(format: ui.ImageByteFormat.png);
+        final ByteData? byteData = await image.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
         File(path)
           ..createSync(recursive: true)
           ..writeAsBytesSync(byteData!.buffer.asUint8List());
@@ -185,7 +220,10 @@ void main() {
       );
     }
 
-    await renderAndSave(brandText(Colors.black87), 'assets/splash_branding.png');
+    await renderAndSave(
+      brandText(Colors.black87),
+      'assets/splash_branding.png',
+    );
     await renderAndSave(
       brandText(Colors.grey.shade300),
       'assets/splash_branding_dark.png',
