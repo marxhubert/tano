@@ -11,6 +11,7 @@ class SettingsGroup extends StatelessWidget {
     required this.tiles,
     this.footer = const <Widget>[],
     this.color,
+    this.topSpacing = defaultTopSpacing,
   });
 
   /// Section title; when null the group starts directly with its card.
@@ -22,8 +23,11 @@ class SettingsGroup extends StatelessWidget {
   final List<Widget> footer;
   final Color? color;
 
+  /// Vertical space above this group; defaults to [defaultTopSpacing].
+  final double topSpacing;
+
   /// Vertical space above a group, so consecutive sections never touch.
-  static const double topSpacing = 24.0;
+  static const double defaultTopSpacing = 24.0;
 
   /// Space between the title, the card and the footer of one group.
   static const double contentSpacing = 4.0;
@@ -34,7 +38,7 @@ class SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: topSpacing),
+      padding: EdgeInsets.only(top: topSpacing),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
