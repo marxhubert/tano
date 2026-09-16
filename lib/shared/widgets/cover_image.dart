@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -126,7 +127,7 @@ class _CoverPlaceholder extends StatelessWidget {
           : Colors.black.withValues(alpha: 0.05),
       child: Center(
         child: Icon(
-          Icons.image_outlined,
+          Symbols.imagesmode,
           size: 22.0,
           color: mutedTextColor(context).withValues(alpha: 0.5),
         ),

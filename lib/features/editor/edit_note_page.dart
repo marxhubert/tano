@@ -798,7 +798,7 @@ class _EditNoteState extends State<EditNote>
                           runSpacing: 4.0,
                           children: [
                             if (_viewModel.isLocked) ...[
-                              metadataGlyph(context, Icons.lock_outline),
+                              metadataGlyph(context, Symbols.lock),
                               _metadataSeparator(context),
                             ],
                             Text(
@@ -828,7 +828,7 @@ class _EditNoteState extends State<EditNote>
                           if (_viewModel.attachments.isNotEmpty)
                             metadataItem(
                               context,
-                              Icons.attachment,
+                              Symbols.attach_file,
                               'x${_viewModel.attachments.length}',
                             ),
                         ],
@@ -904,7 +904,7 @@ class _EditNoteState extends State<EditNote>
                           Row(
                             children: [
                               Icon(
-                                Icons.attachment,
+                                Symbols.attach_file,
                                 size: 18.0,
                                 color: mutedTextColor(context),
                               ),
@@ -1092,7 +1092,7 @@ class _AttachmentRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Icon(
-            Icons.insert_drive_file,
+            Symbols.file_present,
             size: 16.0,
             color: mutedTextColor(context),
           ),
@@ -1115,7 +1115,7 @@ class _AttachmentRow extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             tooltip: AppText.tr('delete'),
             icon: Icon(
-              Icons.close,
+              Symbols.close,
               size: 16.0,
               color: mutedTextColor(context),
             ),

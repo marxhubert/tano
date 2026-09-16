@@ -87,7 +87,27 @@ class _Repo implements NotesRepository, FoldersRepository {
     }
   }
   @override
-  Future<void> trashFolder(String id) async {}
+  Future<void> trashFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) {
+      folders[i] = folders[i].copyWith(isDeleted: true, deletedAt: 'now');
+    }
+  }
+  @override
+  Future<List<Folder>> loadTrashFolders() async =>
+      folders.where((Folder f) => f.isDeleted).toList();
+  @override
+  Future<void> restoreFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) {
+      folders[i] = folders[i].copyWith(isDeleted: false);
+    }
+  }
+  @override
+  Future<void> deleteFolderPermanently(String id) async {
+    folders.removeWhere((Folder f) => f.id == id);
+    notes.removeWhere((Note n) => n.folderId == id);
+  }
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
@@ -115,6 +135,13 @@ Finder _noteCards() => find.byWidgetPredicate(
 
 Finder _folderCards() => find.byWidgetPredicate(
       (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+    );
+
+/// An icon inside the FAB only: card selection markers share `check_circle`
+/// and `circle` with the FAB's select-all / select-none actions.
+Finder _fabIcon(IconData icon) => find.descendant(
+      of: find.byType(AppFab),
+      matching: find.byIcon(icon),
     );
 
 void main() {
@@ -297,7 +324,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('2 Notes'), findsOneWidget);
+    expect(find.text('2 notes'), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -604,7 +631,7 @@ void main() {
     );
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('1 Note')),
+      find.descendant(of: page, matching: find.text('1 note')),
       findsOneWidget,
     );
     expect(
@@ -626,7 +653,7 @@ void main() {
     expect(bookmark.size, metadataIconSize);
     // Not locked, so no lock flag.
     expect(
-      find.descendant(of: page, matching: find.byIcon(Icons.lock_outline)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.lock)),
       findsNothing,
     );
   });
@@ -660,7 +687,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('1 Note'), findsOneWidget);
+    expect(find.text('1 note'), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -747,7 +774,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Selection icons replaced the editor ones, same box.
-    expect(find.byIcon(Symbols.check_circle), findsOneWidget);
+    expect(_fabIcon(Symbols.check_circle), findsOneWidget);
     expect(find.byIcon(Symbols.build_circle), findsNothing);
     expect(tester.getSize(fabBox), before);
   });
@@ -973,7 +1000,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final Finder align = find.ancestor(
-      of: find.byIcon(Icons.check_circle),
+      of: find.byIcon(Symbols.check_circle),
       matching: find.byType(Align),
     );
     expect(align, findsWidgets);
@@ -1147,10 +1174,8 @@ void main() {
     expect(moveButton.onPressed, isNull);
 
     // FAB order: all, none, move, delete.
-    final double all = tester.getCenter(find.byIcon(Symbols.check_circle)).dx;
-    final double none = tester
-        .getCenter(find.byIcon(Symbols.circle))
-        .dx;
+    final double all = tester.getCenter(_fabIcon(Symbols.check_circle)).dx;
+    final double none = tester.getCenter(_fabIcon(Symbols.circle)).dx;
     final double move = tester
         .getCenter(find.byIcon(Symbols.drive_file_move))
         .dx;
@@ -1193,7 +1218,7 @@ void main() {
     expect(actionButton(Symbols.delete).onPressed, isNotNull);
 
     // Clearing the selection keeps selection mode but disables both.
-    await tester.tap(find.byIcon(Symbols.circle));
+    await tester.tap(_fabIcon(Symbols.circle));
     await tester.pumpAndSettle();
     expect(actionButton(Symbols.drive_file_move).onPressed, isNull);
     expect(actionButton(Symbols.delete).onPressed, isNull);
@@ -1264,7 +1289,7 @@ void main() {
     expect(
       find.descendant(
         of: _folderCards(),
-        matching: find.byIcon(Icons.panorama_fish_eye),
+        matching: find.byIcon(Symbols.circle),
       ),
       findsNothing,
     );

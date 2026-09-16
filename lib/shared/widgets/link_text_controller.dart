@@ -608,7 +608,7 @@ class LinkTextEditingController extends TextEditingController {
       children.add(WidgetSpan(
         alignment: PlaceholderAlignment.middle,
         child: Icon(
-          checked ? Icons.check_box : Icons.check_box_outline_blank,
+          checked ? Symbols.check_box : Symbols.check_box_outline_blank,
           size: (base.fontSize ?? 14.4) * 1.3,
           color: checked
               ? linkColor
@@ -635,7 +635,7 @@ class LinkTextEditingController extends TextEditingController {
           child: Transform.translate(
             offset: const Offset(-3, 0),
             child: Icon(
-              Icons.drag_indicator,
+              Symbols.drag_indicator,
               size: (base.fontSize ?? 14.4) * 1.2,
               color: Colors.grey.withValues(alpha: 0.7),
             ),

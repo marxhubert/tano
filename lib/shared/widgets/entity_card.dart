@@ -9,7 +9,7 @@ import 'package:tano/shared/widgets/theme.dart';
 
 /// The kind of entity a card shows. Not used by the layout itself; it lets
 /// callers and tests tell cards apart, and hosts future type-specific tweaks.
-enum EntityKind { note, folder }
+enum EntityKind { note, folder, task, project }
 
 /// The only three card heights allowed by the design, shared by notes and
 /// folders:
@@ -26,11 +26,8 @@ enum EntityCardHeight {
   final double value;
 }
 
-typedef EntityCardBodyBuilder = Widget Function(
-  BuildContext context,
-  Color textColor,
-  bool hasCover,
-);
+typedef EntityCardBodyBuilder =
+    Widget Function(BuildContext context, Color textColor, bool hasCover);
 
 /// The single card container (note, folder, later task/project).
 ///
@@ -47,6 +44,7 @@ class EntityCard extends StatelessWidget {
     this.title = '',
     this.subtitle,
     this.subtitleIcon,
+    this.watermarkIcon,
     this.coverImage,
     this.isImportant = false,
     this.isLocked = false,
@@ -69,9 +67,9 @@ class EntityCard extends StatelessWidget {
   /// Radius of anything inset by [contentInset]: outer - margin.
   static const double innerRadius = outerRadius - contentInset;
 
-  /// Folder watermark glyph size: 24 (its native size) x 3. It is pushed past
-  /// the bottom-right edges, so most of the glyph stays inside the card.
-  static const double folderWatermarkSize = 72.0;
+  /// Watermark glyph size (folders and notes): 24 (its native size) x 3. It is
+  /// pushed past the bottom-right edges, so most of the glyph stays inside.
+  static const double watermarkSize = 72.0;
 
   final EntityKind kind;
   final String category;
@@ -83,6 +81,26 @@ class EntityCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? subtitleIcon;
+
+  /// Overrides the watermark glyph (a folder keeps its drawn path).
+  final IconData? watermarkIcon;
+
+  /// Watermark glyph of a kind.
+  static IconData _watermarkGlyph(EntityKind kind) => switch (kind) {
+    EntityKind.note => Symbols.sticky_note_2,
+    EntityKind.task => Symbols.list_alt,
+    EntityKind.project => Symbols.business_center,
+    EntityKind.folder => Symbols.folder_open,
+  };
+
+  /// Horizontal bleed of the watermark, tuned per glyph so each one sits the
+  /// same distance from the right edge.
+  static double _watermarkRight(EntityKind kind) => switch (kind) {
+    EntityKind.note => -6.0,
+    EntityKind.task => -6.0,
+    EntityKind.project => -4.0,
+    EntityKind.folder => -2.0,
+  };
 
   final String? coverImage;
   final bool isImportant;
@@ -118,10 +136,12 @@ class EntityCard extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final double coverHeight =
-              showCover && !isListLayout ? constraints.maxHeight / 2 : 0.0;
-          final double coverWidth =
-              showCover && isListLayout ? constraints.maxWidth / 3 : 0.0;
+          final double coverHeight = showCover && !isListLayout
+              ? constraints.maxHeight / 2
+              : 0.0;
+          final double coverWidth = showCover && isListLayout
+              ? constraints.maxWidth / 3
+              : 0.0;
           return Stack(
             children: <Widget>[
               if (showCover)
@@ -132,50 +152,62 @@ class EntityCard extends StatelessWidget {
                   bottom: isListLayout ? 0.0 : null,
                   width: isListLayout ? coverWidth : null,
                   height: isListLayout ? null : coverHeight,
-                  // Hairline under the cover, like the cover rules of the managed
-                  // cover; drawn on top of the image.
+                  // Hairline between the cover and the content, like the cover
+                  // rules of the managed cover; drawn on top of the image. It
+                  // faces the content: bottom in the grid (cover on top),
+                  // right in the list (cover on the left).
                   child: DecoratedBox(
                     position: DecorationPosition.foreground,
                     decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: cardBorderColor(isDark),
-                          width: 0.5,
-                        ),
-                      ),
+                      border: isListLayout
+                          ? Border(
+                              right: BorderSide(
+                                color: cardBorderColor(isDark),
+                                width: 0.5,
+                              ),
+                            )
+                          : Border(
+                              bottom: BorderSide(
+                                color: cardBorderColor(isDark),
+                                width: 0.5,
+                              ),
+                            ),
                     ),
                     child: CoverImage(name: coverImage!),
                   ),
                 ),
-              // Folder watermark: the glyph bleeds off the bottom-right corner,
-              // pushed 24px past both edges.
-              if (kind == EntityKind.folder)
-                Positioned(
-                  right: -2.0,
-                  bottom: -20.0,
-                  width: folderWatermarkSize,
-                  height: folderWatermarkSize,
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      key: const ValueKey<String>('entity-card-watermark'),
-                      // A bookmarked folder turns its watermark amber.
-                      painter: _FolderWatermarkPainter(
-                        color: isImportant
-                            ? tanoAmber.withValues(alpha: 0.45)
-                            : textColor.withValues(alpha: 0.10),
-                      ),
-                    ),
+              // Watermark: the glyph bleeds off the bottom-right corner, pushed
+              // past both edges. The kind picks the glyph, and the marker in
+              // the metadata carries the "important" state.
+              Positioned(
+                right: _watermarkRight(kind),
+                bottom: -20.0,
+                width: watermarkSize,
+                height: watermarkSize,
+                child: IgnorePointer(
+                  child: Icon(
+                    watermarkIcon ?? _watermarkGlyph(kind),
+                    key: const ValueKey<String>('entity-card-watermark'),
+                    size: watermarkSize,
+                    weight: 100.0,
+                    color: textColor.withValues(alpha: 0.10),
                   ),
                 ),
+              ),
               if (isLocked)
-                ..._lockedOverlay(bgColor, textColor, isDark)
+                ..._lockedOverlay(textColor, isDark)
               else if (isListLayout)
-                InkWell(
-                  onTap: onTap,
-                  onLongPress: onLongPress,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: coverWidth),
-                    child: builder(context, textColor, showCover),
+                // Fill the whole card: a list card has a fixed height, and an
+                // overlay (like the trash actions) must be positioned against
+                // the card, not against the intrinsic content box.
+                Positioned.fill(
+                  child: InkWell(
+                    onTap: onTap,
+                    onLongPress: onLongPress,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: coverWidth),
+                      child: builder(context, textColor, showCover),
+                    ),
                   ),
                 )
               else
@@ -234,17 +266,18 @@ class EntityCard extends StatelessWidget {
       groupId: fabTapGroup,
       child: isListLayout
           ? SizedBox(
-              height: (showCover
-                      ? EntityCardHeight.normal
-                      : EntityCardHeight.compact)
-                  .value,
+              height:
+                  (showCover
+                          ? EntityCardHeight.normal
+                          : EntityCardHeight.compact)
+                      .value,
               child: card,
             )
           : card,
     );
   }
 
-  List<Widget> _lockedOverlay(Color bgColor, Color textColor, bool isDark) {
+  List<Widget> _lockedOverlay(Color textColor, bool isDark) {
     final Color dotColor = isDark
         ? Colors.white.withValues(alpha: 0.34)
         : Colors.black.withValues(alpha: 0.28);
@@ -254,9 +287,9 @@ class EntityCard extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           child: Container(
-            // A locked folder keeps its watermark visible through the overlay;
-            // the card itself already paints [bgColor].
-            color: kind == EntityKind.folder ? Colors.transparent : bgColor,
+            // Transparent, so the watermark stays visible through the lock
+            // overlay: the card itself already paints [bgColor].
+            color: Colors.transparent,
             // Grid keeps contentInset x2 on every side; the locked list gets
             // wider left/right gutters.
             padding: isListLayout
@@ -362,10 +395,7 @@ class EntityCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: titleStyle,
           ),
-          if (meta != null) ...<Widget>[
-            const SizedBox(height: 2.0),
-            meta,
-          ],
+          if (meta != null) ...<Widget>[const SizedBox(height: 2.0), meta],
         ],
       ),
     );
@@ -375,7 +405,7 @@ class EntityCard extends StatelessWidget {
     if (!isSelectable) return const SizedBox.shrink();
     final Color color = isDark ? TanoStates.action.dark : tanoTeal;
     if (!isSelected) {
-      return Icon(Icons.panorama_fish_eye, size: 24.0, color: color);
+      return Icon(Symbols.circle, size: 24.0, color: color);
     }
     return Stack(
       alignment: Alignment.center,
@@ -385,7 +415,7 @@ class EntityCard extends StatelessWidget {
           height: 18.0,
           child: CircleAvatar(backgroundColor: Colors.white, radius: 100.0),
         ),
-        Icon(Icons.check_circle, size: 24.0, color: color),
+        Icon(Symbols.check_circle, size: 24.0, color: color),
       ],
     );
   }
@@ -436,91 +466,4 @@ class _DottedBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DottedBorderPainter old) =>
       old.color != color || old.radius != radius;
-}
-
-/// Stroke-only folder glyph used as the folder card watermark.
-///
-/// It is the outline "folder open" pictogram: the native artwork is a 24x24
-/// viewBox stroked at 1.0, so the painter scales it to whatever box it is
-/// given.
-class _FolderWatermarkPainter extends CustomPainter {
-  const _FolderWatermarkPainter({required this.color});
-
-  final Color color;
-
-  /// Native stroke width, in the 24x24 artwork space.
-  static const double _nativeStroke = 0.6;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.isEmpty) return;
-    final double scale = size.width / 24.0;
-    final Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _nativeStroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas.save();
-    canvas.scale(scale);
-    final Path path = Path()
-      // Open flap.
-      ..moveTo(2.25, 12.75)
-      ..lineTo(2.25, 12.0)
-      ..arcToPoint(
-        const Offset(4.5, 9.75),
-        radius: const Radius.circular(2.25),
-      )
-      ..lineTo(19.5, 9.75)
-      ..arcToPoint(
-        const Offset(21.75, 12.0),
-        radius: const Radius.circular(2.25),
-      )
-      ..lineTo(21.75, 12.75)
-      // Folder body.
-      ..moveTo(13.06, 6.31)
-      ..lineTo(10.94, 4.19)
-      ..arcToPoint(
-        const Offset(9.879, 3.75),
-        radius: const Radius.circular(1.5),
-        clockwise: false,
-      )
-      ..lineTo(4.5, 3.75)
-      ..arcToPoint(
-        const Offset(2.25, 6.0),
-        radius: const Radius.circular(2.25),
-        clockwise: false,
-      )
-      ..lineTo(2.25, 18.0)
-      ..arcToPoint(
-        const Offset(4.5, 20.25),
-        radius: const Radius.circular(2.25),
-        clockwise: false,
-      )
-      ..lineTo(19.5, 20.25)
-      ..arcToPoint(
-        const Offset(21.75, 18.0),
-        radius: const Radius.circular(2.25),
-        clockwise: false,
-      )
-      ..lineTo(21.75, 9.0)
-      ..arcToPoint(
-        const Offset(19.5, 6.75),
-        radius: const Radius.circular(2.25),
-        clockwise: false,
-      )
-      ..lineTo(14.121, 6.75)
-      ..arcToPoint(
-        const Offset(13.061, 6.31),
-        radius: const Radius.circular(1.5),
-      )
-      ..close();
-    canvas.drawPath(path, paint);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _FolderWatermarkPainter old) =>
-      old.color != color;
 }

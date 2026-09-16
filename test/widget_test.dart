@@ -163,7 +163,7 @@ void main() {
       expect(find.text('Settings'), findsOneWidget);
 
       // The display icons are correctly rendered to the right of the items.
-      expect(find.byIcon(Icons.view_stream), findsOneWidget);
+      expect(find.byIcon(Symbols.view_agenda), findsOneWidget);
 
       // The active item (default grid layout) is colored with the theme
       // color.
@@ -174,7 +174,7 @@ void main() {
 
       // The sorting items have no icon: only the icon of the Display group
       // (view_list/view_stream/view_module) is present.
-      expect(find.byIcon(Icons.date_range), findsNothing);
+      expect(find.byIcon(Symbols.date_range), findsNothing);
       expect(find.byIcon(Symbols.arrow_back_ios), findsNothing);
     },
   );

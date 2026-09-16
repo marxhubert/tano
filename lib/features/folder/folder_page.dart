@@ -277,12 +277,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     if (confirm != true || !mounted) return;
 
-    final NotesRepository repository = getIt<NotesRepository>();
-    for (final Note note in await repository.loadNotes()) {
-      if (note.folderId == _folder.id) {
-        await repository.trashNote(note.id);
-      }
-    }
+    // The folder keeps its notes: they stay filed and travel with it.
     await _foldersRepository?.trashFolder(_folder.id);
     if (mounted) {
       Navigator.of(context).pop();
@@ -430,7 +425,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             ),
             trailing: <Widget>[
               if (_folder.isLocked)
-                metadataGlyph(context, Icons.lock_outline),
+                metadataGlyph(context, Symbols.lock),
               if (_folder.important)
                 metadataGlyph(
                   context,

@@ -17,42 +17,33 @@ class DataTransferPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           sliver: SliverList(
             delegate: SliverChildListDelegate(<Widget>[
-              const SizedBox(height: 24.0),
-              // --- SECTION 1: EXPORT ---
-              SettingsCard(
-                children: <Widget>[
+              SettingsGroup(
+                tiles: <Widget>[
                   SettingsTile(
                     title: AppText.tr('export_data'),
                     selected: false,
                     onTap: () => exportData(context),
                   ),
                 ],
-              ),
-              SettingsFooter(
-                children: <Widget>[
+                footer: <Widget>[
                   SettingsFooterText(text: AppText.tr('desc_export_data')),
                 ],
               ),
 
-              const SizedBox(height: 12.0),
-
-              // --- SECTION 2: IMPORT ---
-              SettingsCard(
-                children: <Widget>[
+              SettingsGroup(
+                tiles: <Widget>[
                   SettingsTile(
                     title: AppText.tr('import_data'),
                     selected: false,
                     onTap: () => importData(context),
                   ),
                 ],
-              ),
-              SettingsFooter(
-                children: <Widget>[
+                footer: <Widget>[
                   SettingsFooterText(text: AppText.tr('desc_import_data')),
                 ],
               ),
 
-              const SizedBox(height: 12.0),
+              const SizedBox(height: SettingsGroup.defaultTopSpacing),
             ]),
           ),
         ),
