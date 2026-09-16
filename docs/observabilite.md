@@ -45,18 +45,23 @@ Sentry n'est pas initialisé et rien ne quitte l'appareil.
 **À trancher** : zéro breadcrumb (le plus strict) ou la fenêtre par défaut
 bridée. Et le DSN, fourni par le propriétaire du projet Sentry.
 
-## Étape 2 — Politique de confidentialité in-app
+## Étape 2 — Politique de confidentialité in-app — **faite**
 
 Pas de domaine pour l'instant : la politique vit donc **dans l'app**.
 
-- une page dédiée (FR/EN), accessible depuis À propos ;
-- contenu minimal : données stockées localement, chiffrement au repos,
-  **Sentry** (sous-traitant, données techniques, **sans IP ni identifiant
-  stable**, désactivable à tout moment) ;
-- reprendre le même texte dans les fiches store (« Data safety » côté Play).
+- page `PrivacyPage` (FR / EN / MG) avec cinq sections : données locales,
+  chiffrement au repos, rapports de crash, aucun pistage, suppression ;
+- une entrée : À propos → Confidentialité, en tête de la carte légale (avant
+  Licences) ;
+- le paragraphe « rapports de crash » cite le libellé de l'interrupteur et
+  rappelle l'absence d'IP et d'identifiant stable ;
+- `desc_bug_report` dit désormais explicitement « sans adresse IP ni
+  identifiant stable » ;
+- texte canonique et réponses « Data safety » / « App Privacy » à recopier :
+  [confidentialite.md](./confidentialite.md).
 
-**À ajuster** : `desc_bug_report` pour dire explicitement « sans adresse IP ni
-identifiant ».
+**Reste hors code** : déclarer les fiches store (voir la
+[feuille de route](./roadmap.md)).
 
 ## Étape 3 — Mises à jour store-native
 
