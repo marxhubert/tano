@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -18,7 +19,7 @@ AlertDialog aboutInfo({
           height: 36.0,
           child: CircleAvatar(
             backgroundColor: Colors.black87,
-            child: Icon(Icons.bookmark_border, size: 21.0, color: Colors.white),
+            child: Icon(Symbols.bookmark, size: 21.0, color: Colors.white),
           ),
         ),
         Padding(padding: EdgeInsets.only(right: 9.0)),

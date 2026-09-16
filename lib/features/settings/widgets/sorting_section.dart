@@ -12,74 +12,69 @@ class SortingSection extends StatefulWidget {
 }
 
 class _SortingSectionState extends State<SortingSection> {
+  String _sortBy = 'date';
+  bool _ascending = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final String sortBy = await widget.viewModel.getSorting();
+    final bool ascending = await widget.viewModel.getSortAscending();
+    if (!mounted) return;
+    setState(() {
+      _sortBy = sortBy;
+      _ascending = ascending;
+    });
+  }
+
+  Future<void> _setSorting(String sortBy) async {
+    await widget.viewModel.setSorting(sortBy);
+    if (mounted) setState(() => _sortBy = sortBy);
+  }
+
+  Future<void> _setAscending(bool ascending) async {
+    await widget.viewModel.setSortAscending(ascending);
+    if (mounted) setState(() => _ascending = ascending);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SettingsSection(title: AppText.tr('menu_sorting')),
-        FutureBuilder<Map<String, dynamic>>(
-          future: Future.wait([
-            widget.viewModel.getSorting(),
-            widget.viewModel.getSortAscending(),
-          ]).then((res) => {'sortBy': res[0], 'ascending': res[1]}),
-          builder: (context, snapshot) {
-            final currentSort = snapshot.data?['sortBy'] ?? 'date';
-            final currentAsc = snapshot.data?['ascending'] ?? true;
-
-            return SettingsCard(
-              children: [
-                SettingsTile(
-                  title: AppText.tr('menu_title'),
-                  selected: currentSort == 'alpha',
-                  onTap: () async {
-                    await widget.viewModel.setSorting('alpha');
-                    setState(() {});
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('menu_date'),
-                  selected: currentSort == 'date',
-                  onTap: () async {
-                    await widget.viewModel.setSorting('date');
-                    setState(() {});
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('menu_modified'),
-                  selected: currentSort == 'updated',
-                  onTap: () async {
-                    await widget.viewModel.setSorting('updated');
-                    setState(() {});
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('menu_favorites'),
-                  selected: currentSort == 'important',
-                  onTap: () async {
-                    await widget.viewModel.setSorting('important');
-                    setState(() {});
-                  },
-                ),
-                SettingsTile(
-                  title: AppText.tr('menu_theme_sort'),
-                  selected: currentSort == 'theme' || currentSort == 'category',
-                  onTap: () async {
-                    await widget.viewModel.setSorting('theme');
-                    setState(() {});
-                  },
-                ),
-                SettingsSwitchTile(
-                  title: AppText.tr('menu_descending'),
-                  value: !currentAsc,
-                  onChanged: (val) async {
-                    await widget.viewModel.setSortAscending(!val);
-                    setState(() {});
-                  },
-                ),
-              ],
-            );
-          },
+    return SettingsGroup(
+      title: AppText.tr('menu_sorting'),
+      tiles: <Widget>[
+        SettingsTile(
+          title: AppText.tr('menu_title'),
+          selected: _sortBy == 'alpha',
+          onTap: () => _setSorting('alpha'),
+        ),
+        SettingsTile(
+          title: AppText.tr('menu_date'),
+          selected: _sortBy == 'date',
+          onTap: () => _setSorting('date'),
+        ),
+        SettingsTile(
+          title: AppText.tr('menu_modified'),
+          selected: _sortBy == 'updated',
+          onTap: () => _setSorting('updated'),
+        ),
+        SettingsTile(
+          title: AppText.tr('menu_favorites'),
+          selected: _sortBy == 'important',
+          onTap: () => _setSorting('important'),
+        ),
+        SettingsTile(
+          title: AppText.tr('menu_theme_sort'),
+          selected: _sortBy == 'theme' || _sortBy == 'category',
+          onTap: () => _setSorting('theme'),
+        ),
+        SettingsSwitchTile(
+          title: AppText.tr('menu_descending'),
+          value: !_ascending,
+          onChanged: (val) => _setAscending(!val),
         ),
       ],
     );

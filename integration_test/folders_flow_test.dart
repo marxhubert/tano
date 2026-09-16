@@ -62,7 +62,25 @@ class _Repo implements NotesRepository, FoldersRepository {
   }
 
   @override
-  Future<void> trashFolder(String id) async {}
+  Future<void> trashFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) {
+      folders[i] = folders[i].copyWith(isDeleted: true, deletedAt: 'now');
+    }
+  }
+  @override
+  Future<List<Folder>> loadTrashFolders() async =>
+      folders.where((Folder f) => f.isDeleted).toList();
+  @override
+  Future<void> restoreFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) folders[i] = folders[i].copyWith(isDeleted: false);
+  }
+  @override
+  Future<void> deleteFolderPermanently(String id) async {
+    folders.removeWhere((Folder f) => f.id == id);
+    notes.removeWhere((Note n) => n.folderId == id);
+  }
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }

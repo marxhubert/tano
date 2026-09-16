@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
 
@@ -175,7 +176,7 @@ void main() {
       final WidgetSpan box = spans[2] as WidgetSpan;
       expect(box.alignment, PlaceholderAlignment.middle);
       expect(box.child, isA<Icon>());
-      expect((box.child as Icon).icon, Icons.check_box_outline_blank);
+      expect((box.child as Icon).icon, Symbols.check_box_outline_blank);
       expect((box.child as Icon).size, greaterThan(_style.fontSize!));
       // The 4 hidden marker characters keep the 1:1 mapping.
       expect((spans[3] as TextSpan).text, '[ ] ');
@@ -190,7 +191,7 @@ void main() {
       );
       final List<InlineSpan> spans = _collectSpans(span);
       expect(spans[2], isA<WidgetSpan>());
-      expect(((spans[2] as WidgetSpan).child as Icon).icon, Icons.check_box);
+      expect(((spans[2] as WidgetSpan).child as Icon).icon, Symbols.check_box);
     });
 
     test('renders a drag handle on a checklist title line', () {
@@ -204,7 +205,7 @@ void main() {
       expect(spans[1], isA<WidgetSpan>());
       final Widget handle = (spans[1] as WidgetSpan).child;
       expect(handle, isA<Transform>());
-      expect(((handle as Transform).child as Icon).icon, Icons.drag_indicator);
+      expect(((handle as Transform).child as Icon).icon, Symbols.drag_indicator);
       expect((spans[2] as TextSpan).text, '# ');
       expect((spans[3] as TextSpan).text, 'Mon titre');
       // The title uses the content's font size, only slightly bold.

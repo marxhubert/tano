@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
+import 'package:tano/features/lab/lab_page.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
-import 'package:tano/core/services/analytics_service.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -20,17 +20,11 @@ void main() async {
     LanguageReferencesController.instance.init(),
   ]);
 
-  // Gather basic device info on first launch for future decision making
-  await AnalyticsService.instance.collectFirstLaunchInfo();
-
   runApp(const Tano());
 }
 
 class Tano extends StatelessWidget {
-  const Tano({
-    super.key,
-    this.themeMode,
-  });
+  const Tano({super.key, this.themeMode});
 
   /// How the light/dark themes are selected. Exposed so tests can pin a
   /// brightness instead of relying on the host platform.
@@ -85,6 +79,7 @@ class Tano extends StatelessWidget {
             '/home': (BuildContext context) => const Home(),
             '/settings': (BuildContext context) => const SettingsPage(),
             '/trash': (BuildContext context) => const TrashPage(),
+            '/lab': (BuildContext context) => const LabPage(),
           },
         );
       },
