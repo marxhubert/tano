@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_page.dart';
@@ -82,7 +83,7 @@ class SplashScreenState extends State<SplashScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(Icons.error_outline, size: 48.0, color: muted),
+          Icon(Symbols.error, size: 48.0, color: muted),
           const SizedBox(height: 16.0),
           Text(
             AppText.tr('load_error_title'),

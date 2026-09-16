@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -32,13 +33,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Hidden until the user long-presses the cover.
-    expect(find.byIcon(Icons.cancel), findsNothing);
+    expect(find.byIcon(Symbols.cancel), findsNothing);
 
     await tester.longPress(find.byType(CoverImage));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.cancel), findsOneWidget);
+    expect(find.byIcon(Symbols.cancel), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.cancel));
+    await tester.tap(find.byIcon(Symbols.cancel));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(removed, isFalse);

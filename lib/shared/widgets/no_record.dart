@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -18,7 +19,7 @@ Widget noRecordFound(BuildContext context) {
                 child: CircleAvatar(
                   backgroundColor: Colors.grey.shade500,
                   child: Icon(
-                    Icons.bookmark_border,
+                    Symbols.bookmark,
                     color: Colors.blueGrey.shade50,
                     size: 45.0,
                   ),
@@ -33,7 +34,7 @@ Widget noRecordFound(BuildContext context) {
                       Container(
                         alignment: Alignment.bottomRight,
                         child: Icon(
-                          Icons.warning,
+                          Symbols.warning,
                           color: primaryTextColor(context),
                           size: 45.0,
                         ),

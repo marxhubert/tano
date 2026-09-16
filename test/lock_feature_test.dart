@@ -435,7 +435,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(EditNote),
-          matching: find.byIcon(Icons.lock_outline),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsOneWidget,
       );
@@ -463,7 +463,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(EditNote),
-          matching: find.byIcon(Icons.lock_outline),
+          matching: find.byIcon(Symbols.lock),
         ),
         findsNothing,
       );
