@@ -43,7 +43,7 @@ class DataTransferPage extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: SettingsGroup.topSpacing),
+              const SizedBox(height: SettingsGroup.defaultTopSpacing),
             ]),
           ),
         ),

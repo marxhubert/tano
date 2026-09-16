@@ -81,7 +81,7 @@ class _ResetPageState extends State<ResetPage> {
                     ),
                   ],
 
-                  const SizedBox(height: SettingsGroup.topSpacing),
+                  const SizedBox(height: SettingsGroup.defaultTopSpacing),
                 ]),
               ),
             ),
