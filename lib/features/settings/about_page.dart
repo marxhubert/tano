@@ -131,6 +131,8 @@ class _AboutPageState extends State<AboutPage> {
           padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 24.0),
           sliver: SliverToBoxAdapter(
             child: SettingsGroup(
+              // The paragraphs above already breathe; keep the gap tight.
+              topSpacing: 12.0,
               tiles: [
                 SettingsTile(
                   title: AppText.tr('about_premium'),
@@ -196,6 +198,7 @@ class _AboutPageState extends State<AboutPage> {
               listenable: _viewModel,
               builder: (context, _) {
                 return SettingsGroup(
+                  topSpacing: 12.0,
                   tiles: [
                     SettingsSwitchTile(
                       title: AppText.tr('option_bug_report'),

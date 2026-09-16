@@ -46,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const LanguageSection(),
                 AboutSection(viewModel: _viewModel),
                 DataManagementSection(viewModel: _viewModel),
-                const SizedBox(height: SettingsGroup.topSpacing),
+                const SizedBox(height: SettingsGroup.defaultTopSpacing),
               ]),
             ),
           ),
