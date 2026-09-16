@@ -52,9 +52,7 @@ void main() {
 
   testWidgets('the border is thicker in the dark theme', (tester) async {
     Future<double> borderWidth(Brightness brightness) async {
-      await tester.pumpWidget(
-        _host(_card(), brightness: brightness),
-      );
+      await tester.pumpWidget(_host(_card(), brightness: brightness));
       await tester.pumpAndSettle();
       final BoxDecoration decoration = tester
           .widgetList<DecoratedBox>(
@@ -73,8 +71,9 @@ void main() {
     expect(await borderWidth(Brightness.dark), 1.0);
   });
 
-  testWidgets('a locked card draws the dashed outline and the lock',
-      (tester) async {
+  testWidgets('a locked card draws the dashed outline and the lock', (
+    tester,
+  ) async {
     await tester.pumpWidget(_host(_card(locked: true)));
     await tester.pumpAndSettle();
 
@@ -117,8 +116,7 @@ void main() {
     expect(find.text('x3'), findsOneWidget);
   });
 
-  testWidgets('a folder card shows the watermark, even locked; a note never',
-      (tester) async {
+  testWidgets('every kind shows its watermark, even locked', (tester) async {
     Future<void> pump(EntityKind kind, {bool locked = false}) async {
       await tester.pumpWidget(
         _host(
@@ -141,10 +139,23 @@ void main() {
       findsOneWidget,
     );
 
+    // Every kind draws a watermark: the glyph is the only difference.
     await pump(EntityKind.note);
     expect(
       find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsNothing,
+      findsOneWidget,
+    );
+
+    await pump(EntityKind.task);
+    expect(
+      find.byKey(const ValueKey<String>('entity-card-watermark')),
+      findsOneWidget,
+    );
+
+    await pump(EntityKind.project);
+    expect(
+      find.byKey(const ValueKey<String>('entity-card-watermark')),
+      findsOneWidget,
     );
 
     // A locked folder keeps its watermark, visible through the lock overlay.
@@ -181,14 +192,15 @@ void main() {
           ),
         )
         .any((DecoratedBox box) {
-      final Decoration d = box.decoration;
-      return d is BoxDecoration && d.border != null;
-    });
+          final Decoration d = box.decoration;
+          return d is BoxDecoration && d.border != null;
+        });
     expect(hasBorder, isTrue);
   });
 
-  testWidgets('a locked card fits the real grid cell without overflowing',
-      (tester) async {
+  testWidgets('a locked card fits the real grid cell without overflowing', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(_card(locked: true), width: 112.67, height: 125.0),
     );

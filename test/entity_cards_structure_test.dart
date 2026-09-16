@@ -96,11 +96,11 @@ Widget _folderCard(
 }
 
 Folder _folder({String? coverImage}) => Folder(
-      id: 'f1',
-      name: 'Studies',
-      date: '2026-01-01 00:00:00.000',
-      coverImage: coverImage,
-    );
+  id: 'f1',
+  name: 'Studies',
+  date: '2026-01-01 00:00:00.000',
+  coverImage: coverImage,
+);
 
 void main() {
   setUp(() {
@@ -110,8 +110,9 @@ void main() {
   });
 
   group('note grid', () {
-    testWidgets('glues the metadata to the bottom, left aligned',
-        (tester) async {
+    testWidgets('glues the metadata to the bottom, left aligned', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_noteCard(_note())));
 
       final Rect card = tester.getRect(find.byType(EntityCard));
@@ -121,8 +122,9 @@ void main() {
       expect(meta.left, closeTo(card.left + 8.0, 2.0));
     });
 
-    testWidgets('fills the top half with the cover and stops the title at 2',
-        (tester) async {
+    testWidgets('fills the top half with the cover and stops the title at 2', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_noteCard(_note(coverImage: 'cover.png'))));
 
       final Rect card = tester.getRect(find.byType(EntityCard));
@@ -133,8 +135,9 @@ void main() {
       expect(tester.widget<Text>(find.text('Alpha title')).maxLines, 2);
     });
 
-    testWidgets('lets the title reach three lines without a cover',
-        (tester) async {
+    testWidgets('lets the title reach three lines without a cover', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_noteCard(_note())));
 
       expect(tester.widget<Text>(find.text('Alpha title')).maxLines, 3);
@@ -158,8 +161,9 @@ void main() {
       expect(cover.width, closeTo(card.width / 3, 1.0));
     });
 
-    testWidgets('stops the title at one line with a cover, two without',
-        (tester) async {
+    testWidgets('stops the title at one line with a cover, two without', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _host(
           _noteCard(_note(coverImage: 'cover.png'), isList: true),
@@ -191,8 +195,9 @@ void main() {
   });
 
   group('folder', () {
-    testWidgets('grid puts the name on top and the metadata at the bottom',
-        (tester) async {
+    testWidgets('grid puts the name on top and the metadata at the bottom', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_folderCard(_folder(), noteCount: 3)));
 
       final Rect card = tester.getRect(find.byType(EntityCard));
@@ -201,8 +206,8 @@ void main() {
 
       expect(name.top, lessThan(meta.top));
       expect(card.bottom - meta.bottom, closeTo(4.0, 1.0));
-      // No folder glyph any more: the watermark replaces it.
-      expect(find.byIcon(Symbols.folder_open), findsNothing);
+      // The only folder glyph is the watermark in the corner.
+      expect(find.byIcon(Symbols.folder_open), findsOneWidget);
     });
 
     testWidgets('list centres the name and its metadata', (tester) async {
@@ -226,8 +231,9 @@ void main() {
   });
 
   group('bookmark', () {
-    testWidgets('a bookmarked note shows the marker first in the metadata',
-        (tester) async {
+    testWidgets('a bookmarked note shows the marker first in the metadata', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_noteCard(_note(important: true))));
 
       final Rect mark = tester.getRect(find.byIcon(Symbols.label_important));
@@ -236,6 +242,5 @@ void main() {
       expect(mark.center.dy, closeTo(counts.center.dy, 1.0));
       expect(mark.left, lessThan(counts.left));
     });
-
   });
 }
