@@ -4,6 +4,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/features/trash/trash_view_model.dart';
 
 class _FakeRepo implements NotesRepository, FoldersRepository {
   _FakeRepo({List<Note>? notes, List<Folder>? folders})
@@ -81,6 +82,19 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
   }
 
 
+  @override
+  Future<List<Folder>> loadTrashFolders() async =>
+      folders.where((Folder f) => f.isDeleted).toList();
+  @override
+  Future<void> restoreFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) folders[i] = folders[i].copyWith(isDeleted: false);
+  }
+  @override
+  Future<void> deleteFolderPermanently(String id) async {
+    folders.removeWhere((Folder f) => f.id == id);
+    notes.removeWhere((Note n) => n.folderId == id);
+  }
   @override
   Future<String> nextFolderName() async {
     final Set<String> names = folders.map((Folder f) => f.name).toSet();
@@ -224,7 +238,7 @@ void main() {
   });
 
   group('deletion', () {
-    test('deleting a folder also trashes its notes', () async {
+    test('deleting a folder trashes it but keeps its notes filed', () async {
       final _FakeRepo repo = _FakeRepo(
         notes: <Note>[_note(id: 'n1', folderId: 'f1')],
         folders: <Folder>[_folder(id: 'f1')],
@@ -236,9 +250,30 @@ void main() {
 
       expect(vm.folders, isEmpty);
       expect(repo.folders.single.isDeleted, isTrue);
-      // The folder content goes to the trash with it.
+      // The note stays filed and active: it travels with its folder.
+      expect(repo.notes.single.isDeleted, isFalse);
+      expect(repo.notes.single.folderId, 'f1');
+    });
+
+    test('undo puts back the deleted notes and folders', () async {
+      final _FakeRepo repo = _FakeRepo(
+        notes: <Note>[_note(id: 'n1'), _note(id: 'n2', folderId: 'f1')],
+        folders: <Folder>[_folder(id: 'f1')],
+      );
+      final HomeViewModel vm = _vm(repo);
+      vm.enterSelectionMode('n1');
+      vm.toggleSelection('f1');
+      await vm.deleteSelected();
+
       expect(vm.notes, isEmpty);
-      expect(repo.notes.single.isDeleted, isTrue);
+      expect(vm.folders, isEmpty);
+
+      await vm.undoLastDelete();
+
+      // Both the note and the folder come back.
+      expect(vm.notes.map((Note n) => n.id), contains('n1'));
+      expect(vm.folders.map((Folder f) => f.id), <String>['f1']);
+      expect(repo.folders.single.isDeleted, isFalse);
     });
 
     test('moving a selected note files it in the target folder', () async {
@@ -288,5 +323,34 @@ void main() {
     expect(cleared.coverImage, isNull);
     expect(cleared.id, 'f1');
     expect(cleared.name, 'Perso');
+  });
+
+  group('trash', () {
+    test('a trashed folder keeps its notes and restores them', () async {
+      final _FakeRepo repo = _FakeRepo(
+        notes: <Note>[_note(id: 'n1', folderId: 'f1')],
+        folders: <Folder>[_folder(id: 'f1')],
+      );
+      await repo.trashFolder('f1');
+
+      final TrashViewModel trash = TrashViewModel(
+        notesRepository: repo,
+        foldersRepository: repo,
+      );
+      await trash.load();
+
+      // The folder is in the trash, whole and with its content.
+      expect(trash.deletedFolders.map((Folder f) => f.id), <String>['f1']);
+      expect(trash.noteCountIn('f1'), 1);
+      expect(trash.deletedNotes, isEmpty);
+
+      await trash.restoreFolder('f1');
+
+      expect(trash.deletedFolders, isEmpty);
+      expect(repo.folders.single.isDeleted, isFalse);
+      // The note never left its folder.
+      expect(repo.notes.single.folderId, 'f1');
+      expect(repo.notes.single.isDeleted, isFalse);
+    });
   });
 }

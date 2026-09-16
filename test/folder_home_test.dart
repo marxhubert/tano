@@ -87,7 +87,27 @@ class _Repo implements NotesRepository, FoldersRepository {
     }
   }
   @override
-  Future<void> trashFolder(String id) async {}
+  Future<void> trashFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) {
+      folders[i] = folders[i].copyWith(isDeleted: true, deletedAt: 'now');
+    }
+  }
+  @override
+  Future<List<Folder>> loadTrashFolders() async =>
+      folders.where((Folder f) => f.isDeleted).toList();
+  @override
+  Future<void> restoreFolder(String id) async {
+    final int i = folders.indexWhere((Folder f) => f.id == id);
+    if (i != -1) {
+      folders[i] = folders[i].copyWith(isDeleted: false);
+    }
+  }
+  @override
+  Future<void> deleteFolderPermanently(String id) async {
+    folders.removeWhere((Folder f) => f.id == id);
+    notes.removeWhere((Note n) => n.folderId == id);
+  }
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
@@ -297,7 +317,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('2 Notes'), findsOneWidget);
+    expect(find.text('2 notes'), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -604,7 +624,7 @@ void main() {
     );
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('1 Note')),
+      find.descendant(of: page, matching: find.text('1 note')),
       findsOneWidget,
     );
     expect(
@@ -660,7 +680,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('1 Note'), findsOneWidget);
+    expect(find.text('1 note'), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (

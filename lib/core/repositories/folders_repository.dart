@@ -11,9 +11,42 @@ abstract class FoldersRepository {
   /// Inserts or updates a single folder.
   Future<void> upsertFolder(Folder folder);
 
-  /// Moves a folder to the trash. Notes it contained are unfiled, not deleted.
+  /// Moves a folder to the trash, keeping its notes exactly as they are: the
+  /// folder stays whole in the trash and restoring it brings its content back.
   Future<void> trashFolder(String id);
 
   /// Smallest "Folder X" name that is not already used.
   Future<String> nextFolderName();
+
+  /// Loads every folder in the trash.
+  Future<List<Folder>> loadTrashFolders();
+
+  /// Restores a trashed folder, together with the notes it still contains.
+  Future<void> restoreFolder(String id);
+
+  /// Deletes a trashed folder and the notes it contains for good.
+  Future<void> deleteFolderPermanently(String id);
+}
+
+/// A repository with no folders at all.
+///
+/// Keeps the trash working when the notes repository has no folder support
+/// (lightweight in-memory doubles in tests).
+class EmptyFoldersRepository implements FoldersRepository {
+  const EmptyFoldersRepository();
+
+  @override
+  Future<List<Folder>> loadFolders() async => <Folder>[];
+  @override
+  Future<List<Folder>> loadTrashFolders() async => <Folder>[];
+  @override
+  Future<void> upsertFolder(Folder folder) async {}
+  @override
+  Future<void> trashFolder(String id) async {}
+  @override
+  Future<void> restoreFolder(String id) async {}
+  @override
+  Future<void> deleteFolderPermanently(String id) async {}
+  @override
+  Future<String> nextFolderName() async => 'Folder 1';
 }
