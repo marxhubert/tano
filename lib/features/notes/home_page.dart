@@ -315,9 +315,22 @@ class HomeState extends State<Home> with RouteAware {
 
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
+    // The message reflects what was actually removed: notes, folders, or both.
+    final List<String> parts = <String>[
+      if (_viewModel.lastDeletedFolders.isNotEmpty)
+        AppText.count(
+          _viewModel.lastDeletedFolders.length,
+          'folder',
+          'folders',
+        ),
+      if (_viewModel.lastDeletedNotes.isNotEmpty)
+        AppText.count(_viewModel.lastDeletedNotes.length, 'note', 'notes'),
+    ];
     showAdaptiveNoticeWithAction(
       context: context,
-      message: AppText.tr('note_deleted'),
+      message: parts.isEmpty
+          ? AppText.tr('note_deleted')
+          : '${parts.join(' & ')} ${AppText.tr('deleted')}',
       actionLabel: AppText.tr('undo'),
       onAction: _viewModel.undoLastDelete,
     );

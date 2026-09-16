@@ -50,9 +50,35 @@ class LocaleController extends ChangeNotifier {
 
     // List of major francophone countries (ISO codes)
     const Set<String> francophoneCountries = {
-      'FR', 'BE', 'CH', 'CA', 'LU', 'MC', 'SN', 'CI', 'CM', 'CD',
-      'CG', 'GA', 'GN', 'NE', 'TG', 'BJ', 'BF', 'BI', 'RW', 'KM',
-      'DJ', 'HT', 'VU', 'SC', 'TD', 'ML', 'MA', 'DZ', 'TN'
+      'FR',
+      'BE',
+      'CH',
+      'CA',
+      'LU',
+      'MC',
+      'SN',
+      'CI',
+      'CM',
+      'CD',
+      'CG',
+      'GA',
+      'GN',
+      'NE',
+      'TG',
+      'BJ',
+      'BF',
+      'BI',
+      'RW',
+      'KM',
+      'DJ',
+      'HT',
+      'VU',
+      'SC',
+      'TD',
+      'ML',
+      'MA',
+      'DZ',
+      'TN',
     };
 
     return countryCode != null && francophoneCountries.contains(countryCode);
@@ -70,11 +96,19 @@ class LocaleController extends ChangeNotifier {
 
 /// Interface strings, resolved according to the current language.
 ///
+/// [AppText.count] builds the "N thing(s)" labels used by metadata lines and
+/// the undo message.
+///
 /// Values may contain named parameters `{name}`, replaced when [tr]
 /// is called.
 class AppText {
   AppText._();
 
+  /// "1 note", "3 notes", "1 folder"… The plural key is used above one.
+  static String count(int value, String singular, String plural) =>
+      '$value ${tr(value > 1 ? plural : singular)}';
+
+  /// Every translatable string, by key.
   static const Map<String, String> _en = <String, String>{
     // Home
     'all_notes': 'My notes',
@@ -92,8 +126,8 @@ class AppText {
     'add_folder': 'Add folder',
     'folder_name': 'Folder name',
     'folder_empty': 'This folder is empty',
-    'note': 'Note',
-    'notes': 'Notes',
+    'note': 'note',
+    'notes': 'notes',
     'search': 'Search',
     'sorted_by': 'Sorted by {sort}',
     'no_note_selected': 'No note selected',
@@ -115,6 +149,7 @@ class AppText {
     'select_all': 'All',
     'select_none': 'None',
     'note_deleted': 'Note deleted',
+    'deleted': 'deleted',
     'undo': 'Undo',
     'save_before_leave': 'Save before leaving',
     'save': 'Save',
@@ -165,11 +200,14 @@ class AppText {
     'back': 'Back',
     'no_title': 'No title',
     'no_data': 'No data',
+    'empty': 'Empty',
     'edit_note': 'Edit note',
     'add_note': 'Add note',
     'find_in_note': 'Find in note',
     'chars': 'chars',
     'notes_section': 'Notes',
+    'folders_group': 'Folders',
+    'notes_group': 'Notes',
     'title': 'Title',
     'content': 'Content',
     'important': 'Important',
@@ -211,19 +249,25 @@ class AppText {
     'auth_reason': 'Authenticate to access the note',
     'delete_locked_error': 'Locked notes cannot be deleted',
     'lock_unavailable_title': 'Cannot lock this note',
-    'lock_requires_device_lock': 'Set up a screen lock (passcode or biometrics) to lock notes',
+    'lock_requires_device_lock':
+        'Set up a screen lock (passcode or biometrics) to lock notes',
     'option_check_update': 'Check for update',
     'option_feedback': 'Give feedback',
     'option_bug_report': 'Allow bug report',
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
-    'desc_bug_report': 'Help us improve TanoNote by automatically sending anonymous crash reports and performance data.',
-    'desc_recycle_bin': 'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
-    'desc_reset_data': 'Resetting data will permanently delete all your notes and preferences. This action cannot be undone.',
+    'desc_bug_report':
+        'Help us improve TanoNote by automatically sending anonymous crash reports and performance data.',
+    'desc_recycle_bin':
+        'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
+    'desc_reset_data':
+        'Resetting data will permanently delete all your notes and preferences. This action cannot be undone.',
     'option_delete_data': 'Delete all data',
     'option_delete_prefs': 'Delete all preferences',
-    'desc_delete_data': 'This will permanently remove all your notes and attachments.',
-    'desc_delete_prefs': 'This will reset all your settings (theme, language, sorting) to their default values.',
+    'desc_delete_data':
+        'This will permanently remove all your notes and attachments.',
+    'desc_delete_prefs':
+        'This will reset all your settings (theme, language, sorting) to their default values.',
     // Menu
     'menu_display': 'Display',
     'menu_list': 'List',
@@ -250,7 +294,8 @@ class AppText {
     'attachment': 'Attachment',
     'attachments': 'Attachments',
     'licenses': 'Licenses',
-    'license_disclaimer': 'This has been translated from the original English version by an AI, then reviewed and verified by a human. However, translation errors may still occur. We apologize in advance and thank you for your understanding.',
+    'license_disclaimer':
+        'This has been translated from the original English version by an AI, then reviewed and verified by a human. However, translation errors may still occur. We apologize in advance and thank you for your understanding.',
     'license_view_original': 'View original version',
     'lang_en': 'ENGLISH',
     'lang_fr': 'FRENCH',
@@ -275,8 +320,8 @@ class AppText {
     'add_folder': 'Ajouter un dossier',
     'folder_name': 'Nom du dossier',
     'folder_empty': 'Ce dossier est vide',
-    'note': 'Note',
-    'notes': 'Notes',
+    'note': 'note',
+    'notes': 'notes',
     'search': 'Rechercher',
     'sorted_by': 'Triage par {sort}',
     'no_note_selected': 'Aucune note sélectionnée',
@@ -298,6 +343,7 @@ class AppText {
     'select_all': 'Tout',
     'select_none': 'Rien',
     'note_deleted': 'Note supprimée',
+    'deleted': 'supprimé(s)',
     'undo': 'Annuler',
     'save_before_leave': 'Enregistrer avant de quitter',
     'save': 'Enregistrer',
@@ -348,11 +394,14 @@ class AppText {
     'back': 'Retour',
     'no_title': 'Sans titre',
     'no_data': 'Pas de donnée',
+    'empty': 'Vide',
     'edit_note': 'Modifier la note',
     'add_note': 'Ajouter une note',
     'find_in_note': 'Rechercher dans la note',
     'chars': 'caractères',
     'notes_section': 'Notes',
+    'folders_group': 'Dossiers',
+    'notes_group': 'Notes',
     'title': 'Titre',
     'content': 'Contenu',
     'important': "Important",
@@ -392,21 +441,28 @@ class AppText {
     'option_lock': 'Verrouiller',
     'option_unlock': 'Déverrouiller',
     'auth_reason': 'Authentifiez-vous pour accéder à la note',
-    'delete_locked_error': 'Les notes verrouillées ne peuvent pas être supprimées',
+    'delete_locked_error':
+        'Les notes verrouillées ne peuvent pas être supprimées',
     'lock_unavailable_title': 'Impossible de verrouiller la note',
-    'lock_requires_device_lock': 'Configurez un verrou d\'écran (code ou biométrie) pour verrouiller une note',
+    'lock_requires_device_lock':
+        'Configurez un verrou d\'écran (code ou biométrie) pour verrouiller une note',
     'option_check_update': 'Mise à jour',
     'option_feedback': 'Donner un avis',
     'option_bug_report': 'Autoriser les rapports de bug',
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
-    'desc_bug_report': 'Aidez-nous à améliorer TanoNote en envoyant automatiquement des rapports d\'erreur anonymes.',
-    'desc_recycle_bin': 'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
-    'desc_reset_data': 'La réinitialisation supprimera définitivement toutes vos notes et préférences. Cette action est irréversible.',
+    'desc_bug_report':
+        'Aidez-nous à améliorer TanoNote en envoyant automatiquement des rapports d\'erreur anonymes.',
+    'desc_recycle_bin':
+        'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
+    'desc_reset_data':
+        'La réinitialisation supprimera définitivement toutes vos notes et préférences. Cette action est irréversible.',
     'option_delete_data': 'Supprimer toutes les données',
     'option_delete_prefs': 'Supprimer toutes les préférences',
-    'desc_delete_data': 'Ceci supprimera définitivement toutes vos notes et pièces jointes.',
-    'desc_delete_prefs': 'Ceci réinitialisera tous vos réglages (thème, langue, tri) à leurs valeurs par défaut.',
+    'desc_delete_data':
+        'Ceci supprimera définitivement toutes vos notes et pièces jointes.',
+    'desc_delete_prefs':
+        'Ceci réinitialisera tous vos réglages (thème, langue, tri) à leurs valeurs par défaut.',
     // Menu
     'menu_display': 'Affichage',
     'menu_list': 'Liste',
@@ -433,7 +489,8 @@ class AppText {
     'attachment': 'Pièce jointe',
     'attachments': 'Pièces jointes',
     'licenses': 'Licences',
-    'license_disclaimer': "Ceci a été traduit de la version originale anglaise par une IA, puis relu et vérifié par un humain. Toutefois, des erreurs de traduction peuvent encore subsister. Nous nous en excusons par avance et vous remercions de votre compréhension.",
+    'license_disclaimer':
+        "Ceci a été traduit de la version originale anglaise par une IA, puis relu et vérifié par un humain. Toutefois, des erreurs de traduction peuvent encore subsister. Nous nous en excusons par avance et vous remercions de votre compréhension.",
     'license_view_original': "Voir la version originale",
     'lang_en': 'ANGLAIS',
     'lang_fr': 'FRANÇAIS',
@@ -458,8 +515,8 @@ class AppText {
     'add_folder': 'Hampiditra rakitra',
     'folder_name': 'Anaran\'ny rakitra',
     'folder_empty': 'Foana ity rakitra ity',
-    'note': 'Naoty',
-    'notes': 'Naoty',
+    'note': 'naoty',
+    'notes': 'naoty',
     'search': 'Karohy',
     'sorted_by': 'Voalamina araka ny {sort}',
     'no_note_selected': 'Tsy misy naoty voafantina',
@@ -481,6 +538,7 @@ class AppText {
     'select_all': 'Rehetra',
     'select_none': 'Tsy misy',
     'note_deleted': 'Voafafa ny naoty',
+    'deleted': 'voafafa',
     'undo': 'Avereno',
     'save_before_leave': 'Tehirizina alohan\'ny hiala',
     'save': 'Tehirizo',
@@ -516,7 +574,8 @@ class AppText {
         'Misy naoty voahidy: ny fanondranana mazava dia hamaha azy ireo.',
     'export_done': 'Voatahiry ny fanondranana.',
     'import_password_title': 'Fanondranana voahidy',
-    'import_password_message': 'Ampidiro ny teny miafina amin\'ity fanondranana ity.',
+    'import_password_message':
+        'Ampidiro ny teny miafina amin\'ity fanondranana ity.',
     'import_failed': 'Tsy nahomby ny fampidirana',
     'import_done':
         '{added} naoty nampidirina, {skipped} nolavina, {unlocked} navahana.',
@@ -531,11 +590,14 @@ class AppText {
     'back': 'Hiverina',
     'no_title': 'Tsy misy lohateny',
     'no_data': 'Tsy misy angona',
+    'empty': 'Foana',
     'edit_note': 'Hanova naoty',
     'add_note': 'Hanampy naoty',
     'find_in_note': 'Hikaroka ao anaty naoty',
     'chars': 'litera',
     'notes_section': 'Naoty',
+    'folders_group': 'Rakitra',
+    'notes_group': 'Naoty',
     'title': 'Lohateny',
     'content': 'Votoatiny',
     'important': 'Zava-dehibe',
@@ -577,19 +639,25 @@ class AppText {
     'auth_reason': 'Mila famantarana vao afaka mijery ny naoty',
     'delete_locked_error': 'Tsy azo fafana ny naoty voahidy',
     'lock_unavailable_title': 'Tsy azo hidiana ny naoty',
-    'lock_requires_device_lock': 'Mametraha hidy efijery (kaody na biometrika) vao afaka manidy naoty',
+    'lock_requires_device_lock':
+        'Mametraha hidy efijery (kaody na biometrika) vao afaka manidy naoty',
     'option_check_update': 'Hizaha vao',
     'option_feedback': 'Hanome hevitra',
     'option_bug_report': 'Hamela ny tatitra bug',
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
-    'desc_bug_report': 'Ampio izahay hanatsara ny TanoNote amin\'ny alalan\'ny fandefasana tatitra momba ny olana miseho amin\'ny fampiasanao ny rindrankajy.',
-    'desc_recycle_bin': 'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
-    'desc_reset_data': 'Ny famerenana ny angona dia hamafa tanteraka ny naoty sy ny fikirana rehetra nataonao. Tsy azo averina intsony izany rehefa voafafa.',
+    'desc_bug_report':
+        'Ampio izahay hanatsara ny TanoNote amin\'ny alalan\'ny fandefasana tatitra momba ny olana miseho amin\'ny fampiasanao ny rindrankajy.',
+    'desc_recycle_bin':
+        'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
+    'desc_reset_data':
+        'Ny famerenana ny angona dia hamafa tanteraka ny naoty sy ny fikirana rehetra nataonao. Tsy azo averina intsony izany rehefa voafafa.',
     'option_delete_data': 'Hamafa ny angona rehetra',
     'option_delete_prefs': 'Hamafa ny fikirana rehetra',
-    'desc_delete_data': 'Hamafa tanteraka ny naoty sy ny rakitra rehetra izany.',
-    'desc_delete_prefs': 'Hamerina ny fikirana rehetra (loko, fiteny, filaminana) amin\'ny teo aloha izany.',
+    'desc_delete_data':
+        'Hamafa tanteraka ny naoty sy ny rakitra rehetra izany.',
+    'desc_delete_prefs':
+        'Hamerina ny fikirana rehetra (loko, fiteny, filaminana) amin\'ny teo aloha izany.',
     // Menu
     'menu_display': 'Fampisehoana',
     'menu_list': 'Lisitra',
@@ -616,7 +684,8 @@ class AppText {
     'attachment': 'Rakitra ampiana',
     'attachments': 'Rakitra ampiana',
     'licenses': 'Lisansa',
-    'license_disclaimer': "Ity dia nadika avy tamin'ny dikan-teny anglisy tany am-boalohany tamin'ny alalan'ny AI, nefa efa novakiana sy nohamarinin'olombelona. Na izany aza, mety mbola hisy ny hadisoana amin'ny fandikan-teny. Mifona mialoha izahay ary misaotra anareo amin'ny fahatakarana.",
+    'license_disclaimer':
+        "Ity dia nadika avy tamin'ny dikan-teny anglisy tany am-boalohany tamin'ny alalan'ny AI, nefa efa novakiana sy nohamarinin'olombelona. Na izany aza, mety mbola hisy ny hadisoana amin'ny fandikan-teny. Mifona mialoha izahay ary misaotra anareo amin'ny fahatakarana.",
     'license_view_original': "Hijery ny dikan-teny tany am-boalohany",
     'lang_en': 'ANGLISY',
     'lang_fr': 'FRANTSAY',

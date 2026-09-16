@@ -57,7 +57,8 @@ class HomeViewModel extends ChangeNotifier {
   String _viewLayout = 'gridlist';
   late final SelectionController _selection;
   String _actionButtons = 'add';
-  (List<Note>, List<int>)? _lastDeleted;
+  /// Notes and folders removed by the last delete, so undo can restore both.
+  ({List<Note> notes, List<int> indexes, List<Folder> folders})? _lastDeleted;
 
   /// Notes currently displayed: unfiled notes, or the search results.
   List<Note> get notes => List<Note>.unmodifiable(_visibleNotes());
@@ -274,22 +275,15 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> deleteSelected() async {
     final List<Note> removed = <Note>[];
     final List<int> indexes = <int>[];
-    final Set<String> folderIds = _folders
+    final List<Folder> deletedFolders = _folders
         .where((Folder f) => _selection.contains(f.id))
-        .map((Folder f) => f.id)
-        .toSet();
+        .toList();
 
-    // Deleting a folder deletes its content too.
-    for (final String folderId in folderIds) {
-      final List<Note> children =
-          _allNotes.where((Note n) => n.folderId == folderId).toList();
-      for (final Note note in children) {
-        await repository.trashNote(note.id);
-      }
-      _allNotes.removeWhere((Note n) => n.folderId == folderId);
-      await _foldersRepository?.trashFolder(folderId);
+    // The folder keeps its notes: they stay filed and travel with it.
+    for (final Folder folder in deletedFolders) {
+      await _foldersRepository?.trashFolder(folder.id);
     }
-    _folders.removeWhere((Folder f) => folderIds.contains(f.id));
+    _folders.removeWhere((Folder f) => _selection.contains(f.id));
 
     for (int i = 0; i < _allNotes.length; i++) {
       if (_selection.contains(_allNotes[i].id)) {
@@ -299,7 +293,7 @@ class HomeViewModel extends ChangeNotifier {
       }
     }
     _allNotes.removeWhere((Note note) => _selection.contains(note.id));
-    _lastDeleted = (removed, indexes);
+    _lastDeleted = (notes: removed, indexes: indexes, folders: deletedFolders);
     _selection.exit();
   }
 
@@ -324,22 +318,40 @@ class HomeViewModel extends ChangeNotifier {
     final Note note = _allNotes[index];
     await repository.trashNote(id);
     _allNotes.removeAt(index);
-    _lastDeleted = (<Note>[note], <int>[index]);
+    _lastDeleted = (
+      notes: <Note>[note],
+      indexes: <int>[index],
+      folders: const <Folder>[],
+    );
     notifyListeners();
   }
 
+  /// Notes removed by the last delete (empty when nothing was deleted).
+  List<Note> get lastDeletedNotes =>
+      _lastDeleted?.notes ?? const <Note>[];
+
+  /// Folders removed by the last delete (empty when nothing was deleted).
+  List<Folder> get lastDeletedFolders =>
+      _lastDeleted?.folders ?? const <Folder>[];
+
+  /// Puts back everything the last delete removed: notes and folders.
   Future<void> undoLastDelete() async {
-    final (List<Note>, List<int>)? record = _lastDeleted;
+    final ({List<Note> notes, List<int> indexes, List<Folder> folders})?
+        record = _lastDeleted;
     if (record == null) return;
-    final List<Note> notesToRestore = record.$1;
-    final List<int> originalIndexes = record.$2;
-    for (int i = 0; i < notesToRestore.length; i++) {
-      final Note note = notesToRestore[i];
+    for (int i = 0; i < record.notes.length; i++) {
+      final Note note = record.notes[i];
       await repository.restoreNote(note.id);
-      final int index =
-          originalIndexes[i] > _allNotes.length ? _allNotes.length : originalIndexes[i];
+      final int index = record.indexes[i] > _allNotes.length
+          ? _allNotes.length
+          : record.indexes[i];
       _allNotes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
     }
+    for (final Folder folder in record.folders) {
+      await _foldersRepository?.restoreFolder(folder.id);
+      _folders.add(folder.copyWith(isDeleted: false));
+    }
+    _sort();
     _lastDeleted = null;
     notifyListeners();
   }
@@ -412,7 +424,11 @@ class HomeViewModel extends ChangeNotifier {
         if (index != -1) {
           final Note removed = _allNotes.removeAt(index);
           await repository.trashNote(originalId);
-          _lastDeleted = (<Note>[removed], <int>[index]);
+          _lastDeleted = (
+            notes: <Note>[removed],
+            indexes: <int>[index],
+            folders: const <Folder>[],
+          );
         }
         break;
       case NoteActionKind.cancel:

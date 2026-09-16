@@ -178,12 +178,17 @@ class EntityCard extends StatelessWidget {
               if (isLocked)
                 ..._lockedOverlay(bgColor, textColor, isDark)
               else if (isListLayout)
-                InkWell(
-                  onTap: onTap,
-                  onLongPress: onLongPress,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: coverWidth),
-                    child: builder(context, textColor, showCover),
+                // Fill the whole card: a list card has a fixed height, and an
+                // overlay (like the trash actions) must be positioned against
+                // the card, not against the intrinsic content box.
+                Positioned.fill(
+                  child: InkWell(
+                    onTap: onTap,
+                    onLongPress: onLongPress,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: coverWidth),
+                      child: builder(context, textColor, showCover),
+                    ),
                   ),
                 )
               else

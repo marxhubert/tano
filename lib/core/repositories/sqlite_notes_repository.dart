@@ -19,11 +19,11 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     String? databasePath,
     Future<Directory> Function()? documentsDirectory,
     Future<String?> Function()? passwordProvider,
-  })  : _databaseFactory = databaseFactoryOverride ?? databaseFactory,
-        _databasePath = databasePath,
-        _documentsDirectory =
-            documentsDirectory ?? getApplicationDocumentsDirectory,
-        _passwordProvider = passwordProvider;
+  }) : _databaseFactory = databaseFactoryOverride ?? databaseFactory,
+       _databasePath = databasePath,
+       _documentsDirectory =
+           documentsDirectory ?? getApplicationDocumentsDirectory,
+       _passwordProvider = passwordProvider;
 
   /// Injectable for tests (e.g. `databaseFactoryFfi`); defaults to the
   /// platform implementation.
@@ -59,14 +59,17 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   ];
 
   Future<Database> _initDb() async {
-    final String path = _databasePath ??
+    final String path =
+        _databasePath ??
         join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
     final String? password = await _passwordProvider?.call();
 
     // A database created before encryption must be carried over before the
     // encrypted one takes its place.
-    final List<Map<String, Object?>>? legacyRows =
-        await _extractPlaintextRows(path, password);
+    final List<Map<String, Object?>>? legacyRows = await _extractPlaintextRows(
+      path,
+      password,
+    );
 
     final Database db = await _databaseFactory.openDatabase(
       path,
@@ -115,9 +118,9 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     // `query` returns read-only rows; copy them so the dropped `isPinned`
     // column (removed with the pin feature) can be stripped before the rows
     // are copied into the new schema.
-    final List<Map<String, Object?>> rows = (await legacy.query('notes'))
-        .map((Map<String, Object?> row) => Map<String, Object?>.of(row))
-        .toList();
+    final List<Map<String, Object?>> rows = (await legacy.query(
+      'notes',
+    )).map((Map<String, Object?> row) => Map<String, Object?>.of(row)).toList();
     for (final Map<String, Object?> row in rows) {
       row.remove('isPinned');
     }
@@ -183,9 +186,11 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   ) async {
     if (oldVersion < 2) {
       await db.execute(
-          'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0');
+        'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0',
+      );
       await db.execute(
-          'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0');
+        'ALTER TABLE notes ADD COLUMN isLocked INTEGER DEFAULT 0',
+      );
     }
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE notes ADD COLUMN deletedAt TEXT');
@@ -225,12 +230,18 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       // bump, so databases upgraded to v6 may still miss the columns.
       await _addColumnIfMissing(db, 'folders', 'coverImage', 'TEXT');
       await _addColumnIfMissing(db, 'folders', 'isLocked', 'INTEGER DEFAULT 0');
-      await db.execute('UPDATE notes SET createdAt = date WHERE createdAt IS NULL');
-      await db.execute('UPDATE notes SET updatedAt = date WHERE updatedAt IS NULL');
       await db.execute(
-          'UPDATE folders SET createdAt = date WHERE createdAt IS NULL');
+        'UPDATE notes SET createdAt = date WHERE createdAt IS NULL',
+      );
       await db.execute(
-          'UPDATE folders SET updatedAt = date WHERE updatedAt IS NULL');
+        'UPDATE notes SET updatedAt = date WHERE updatedAt IS NULL',
+      );
+      await db.execute(
+        'UPDATE folders SET createdAt = date WHERE createdAt IS NULL',
+      );
+      await db.execute(
+        'UPDATE folders SET updatedAt = date WHERE updatedAt IS NULL',
+      );
     }
   }
 
@@ -244,10 +255,12 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     String column,
     String type,
   ) async {
-    final List<Map<String, Object?>> columns =
-        await db.rawQuery('PRAGMA table_info($table)');
-    final bool exists =
-        columns.any((Map<String, Object?> c) => c['name'] == column);
+    final List<Map<String, Object?>> columns = await db.rawQuery(
+      'PRAGMA table_info($table)',
+    );
+    final bool exists = columns.any(
+      (Map<String, Object?> c) => c['name'] == column,
+    );
     if (!exists) {
       await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
     }
@@ -274,16 +287,20 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
+  Future<List<Folder>> loadTrashFolders() async {
+    final db = await _database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'folders',
+      where: 'isDeleted = 1',
+    );
+    return results.map((json) => Folder.fromJson(json)).toList();
+  }
+
+  @override
   Future<void> trashFolder(String id) async {
     final db = await _database;
-    // Notes are unfiled rather than deleted: trashing a folder must never lose
-    // the notes it contained.
-    await db.update(
-      'notes',
-      <String, Object?>{'folderId': null},
-      where: 'folderId = ?',
-      whereArgs: <Object?>[id],
-    );
+    // The notes keep their `folderId`: the folder stays whole in the trash and
+    // restoring it brings its content back with it.
     await db.update(
       'folders',
       <String, Object?>{
@@ -297,9 +314,29 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
+  Future<void> restoreFolder(String id) async {
+    final db = await _database;
+    await db.update(
+      'folders',
+      <String, Object?>{'isDeleted': 0, 'deletedAt': null},
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
+  }
+
+  @override
+  Future<void> deleteFolderPermanently(String id) async {
+    final db = await _database;
+    // The folder goes with its notes: they are only reachable through it.
+    await db.delete('notes', where: 'folderId = ?', whereArgs: <Object?>[id]);
+    await db.delete('folders', where: 'id = ?', whereArgs: <Object?>[id]);
+  }
+
+  @override
   Future<String> nextFolderName() async {
-    final Set<String> names =
-        (await loadFolders()).map((Folder f) => f.name).toSet();
+    final Set<String> names = (await loadFolders())
+        .map((Folder f) => f.name)
+        .toSet();
     int i = 1;
     while (names.contains('Folder $i')) {
       i++;
@@ -360,10 +397,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final db = await _database;
     await db.update(
       'notes',
-      {
-        'isDeleted': 1,
-        'deletedAt': DateTime.now().toString(),
-      },
+      {'isDeleted': 1, 'deletedAt': DateTime.now().toString()},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -374,10 +408,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final db = await _database;
     await db.update(
       'notes',
-      {
-        'isDeleted': 0,
-        'deletedAt': null,
-      },
+      {'isDeleted': 0, 'deletedAt': null},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -410,11 +441,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   @override
   Future<void> deleteNotePermanently(String id) async {
     final db = await _database;
-    await db.delete(
-      'notes',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('notes', where: 'id = ?', whereArgs: [id]);
   }
 
   @override
