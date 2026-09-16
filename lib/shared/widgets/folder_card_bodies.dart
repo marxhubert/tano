@@ -46,12 +46,16 @@ Widget buildFolderListContent({
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
+      // The name yields to the metadata rather than overflowing a short card.
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
-          folder.name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: cardTitleStyle(textColor),
+        Flexible(
+          child: Text(
+            folder.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: cardTitleStyle(textColor),
+          ),
         ),
         buildFolderMetadata(textColor, noteCount),
       ],
@@ -59,11 +63,10 @@ Widget buildFolderListContent({
   );
 }
 
-/// Folder metadata: a note-count glyph and value.
-Widget buildFolderMetadata(
-  Color textColor,
-  int noteCount,
-) {
+/// Folder metadata: a note-count glyph and value. An empty folder shows
+/// nothing at all rather than an "x0".
+Widget buildFolderMetadata(Color textColor, int noteCount) {
+  if (noteCount == 0) return const SizedBox.shrink();
   final Color color = textColor.withValues(alpha: 0.6);
   return Padding(
     padding: const EdgeInsets.only(top: 2.0),
@@ -71,8 +74,10 @@ Widget buildFolderMetadata(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Icon(Symbols.sticky_note_2, size: cardMetaIconSize, color: color),
-        Text('x$noteCount',
-            style: TextStyle(fontSize: cardMetaSize, color: color)),
+        Text(
+          'x$noteCount',
+          style: TextStyle(fontSize: cardMetaSize, color: color),
+        ),
       ],
     ),
   );
