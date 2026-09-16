@@ -10,6 +10,7 @@ Deux familles de documents.
 | [Architecture](./architecture.md) | Couches, persistance, synchronisation, données |
 | [Composants](./composants.md) | Anatomie et **contrats** des briques d'écran |
 | [Sécurité](./securite.md) | Chiffrement au repos, export / import, verrou |
+| [Observabilité](./observabilite.md) | Rapports de crash (Sentry) et mises à jour stores |
 | [Modularité](./modularite.md) | Services et découpage gratuit / premium |
 | [Dossiers](./dossiers.md) | Contrat de l'organisation en dossiers |
 

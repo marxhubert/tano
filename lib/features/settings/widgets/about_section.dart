@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/features/settings/about_page.dart';
-import 'package:tano/features/settings/update_page.dart';
-import 'package:tano/features/settings/feedback_page.dart';
 import 'settings_widgets.dart';
 
 class AboutSection extends StatelessWidget {
@@ -25,26 +23,6 @@ class AboutSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AboutPage()),
-                );
-              },
-            ),
-            SettingsTile(
-              title: AppText.tr('option_check_update'),
-              selected: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UpdatePage()),
-                );
-              },
-            ),
-            SettingsTile(
-              title: AppText.tr('option_feedback'),
-              selected: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FeedbackPage()),
                 );
               },
             ),
