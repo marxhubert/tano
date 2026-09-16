@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
+  sentry_flutter: ^9.30.0
   flutter:
     sdk: flutter
 
@@ -27,6 +28,7 @@ dependencies:
   archive: ^4.2.0
 
 dev_dependencies:
+  sentry_dart_plugin: ^3.4.0
   flutter_test:
     sdk: flutter
   integration_test:
@@ -70,3 +72,13 @@ flutter:
   assets:
     - assets/config/malagasy_refs.json
     - assets/licenses/
+
+# Sentry dart plugin: uploads the debug symbols so that release stack traces
+# stay readable. Needs SENTRY_AUTH_TOKEN (or sentry.properties, git-ignored)
+# and only runs on a release build.
+sentry:
+  upload_debug_symbols: true
+  # Web only; TanoNote ships on Android and iOS.
+  upload_source_maps: false
+  project: flutter
+  org: railovy

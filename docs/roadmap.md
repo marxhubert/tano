@@ -14,7 +14,7 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **~245 tests** verts, CI `analyze` + `test`.
+- `flutter analyze` 0 issue, **~250 tests** verts, CI `analyze` + `test`.
 - Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
   dialogues, couvertures, FAB, nettoyage, accessibilité).
 
@@ -27,8 +27,9 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 - [ ] **Confidentialité store** : `PrivacyInfo.xcprivacy`, politique de
   confidentialité App Store, « Data safety » Play. App hors-ligne → contenu
   simple mais **obligatoire**.
-- [ ] **Rapports de crash** : Sentry **derrière le consentement**, sans IP ni
-  identifiant stable (voir [observabilité](./observabilite.md)).
+- [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
+  identifiant stable, zéro breadcrumb (voir
+  [observabilité](./observabilite.md)).
 - [ ] **Mises à jour** : store-native (Play In-App Updates + lookup App Store).
 - [ ] **Release** : CHANGELOG, bump de version, tag, build signé Play / App Store.
 - [ ] **CI** : job de *build* (`build apk` / `build ios --no-codesign`).
