@@ -77,7 +77,7 @@ Widget _folderCard(
     category: folder.category,
     title: folder.name,
     subtitle: 'x$noteCount',
-    subtitleIcon: Icons.description_outlined,
+    subtitleIcon: Symbols.description,
     isListLayout: isList,
     builder: (BuildContext context, Color textColor, bool hasCover) => isList
         ? buildFolderListContent(
@@ -183,7 +183,7 @@ void main() {
       );
 
       final Rect card = tester.getRect(find.byType(EntityCard));
-      final Offset mark = tester.getCenter(find.byIcon(Icons.check_circle));
+      final Offset mark = tester.getCenter(find.byIcon(Symbols.check_circle));
 
       expect(mark.dx, greaterThan(card.center.dx));
       expect(mark.dy, lessThan(card.center.dy));
@@ -202,7 +202,7 @@ void main() {
       expect(name.top, lessThan(meta.top));
       expect(card.bottom - meta.bottom, closeTo(4.0, 1.0));
       // No folder glyph any more: the watermark replaces it.
-      expect(find.byIcon(Icons.folder_open), findsNothing);
+      expect(find.byIcon(Symbols.folder_open), findsNothing);
     });
 
     testWidgets('list centres the name and its metadata', (tester) async {
