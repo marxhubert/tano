@@ -59,7 +59,11 @@ n'est pas initialisé et rien ne quitte l'appareil.
   écriture seule. Il a été **vérifié** : un événement de test a été accepté
   (HTTP 200) ;
 - `release` = `tano@<version>` et `dist` = numéro de build, la forme que le
-  plugin dart calcule de son côté pour retrouver les symboles.
+  plugin dart calcule de son côté pour retrouver les symboles ;
+- **l'app ne peut pas confirmer la réception** : sur Android et iOS le SDK remet
+  l'enveloppe au SDK natif, qui tient la file d'attente et les renvois. Un envoi
+  sans erreur veut dire « prise en charge », pas « reçue ». Seule la console
+  tranche.
 
 ### Câblage du plugin
 
@@ -111,11 +115,18 @@ Fait, dans `test/crash_reports_test.dart` :
   changement ;
 - « un événement ne porte ni user, ni request, ni breadcrumb ».
 
-Reste, à faire sur un appareil :
+Vérifié sur appareil, avec un laboratoire jetable depuis retiré : l'erreur
+déclenchée est **arrivée dans Sentry**, la pile résolue jusqu'à la méthode du
+laboratoire. La chaîne capture → scrub → transport → SDK natif → console tient
+donc de bout en bout.
 
-- activer l'interrupteur, provoquer une erreur, la voir arriver dans Sentry ;
-- vérifier qu'aucun `setUser` n'existe nulle part ;
-- vérifier côté console que l'IP est bien exclue du projet.
+Reste :
+
+- vérifier dans l'événement l'absence des blocs *User*, *Request* et
+  *Breadcrumbs* ;
+- vérifier côté console que l'IP est bien exclue du projet — réglage serveur,
+  le seul que le code ne peut pas imposer ;
+- `grep setUser` : fait, zéro occurrence dans `lib/`.
 
 ## Hors périmètre
 

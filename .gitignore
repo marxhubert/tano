@@ -56,4 +56,9 @@ lib/generated_plugin_registrant.dart
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 
+# Sentry auth token. Never commit it.
 sentry.properties
+
+# Xcode keeps a second copy of the SwiftPM lockfile inside the project's own
+# workspace. The reference one lives in Runner.xcworkspace and is committed.
+/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
