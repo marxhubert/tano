@@ -20,12 +20,21 @@ dossier publié ; `docs/` reste interne.
 **Pour l'activer**, une fois :
 
 1. GitHub → *Settings* → *Pages* → *Source* : **GitHub Actions**.
-2. Onglet *Actions* → *Publish the privacy policy* → *Run workflow*.
+2. Onglet *Actions* → *Publish the privacy policy* → *Run workflow* (à droite).
 
 Ensuite le workflow `.github/workflows/pages.yml` republie le site à chaque
-poussée qui touche `site/` sur `master`. Un déploiement qui échoue **ne coupe
-pas** le site : la dernière version publiée reste en ligne — la page promise aux
-stores ne disparaît pas sur une panne de CI.
+poussée qui touche `site/` sur `master` — plus rien à cliquer. Un déploiement
+qui échoue **ne coupe pas** le site : la dernière version publiée reste en
+ligne, la page promise aux stores ne disparaît pas sur une panne de CI.
+
+> **Piège** : à l'activation de Pages, GitHub propose d'ajouter son propre
+> workflow *Deploy static content to Pages*. Ne pas l'accepter : il publie **tout
+> le dépôt** (`path: '.'`) et prend le dessus sur celui-ci — `/privacy/`
+> répond alors 404, et `docs/` devient un site public.
+>
+> Autre piège, sans gravité : un workflow n'apparaît dans l'onglet *Actions*
+> que s'il existe déjà sur la branche par défaut. Tant que `pages.yml` n'est
+> pas sur `master`, ni lui ni son bouton *Run workflow* ne sont visibles.
 
 > L'alternative, sans CI, est une branche `gh-pages` ne contenant que
 > `privacy/` et Pages pointé dessus. Elle supprime le workflow mais déplace le
