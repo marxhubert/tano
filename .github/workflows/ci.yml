@@ -27,4 +27,6 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test
+        # The golden tests compare pixels and depend on how the host rasterises
+        # text: they are generated and reviewed locally, never here.
+        run: flutter test --exclude-tags golden

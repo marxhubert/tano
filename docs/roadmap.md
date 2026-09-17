@@ -14,7 +14,8 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **259 tests** verts, CI `analyze` + `test`.
+- `flutter analyze` 0 issue, **279 tests** verts (dont 20 goldens, joués en
+  local), CI `analyze` + `test`.
 - Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
   dialogues, couvertures, FAB, nettoyage, accessibilité).
 
@@ -44,7 +45,8 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 ## 2. Qualité
 
-- [ ] **Golden tests** des cartes (grille/liste, thèmes, états).
+- [x] **Golden tests** des cartes (grille/liste, thèmes, états) —
+  `test/golden/`, vingt images, hors CI. Voir [tests](./tests.md).
 - [ ] Étendre les **tests d'intégration** (dossiers, export/import, verrou).
 - [ ] **Logs** silencieux en release ; erreurs utilisateur uniformisées.
 
