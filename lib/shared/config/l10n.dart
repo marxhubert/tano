@@ -252,6 +252,9 @@ class AppText {
     'lock_requires_device_lock':
         'Set up a screen lock (passcode or biometrics) to lock notes',
     'option_bug_report': 'Allow bug report',
+    'option_update': 'Check for update',
+    'update_up_to_date': 'You are up to date',
+    'update_unavailable': 'Update check unavailable',
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report':
@@ -304,6 +307,9 @@ class AppText {
     'privacy_crash_title': 'Crash reports (optional)',
     'privacy_crash_body':
         'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no stable identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
+    'privacy_updates_title': 'Update check',
+    'privacy_updates_body':
+        'When you open the About screen, the app asks the store whether a newer version exists. The only thing carried is the name of the app — no account, no identifier, and nothing kept. The check can also be started by hand from that screen.',
     'privacy_tracking_title': 'No tracking, no ads',
     'privacy_tracking_body':
         'TanoNote contains no usage analytics, no advertising and no third-party tracker, and never sells or shares your data. Nothing is collected until you turn the crash reports on.',
@@ -465,6 +471,9 @@ class AppText {
     'lock_requires_device_lock':
         'Configurez un verrou d\'écran (code ou biométrie) pour verrouiller une note',
     'option_bug_report': 'Autoriser les rapports de bug',
+    'option_update': 'Mise à jour',
+    'update_up_to_date': 'Vous êtes à jour',
+    'update_unavailable': 'Vérification indisponible',
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report':
@@ -517,6 +526,9 @@ class AppText {
     'privacy_crash_title': 'Rapports de crash (facultatif)',
     'privacy_crash_body':
         "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant stable et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
+    'privacy_updates_title': 'Vérification des mises à jour',
+    'privacy_updates_body':
+        "Quand vous ouvrez l'écran À propos, l'application demande au store s'il existe une version plus récente. La seule chose transmise est le nom de l'application — aucun compte, aucun identifiant, rien de conservé. La vérification peut aussi être lancée à la main depuis ce même écran.",
     'privacy_tracking_title': 'Aucun pistage, aucune publicité',
     'privacy_tracking_body':
         "TanoNote ne contient ni analyse d'usage, ni publicité, ni traceur tiers, et ne vend ni ne partage vos données. Rien n'est collecté tant que vous n'activez pas les rapports de crash.",
@@ -678,6 +690,9 @@ class AppText {
     'lock_requires_device_lock':
         'Mametraha hidy efijery (kaody na biometrika) vao afaka manidy naoty',
     'option_bug_report': 'Hamela ny tatitra bug',
+    'option_update': 'Hizaha vao',
+    'update_up_to_date': 'Efa farany ianao',
+    'update_unavailable': 'Tsy afaka manamarina ny fanavaozana',
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report':
@@ -730,6 +745,9 @@ class AppText {
     'privacy_crash_title': 'Tatitra momba ny olana (tsy voatery)',
     'privacy_crash_body':
         "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana maharitra ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
+    'privacy_updates_title': 'Fanamarinana ny fanavaozana',
+    'privacy_updates_body':
+        "Rehefa manokatra ny efijery Momba ny ianao dia manontany ny store ny rindrankajy raha misy dikan-teny vaovao. Ny anaran'ny rindrankajy ihany no alefa — tsy misy kaonty, tsy misy famantarana, ary tsy misy tehirizina. Azo atao koa ny manamarina amin'ny tanana avy amin'io efijery io.",
     'privacy_tracking_title': 'Tsy misy fanarahana, tsy misy doka',
     'privacy_tracking_body':
         "Ny TanoNote dia tsy misy fandinihana fampiasana, tsy misy doka ary tsy misy mpanara-maso avy any ivelany; tsy mivarotra na mizara ny angonao izy. Tsy misy angonina raha tsy velonao ny tatitra momba ny olana.",

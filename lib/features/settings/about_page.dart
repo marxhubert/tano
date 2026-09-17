@@ -1,10 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/core/services/update_service.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
+import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -20,13 +24,56 @@ class AboutPage extends StatefulWidget {
   State<AboutPage> createState() => _AboutPageState();
 }
 
-class _AboutPageState extends State<AboutPage> {
+class _AboutPageState extends State<AboutPage>
+    with SingleTickerProviderStateMixin {
   final SettingsViewModel _viewModel = SettingsViewModel();
+  final UpdateService _updates = UpdateService();
+
+  bool _isCheckingUpdate = false;
+  late final AnimationController _rotationController;
 
   @override
   void initState() {
     super.initState();
     _viewModel.init();
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  /// The store is asked only when it is asked for, and a failure is never
+  /// dressed up as an error: an offline app must not nag.
+  Future<void> _checkUpdate() async {
+    if (_isCheckingUpdate) return;
+    setState(() => _isCheckingUpdate = true);
+    _rotationController.repeat();
+
+    final AppUpdate update = await _updates.check(force: true);
+
+    if (!mounted) return;
+    _rotationController
+      ..stop()
+      ..reset();
+    setState(() => _isCheckingUpdate = false);
+
+    if (update.isAvailable) {
+      await _updates.apply(update);
+      return;
+    }
+
+    await showAdaptiveNotice(
+      context,
+      update.status == UpdateStatus.upToDate
+          ? AppText.tr('update_up_to_date')
+          : AppText.tr('update_unavailable'),
+    );
   }
 
   Future<void> _launchUrl(String url) async {
@@ -88,14 +135,50 @@ class _AboutPageState extends State<AboutPage> {
               listenable: _viewModel,
               builder: (context, _) {
                 final PackageInfo? info = _viewModel.packageInfo;
-                return Text(
-                  info == null
-                      ? ''
-                      : 'Version ${info.version} (${info.buildNumber})',
-                  style: TextStyle(
-                    color: mutedTextColor(context),
-                    fontSize: 14.0,
-                  ),
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        info == null
+                            ? ''
+                            : 'Version ${info.version} (${info.buildNumber})',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: mutedTextColor(context),
+                          fontSize: 14.0,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _checkUpdate,
+                      icon: AnimatedBuilder(
+                        animation: _rotationController,
+                        builder: (BuildContext context, Widget? child) =>
+                            Transform.rotate(
+                              angle: _rotationController.value * 2 * math.pi,
+                              child: child,
+                            ),
+                        child: Icon(
+                          Symbols.update,
+                          size: 16.0,
+                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                        ),
+                      ),
+                      label: Text(
+                        AppText.tr('option_update'),
+                        style: TextStyle(
+                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                          fontSize: 14.0,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
