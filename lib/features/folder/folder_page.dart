@@ -27,6 +27,7 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/empty_state.dart';
 
 /// Shows the notes filed in a single folder and its organisation actions.
 class FolderPage extends StatefulWidget {
@@ -594,14 +595,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (notes.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: Center(
-          child: Text(
-            _isSearchMode
-                ? AppText.tr('no_note_found')
-                : AppText.tr('folder_empty'),
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: TanoText.label, color: mutedTextColor(context)),
-          ),
+        child: emptyState(
+          context,
+          _isSearchMode
+              ? AppText.tr('no_note_found')
+              : AppText.tr('folder_empty'),
+          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
         ),
       );
     }

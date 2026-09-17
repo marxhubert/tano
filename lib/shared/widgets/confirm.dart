@@ -12,9 +12,14 @@ Future<bool?> getConfirmation({
 }) async {
   final ThemeData theme = Theme.of(context);
   final bool isSave = action.toLowerCase() == AppText.tr('save').toLowerCase();
+  // Compared against the translated words: a dialog must never change colour
+  // with the language. This used to test actionTitle.contains('reset'), and
+  // the French word does not contain it: the reset action came out teal in
+  // French and in Malagasy.
+  final String lowered = action.toLowerCase();
   final bool isDestructive =
-      action.toLowerCase() == AppText.tr('delete').toLowerCase() ||
-      actionTitle.toLowerCase().contains('reset');
+      lowered == AppText.tr('delete').toLowerCase() ||
+      lowered == AppText.tr('reset').toLowerCase();
 
   if (theme.platform == TargetPlatform.iOS ||
       theme.platform == TargetPlatform.macOS) {

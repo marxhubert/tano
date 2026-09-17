@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -82,7 +84,14 @@ class SettingsViewModel extends ChangeNotifier {
     final startTime = DateTime.now();
     try {
       if (deleteData) {
-        await getIt<NotesRepository>().deleteAllNotes();
+        final NotesRepository repository = getIt<NotesRepository>();
+        await repository.deleteAllNotes();
+        // A hard reset takes everything: the folders and the files on disk go
+        // with the notes, or the app would leave orphans behind.
+        if (repository is FoldersRepository) {
+          await (repository as FoldersRepository).deleteAllFolders();
+        }
+        await getIt<AttachmentsStore>().deleteAll();
         // Ensure we don't auto-seed fixtures on next load
         final SecurePreferences prefs = await SecurePreferences.getInstance();
         await prefs.setBool('database_initial_seed_done', true);

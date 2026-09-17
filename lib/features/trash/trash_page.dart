@@ -16,6 +16,7 @@ import 'package:tano/shared/widgets/folder_card_bodies.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/empty_state.dart';
 
 class TrashPage extends StatefulWidget {
   const TrashPage({super.key});
@@ -92,40 +93,38 @@ class _TrashPageState extends State<TrashPage> {
               )
             else if (_viewModel.isEmpty)
               SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(AppText.tr('no_note_found')),
-                      const SizedBox(height: 16),
-                      // Same shape as the "Check for update" action in About:
-                      // just an icon and a label, no chrome.
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pushNamedAndRemoveUntil('/home', (route) => false);
-                        },
-                        icon: Icon(
-                          Symbols.in_home_mode,
-                          size: 16.0,
+                child: emptyState(
+                  context,
+                  AppText.tr('no_note_found'),
+                  image: EmptyArt.bin,
+                  actions: <Widget>[
+                    // Same shape as the "Check for update" action in About:
+                    // just an icon and a label, no chrome.
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/home', (route) => false);
+                      },
+                      icon: Icon(
+                        Symbols.in_home_mode,
+                        size: 16.0,
+                        color: mutedTextColor(context),
+                      ),
+                      label: Text(
+                        AppText.tr('home'),
+                        style: TextStyle(
                           color: mutedTextColor(context),
-                        ),
-                        label: Text(
-                          AppText.tr('home'),
-                          style: TextStyle(
-                            color: mutedTextColor(context),
-                            fontSize: TanoText.label,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          fontSize: TanoText.label,
                         ),
                       ),
-                    ],
-                  ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
                 ),
               )
             else ...<Widget>[

@@ -96,8 +96,8 @@ class TanoText {
   /// Page title ("À propos", a folder name…).
   static const double pageTitle = 24.0;
 
-  /// Prompt of an empty state.
-  static const double emptyState = 20.0;
+  /// Label of an action in an action sheet.
+  static const double sheetAction = 20.0;
 
   /// « TanoNote », in a dialog.
   static const double wordmark = 18.0;
