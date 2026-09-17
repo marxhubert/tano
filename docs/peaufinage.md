@@ -167,12 +167,74 @@ branches Cupertino. Le vrai compte est **zéro**.
 
 ## 5. États
 
-| Point | Détail |
+### Un seul état vide — **fait**
+
+Il y avait **quatre** façons de dire « il n'y a rien ici » :
+
+| Endroit | Avant |
 |---|---|
-| Vide | Présent : `folder_empty` (4), `no_note_found` (6), `empty` (1) |
-| Erreur | `load_error_*` utilisé 8 fois, mais **un seul** point de reprise (`retry`) |
-| Chargement | 5 indicateurs, tous adaptatifs |
-| Hors-ligne | **Rien de spécifique** — l'app ne dit pas qu'elle fonctionne sans réseau, alors que c'est son argument |
+| Accueil, première fois | une **illustration maison** (cercle gris, signet, pastille d'avertissement) + « no data » |
+| Accueil, recherche sans résultat | un texte de **12 px**, en pleine opacité |
+| Dossier vide, recherche | 14 px, atténué, centré |
+| Corbeille vide | texte par défaut + une action « Accueil » |
+
+Trois d'entre elles lisent désormais **`emptyState`**
+(`lib/shared/widgets/empty_state.dart`) : centré, atténué, à 14 px, avec des
+actions optionnelles.
+
+Au passage, `TanoText.emptyState` était **mal nommé** : les quatre textes qu'il
+portait sont les actions d'un *action sheet* (20 px, teal, dans l'accueil vide).
+Il s'appelle maintenant `TanoText.sheetAction`.
+
+**Fait** : chaque état vide a son illustration, fournie par le propriétaire du
+projet — `empty-box` à l'accueil de première fois, `empty-folder` dans un dossier,
+`recycle-bin` dans la corbeille, `empty` sur une recherche sans résultat. Le
+composant `noRecordFound` et son dessin maison sont supprimés.
+
+**Crédit** : les illustrations sont de **Ghozi Muhtarom**, publiées sur **Flaticon**. Le crédit vit dans un fichier dédié à la racine du dépôt, **`CREDITS.md`**, rédigé dans la forme exacte que Flaticon demande (« Icon made by [auteur] from [www.flaticon.com] », l'auteur et Flaticon étant cliquables). Les fichiers de licences embarqués dans l'app (`assets/licenses/*.txt`) n'ont pas été touchés.
+
+> La licence gratuite de Flaticon impose l'attribution : c'est pourquoi le crédit
+> figure dans les trois fichiers de licences, et pas seulement ici. L'auteur publie
+> sous le nom **Ghozi Muhtarom** (le dossier local s'appelle « Ghozi_Muhtarom »).
+
+## Correctifs signalés
+
+### Le hard reset ne supprimait que les notes
+
+`deleteAllNotes()` vidait la table `notes` et **laissait les dossiers** — et les
+pièces jointes sur le disque. Le contrat des dossiers n'avait même pas de « tout
+supprimer » :
+
+- `FoldersRepository.deleteAllFolders()` ajouté (contrat + implémentation SQLite) ;
+- `AttachmentsStore.deleteAll()` ajouté : il efface le dossier `attachments/` **et**
+  les copies matérialisées, sans quoi un reset laissait des fichiers orphelins ;
+- `performHardReset` appelle les trois, dans le même bloc ;
+- **un test** verrouille le comportement : `deleteAllFolders` vide les dossiers,
+  corbeille comprise.
+
+### Le rouge des actions dangereuses dépendait de la langue
+
+`getConfirmation` décidait qu'une action est destructrice avec
+`actionTitle.contains('reset')` — un mot **anglais**. En français le titre est
+« Réinitialiser » : l'action du dialogue s'affichait donc **en teal**, alors qu'en
+anglais elle était rouge. La comparaison se fait maintenant sur les mots
+**traduits** (`tr('delete')`, `tr('reset')`), donc dans toutes les langues.
+
+### Le hors-ligne : rien à ajouter, et c'est volontaire
+
+**Aucun écran ne dépend du réseau.** Il n'y a donc pas d'« état hors-ligne » à
+afficher : l'app fonctionne, simplement. La seule fonction qui a besoin du réseau
+— la vérification des mises à jour — répond déjà « Vérification indisponible »
+quand elle échoue. Une bannière « vous êtes hors-ligne » serait du bruit, et
+contredirait le propos du produit.
+
+### Les erreurs : un seul endroit, et c'est le bon
+
+Le **splash** est le seul écran qui peut échouer (charger la base au démarrage) et
+il a son état complet : titre, message, **bouton Réessayer**. Tout le reste est
+synchrone, et les échecs ponctuels passent par un message adaptatif (import raté,
+image corrompue). Un seul point de reprise, donc — mais c'est le seul qui ait un
+sens.
 
 ## 6. Animations
 
@@ -191,5 +253,5 @@ branches Cupertino. Le vrai compte est **zéro**.
 3. ~~**Espacements et rayons**~~ — **fait** ; les trois écarts (10, 9, 90)
    attendent ton arbitrage.
 4. ~~**iOS**~~ — **rien à faire** ; un fichier mort supprimé au passage.
-5. **États** — l'angle hors-ligne, et la reprise après erreur.
+5. ~~**États**~~ — **fait** ; reste l'illustration de l'accueil à trancher.
 6. **Animations** — les durées, puis éventuellement les transitions.

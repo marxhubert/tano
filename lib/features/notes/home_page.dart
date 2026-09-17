@@ -20,13 +20,13 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/empty_state.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, this.initialNotes});
@@ -341,17 +341,20 @@ class HomeState extends State<Home> with RouteAware {
       if (_viewModel.hasSearchQuery) {
         return SliverFillRemaining(
           hasScrollBody: false,
-          child: Center(
-            child: Text(
-              AppText.tr('no_note_found'),
-              style: const TextStyle(fontSize: TanoText.tiny),
-            ),
+          child: emptyState(
+            context,
+            AppText.tr('no_note_found'),
+            image: EmptyArt.search,
           ),
         );
       }
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: noRecordFound(context),
+        child: emptyState(
+            context,
+            AppText.tr('no_data'),
+            image: EmptyArt.box,
+          ),
       );
     }
 
@@ -529,7 +532,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_list'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: TanoText.emptyState,
+                fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -543,7 +546,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_grid'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: TanoText.emptyState,
+                fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -555,7 +558,7 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoTeal, fontSize: TanoText.emptyState),
+              style: const TextStyle(color: tanoTeal, fontSize: TanoText.sheetAction),
             ),
           ),
         ],
@@ -566,7 +569,7 @@ class HomeState extends State<Home> with RouteAware {
           },
           child: Text(
             AppText.tr('cancel'),
-            style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.emptyState),
+            style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.sheetAction),
           ),
         ),
       ),

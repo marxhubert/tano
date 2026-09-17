@@ -91,6 +91,9 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
     if (i != -1) folders[i] = folders[i].copyWith(isDeleted: false);
   }
   @override
+  Future<void> deleteAllFolders() async {}
+
+  @override
   Future<void> deleteFolderPermanently(String id) async {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
