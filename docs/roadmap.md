@@ -27,13 +27,16 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
 - [x] **Manifeste de confidentialité** : `ios/Runner/PrivacyInfo.xcprivacy`,
   déclaré et câblé dans la cible Runner.
-- [ ] **Fiches store** : politique de confidentialité App Store, « Data
-  safety » Play. Contenu simple mais **obligatoire** ; le texte est prêt dans
-  [confidentialité](./confidentialite.md).
+- [ ] **Fiches store** : la page de politique est prête à publier
+  (`site/privacy/`, GitHub Pages) et tous les textes à coller sont dans
+  [store-listing.md](./store-listing.md) — il reste à les saisir dans les deux
+  consoles.
 - [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
   identifiant stable, zéro breadcrumb (voir
   [observabilité](./observabilite.md)).
-- [ ] **Mises à jour** : store-native (Play In-App Updates + lookup App Store).
+- [x] **Mises à jour** : store-native (Play In-App Updates + lookup App Store),
+  entrée « Vérifier les mises à jour » dans À propos. Voir
+  [observabilité](./observabilite.md).
 - [ ] **Release** : CHANGELOG, bump de version, tag, build signé Play / App Store.
 - [ ] **CI** : job de *build* (`build apk` / `build ios --no-codesign`).
 - [ ] **README racine** : à réécrire (SQLite chiffré, `core/features/shared`,

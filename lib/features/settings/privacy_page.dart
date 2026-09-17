@@ -19,6 +19,7 @@ class PrivacyPage extends StatelessWidget {
     ('privacy_local_title', 'privacy_local_body'),
     ('privacy_encryption_title', 'privacy_encryption_body'),
     ('privacy_crash_title', 'privacy_crash_body'),
+    ('privacy_updates_title', 'privacy_updates_body'),
     ('privacy_tracking_title', 'privacy_tracking_body'),
     ('privacy_delete_title', 'privacy_delete_body'),
   ];
