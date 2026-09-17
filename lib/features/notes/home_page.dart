@@ -336,6 +336,11 @@ class HomeState extends State<Home> with RouteAware {
     );
   }
 
+  /// True when the page has nothing to show: the illustration is then the only
+  /// content, and it has to hold its place when the keyboard opens.
+  bool get _isEmptyHome =>
+      _viewModel.folders.isEmpty && _viewModel.notes.isEmpty;
+
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
       if (_viewModel.hasSearchQuery) {
@@ -531,7 +536,7 @@ class HomeState extends State<Home> with RouteAware {
             child: Text(
               AppText.tr('menu_list'),
               style: TextStyle(
-                color: tanoTeal,
+                color: tanoBlue,
                 fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
               ),
@@ -545,7 +550,7 @@ class HomeState extends State<Home> with RouteAware {
             child: Text(
               AppText.tr('menu_grid'),
               style: TextStyle(
-                color: tanoTeal,
+                color: tanoBlue,
                 fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
               ),
@@ -558,7 +563,7 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoTeal, fontSize: TanoText.sheetAction),
+              style: const TextStyle(color: tanoBlue, fontSize: TanoText.sheetAction),
             ),
           ),
         ],
@@ -605,6 +610,7 @@ class HomeState extends State<Home> with RouteAware {
         return PageScaffold(
           title: AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
+          freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,

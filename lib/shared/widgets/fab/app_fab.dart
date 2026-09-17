@@ -158,6 +158,15 @@ mixin _FabStateMixin on State<AppFab> {
   List<Note> _availableNotes = [];
   List<Folder> _availableFolders = [];
 
+  /// Whether those lists have been read at least once: before that, nothing is
+  /// refused, so a menu never opens greyed out by surprise.
+  bool _notesLoaded = false;
+  bool _foldersLoaded = false;
+
+  /// Whether the app holds a folder at all. The move menu filters the note's
+  /// own folder out, but a note sitting in the only folder can still go home.
+  bool _hasFolders = false;
+
   // Sorting state for the link and move sub-menu lists.
   ListSortCriteria _sortCriteria = ListSortCriteria.date;
   bool _isAscending = true;
@@ -212,16 +221,46 @@ mixin _FabStateMixin on State<AppFab> {
     }
   }
 
+  /// Reads the notes the "link a note" list can offer: every note but this one.
+  Future<void> _loadNotes() async {
+    if (!getIt.isRegistered<NotesRepository>()) return;
+    final List<Note> notes = await getIt<NotesRepository>().loadNotes();
+    if (!mounted) return;
+    setState(() {
+      _availableNotes = notes
+          .where((n) => n.id != widget.currentNoteId && !n.isDeleted)
+          .toList();
+      _notesLoaded = true;
+    });
+  }
+
+  /// Reads what the "move to" list can offer: every folder but the one the note
+  /// already sits in, and whether there is any folder at all.
+  Future<void> _loadFolders() async {
+    if (!getIt.isRegistered<NotesRepository>()) return;
+    final NotesRepository repository = getIt<NotesRepository>();
+    final List<Folder> folders = repository is FoldersRepository
+        ? await (repository as FoldersRepository).loadFolders()
+        : const <Folder>[];
+    if (!mounted) return;
+    setState(() {
+      _hasFolders = folders.isNotEmpty;
+      _availableFolders = folders
+          .where((Folder folder) => folder.id != widget.currentFolderId)
+          .toList();
+      _foldersLoaded = true;
+    });
+  }
+
   Future<void> _toggleVerticalMenu(FabVerticalMenu menu) async {
-    if (menu == FabVerticalMenu.link) {
-      final repository = getIt<NotesRepository>();
-      final notes = await repository.loadNotes();
-      setState(() {
-        _availableNotes = notes
-            .where((n) => n.id != widget.currentNoteId && !n.isDeleted)
-            .toList();
-      });
+    // The link and move sub-menus are built from those lists, and the item that
+    // opens them has to know whether they are empty: read them first.
+    if (menu == FabVerticalMenu.link || menu == FabVerticalMenu.add) {
+      await _loadNotes();
+    } else if (menu == FabVerticalMenu.more) {
+      await _loadFolders();
     }
+    if (!mounted) return;
 
     setState(() {
       _verticalMenu = (_verticalMenu == menu) ? FabVerticalMenu.none : menu;
@@ -236,15 +275,9 @@ mixin _FabStateMixin on State<AppFab> {
   /// Opens the "move to folder" sub-menu. [returnTo] is the menu the back
   /// action goes back to (the more menu, or none from the selection bar).
   Future<void> _openMoveMenu(FabVerticalMenu returnTo) async {
-    final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders = repository is FoldersRepository
-        ? await (repository as FoldersRepository).loadFolders()
-        : const <Folder>[];
+    await _loadFolders();
     if (!mounted) return;
     setState(() {
-      _availableFolders = folders
-          .where((Folder folder) => folder.id != widget.currentFolderId)
-          .toList();
       _moveReturnTo = returnTo;
       _verticalMenu = FabVerticalMenu.move;
       _isManuallyExpanded = true;
@@ -265,6 +298,13 @@ class AppFabState extends State<AppFab>
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
     final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
+
+    final BorderRadius fabRadius = isMenuOpen
+        ? BorderRadius.vertical(
+            top: const Radius.circular(24.0),
+            bottom: Radius.circular(borderRadiusValue),
+          )
+        : BorderRadius.circular(borderRadiusValue);
 
     if (isKeyboardClosed != _wasKeyboardClosed) {
       _isManuallyExpanded = null;
@@ -366,19 +406,7 @@ class AppFabState extends State<AppFab>
       transform: Matrix4.translationValues(tx, ty, 0.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: isMenuOpen
-          ? BorderRadius.vertical(
-              top: const Radius.circular(24.0),
-              bottom: Radius.circular(borderRadiusValue),
-            )
-          : BorderRadius.circular(borderRadiusValue),
-        // Light rule in dark, dark rule in light; width 1.0 in both themes.
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.22)
-              : Colors.black.withValues(alpha: 0.08),
-          width: 1.0,
-        ),
+        borderRadius: fabRadius,
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -386,6 +414,20 @@ class AppFabState extends State<AppFab>
             offset: Offset(0, 4),
           ),
         ],
+      ),
+      // The rule has to sit above the menu surface: painted underneath it, it
+      // only kept its straight runs and vanished on the rounded corners, which
+      // left the top of the FAB looking chopped. Same reason as the colour
+      // couplets in fab_menus.dart.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: fabRadius,
+        // Light rule in dark, dark rule in light; width 1.0 in both themes.
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.22)
+              : Colors.black.withValues(alpha: 0.08),
+          width: 1.0,
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {

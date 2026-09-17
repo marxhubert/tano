@@ -113,7 +113,7 @@ class _EditorAction extends StatelessWidget {
     // behind it already signals the active state.
     final Color base = color ?? Colors.white;
     // When disabled, every action borrows the neutral dimmed colour: a red
-    // "delete" at 35% would be invisible on the teal FAB.
+    // "delete" at 35% would be invisible on the blue FAB.
     final Color iconColor =
         onTap == null ? Colors.white.withValues(alpha: 0.35) : base;
     // The bar splits into equal, gapless full-height zones: each action fills
@@ -219,6 +219,7 @@ class _VerticalMenuItem extends StatelessWidget {
     this.fontSize = 17.0,
     this.maxLines,
     this.fill,
+    this.enabled = true,
   });
 
   final IconData icon;
@@ -233,10 +234,15 @@ class _VerticalMenuItem extends StatelessWidget {
   /// Material Symbols FILL axis: 0 = outlined, 1 = filled.
   final double? fill;
 
+  /// A refused entry keeps its place in the menu — the list never reshuffles —
+  /// but it reads muted and does not react to a tap.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
+    final Color? muted = enabled ? null : Colors.white.withValues(alpha: 0.38);
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: appPaddingMedium, horizontal: 4.0),
         child: Row(
@@ -244,13 +250,18 @@ class _VerticalMenuItem extends StatelessWidget {
               ? CrossAxisAlignment.start
               : CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.white, size: iconSize, fill: fill),
+            Icon(
+              icon,
+              color: muted ?? iconColor ?? Colors.white,
+              size: iconSize,
+              fill: fill,
+            ),
             const SizedBox(width: appPaddingTight),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: textColor ?? Colors.white,
+                  color: muted ?? textColor ?? Colors.white,
                   fontSize: fontSize,
                 ),
                 maxLines: maxLines,
