@@ -27,6 +27,13 @@
 - **Erreurs de chargement** explicites et localisées.
 - **Lints plus strictes** (`unawaited_futures`, `prefer_const_constructors`…) +
   `dart format` en pre-commit.
+- **Swift Package Manager** : `open_filex` et `sqflite_sqlcipher` ne le
+  supportent pas encore ; Flutter les fait passer par CocoaPods et prévient que
+  l'avertissement deviendra une **erreur**. Rien à faire tant que ça reste un
+  avertissement. À l'upgrade Flutter qui le durcira, dans cet ordre : monter
+  les deux paquets, sinon couper SPM (`flutter config
+  --no-enable-swift-package-manager`) — et retirer alors `ios/**/Package.resolved`
+  du suivi, qui perdrait son sens.
 - **Cibles desktop / web** (utile pour tester la synchronisation en local).
 
 ## À trancher
