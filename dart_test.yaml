@@ -1,0 +1,8 @@
+# Test tags used by the suite.
+#
+# The golden tests rasterise widgets and compare them with the committed PNGs.
+# Text rasterisation depends on the host, so they are meant to run on the
+# machine where they were generated: CI excludes them with --exclude-tags
+# golden. See docs/tests.md.
+tags:
+  golden:

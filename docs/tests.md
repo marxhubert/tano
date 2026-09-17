@@ -39,10 +39,24 @@ combler les manques identifiés.
 
 ## 3. Tests de widgets et golden tests
 
-### 🟠 M — Golden tests
-- **Proposition** : capturer les 3 layouts (liste/compact/grille), le mode sombre,
-  l'écran vide et l'éditeur, avec `golden_toolkit` ou `matchesGoldenFile`.
-- **Bénéfice** : détecte les régressions visuelles.
+### ✅ — Golden tests des cartes *(faits)*
+- **Où** : `test/golden/entity_card_golden_test.dart`, 20 images dans
+  `test/golden/goldens/`.
+- **Quoi** : les quatre types (note, dossier, tâche, projet) × grille et liste ×
+  thème clair et sombre, plus deux planches d'états — normal, important,
+  verrouillé, en sélection et sélectionné.
+- **Lancer** : `flutter test test/golden/`
+- **Après un changement voulu** : `flutter test --update-goldens test/golden/`
+  puis **regarder les PNG**. Le diff git dit combien d'octets ont bougé, l'image
+  dit quoi.
+- **Polices** : les vraies sont chargées par `test/golden/golden_setup.dart` —
+  Roboto depuis le cache de Flutter, Material Symbols depuis le paquet que
+  `pub` a résolu. Sans elles, tout serait des rectangles.
+- **Hors CI** : le rendu du texte dépend de la machine. La CI les exclut
+  (`flutter test --exclude-tags golden`, tag déclaré dans `dart_test.yaml`).
+- **Limite connue** : l'extrait de note est dessiné par un `RichText`, qui
+  n'hérite pas de la police du thème. Il apparaît donc en blocs : sa **boîte**
+  est couverte par l'image, ses retours à la ligne non.
 
 ### 🟠 S — Tests de la réactivité de la langue et du thème
 - **Proposition** : vérifier que le changement de langue rebuild l'UI
