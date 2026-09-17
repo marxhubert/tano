@@ -50,8 +50,8 @@ class Tano extends StatelessWidget {
           title: 'TanoNote',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: tanoTeal,
-              primary: tanoTeal,
+              seedColor: tanoBlue,
+              primary: tanoBlue,
               secondary: tanoAmber,
               surface: lightBackground,
             ),
@@ -65,9 +65,9 @@ class Tano extends StatelessWidget {
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: tanoTeal,
+              seedColor: tanoBlue,
               brightness: Brightness.dark,
-              primary: tanoTeal,
+              primary: tanoBlue,
               secondary: tanoAmberDark,
               surface: darkBackground,
             ),

@@ -179,8 +179,7 @@ Il y avait **quatre** façons de dire « il n'y a rien ici » :
 | Corbeille vide | texte par défaut + une action « Accueil » |
 
 Trois d'entre elles lisent désormais **`emptyState`**
-(`lib/shared/widgets/empty_state.dart`) : centré, atténué, à 14 px, avec des
-actions optionnelles.
+(`lib/shared/widgets/empty_state.dart`) : centré, atténué, à 14 px.
 
 Au passage, `TanoText.emptyState` était **mal nommé** : les quatre textes qu'il
 portait sont les actions d'un *action sheet* (20 px, teal, dans l'accueil vide).
@@ -193,9 +192,29 @@ composant `noRecordFound` et son dessin maison sont supprimés.
 
 **Crédit** : les illustrations sont de **Ghozi Muhtarom**, publiées sur **Flaticon**. Le crédit vit dans un fichier dédié à la racine du dépôt, **`CREDITS.md`**, rédigé dans la forme exacte que Flaticon demande (« Icon made by [auteur] from [www.flaticon.com] », l'auteur et Flaticon étant cliquables). Les fichiers de licences embarqués dans l'app (`assets/licenses/*.txt`) n'ont pas été touchés.
 
-> La licence gratuite de Flaticon impose l'attribution : c'est pourquoi le crédit
-> figure dans les trois fichiers de licences, et pas seulement ici. L'auteur publie
-> sous le nom **Ghozi Muhtarom** (le dossier local s'appelle « Ghozi_Muhtarom »).
+**Retouches demandées après coup.** Le bloc entier remonte de 24 px (une marge
+basse de `2 * sectionGap`, dont la moitié passe sous le milieu de l'écran) : les
+quatre illustrations sont désormais au-dessus du centre géométrique, ce qui se lit
+comme centré. Les quatre messages changent : « No item found » sur une recherche
+sans résultat, « Nothing yet » à l'accueil, « Empty trash » dans la corbeille, et
+« This folder is empty » reste tel quel dans un dossier. « Empty trash » est une
+clé neuve, `trash_empty` : `empty_trash` (« Vider la corbeille ») est l'action,
+pas le message. Enfin, dans la corbeille vide, le bouton « Accueil » quitte le
+corps pour la barre du haut, tout à droite, en icône seule (`Symbols.home`). Plus
+personne n'utilisant `actions`, le paramètre disparaît d'`emptyState`.
+
+**Filigranes figés.** Clavier ouvert (la recherche), le corps de la page
+rétrécissait et l'illustration remontait avec lui : elle était un objet dans le
+défilement, pas un fond. `PageScaffold` gagne `freezeBody` : le corps est alors
+posé sur la hauteur qu'il a clavier fermé, donc le clavier ne le déplace plus du
+tout, et sa position de repos ne change pas. Les trois écrans vides l'activent ;
+les listes gardent le comportement normal, pour que le dernier élément remonte
+bien au-dessus du clavier. Deux tests le tiennent
+(`test/empty_state_keyboard_test.dart`).
+
+> La licence gratuite de Flaticon impose l'attribution, et **une ligne par auteur**
+> suffit — pas une par icône. L'auteur publie sous le nom **Ghozi Muhtarom** ; le
+> dossier local s'appelle `Ghozi_Muhtarom`.
 
 ## Correctifs signalés
 
@@ -235,6 +254,42 @@ il a son état complet : titre, message, **bouton Réessayer**. Tout le reste es
 synchrone, et les échecs ponctuels passent par un message adaptatif (import raté,
 image corrompue). Un seul point de reprise, donc — mais c'est le seul qui ait un
 sens.
+
+### Le FAB ouvert : la règle avait les coins coupés
+
+`app_fab.dart` peignait sa règle dans la `decoration`, donc **sous** l'enfant.
+La surface sombre du menu, découpée aux coins en anti-aliasing, la recouvrait
+le long de chaque arc : la règle suivait les bords droits puis disparaissait au
+virage. Mesuré sur une capture : aucun pixel de règle dans les 33 px du coin,
+alors qu'elle est franche sur les bords. Elle passe en `foregroundDecoration`,
+au-dessus de l'enfant — exactement le remède déjà appliqué aux pastilles de
+couleur, avec le même commentaire dans `fab_menus.dart`.
+
+### Deux actions se refusent quand elles n'ont rien à proposer
+
+`_VerticalMenuItem` sait se refuser : grisé, insensible au tap, mais **à sa
+place** — le menu ne se réorganise pas d'une ouverture à l'autre. « Lier une
+note » se refuse quand c'est la seule note, « Déplacer vers » quand
+l'application ne contient aucun dossier. Les deux listes sont lues à
+l'ouverture du menu qui en dépend.
+
+### Le dossier de la note n'est jamais une destination
+
+C'était déjà le cas : `currentFolderId` est retiré de la liste à l'ouverture du
+menu, comme le note le contrat d'`AppFab`. Rien à corriger, donc, mais cinq
+tests le verrouillent maintenant (`test/fab_menu_test.dart`).
+
+### Le bleu des icônes comme couleur principale — **essai**
+
+Les quatre illustrations partagent un bleu franc, `#2D74FF` (mesuré sur les
+PNG : c'est la couleur exacte de leur aplat, le trait étant en `#738BAB`). Le
+jeton est devenu `tanoBlue` — le renommer évitait de garder « teal » sur une
+couleur bleue — et `TanoStates.action` suit. Les contrastes mesurés donnent
+`#2D74FF` au-dessus du teal sur fond clair (3,94 contre 3,48) et en dessous sur
+fond sombre (4,51 contre 5,10) ; sur le panneau du FAB, où le contenu est
+blanc, le bleu gagne aussi (4,16 contre 3,67). Quatre goldens ont été
+régénérés : le rond de sélection des cartes est teinté avec la couleur
+principale.
 
 ## 6. Animations
 

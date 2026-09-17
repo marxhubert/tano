@@ -463,6 +463,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           ? AppText.tr('search_results')
           : _folder.name,
       headerMetadata: _headerMetadata,
+      // Nothing but the illustration: it must hold its place.
+      freezeBody: !_loading && _visibleNotes.isEmpty,
       titleWidget: _isEditingTitle
           ? TapRegion(
               onTapOutside: (_) => _exitTitleEdit(),

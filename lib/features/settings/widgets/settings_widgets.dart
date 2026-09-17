@@ -183,7 +183,7 @@ class SettingsTile extends StatelessWidget {
       title: Text(
         title,
         style: TextStyle(
-          color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
+          color: textColor ?? (selected ? tanoBlue : primaryTextColor(context)),
           fontWeight:
               fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
           fontSize: TanoText.listTitle,
@@ -192,7 +192,7 @@ class SettingsTile extends StatelessWidget {
       trailing:
           trailing ??
           (selected
-              ? const Icon(Symbols.check_circle, color: tanoTeal, size: 20.0)
+              ? const Icon(Symbols.check_circle, color: tanoBlue, size: 20.0)
               : null),
       onTap: onTap,
     );
@@ -226,7 +226,7 @@ class SettingsSwitchTile extends StatelessWidget {
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: tanoTeal,
+          activeThumbColor: tanoBlue,
         ),
       ),
     );

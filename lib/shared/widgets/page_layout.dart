@@ -50,6 +50,7 @@ class PageScaffold extends StatefulWidget {
     required this.slivers,
     this.actions,
     this.isHome = false,
+    this.freezeBody = false,
     this.alignAppBarTitleLeft = false,
     this.headerMetadata,
     this.floatingActionButton,
@@ -70,6 +71,13 @@ class PageScaffold extends StatefulWidget {
   final List<Widget> slivers;
   final List<Widget>? actions;
   final bool isHome;
+
+  /// When true, the body is laid out against the height it has when no
+  /// keyboard is up. The empty screens ask for it: the shrinking body would
+  /// otherwise drag their illustration up as soon as the keyboard opens. Kept
+  /// still, the illustration reads as a watermark. The lists keep the default,
+  /// so their last item still scrolls up out of the keyboard's way.
+  final bool freezeBody;
 
   /// When true (and the app bar title is shown after scrolling), the title
   /// slides to the left, right after the back button, instead of staying
@@ -136,6 +144,10 @@ class _PageScaffoldState extends State<PageScaffold> {
     final Color scaffoldBgColor =
         widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = getTextColor(scaffoldBgColor);
+    // Read here, above the Scaffold: it replaces the body's MediaQuery with one
+    // whose bottom view inset is gone, so the body itself can no longer tell
+    // that the keyboard is up.
+    final double keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     final String appBarTitleText =
         (widget.titleController?.text ?? '').isNotEmpty
@@ -204,28 +216,56 @@ class _PageScaffoldState extends State<PageScaffold> {
                 ))
             .toList(),
       ),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: <Widget>[
-          // Big title in the body.
-          SliverToBoxAdapter(
-            child: SectionTitleLine(
-              titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
-              metadata: widget.headerMetadata,
-              padding: EdgeInsets.fromLTRB(
-                widget.titlePaddingLeft ?? appPaddingLarge,
-                appPaddingMedium,
-                appPaddingLarge,
-                0.0,
-              ),
-            ),
-          ),
-          // Content slivers
-          ...widget.slivers,
-        ],
-      ),
+      body: _buildBody(textColor, keyboard),
       floatingActionButton: widget.floatingActionButton,
       floatingActionButtonLocation: widget.floatingActionButtonLocation,
+    );
+  }
+
+  /// The body scroll view.
+  ///
+  /// With [freezeBody], it is laid out against the height it has when no
+  /// keyboard is up, whatever the keyboard does: the empty screens then see
+  /// their illustration stay exactly where it is rather than being dragged up
+  /// by the shrinking body.
+  Widget _buildBody(Color textColor, double keyboard) {
+    final Widget scrollView = CustomScrollView(
+      controller: _scrollController,
+      slivers: <Widget>[
+        // Big title in the body.
+        SliverToBoxAdapter(
+          child: SectionTitleLine(
+            titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
+            metadata: widget.headerMetadata,
+            padding: EdgeInsets.fromLTRB(
+              widget.titlePaddingLeft ?? appPaddingLarge,
+              appPaddingMedium,
+              appPaddingLarge,
+              0.0,
+            ),
+          ),
+        ),
+        // Content slivers
+        ...widget.slivers,
+      ],
+    );
+
+    if (!widget.freezeBody) return scrollView;
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        if (keyboard == 0.0 || !constraints.hasBoundedHeight) {
+          return scrollView;
+        }
+        // Laid out against the full height, the body no longer knows the
+        // keyboard is there: the content stays where it rests.
+        return OverflowBox(
+          alignment: Alignment.topCenter,
+          minHeight: constraints.maxHeight + keyboard,
+          maxHeight: constraints.maxHeight + keyboard,
+          child: scrollView,
+        );
+      },
     );
   }
 

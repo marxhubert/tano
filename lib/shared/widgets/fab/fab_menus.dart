@@ -362,6 +362,8 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
+        // Nothing to link to when this is the only note.
+        enabled: !_notesLoaded || _availableNotes.isNotEmpty,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
           widget.onLinkSelected?.call();
@@ -429,6 +431,8 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
+        // Nowhere to move to when the app holds no folder at all.
+        enabled: !_foldersLoaded || _hasFolders,
         onTap: () => _openMoveMenu(FabVerticalMenu.more),
       ),
       _VerticalMenuItem(

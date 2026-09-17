@@ -65,6 +65,8 @@ class _TrashPageState extends State<TrashPage> {
         return PageScaffold(
           title: AppText.tr('option_recycle_bin'),
           headerMetadata: _headerMetadata,
+          // Nothing but the illustration: it must hold its place.
+          freezeBody: !_isLoading && _viewModel.isEmpty,
           actions: [
             if (!_viewModel.isEmpty)
               IconButton(
@@ -85,6 +87,18 @@ class _TrashPageState extends State<TrashPage> {
                   }
                 },
               ),
+            // The empty screen has nothing left to do but leave, so the way
+            // home sits here, icon only, rather than in the body.
+            if (_viewModel.isEmpty)
+              IconButton(
+                icon: const Icon(Symbols.home),
+                tooltip: AppText.tr('home'),
+                onPressed: () {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/home', (route) => false);
+                },
+              ),
           ],
           slivers: [
             if (_isLoading)
@@ -95,36 +109,8 @@ class _TrashPageState extends State<TrashPage> {
               SliverFillRemaining(
                 child: emptyState(
                   context,
-                  AppText.tr('no_note_found'),
+                  AppText.tr('trash_empty'),
                   image: EmptyArt.bin,
-                  actions: <Widget>[
-                    // Same shape as the "Check for update" action in About:
-                    // just an icon and a label, no chrome.
-                    TextButton.icon(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pushNamedAndRemoveUntil('/home', (route) => false);
-                      },
-                      icon: Icon(
-                        Symbols.in_home_mode,
-                        size: 16.0,
-                        color: mutedTextColor(context),
-                      ),
-                      label: Text(
-                        AppText.tr('home'),
-                        style: TextStyle(
-                          color: mutedTextColor(context),
-                          fontSize: TanoText.label,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                  ],
                 ),
               )
             else ...<Widget>[

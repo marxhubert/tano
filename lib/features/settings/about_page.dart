@@ -162,13 +162,13 @@ class _AboutPageState extends State<AboutPage>
                         child: Icon(
                           Symbols.update,
                           size: 16.0,
-                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                          color: _isCheckingUpdate ? tanoBlue : Colors.grey,
                         ),
                       ),
                       label: Text(
                         AppText.tr('option_update'),
                         style: TextStyle(
-                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                          color: _isCheckingUpdate ? tanoBlue : Colors.grey,
                           fontSize: TanoText.label,
                         ),
                       ),

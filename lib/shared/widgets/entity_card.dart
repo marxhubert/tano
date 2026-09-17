@@ -404,7 +404,7 @@ class EntityCard extends StatelessWidget {
 
   Widget _selectionIcon(bool isDark) {
     if (!isSelectable) return const SizedBox.shrink();
-    final Color color = isDark ? TanoStates.action.dark : tanoTeal;
+    final Color color = isDark ? TanoStates.action.dark : tanoBlue;
     if (!isSelected) {
       return Icon(Symbols.circle, size: 24.0, color: color);
     }

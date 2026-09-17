@@ -116,7 +116,7 @@ class SplashScreenState extends State<SplashScreen> {
             width: double.infinity,
             child: FilledButton(
               onPressed: _retry,
-              style: FilledButton.styleFrom(backgroundColor: tanoTeal),
+              style: FilledButton.styleFrom(backgroundColor: tanoBlue),
               child: Text(AppText.tr('retry')),
             ),
           ),
