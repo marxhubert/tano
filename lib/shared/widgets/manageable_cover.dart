@@ -121,7 +121,7 @@ class _ManageableCoverState extends State<ManageableCover> {
                       AppText.tr('corrupted_image'),
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.small,
                       ),
                     ),
                   ),

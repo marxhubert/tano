@@ -476,7 +476,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                 onSubmitted: (_) => _exitTitleEdit(),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 24.0,
+                  fontSize: TanoText.pageTitle,
                   letterSpacing: -0.41,
                   color: getTextColor(
                     Theme.of(context).scaffoldBackgroundColor,
@@ -600,7 +600,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                 ? AppText.tr('no_note_found')
                 : AppText.tr('folder_empty'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14.0, color: mutedTextColor(context)),
+            style: TextStyle(fontSize: TanoText.label, color: mutedTextColor(context)),
           ),
         ),
       );

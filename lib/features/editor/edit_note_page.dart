@@ -874,7 +874,7 @@ class _EditNoteState extends State<EditNote>
                         controller: _contentController,
                         textInputAction: TextInputAction.newline,
                         textCapitalization: TextCapitalization.sentences,
-                        style: const TextStyle(fontSize: 14.4, height: 1.8),
+                        style: const TextStyle(fontSize: TanoText.label, height: 1.8),
                         decoration: InputDecoration(
                           hintText: AppText.tr('add_note'),
                           border: InputBorder.none,
@@ -914,7 +914,7 @@ class _EditNoteState extends State<EditNote>
                                     ? 'attachments'
                                     : 'attachment'),
                                 style: TextStyle(
-                                  fontSize: 14.4,
+                                  fontSize: TanoText.label,
                                   fontWeight: FontWeight.w600,
                                   color: primaryTextColor(context),
                                 ),
@@ -1105,7 +1105,7 @@ class _AttachmentRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14.0,
+                  fontSize: TanoText.label,
                   color: primaryTextColor(context),
                 ),
               ),

@@ -105,7 +105,7 @@ const double metadataIconSize = 12.0;
 /// Muted style shared by every metadata-line value (date, counts, ...).
 TextStyle metadataLineStyle(BuildContext context) => TextStyle(
       color: mutedTextColor(context),
-      fontSize: 11.0,
+      fontSize: TanoText.caption,
     );
 
 /// A bare glyph of the metadata line (lock, bookmark, ...).

@@ -69,7 +69,7 @@ class SettingsSection extends StatelessWidget {
         style: TextStyle(
           color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           letterSpacing: -0.08,
         ),
       ),
@@ -109,7 +109,7 @@ class SettingsFooterText extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13.0,
+          fontSize: TanoText.small,
           color: mutedTextColor(context),
           height: 1.4,
         ),
@@ -186,7 +186,7 @@ class SettingsTile extends StatelessWidget {
           color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
           fontWeight:
               fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
         ),
       ),
       trailing:
@@ -219,7 +219,7 @@ class SettingsSwitchTile extends StatelessWidget {
       dense: false,
       title: Text(
         title,
-        style: TextStyle(color: primaryTextColor(context), fontSize: 17.0),
+        style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.listTitle),
       ),
       trailing: Transform.scale(
         scale: 0.8,

@@ -84,7 +84,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         return _VerticalMenuItem(
           icon: Symbols.sticky_note_2,
           iconSize: 20.0,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
@@ -129,7 +129,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.home,
           iconSize: 20.0,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           maxLines: 2,
           label: AppText.tr('no_folder'),
           onTap: () {
@@ -141,7 +141,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           _VerticalMenuItem(
             icon: Symbols.folder,
             iconSize: 20.0,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             maxLines: 2,
             label: folder.name,
             onTap: () {
@@ -204,7 +204,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(color: Colors.white, fontSize: 17),
+            style: const TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -406,8 +406,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.delete,
           label: capitalizedDelete,
-          iconColor: const Color(0xFFFF8A80),
-          textColor: const Color(0xFFFF8A80),
+          iconColor: TanoStates.error.dark,
+          textColor: TanoStates.error.dark,
           onTap: widget.onDeleteSelected,
         ),
       ]);
@@ -433,14 +433,16 @@ mixin _FabMenusMixin on _FabStateMixin {
       ),
       _VerticalMenuItem(
         icon: widget.isLocked ? Symbols.lock_open : Symbols.lock,
-        label: widget.isLocked ? AppText.tr('option_unlock') : AppText.tr('option_lock'),
+        label: widget.isLocked
+            ? AppText.tr('option_unlock')
+            : AppText.tr('option_lock'),
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(
         icon: Symbols.delete,
         label: capitalizedDelete,
-        iconColor: const Color(0xFFFF8A80),
-        textColor: const Color(0xFFFF8A80),
+        iconColor: TanoStates.error.dark,
+        textColor: TanoStates.error.dark,
         onTap: widget.onDeleteSelected,
       ),
     ]);

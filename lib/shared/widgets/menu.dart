@@ -68,7 +68,7 @@ Widget popupButton({
         style: TextStyle(
           color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           letterSpacing: -0.08,
         ),
       ),
@@ -87,7 +87,7 @@ Widget popupButton({
     popupItem.title,
     style: TextStyle(
       color: activeColor,
-      fontSize: 17.0,
+      fontSize: TanoText.listTitle,
       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
     ),
     overflow: TextOverflow.ellipsis,

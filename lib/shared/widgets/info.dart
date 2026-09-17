@@ -30,7 +30,7 @@ AlertDialog aboutInfo({
               style: TextStyle(
                 fontWeight: FontWeight.w900,
                 color: primaryTextColor(context),
-                fontSize: 18.0,
+                fontSize: TanoText.wordmark,
               ),
               children: <TextSpan>[
                 TextSpan(
@@ -38,7 +38,7 @@ AlertDialog aboutInfo({
                   style: TextStyle(
                     fontWeight: FontWeight.w400,
                     color: primaryTextColor(context),
-                    fontSize: 18.0,
+                    fontSize: TanoText.wordmark,
                   ),
                 ),
               ],
@@ -50,7 +50,7 @@ AlertDialog aboutInfo({
           style: TextStyle(
             fontWeight: FontWeight.w400,
             color: primaryTextColor(context),
-            fontSize: 14.4,
+            fontSize: TanoText.label,
           ),
         ),
       ],
@@ -61,7 +61,7 @@ AlertDialog aboutInfo({
         style: TextStyle(
           fontWeight: FontWeight.w400,
           color: primaryTextColor(context),
-          fontSize: 14.4,
+          fontSize: TanoText.label,
           height: 1.5,
         ),
         children: <TextSpan>[
@@ -70,7 +70,7 @@ AlertDialog aboutInfo({
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: primaryTextColor(context),
-              fontSize: 14.4,
+              fontSize: TanoText.label,
               height: 1.5,
             ),
           ),
@@ -81,7 +81,7 @@ AlertDialog aboutInfo({
       TextButton(
         child: Text(
           AppText.tr('close_button'),
-          style: TextStyle(color: Colors.blue),
+          style: TextStyle(color: tanoTeal),
         ),
         onPressed: () {
           Navigator.of(context).pop();

@@ -344,7 +344,7 @@ class HomeState extends State<Home> with RouteAware {
           child: Center(
             child: Text(
               AppText.tr('no_note_found'),
-              style: const TextStyle(fontSize: 12.0),
+              style: const TextStyle(fontSize: TanoText.tiny),
             ),
           ),
         );
@@ -529,7 +529,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_list'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: 20.0,
+                fontSize: TanoText.emptyState,
                 fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -543,7 +543,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_grid'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: 20.0,
+                fontSize: TanoText.emptyState,
                 fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -555,7 +555,7 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoTeal, fontSize: 20.0),
+              style: const TextStyle(color: tanoTeal, fontSize: TanoText.emptyState),
             ),
           ),
         ],
@@ -566,7 +566,7 @@ class HomeState extends State<Home> with RouteAware {
           },
           child: Text(
             AppText.tr('cancel'),
-            style: TextStyle(color: primaryTextColor(context), fontSize: 20.0),
+            style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.emptyState),
           ),
         ),
       ),

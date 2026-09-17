@@ -59,11 +59,7 @@ mixin _FabBarsMixin on _FabStateMixin {
   ) {
     if (!isExpanded) {
       return IconButton(
-        icon: Icon(
-          Symbols.more_horiz,
-          color: Colors.white,
-          weight: 900.0,
-        ),
+        icon: Icon(Symbols.more_horiz, color: Colors.white, weight: 900.0),
         tooltip: AppText.tr('more'),
         onPressed: () => setState(() => _isManuallyExpanded = true),
       );
@@ -74,7 +70,8 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.add_circle,
         label: AppText.tr('add'),
         // Stay amber while one of the add menu's sub-menus (link) is open.
-        isActive: _verticalMenu == FabVerticalMenu.add ||
+        isActive:
+            _verticalMenu == FabVerticalMenu.add ||
             _verticalMenu == FabVerticalMenu.link,
         onTap: () {
           // Keep focus so checklist insertion can use the current caret.
@@ -94,7 +91,8 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.build_circle,
         label: AppText.tr('more'),
         // Stay amber while the move sub-menu, opened from "more", is shown.
-        isActive: _verticalMenu == FabVerticalMenu.more ||
+        isActive:
+            _verticalMenu == FabVerticalMenu.more ||
             _verticalMenu == FabVerticalMenu.move,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.more);
@@ -138,7 +136,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       _EditorAction(
         icon: Symbols.delete,
         label: AppText.tr('delete'),
-        color: const Color(0xFFFF8A80),
+        color: TanoStates.error.dark,
         onTap: widget.canDelete ? (widget.onDelete ?? () {}) : null,
       ),
     ]);
@@ -158,9 +156,9 @@ mixin _FabBarsMixin on _FabStateMixin {
                 controller: widget.controller,
                 focusNode: widget.focusNode,
                 cursorColor: Colors.white,
-                cursorWidth: 1.0, 
+                cursorWidth: 1.0,
                 cursorHeight: 16.0,
-                style: const TextStyle(color: Colors.white, fontSize: 16.0),
+                style: const TextStyle(color: Colors.white, fontSize: TanoText.body),
                 decoration: InputDecoration(
                   hintText: ' ${AppText.tr('search')}',
                   hintStyle: const TextStyle(color: Colors.white70),
@@ -222,7 +220,11 @@ mixin _FabBarsMixin on _FabStateMixin {
                 child: SizedBox(
                   width: 44.0,
                   child: const Center(
-                    child: Icon(Symbols.search, color: Colors.white, size: 26.0),
+                    child: Icon(
+                      Symbols.search,
+                      color: Colors.white,
+                      size: 26.0,
+                    ),
                   ),
                 ),
               ),
@@ -241,7 +243,7 @@ mixin _FabBarsMixin on _FabStateMixin {
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
               textInputAction: TextInputAction.search,
-              style: const TextStyle(color: Colors.white, fontSize: 16.0),
+              style: const TextStyle(color: Colors.white, fontSize: TanoText.body),
               decoration: InputDecoration(
                 isCollapsed: true,
                 hintText: AppText.tr('find_in_note'),
@@ -320,7 +322,7 @@ mixin _FabBarsMixin on _FabStateMixin {
                 '${widget.findCurrent}',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14.0,
+                  fontSize: TanoText.label,
                   fontWeight: FontWeight.bold,
                   height: 0.8,
                 ),
@@ -331,7 +333,7 @@ mixin _FabBarsMixin on _FabStateMixin {
                   '/$total',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10.0,
+                    fontSize: TanoText.badge,
                     height: 0.8,
                   ),
                 ),
@@ -348,7 +350,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       child: Center(
         child: RichText(
           text: TextSpan(
-            style: const TextStyle(color: Colors.white, fontSize: 14.0),
+            style: const TextStyle(color: Colors.white, fontSize: TanoText.label),
             children: <InlineSpan>[
               TextSpan(
                 text: '${widget.findCurrent}',

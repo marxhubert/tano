@@ -77,7 +77,7 @@ class _LicensesPageState extends State<LicensesPage> {
                       langName,
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.small,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -85,7 +85,7 @@ class _LicensesPageState extends State<LicensesPage> {
                       '2026',
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.small,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -96,7 +96,7 @@ class _LicensesPageState extends State<LicensesPage> {
                   Text(
                     AppText.tr('license_disclaimer'),
                     style: TextStyle(
-                      fontSize: 13.0,
+                      fontSize: TanoText.small,
                       color: mutedTextColor(context),
                       height: 1.4,
                     ),
@@ -150,7 +150,7 @@ class _LicensesPageState extends State<LicensesPage> {
                     _licenseText,
                     style: TextStyle(
                       color: primaryTextColor(context),
-                      fontSize: 16.0,
+                      fontSize: TanoText.body,
                       height: 1.6,
                     ),
                   ),

@@ -49,7 +49,7 @@ Widget noRecordFound(BuildContext context) {
         Padding(padding: EdgeInsets.only(bottom: 18.0)),
         Text(
           AppText.tr('no_data'),
-          style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15.0),
+          style: TextStyle(fontWeight: FontWeight.w400, fontSize: TanoText.label),
         ),
       ],
     ),

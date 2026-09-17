@@ -5,6 +5,7 @@ import 'package:tano/features/settings/widgets/settings_widgets.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 class ResetPage extends StatefulWidget {
   const ResetPage({super.key});
@@ -119,7 +120,7 @@ class _ResetPageState extends State<ResetPage> {
                             AppText.tr('developer_reset').toUpperCase(),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16.0,
+                              fontSize: TanoText.body,
                               letterSpacing: 1.1,
                             ),
                           ),
@@ -161,7 +162,7 @@ class _ResetPageState extends State<ResetPage> {
                                 AppText.tr('reset').toUpperCase(),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16.0,
+                                  fontSize: TanoText.body,
                                   letterSpacing: 1.1,
                                 ),
                               ),
