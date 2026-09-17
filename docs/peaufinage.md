@@ -143,13 +143,27 @@ métadonnées d'un en-tête passe de 11 à **12**. Un pixel, mais c'est voulu.
 
 ## 4. iOS
 
-**Déjà bon** : 0 `showModalBottomSheet`, 0 `showSnackBar` direct (tout passe par
-`showAdaptiveNotice`), 0 `Switch` ni `CircularProgressIndicator` non adaptatif.
+**Rien à faire — le passage iOS était déjà fait.** Vérifié un par un, pas au
+motif de recherche :
 
-| Point | Détail |
-|---|---|
-| Dialogues Material sur iOS | `data_transfer.dart` (2), `info.dart` (1) — les 7 autres passent bien par `confirm.dart` | Passer par `showAdaptiveAlert` |
-| `PopupMenuButton` | 1 usage | Menu Cupertino sur iOS ? |
+- l'export et l'import ont **leur variante Cupertino**
+  (`isApple ? CupertinoAlertDialog : AlertDialog`), y compris l'interrupteur et le
+  champ de mot de passe ;
+- le menu « plus » de l'accueil est un **action sheet Cupertino** sur iOS
+  (`_buildAdaptiveMenu`) ;
+- tous les messages courts passent par `showAdaptiveNotice` — huit appels, **aucun**
+  `showSnackBar` direct ;
+- interrupteurs, indicateurs et cases de liste sont adaptatifs, aucun ne manque ;
+- aucun sélecteur de date, aucun `RefreshIndicator`, aucun `Checkbox`, `Slider` ni
+  `Drawer` : les coches de checklist sont des glyphes dessinés à la main.
+
+**Mon audit annonçait « 3 dialogues Material directs » : c'était faux.** Mon motif
+de recherche `AlertDialog(` comptait aussi `CupertinoAlertDialog(` — j'ai compté les
+branches Cupertino. Le vrai compte est **zéro**.
+
+**Le seul résultat** : `lib/shared/widgets/info.dart` était **entièrement mort** —
+92 lignes, une fonction `aboutInfo`, appelée nulle part et importée par personne.
+**Supprimé.**
 
 ## 5. États
 
@@ -176,6 +190,6 @@ métadonnées d'un en-tête passe de 11 à **12**. Un pixel, mais c'est voulu.
    arbitrage.
 3. ~~**Espacements et rayons**~~ — **fait** ; les trois écarts (10, 9, 90)
    attendent ton arbitrage.
-4. **iOS** — trois dialogues, un menu.
+4. ~~**iOS**~~ — **rien à faire** ; un fichier mort supprimé au passage.
 5. **États** — l'angle hors-ligne, et la reprise après erreur.
 6. **Animations** — les durées, puis éventuellement les transitions.
