@@ -30,5 +30,7 @@ Deux familles de documents.
 - `site/` est le **site publié** par GitHub Pages — aujourd'hui la seule
   politique de confidentialité ; `docs/` reste interne (voir
   [fiches store](./store-listing.md)).
+- `docs/archive/` garde les plans d'implémentation et les listes de tâches
+  d'époque. Ce n'est **pas** de la référence : rien n'y est tenu à jour.
 - `flutter analyze` 0 issue et tests verts avant tout merge.
 - La documentation est en français ; le code et les commits en anglais.
