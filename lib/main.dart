@@ -10,6 +10,7 @@ import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/core/services/crash_reports.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,13 @@ void main() async {
     LanguageReferencesController.instance.init(),
   ]);
 
-  runApp(const Tano());
+  // Crash reports are opt-in: without the user's consent the SDK is not even
+  // initialised, and nothing leaves the device. See docs/observabilite.md.
+  if (await CrashReports.hasConsent()) {
+    await CrashReports.start(appRunner: () => runApp(const Tano()));
+  } else {
+    runApp(const Tano());
+  }
 }
 
 class Tano extends StatelessWidget {
