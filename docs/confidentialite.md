@@ -48,8 +48,45 @@ Le paragraphe « Crash reports » cite le libellé exact de l'interrupteur : si
 - **Diagnostics → Crash Data** : collecté, **non lié à l'identité**, **non
   utilisé pour le suivi**, et seulement après consentement.
 - Tout le reste : *Not collected*.
-- `PrivacyInfo.xcprivacy` doit déclarer la même chose (à faire, section 1 de la
-  [feuille de route](./roadmap.md)).
+
+## Ce que le bundle déclare
+
+### `ios/Runner/PrivacyInfo.xcprivacy`
+
+Créé et **câblé dans la cible Runner** (référence de fichier, phase *Copy
+Bundle Resources*) : sans ce câblage le fichier resterait sur le disque et ne
+partirait pas dans l'app.
+
+- `NSPrivacyTracking: false` et aucun domaine de suivi ;
+- un seul type collecté, **`CrashData`**, marqué *non lié* et *non utilisé pour
+  le suivi*, avec pour finalité *AppFunctionality* — exactement ce que dit la
+  politique in-app ;
+- les *required reason APIs* : `UserDefaults` (CA92.1), `FileTimestamp`
+  (C617.1), `SystemBootTime` (35F9.1) et `DiskSpace` (E174.1). Le moteur
+  Flutter et la plupart des paquets livrent leur propre manifeste ; celui-ci
+  couvre l'app et les paquets qui n'en ont pas.
+
+### `ios/Runner/Info.plist`
+
+- **`NSFaceIDUsageDescription`** : présent, et c'est le **seul** descriptif
+  d'usage nécessaire — l'app lit les notes verrouillées derrière Face ID.
+- **Pas de `NSPhotoLibraryUsageDescription`** : le sélecteur d'image passe par
+  **PHPicker**, qui s'exécute hors processus et ne demande **aucune**
+  autorisation sur la photothèque. Vérifié dans le code du paquet
+  (`file_picker_darwin`, `PHPickerViewController` seul, aucun
+  `requestAuthorization`) ; la cible de déploiement est iOS 15, donc jamais le
+  chemin `UIImagePickerController`.
+- **Pas de `NSCameraUsageDescription`** : l'app ne propose aucune prise de vue.
+- **Pas de `LSApplicationQueriesSchemes`** : `canLaunchUrl` n'est jamais
+  appelé, seulement `launchUrl`.
+- **Pas d'exception ATS** : tout passe en HTTPS. Si l'on ajoute un jour la
+  caméra ou `canLaunchUrl`, il faudra revenir ici.
+
+### `android/app/src/main/AndroidManifest.xml`
+
+- `INTERNET` (les rapports de crash et, plus tard, la vérification de version),
+  `USE_BIOMETRIC` et `USE_FINGERPRINT` pour le verrou.
+- `android:allowBackup="false"` : rien ne part dans les sauvegardes système.
 
 ## Points de vigilance
 

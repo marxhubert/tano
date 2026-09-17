@@ -105,9 +105,9 @@ Aucun serveur : les stores font le travail.
 
 Un manifeste JSON ne devient nécessaire que pour du sideload ou du desktop.
 
-## Étape 4 — Vérifications
+## Étape 4 — Vérifications — **faites**
 
-Fait, dans `test/crash_reports_test.dart` :
+Dans `test/crash_reports_test.dart` :
 
 - « sans consentement, rien n'est initialisé » ;
 - « l'interrupteur persiste le consentement » (et survit à un redémarrage) ;
@@ -115,18 +115,20 @@ Fait, dans `test/crash_reports_test.dart` :
   changement ;
 - « un événement ne porte ni user, ni request, ni breadcrumb ».
 
-Vérifié sur appareil, avec un laboratoire jetable depuis retiré : l'erreur
-déclenchée est **arrivée dans Sentry**, la pile résolue jusqu'à la méthode du
-laboratoire. La chaîne capture → scrub → transport → SDK natif → console tient
-donc de bout en bout.
+Sur appareil, avec un laboratoire jetable depuis retiré : l'erreur déclenchée
+est **arrivée dans Sentry**, la pile résolue jusqu'à la méthode du laboratoire.
+La chaîne capture → scrub → transport → SDK natif → console tient donc de bout
+en bout.
 
-Reste :
+Sur appareil et en console, pour finir :
 
-- vérifier dans l'événement l'absence des blocs *User*, *Request* et
-  *Breadcrumbs* ;
-- vérifier côté console que l'IP est bien exclue du projet — réglage serveur,
-  le seul que le code ne peut pas imposer ;
-- `grep setUser` : fait, zéro occurrence dans `lib/`.
+- l'événement ne porte **aucun** bloc *User*, *Request* ni *Breadcrumbs* ;
+- le projet a **« Prevent Storing of IP Addresses »** activé — le seul critère
+  qui vit côté serveur, hors de portée du code ;
+- `grep setUser` : zéro occurrence dans `lib/`.
+
+Toutes les promesses de la politique sont donc vérifiées. Le câblage crash est
+terminé ; [l'étape 3](#étape-3--mises-à-jour-store-native) reste ouverte.
 
 ## Hors périmètre
 
