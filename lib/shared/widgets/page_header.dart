@@ -73,7 +73,7 @@ class SectionTitleLine extends StatelessWidget {
               ),
               if (metadata != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 12.0),
+                  padding: const EdgeInsets.only(left: appPaddingMedium),
                   child: ConstrainedBox(
                     // The metadata only takes what it needs, up to 60% of the
                     // line: the title keeps the rest.
@@ -105,7 +105,7 @@ const double metadataIconSize = 12.0;
 /// Muted style shared by every metadata-line value (date, counts, ...).
 TextStyle metadataLineStyle(BuildContext context) => TextStyle(
       color: mutedTextColor(context),
-      fontSize: TanoText.caption,
+      fontSize: TanoText.tiny,
     );
 
 /// A bare glyph of the metadata line (lock, bookmark, ...).
@@ -165,7 +165,7 @@ class MetadataLine extends StatelessWidget {
         children: <Widget>[
           Expanded(child: leading ?? const SizedBox.shrink()),
           for (final Widget item in trailing) ...<Widget>[
-            const SizedBox(width: 8.0),
+            const SizedBox(width: appPaddingTight),
             item,
           ],
         ],

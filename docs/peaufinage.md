@@ -76,29 +76,70 @@ L'échelle vit dans `theme.dart`, sous le nom `TanoText` :
   `card_typography.dart` la définit : il lit maintenant `cardTitleSize` et
   `cardMetaSize`. C'est pour ça que les goldens sont **inchangés**.
 
-### La réduction, maintenant qu'elle coûte une ligne
+### Tranché
 
-Les jetons sont en place : réduire l'échelle, c'est changer **une valeur dans
-`theme.dart`**, et tout suit. Quatre questions, chacune avec son compromis :
+Quatre questions posées, quatre réponses :
 
-1. **`body` (16) et `listTitle` (17)** — un pixel d'écart, deux rôles proches.
-   Les fusionner à 17 ? *(+1 px sur tout le corps de texte)*
-2. **`label` (14), `small` (13), `tiny` (12), `caption` (11)** — quatre tailles
-   en quatre pixels, pour les mêmes « petits textes ». En garder deux ? *(14 et
-   12 : les footers grossissent d'un pixel, les mentions aussi)*
-3. **`emptyState` (20)** — un seul écran (l'accueil vide) l'utilise. L'aligner sur
-   `listTitle` (17) ?
-4. **Le wordmark** — 18 dans le dialogue, 24 dans À propos. Même mot, deux
-   tailles : voulu (dialogue vs page) ou à unifier ?
+| Question | Décision |
+|---|---|
+| `body` (16) et `listTitle` (17) | **Garder les deux.** Un pixel suffit à distinguer un corps d'un titre ; fusionner ferait perdre la nuance |
+| Les quatre petits textes | **Deux seulement** : `label` (14) et `tiny` (12). `small` (13) et `caption` (11) **disparaissent du thème** — leurs 9 sites lisent `label` ou `tiny` |
+| `emptyState` (20) | **Garder.** Un seul écran, et l'écart est voulu : c'est une invitation, pas un élément de liste |
+| Le wordmark (18 / 24) | **Garder les deux.** Un dialogue n'est pas une page |
+
+**Effet visible** : les pieds de section des Réglages, la note des Licences et
+les libellés des Références linguistiques passent de 13 à **14** ; la ligne de
+métadonnées d'un en-tête passe de 11 à **12**. Un pixel, mais c'est voulu.
 
 ## 3. Espacements et rayons
 
-| Point | Détail | Proposition |
-|---|---|---|
-| Espacements | 25 `EdgeInsets` littéraux contre 39 usages des jetons | Ramener au barème |
-| Valeurs en présence | 2 · 4 · 6 · 8 · 10 · 12 · 16 · 18 · 20 · 24 · 40 · 90 | Une échelle nommée ; 6, 12, 18 sont déjà les jetons |
-| `SizedBox(height:)` | 8 · 16 · 4 · 6 · 24 · 2 · 12 | Idem |
-| Rayons | quasi tous passés par `appBorderRadius` ✓ ; restent **55** (pilule), **18** (carte de réglages), `5` et `2` | Deux jetons : `pillRadius`, `settingsCardRadius` |
+**Fait.**
+
+| Fait | Détail |
+|---|---|
+| Deux rayons nommés | `pillRadius` (55, les boutons pleins) et `settingsCardRadius` (18, une carte de réglages) — 3 sites. |
+| Les `EdgeInsets` qui recopiaient un jeton | **19 lignes** écrivaient `6.0`, `12.0` ou `18.0` en dur là où `appPaddingSmall/Medium/Large` existaient déjà. Elles les lisent maintenant. |
+
+**Vérifié** : les 20 goldens passent **sans régénération** (mêmes valeurs),
+`analyze` 0 issue, 279 tests verts.
+
+### Reste — et je ne crois pas qu'il faille y toucher
+
+- Les littéraux **restants** sont des valeurs **sans jeton** : 8 (17×), 20, 16, 4, 2,
+  24, 40, 48, 10, 3. Inventer dix jetons pour ça serait du zèle : `EdgeInsets.all(8)`
+  se lit très bien tel quel.
+- **Les jetons couvrent l'usage, mais il leur manque les deux valeurs les plus
+  écrites.** Comptes réels (jeton + littéraux avant le lot 3) :
+
+  | Jeton | Usages | Littéraux `18/12/6` | Valeur sans jeton |
+  |---|---|---|---|
+  | `appPaddingLarge` | **15** | 4 | — |
+  | `appPaddingMedium` | **36** | 20 | — |
+  | `appPaddingSmall` | **7** | 2 | — |
+  | — | — | — | **8** écrit 17 fois |
+  | — | — | — | **16** écrit 9 fois |
+
+  **Tranché : les nommer sans rien changer.** `appPaddingTight` (8) et
+  `appPaddingWide` (16) rejoignent le barème — 31 lignes d'espacement cessent
+  d'écrire une valeur en dur. Le barème est à cinq valeurs, et les fusionner
+  reste possible plus tard en changeant un chiffre.
+
+  **Tranché aussi** : le pied de page d'À propos n'écrit plus `90` mais
+  `4 * sectionGap` — **96**, quatre fois le rythme de section. Le nouveau jeton
+  `sectionGap` (24) remplace au passage les dix autres `24` d'espacement, jusqu'ici
+  écrits en dur. Effet visible : le pied de page descend de 6 px.
+- **Les « écarts » que j'avais annoncés n'en sont pas** : le `9` était la taille de
+  date des cartes (déjà passée en jeton), le `10` aligne trois choses précises (une
+  tuile à interrupteur, le champ de recherche, un item de menu), et le `90` est
+  **trois valeurs différentes** qui se trouvent valoir 90 (un pied de page, une
+  barre d'outils, une illustration). Rien à unifier.
+- Les deux micro-rayons de l'aperçu de thème (`5` et `2`) restent littéraux : ils
+  dessinent une maquette miniature, pas une surface de l'app.
+
+> **Ce que je ne recommande pas** : tokeniser les `SizedBox(height:)` et les
+> `EdgeInsets` restants. Contrairement aux couleurs et aux tailles, une valeur
+> d'espacement est **contextuelle** — un `8` entre deux lignes n'a rien à voir
+> avec un `8` autour d'une icône. Un jeton les ferait passer pour la même chose.
 
 ## 4. iOS
 
@@ -133,7 +174,8 @@ Les jetons sont en place : réduire l'échelle, c'est changer **une valeur dans
 1. ~~**Couleurs**~~ — **fait** (voir plus haut).
 2. ~~**Typographie**~~ — **fait** (voir plus haut) ; la réduction attend ton
    arbitrage.
-3. **Espacements et rayons** — finit le barème.
+3. ~~**Espacements et rayons**~~ — **fait** ; les trois écarts (10, 9, 90)
+   attendent ton arbitrage.
 4. **iOS** — trois dialogues, un menu.
 5. **États** — l'angle hors-ligne, et la reprise après erreur.
 6. **Animations** — les durées, puis éventuellement les transitions.

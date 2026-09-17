@@ -31,7 +31,7 @@ class PrivacyPage extends StatelessWidget {
       actions: const <Widget>[ThemeToggleButton()],
       slivers: <Widget>[
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(20.0, appPaddingTight, 20.0, 0.0),
           sliver: SliverToBoxAdapter(
             child: _Paragraph(text: AppText.tr('privacy_intro')),
           ),
@@ -62,7 +62,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24.0),
+      padding: const EdgeInsets.only(top: sectionGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

@@ -412,7 +412,7 @@ class HomeState extends State<Home> with RouteAware {
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
+        padding: const EdgeInsets.only(bottom: appPaddingTight),
         // The content sits in a 12px sliver padding: adding 6 lines the notes
         // title up with the page title (18px).
         child: SectionTitleLine(

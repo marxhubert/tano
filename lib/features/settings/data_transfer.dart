@@ -91,16 +91,16 @@ Future<bool?> _showExportDialog(
             ),
           if (encrypted) ...<Widget>[
             if (isApple) ...<Widget>[
-              const SizedBox(height: 8.0),
+              const SizedBox(height: appPaddingTight),
               CupertinoTextField(
                 controller: passwordController,
                 obscureText: true,
                 placeholder: AppText.tr('export_password'),
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(appPaddingTight),
               ),
               if (error() != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6.0),
+                  padding: const EdgeInsets.only(top: appPaddingSmall),
                   child: Text(
                     error()!,
                     style: const TextStyle(
@@ -120,13 +120,13 @@ Future<bool?> _showExportDialog(
                 ),
               ),
           ] else ...<Widget>[
-            if (isApple) const SizedBox(height: 8.0),
+            if (isApple) const SizedBox(height: appPaddingTight),
             Text(
               AppText.tr('import_clear_warning'),
               style: const TextStyle(fontSize: TanoText.tiny),
             ),
             if (hasLockedNotes) ...<Widget>[
-              if (!isApple) const SizedBox(height: 8.0),
+              if (!isApple) const SizedBox(height: appPaddingTight),
               Text(
                 AppText.tr('export_locked_warning'),
                 style: TextStyle(

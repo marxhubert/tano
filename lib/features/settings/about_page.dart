@@ -129,7 +129,7 @@ class _AboutPageState extends State<AboutPage>
       ),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: sectionGap),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -198,7 +198,7 @@ class _AboutPageState extends State<AboutPage>
                     height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: appPaddingWide),
                 Text(
                   AppText.tr('about_cta'),
                   style: TextStyle(
@@ -212,7 +212,7 @@ class _AboutPageState extends State<AboutPage>
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 24.0),
+          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, sectionGap),
           sliver: SliverToBoxAdapter(
             child: SettingsGroup(
               // The paragraphs above already breathe; keep the gap tight.
@@ -276,7 +276,7 @@ class _AboutPageState extends State<AboutPage>
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 0.0),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -322,7 +322,7 @@ class _AboutPageState extends State<AboutPage>
         SliverFillRemaining(
           hasScrollBody: false,
           child: Container(
-            padding: const EdgeInsets.only(top: 90.0, bottom: 24.0),
+            padding: const EdgeInsets.only(top: 4 * sectionGap, bottom: sectionGap),
             alignment: Alignment.bottomCenter,
             child: Text(
               '© 2026, Marx Hubert',

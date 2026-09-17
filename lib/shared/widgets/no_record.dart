@@ -46,7 +46,7 @@ Widget noRecordFound(BuildContext context) {
             ],
           ),
         ),
-        Padding(padding: EdgeInsets.only(bottom: 18.0)),
+        Padding(padding: EdgeInsets.only(bottom: appPaddingLarge)),
         Text(
           AppText.tr('no_data'),
           style: TextStyle(fontWeight: FontWeight.w400, fontSize: TanoText.label),

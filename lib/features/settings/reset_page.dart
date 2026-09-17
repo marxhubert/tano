@@ -34,7 +34,7 @@ class _ResetPageState extends State<ResetPage> {
           title: AppText.tr('option_reset_data'),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: appPaddingMedium),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   SettingsGroup(
@@ -89,7 +89,7 @@ class _ResetPageState extends State<ResetPage> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 48.0, 24.0, 24.0),
+                padding: const EdgeInsets.fromLTRB(sectionGap, 48.0, sectionGap, sectionGap),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -97,7 +97,7 @@ class _ResetPageState extends State<ResetPage> {
                     // Its bottom space belongs to the button, so removing the
                     // button removes the gap with the real reset too.
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
+                      padding: const EdgeInsets.only(bottom: appPaddingMedium),
                       child: SizedBox(
                         width: double.infinity,
                         height: 54.0,
@@ -112,7 +112,7 @@ class _ResetPageState extends State<ResetPage> {
                               alpha: 0.4,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(55.0),
+                              borderRadius: BorderRadius.circular(pillRadius),
                             ),
                             elevation: 0,
                           ),
@@ -143,7 +143,7 @@ class _ResetPageState extends State<ResetPage> {
                             alpha: 0.3,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(55.0),
+                            borderRadius: BorderRadius.circular(pillRadius),
                           ),
                           elevation: 0,
                         ),

@@ -146,7 +146,7 @@ mixin _FabBarsMixin on _FabStateMixin {
     return TapRegion(
       onTapOutside: (_) => widget.focusNode?.unfocus(),
       child: Container(
-        padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+        padding: const EdgeInsets.only(left: appPaddingWide, right: appPaddingTight),
         child: Row(
           spacing: 8.0,
           children: <Widget>[
@@ -216,7 +216,7 @@ mixin _FabBarsMixin on _FabStateMixin {
               ),
             ] else
               Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: appPaddingTight),
                 child: SizedBox(
                   width: 44.0,
                   child: const Center(

@@ -364,7 +364,7 @@ class _TrashAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(6.0),
+        padding: const EdgeInsets.all(appPaddingSmall),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.8),
           shape: BoxShape.circle,

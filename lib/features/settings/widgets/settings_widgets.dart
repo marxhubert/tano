@@ -109,7 +109,7 @@ class SettingsFooterText extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: TanoText.small,
+          fontSize: TanoText.label,
           color: mutedTextColor(context),
           height: 1.4,
         ),
@@ -150,7 +150,7 @@ class SettingsCard extends StatelessWidget {
           (Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withValues(alpha: 0.06)
               : Colors.black.withValues(alpha: 0.06)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(settingsCardRadius)),
       child: Column(children: dividedChildren),
     );
   }
@@ -178,7 +178,7 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: const VisualDensity(vertical: -2.0),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: appPaddingWide),
       dense: false,
       title: Text(
         title,
@@ -215,7 +215,7 @@ class SettingsSwitchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: const VisualDensity(vertical: -2.0),
-      contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
+      contentPadding: const EdgeInsets.only(left: appPaddingWide, right: 10.0),
       dense: false,
       title: Text(
         title,

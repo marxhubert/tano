@@ -231,7 +231,7 @@ class EntityCard extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.topRight,
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(appPaddingTight),
                           child: _selectionIcon(isDark),
                         ),
                       ),

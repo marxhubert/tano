@@ -62,7 +62,7 @@ Widget popupButton({
   }
   if ('header' == popupItem.value) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(appPaddingWide, appPaddingWide, appPaddingWide, 0.0),
       child: Text(
         popupItem.title,
         style: TextStyle(
@@ -94,7 +94,7 @@ Widget popupButton({
   );
 
   return ListTile(
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+    contentPadding: const EdgeInsets.symmetric(horizontal: appPaddingWide),
     visualDensity: const VisualDensity(vertical: -1.0),
     dense: false,
     title: label,

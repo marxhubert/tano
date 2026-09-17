@@ -246,7 +246,7 @@ Future<String?> showAdaptivePrompt({
               keyboardType: keyboardType,
               maxLength: maxLength,
               placeholder: hint,
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(appPaddingTight),
             )
           : TextField(
               controller: controller,
@@ -259,7 +259,7 @@ Future<String?> showAdaptivePrompt({
       final Widget content = message == null
           // A small gap between the title and the field, so they do not look
           // glued together when there is no message.
-          ? Padding(padding: const EdgeInsets.only(top: 8.0), child: field)
+          ? Padding(padding: const EdgeInsets.only(top: appPaddingTight), child: field)
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: isApple
