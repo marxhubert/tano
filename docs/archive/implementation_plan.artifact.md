@@ -10,7 +10,7 @@ This feature allows users to insert clickable links to other notes within the ed
 ## Proposed Changes
 
 ### 1. FAB (Note Selection Menu)
-#### [MODIFY] [app_fab.dart](file:///Users/marx/Devhub/tano/lib/shared/widgets/app_fab.dart)
+#### [MODIFY] [app_fab.dart](../../lib/shared/widgets/app_fab.dart)
 - Add a new menu state `FabVerticalMenu.link`.
 - Implement `_buildLinkMenu(context)` to list all notes.
 - Ensure the menu has a max height of 1/3 of the screen and is scrollable.
@@ -24,17 +24,17 @@ This feature allows users to insert clickable links to other notes within the ed
     - The `sticky_note_2` icon.
     - The title in bold, underlined, and colored.
 
-#### [MODIFY] [edit_note_page.dart](file:///Users/marx/Devhub/tano/lib/features/editor/edit_note_page.dart)
+#### [MODIFY] [edit_note_page.dart](../../lib/features/editor/edit_note_page.dart)
 - Replace the standard `TextEditingController` with the new `LinkTextEditingController`.
 - Implement tap detection on the link spans to navigate to the target note.
 - Implement the `onLinkSelected` callback to insert the link placeholder at the current cursor position.
 
 ### 3. Repository
-#### [MODIFY] [notes_repository.dart](file:///Users/marx/Devhub/tano/lib/core/repositories/notes_repository.dart)
+#### [MODIFY] [notes_repository.dart](../../lib/core/repositories/notes_repository.dart)
 - Ensure we can fetch notes efficiently for the selection list.
 
 ### 4. Localization
-#### [MODIFY] [l10n.dart](file:///Users/marx/Devhub/tano/lib/shared/config/l10n.dart)
+#### [MODIFY] [l10n.dart](../../lib/shared/config/l10n.dart)
 - Add translations for "Back" if not already present.
 
 ## Verification Plan
