@@ -20,13 +20,16 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 ## 1. Livraison store *(bloquant)*
 
-- [ ] **Permissions iOS** : `NSPhotoLibraryUsageDescription` (voire
-  `NSCameraUsageDescription`) dans `Info.plist`.
+- [x] **Permissions iOS** : `NSFaceIDUsageDescription` en place. Ni
+  photothèque ni caméra nécessaires — PHPicker, vérifié dans le paquet.
+  Voir [confidentialité](./confidentialite.md).
 - [x] **Confidentialité in-app** : politique FR / EN / MG (`PrivacyPage`),
   accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
-- [ ] **Confidentialité store** : `PrivacyInfo.xcprivacy`, politique de
-  confidentialité App Store, « Data safety » Play. App hors-ligne → contenu
-  simple mais **obligatoire**.
+- [x] **Manifeste de confidentialité** : `ios/Runner/PrivacyInfo.xcprivacy`,
+  déclaré et câblé dans la cible Runner.
+- [ ] **Fiches store** : politique de confidentialité App Store, « Data
+  safety » Play. Contenu simple mais **obligatoire** ; le texte est prêt dans
+  [confidentialité](./confidentialite.md).
 - [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
   identifiant stable, zéro breadcrumb (voir
   [observabilité](./observabilite.md)).
