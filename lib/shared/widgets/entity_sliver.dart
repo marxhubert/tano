@@ -29,7 +29,7 @@ class EntitySliver<T> extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) =>
             cardBuilder(context, items[index]),
         separatorBuilder: (BuildContext context, int index) =>
-            const SizedBox(height: 8.0),
+            const SizedBox(height: appPaddingTight),
       );
     }
     return SliverGrid.builder(

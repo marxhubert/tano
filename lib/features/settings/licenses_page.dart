@@ -65,7 +65,7 @@ class _LicensesPageState extends State<LicensesPage> {
       ],
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 16.0),
+          padding: const EdgeInsets.fromLTRB(20.0, appPaddingTight, 20.0, appPaddingWide),
           sliver: SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +77,7 @@ class _LicensesPageState extends State<LicensesPage> {
                       langName,
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: TanoText.small,
+                        fontSize: TanoText.label,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -85,23 +85,23 @@ class _LicensesPageState extends State<LicensesPage> {
                       '2026',
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: TanoText.small,
+                        fontSize: TanoText.label,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
                 if (_currentLang != 'en' && !_showingOriginal) ...[
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   Text(
                     AppText.tr('license_disclaimer'),
                     style: TextStyle(
-                      fontSize: TanoText.small,
+                      fontSize: TanoText.label,
                       color: mutedTextColor(context),
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   TextButton(
                     onPressed: _toggleOriginal,
                     style: TextButton.styleFrom(
@@ -119,7 +119,7 @@ class _LicensesPageState extends State<LicensesPage> {
                     ),
                   ),
                 ] else if (_showingOriginal && _currentLang != 'en') ...[
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   TextButton(
                     onPressed: _toggleOriginal,
                     style: TextButton.styleFrom(

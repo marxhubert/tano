@@ -238,14 +238,14 @@ class _VerticalMenuItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: appPaddingMedium, horizontal: 4.0),
         child: Row(
           crossAxisAlignment: maxLines != null
               ? CrossAxisAlignment.start
               : CrossAxisAlignment.center,
           children: [
             Icon(icon, color: iconColor ?? Colors.white, size: iconSize, fill: fill),
-            const SizedBox(width: 8.0),
+            const SizedBox(width: appPaddingTight),
             Expanded(
               child: Text(
                 label,

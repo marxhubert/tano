@@ -20,7 +20,7 @@ class AppearanceSection extends StatelessWidget {
           title: AppText.tr('menu_theme'),
           tiles: <Widget>[
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              padding: const EdgeInsets.symmetric(vertical: sectionGap),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [

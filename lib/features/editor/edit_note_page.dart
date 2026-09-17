@@ -789,7 +789,7 @@ class _EditNoteState extends State<EditNote>
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      padding: const EdgeInsets.symmetric(vertical: appPaddingMedium),
                       child: MetadataLine(
                         leading: Wrap(
                           alignment: WrapAlignment.start,
@@ -894,7 +894,7 @@ class _EditNoteState extends State<EditNote>
                 ),
                 if (_viewModel.attachments.isNotEmpty)
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
+                    padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 100.0),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,7 +908,7 @@ class _EditNoteState extends State<EditNote>
                                 size: 18.0,
                                 color: mutedTextColor(context),
                               ),
-                              const SizedBox(width: 8.0),
+                              const SizedBox(width: appPaddingTight),
                               Text(
                                 AppText.tr(_viewModel.attachments.length > 1
                                     ? 'attachments'

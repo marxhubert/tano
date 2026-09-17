@@ -65,8 +65,24 @@ class TanoPastels {
 const double appPaddingLarge = 18.0;
 const double appPaddingMedium = 12.0;
 const double appPaddingSmall = 6.0;
+
+/// The two gaps the code writes most, which the trio above does not cover:
+/// a tight one between two lines or around an icon, a wide one as the inner
+/// margin of a card or a list.
+const double appPaddingTight = 8.0;
+const double appPaddingWide = 16.0;
+
+/// The rhythm between two blocks of a screen. The About footer, for instance,
+/// is four of those.
+const double sectionGap = 24.0;
 const double appBorderRadius = 12.0;
 const double sectionBorderRadius = 24.0;
+
+/// Pill radius of the full-width buttons (reset, confirm).
+const double pillRadius = 55.0;
+
+/// Radius of a settings card.
+const double settingsCardRadius = 18.0;
 
 /// The app's type scale, outside the cards.
 ///
@@ -95,14 +111,8 @@ class TanoText {
   /// Secondary label: tile subtitles, dialog footnotes.
   static const double label = 14.0;
 
-  /// Small label: section footers, hints.
-  static const double small = 13.0;
-
-  /// Smallest text: mentions, counters.
+  /// Smallest text: mentions, counters, and the metadata line of a header.
   static const double tiny = 12.0;
-
-  /// Metadata line of a page header.
-  static const double caption = 11.0;
 
   /// Counter drawn on a bar ("/12").
   static const double badge = 10.0;

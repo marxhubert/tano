@@ -17,7 +17,7 @@ class ManageableCover extends StatefulWidget {
     required this.onRemove,
     this.height,
     this.fit = BoxFit.cover,
-    this.padding = const EdgeInsets.symmetric(vertical: 12.0),
+    this.padding = const EdgeInsets.symmetric(vertical: appPaddingMedium),
     this.lightDimAlpha = 0.12,
   });
 
@@ -121,7 +121,7 @@ class _ManageableCoverState extends State<ManageableCover> {
                       AppText.tr('corrupted_image'),
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: TanoText.small,
+                        fontSize: TanoText.label,
                       ),
                     ),
                   ),

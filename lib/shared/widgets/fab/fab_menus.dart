@@ -178,7 +178,7 @@ mixin _FabMenusMixin on _FabStateMixin {
               ? ListSortCriteria.title
               : ListSortCriteria.date;
         }),
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(appPaddingTight),
         constraints: const BoxConstraints(),
       ),
       IconButton(
@@ -189,7 +189,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           color: Colors.white,
         ),
         onPressed: () => setState(() => _isAscending = !_isAscending),
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(appPaddingTight),
         constraints: const BoxConstraints(),
       ),
     ];
@@ -197,7 +197,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   Widget _buildColorMenu(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(sectionGap),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +450,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   Widget _buildVerticalList(List<Widget> children) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(appPaddingWide),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -17,7 +17,7 @@ Widget buildNoteGridContent({
 }) {
   return Container(
     // Grid padding 8; gap under a cover 4; metadata 4 from the bottom.
-    padding: EdgeInsets.fromLTRB(8.0, hasCover ? 4.0 : 8.0, 8.0, 4.0),
+    padding: EdgeInsets.fromLTRB(appPaddingTight, hasCover ? 4.0 : appPaddingTight, appPaddingTight, 4.0),
     child: Column(
       // Metadata always left-aligned, body top-aligned.
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +71,7 @@ Widget buildNoteListContent({
 }) {
   return Padding(
     // List padding 12, but the metadata sits 4 from the bottom.
-    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
+    padding: const EdgeInsets.fromLTRB(appPaddingMedium, appPaddingMedium, appPaddingMedium, 4.0),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
