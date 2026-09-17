@@ -68,9 +68,9 @@ class _TrashPageState extends State<TrashPage> {
             if (!_viewModel.isEmpty)
               IconButton(
                 tooltip: AppText.tr('empty_trash'),
-                icon: const Icon(
+                icon: Icon(
                   Symbols.delete_sweep,
-                  color: Color(0xFFFF8A80),
+                  color: TanoStates.error.dark,
                   size: 22.0,
                 ),
                 onPressed: () async {
@@ -115,7 +115,7 @@ class _TrashPageState extends State<TrashPage> {
                           AppText.tr('home'),
                           style: TextStyle(
                             color: mutedTextColor(context),
-                            fontSize: 14.0,
+                            fontSize: TanoText.label,
                           ),
                         ),
                         style: TextButton.styleFrom(
@@ -202,7 +202,7 @@ class _TrashPageState extends State<TrashPage> {
           style: TextStyle(
             color: mutedTextColor(context),
             fontWeight: FontWeight.bold,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             letterSpacing: -0.08,
           ),
         ),
@@ -304,7 +304,7 @@ class _TrashPageState extends State<TrashPage> {
     final Widget delete = _TrashAction(
       icon: Symbols.delete_forever,
       onTap: onDelete,
-      color: const Color(0xFFFF8A80),
+      color: TanoStates.error.dark,
     );
     if (_isListLayout) {
       return Positioned(

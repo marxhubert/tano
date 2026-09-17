@@ -3,6 +3,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/features/settings/data_transfer_page.dart';
 import 'package:tano/features/settings/reset_page.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
+import 'package:tano/shared/widgets/theme.dart';
 import 'settings_widgets.dart';
 
 class DataManagementSection extends StatelessWidget {
@@ -36,7 +37,7 @@ class DataManagementSection extends StatelessWidget {
             SettingsTile(
               title: AppText.tr('option_reset_data'),
               selected: false,
-              textColor: const Color(0xFFFF8A80),
+              textColor: TanoStates.error.dark,
               fontWeight: FontWeight.bold,
               onTap: viewModel.isResetting
                   ? () {}

@@ -39,7 +39,7 @@ class LanguageReferencesPage extends StatelessWidget {
             child: Text(
               "Natao ity hanazavana ireo teny sy fiteny nampiasaina ato amin'ity rindrankajy ity. Niezahana ho voambolana malagasy ofisialy, saingy misy fiteny mifanendrika bebe kokoa amin'ny angaly tiana havoitra. \n\nIreto izy ireo raha mahaliana anao ny heviny. Araho ny rohy ho fanampim-panazavana misimisy kokoa.",
               style: TextStyle(
-                fontSize: 13.0,
+                fontSize: TanoText.small,
                 color: mutedTextColor(context),
                 height: 1.5,
               ),
@@ -71,7 +71,7 @@ class LanguageReferencesPage extends StatelessWidget {
                             TextSpan(
                               style: TextStyle(
                                 color: mutedTextColor(context),
-                                fontSize: 13.0,
+                                fontSize: TanoText.small,
                                 fontWeight: FontWeight.normal,
                               ),
                               children: [
@@ -80,7 +80,7 @@ class LanguageReferencesPage extends StatelessWidget {
                                   text: ref.word,
                                   style: TextStyle(
                                     color: primaryTextColor(context),
-                                    fontSize: 17.0,
+                                    fontSize: TanoText.listTitle,
                                   ),
                                 ),
                               ],
@@ -103,7 +103,7 @@ class LanguageReferencesPage extends StatelessWidget {
                       ref.description,
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.small,
                         height: 1.4,
                       ),
                     ),

@@ -70,7 +70,7 @@ class _Section extends StatelessWidget {
             AppText.tr(titleKey),
             style: TextStyle(
               color: primaryTextColor(context),
-              fontSize: 17.0,
+              fontSize: TanoText.listTitle,
               fontWeight: FontWeight.bold,
             ),
           ),

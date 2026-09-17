@@ -147,7 +147,7 @@ class _SectionTitle extends StatelessWidget {
           style: TextStyle(
             color: mutedTextColor(context),
             fontWeight: FontWeight.bold,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             letterSpacing: -0.08,
           ),
         ),

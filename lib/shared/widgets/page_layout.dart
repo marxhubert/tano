@@ -242,7 +242,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         onChanged: widget.titleOnChanged,
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          fontSize: 24.0,
+          fontSize: TanoText.pageTitle,
           letterSpacing: -0.41,
           color: textColor,
         ),
@@ -260,7 +260,7 @@ class _PageScaffoldState extends State<PageScaffold> {
       widget.title,
       style: TextStyle(
         fontWeight: FontWeight.w600,
-        fontSize: 24.0,
+        fontSize: TanoText.pageTitle,
         letterSpacing: -0.41,
         color: textColor,
       ),

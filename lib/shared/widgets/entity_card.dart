@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/card_typography.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -331,7 +332,7 @@ class EntityCard extends StatelessWidget {
     );
     final String shownTitle = title.isEmpty ? AppText.tr('no_title') : title;
     final TextStyle titleStyle = TextStyle(
-      fontSize: 11.0,
+      fontSize: cardTitleSize,
       fontWeight: FontWeight.bold,
       color: textColor,
     );
@@ -348,7 +349,7 @@ class EntityCard extends StatelessWidget {
                   subtitle!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 9.0, color: metaColor),
+                  style: TextStyle(fontSize: cardMetaSize, color: metaColor),
                 ),
               ),
             ],

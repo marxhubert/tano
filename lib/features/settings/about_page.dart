@@ -93,7 +93,7 @@ class _AboutPageState extends State<AboutPage>
         style: TextStyle(
           fontWeight: FontWeight.w900,
           color: textColor,
-          fontSize: 24.0,
+          fontSize: TanoText.pageTitle,
           letterSpacing: -1.0,
         ),
         children: <TextSpan>[
@@ -102,7 +102,7 @@ class _AboutPageState extends State<AboutPage>
             style: TextStyle(
               fontWeight: FontWeight.w400,
               color: textColor,
-              fontSize: 24.0,
+              fontSize: TanoText.pageTitle,
               letterSpacing: -1.0,
             ),
           ),
@@ -146,7 +146,7 @@ class _AboutPageState extends State<AboutPage>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: mutedTextColor(context),
-                          fontSize: 14.0,
+                          fontSize: TanoText.label,
                         ),
                       ),
                     ),
@@ -169,7 +169,7 @@ class _AboutPageState extends State<AboutPage>
                         AppText.tr('option_update'),
                         style: TextStyle(
                           color: _isCheckingUpdate ? tanoTeal : Colors.grey,
-                          fontSize: 14.0,
+                          fontSize: TanoText.label,
                         ),
                       ),
                       style: TextButton.styleFrom(
@@ -194,7 +194,7 @@ class _AboutPageState extends State<AboutPage>
                   AppText.tr('about_description'),
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16.0,
+                    fontSize: TanoText.body,
                     height: 1.6,
                   ),
                 ),
@@ -203,7 +203,7 @@ class _AboutPageState extends State<AboutPage>
                   AppText.tr('about_cta'),
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16.0,
+                    fontSize: TanoText.body,
                     height: 1.6,
                   ),
                 ),
@@ -271,7 +271,7 @@ class _AboutPageState extends State<AboutPage>
           sliver: SliverToBoxAdapter(
             child: Text(
               AppText.tr('about_more'),
-              style: TextStyle(color: textColor, fontSize: 16.0, height: 1.6),
+              style: TextStyle(color: textColor, fontSize: TanoText.body, height: 1.6),
             ),
           ),
         ),
@@ -326,7 +326,7 @@ class _AboutPageState extends State<AboutPage>
             alignment: Alignment.bottomCenter,
             child: Text(
               '© 2026, Marx Hubert',
-              style: TextStyle(color: mutedTextColor(context), fontSize: 12.0),
+              style: TextStyle(color: mutedTextColor(context), fontSize: TanoText.tiny),
             ),
           ),
         ),

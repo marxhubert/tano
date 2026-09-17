@@ -48,7 +48,7 @@ class _SubMenuLayout extends StatelessWidget {
                 ),
                 label: Text(
                   title,
-                  style: TextStyle(color: Colors.white, fontSize: 17.0),
+                  style: TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
