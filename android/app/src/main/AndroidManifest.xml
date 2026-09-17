@@ -1,9 +1,28 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
     <!-- Crash reports, and the store update lookups, go out over the network.
          Nothing else does; the app works fully offline. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- open_filex declares these for opening files from shared storage.
+         TanoNote only opens files from its own private directory, through a
+         content URI its own provider hands over — no storage permission is
+         involved. Left in, Play would advertise "Photos and videos" on the
+         store page, which the app has no business asking for. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_AUDIO"
+        tools:node="remove"/>
     <application
         android:label="TanoNote"
         android:name="${applicationName}"
