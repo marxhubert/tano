@@ -92,18 +92,39 @@ Pas de domaine pour l'instant : la politique vit donc **dans l'app**.
 **Reste hors code** : déclarer les fiches store (voir la
 [feuille de route](./roadmap.md)).
 
-## Étape 3 — Mises à jour store-native
+## Étape 3 — Mises à jour store-native — **faite**
 
 Aucun serveur : les stores font le travail.
 
-- **Android** : **Play In-App Updates** — déclenche le flux de mise à jour
-  natif, immédiat ou flexible.
-- **iOS** : API publique `itunes.apple.com/lookup?bundleId=…` — détecte une
-  version plus récente, puis propose le lien App Store.
-- On rouvrira à ce moment-là une entrée « Mise à jour » dans À propos, cette
-  fois adossée à la vraie vérification.
+`lib/core/services/update_service.dart` porte le contrôle, et rien d'autre ne
+fait d'appel réseau dans l'app :
+
+- **iOS** : l'API publique `itunes.apple.com/lookup?bundleId=…`. La
+  comparaison des versions gère les champs numériques (`1.10.0` est plus récent
+  que `1.9.9`) et les pré-versions (`0.9.0-beta` est plus ancien que `0.9.0`) ;
+- **Android** : **Play In-App Updates** (`in_app_update`), qui ne répond que si
+  l'app vient du Play. Le flow échoue ailleurs : on retombe alors sur la fiche
+  Play ;
+- **le contrôle ne part que si on le demande** : dans À propos, le bouton posé
+  à droite de la ligne de version — la même icône qui tourne pendant la requête
+  qu'avant, mais branchée sur la vraie vérification — lance le contrôle. Ouvrir
+  l'écran ne coûte **aucun** appel réseau ;
+- si une version plus récente est publiée, l'app ouvre le store (ou le flow
+  Play) ; sinon elle répond « Vous êtes à jour », et « Vérification
+  indisponible » hors-ligne ou avant publication. Aucun échec n'est présenté
+  comme une panne ;
+- le résultat est mis en cache six heures, pour ne pas interroger le store à
+  chaque appui.
+
+Le lookup ne transmet que le **nom de l'app** : aucune donnée personnelle, aucun
+identifiant. C'est écrit dans la politique, section « Vérification des mises à
+jour », dans les trois langues.
 
 Un manifeste JSON ne devient nécessaire que pour du sideload ou du desktop.
+
+**Note** : tant que l'app n'est pas publiée, le lookup iOS renvoie zéro résultat
+et le contrôle répond « inconnu » — c'est le cas aujourd'hui, et c'est traité
+comme tel (vérifié par un test).
 
 ## Étape 4 — Vérifications — **faites**
 

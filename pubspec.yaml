@@ -16,6 +16,8 @@ dependencies:
   package_info_plus: ^10.2.1
   material_symbols_icons: ^4.2960.0
   url_launcher: ^6.3.2
+  # Play In-App Updates, Android only: the store owns the update, we just ask.
+  in_app_update: ^5.0.0
   path: ^1.9.0
   get_it: ^8.0.3
   uuid: ^4.5.1

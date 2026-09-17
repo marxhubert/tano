@@ -47,7 +47,8 @@ Le paragraphe « Crash reports » cite le libellé exact de l'interrupteur : si
 
 - **Diagnostics → Crash Data** : collecté, **non lié à l'identité**, **non
   utilisé pour le suivi**, et seulement après consentement.
-- Tout le reste : *Not collected*.
+- Tout le reste : *Not collected* — y compris la **vérification des mises à
+  jour**, qui ne transmet que le nom de l'app et ne collecte rien.
 
 ## Ce que le bundle déclare
 
@@ -94,8 +95,12 @@ partirait pas dans l'app.
   sinon la déclaration passe de « non lié » à « lié à l'identité ».
 - **IP non stockée** : réglage projet Sentry « Prevent Storing of IP
   Addresses ».
-- Les **mises à jour store-native** (étape 3) feront un appel réseau
-  `itunes.apple.com` / Play : à mentionner dans la politique le jour où elles
-  arrivent.
+- La **vérification des mises à jour** fait un appel réseau
+  (`itunes.apple.com` ou l'API Play) : elle est mentionnée dans la politique
+  in-app et dans la page publiée. Rien à déclarer aux stores, elle ne collecte
+  rien.
+- Le manifeste Android **retire** les permissions média que `open_filex`
+  déclare pour son compte : sans ça, Play afficherait « Photos et vidéos » sur
+  la fiche, ce que l'app n'a aucune raison de demander.
 - Toute nouvelle donnée collectée impose de mettre à jour **les deux** : la
   page in-app et les fiches store.
