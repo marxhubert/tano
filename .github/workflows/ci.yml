@@ -30,3 +30,36 @@ jobs:
         # The golden tests compare pixels and depend on how the host rasterises
         # text: they are generated and reviewed locally, never here.
         run: flutter test --exclude-tags golden
+
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      # A broken Android build must not hide a broken iOS one.
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: apk
+            args: --debug
+          - os: macos-latest
+            target: ios
+            # No signing profile here: the point is to compile the app, not to
+            # produce something installable.
+            args: --debug --no-codesign
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build
+        run: flutter build ${{ matrix.target }} ${{ matrix.args }}
