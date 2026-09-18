@@ -23,6 +23,10 @@ Older releases are described on the
   kept.
 - One undo for every deletion: the home list and the folder page now build the
   same notice and put the notes back the same way.
+- Moving notes and locking a note or a folder now say so. Android keeps its
+  SnackBar; iOS gets a toast that fades away on its own instead of an alert.
+- The settings offer four text sizes, and switches for the haptic feedback and
+  the sound. The chosen size multiplies the system's own text scale.
 
 ### Changed
 

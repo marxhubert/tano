@@ -319,6 +319,22 @@ class AppText {
     'onboarding_body_3':
         'Sort your notes into folders, and find everything you deleted in the trash — with one tap to undo.',
     'onboarding_replay': 'Replay the introduction',
+    // Feedback and text
+    'menu_feedback': 'Feedback and text',
+    'text_size': 'Text size',
+    'text_size_small': 'Small',
+    'text_size_normal': 'Normal',
+    'text_size_large': 'Large',
+    'text_size_extra_large': 'Larger',
+    'feedback_haptics': 'Haptic feedback',
+    'feedback_sound': 'Sound',
+    'moved_to': 'moved to {folder}',
+    'moved_home': 'moved back to Home',
+    'moved': 'moved',
+    'note_locked': 'Note locked',
+    'note_unlocked': 'Note unlocked',
+    'folder_locked': 'Folder locked',
+    'folder_unlocked': 'Folder unlocked',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -532,6 +548,22 @@ class AppText {
     'onboarding_body_3':
         'Classez vos notes dans des dossiers et retrouvez dans la corbeille tout ce que vous supprimez — avec une annulation en un geste.',
     'onboarding_replay': "Revoir l'introduction",
+    // Retours et texte
+    'menu_feedback': 'Retours et texte',
+    'text_size': 'Taille du texte',
+    'text_size_small': 'Petit',
+    'text_size_normal': 'Normal',
+    'text_size_large': 'Grand',
+    'text_size_extra_large': 'Plus grand',
+    'feedback_haptics': 'Retour haptique',
+    'feedback_sound': 'Son',
+    'moved_to': 'déplacé(e) vers {folder}',
+    'moved_home': "ramené(e) à l'accueil",
+    'moved': 'déplacé(e)',
+    'note_locked': 'Note verrouillée',
+    'note_unlocked': 'Note déverrouillée',
+    'folder_locked': 'Dossier verrouillé',
+    'folder_unlocked': 'Dossier déverrouillé',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -745,6 +777,22 @@ class AppText {
     'onboarding_body_3':
         "Alamino ao anaty rakitra ny naotinao ary hita ao amin'ny fitoeram-pako izay rehetra voafafa — misy fanafoanana amin'ny tsindry iray.",
     'onboarding_replay': 'Avereno jerena ny fanazavana',
+    // Famaliana sy lahatsoratra
+    'menu_feedback': 'Famaliana sy lahatsoratra',
+    'text_size': "Haben'ny soratra",
+    'text_size_small': 'Kely',
+    'text_size_normal': 'Antonony',
+    'text_size_large': 'Lehibe',
+    'text_size_extra_large': 'Lehibe kokoa',
+    'feedback_haptics': 'Fihovitrovitra',
+    'feedback_sound': 'Feo',
+    'moved_to': "nafindra tany amin'ny {folder}",
+    'moved_home': "naverina tany amin'ny fandraisana",
+    'moved': 'nafindra',
+    'note_locked': 'Voahidy ny naoty',
+    'note_unlocked': 'Novahana ny naoty',
+    'folder_locked': 'Voahidy ny rakitra',
+    'folder_unlocked': 'Novahana ny rakitra',
   };
 
   /// Returns the string associated with [key] in the current language,

@@ -13,6 +13,7 @@ import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -29,6 +30,7 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
 
 /// Shows the notes filed in a single folder and its organisation actions.
@@ -260,6 +262,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         return;
       }
       await _save(_folder.copyWith(isLocked: true));
+      if (!mounted) return;
+      await FeedbackController.instance.success();
+      if (!mounted) return;
+      await showLockToast(context, locked: true, folder: true);
       return;
     }
     final bool authenticated = await getIt<AuthService>().authenticate(
@@ -267,6 +273,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     if (!authenticated || !mounted) return;
     await _save(_folder.copyWith(isLocked: false));
+    if (!mounted) return;
+    await FeedbackController.instance.success();
+    if (!mounted) return;
+    await showLockToast(context, locked: false, folder: true);
   }
 
   Future<void> _delete() async {
@@ -374,11 +384,16 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             : note.copyWith(folderId: folderId),
       );
     }
+    final int count = selected.length;
     if (!mounted) return;
     setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
     await _load();
+    if (!mounted) return;
+    await FeedbackController.instance.impact();
+    if (!mounted) return;
+    await showMovedToast(context, count: count, folderId: folderId);
   }
 
   /// Notes shown: the folder content, filtered by the local search. A locked

@@ -14,7 +14,7 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **284 tests** verts (dont 20 goldens, joués en
+- `flutter analyze` 0 issue, **294 tests** verts (dont 20 goldens, joués en
   local), CI `analyze` + `test` + un build de débogage des deux cibles.
 - **Premier lancement** : une introduction de 3 écrans, rejouable depuis
   À propos, sur une base **vide** (plus de données de démonstration).
@@ -63,8 +63,10 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   À propos. La base démarre vide.
 - [x] **Undo uniformisé** : une seule annulation, partagée par l'accueil et le
   dossier.
-- [ ] **Feedback** sur déplacement / verrouillage.
-- [ ] **Réglages** : taille de texte, retour haptique / son.
+- [x] **Feedback** sur déplacement / verrouillage : un avis court après
+  l'action. Android garde son SnackBar, iOS a un toast qui s'efface seul.
+- [x] **Réglages** : quatre tailles de texte (appliquées par-dessus l'échelle du
+  système) et deux interrupteurs, retour haptique et son.
 - [ ] **Recherche** : historique + filtres (catégorie, favori, dates).
 
 ## 4. Cœur produit
