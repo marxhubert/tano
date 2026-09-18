@@ -17,7 +17,8 @@ services, not an old checklist. Review the iOS privacy manifest with native payl
 
 Local deletion cannot erase exports, other applications' copies or reports already
 sent. Known pre-release migration leftovers are discarded at database initialization.
-Encrypted orphan collection and exhaustive reset validation remain release work.
+Encrypted orphans are collected at startup from a complete reference snapshot.
+Exhaustive reset and native validation remain release work.
 
 Author attribution, bundle identifier, repository URLs and the public contact address
 identify the publisher. They are distinct from user data and intentionally public.

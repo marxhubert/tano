@@ -32,14 +32,16 @@ subjected to this policy: define forward migrations before the first public rele
 
 ## Remaining release work
 
-- Invalidate authentication on backgrounding and protect app-switcher previews.
-- Provide a non-destructive recovery screen for keystore/database failures.
+- Validate the implemented reauthentication guard and native app-switcher covers on devices.
+- Verify the retry screen with native keystore/database failures and key-loss scenarios.
 - Expire temporary external-viewer files safely; copies made by other apps are
   outside TanoNote's control. Startup/reset already clear local materialized files.
-- Collect encrypted orphans using active and trash references, with crash recovery.
+- Verify startup orphan collection on devices; full reset is still not one atomic operation.
 - Verify SQLCipher, backup/restore policies, key loss and native logs on real devices.
 - Inspect complete Sentry envelopes and consent withdrawal; native crashes remain
   disabled until equivalent filtering is validated.
 
 FFI tests do not validate native SQLCipher. A Pub advisory scan does not cover all
 native SDKs. Reference: [OWASP MASVS Storage](https://mas.owasp.org/MASVS/05-MASVS-STORAGE/).
+
+See [step 2](consolidation-step-2.md) for the implemented protections and their limits.

@@ -27,7 +27,7 @@ Import validates a bounded v1 archive before writing files. It resolves attachme
 name collisions and inserts notes in one SQLite transaction. Imported notes have no
 folder because v1 does not carry folder metadata. Existing IDs, including trash,
 are skipped. Filesystem and SQLite writes are not one atomic transaction: a crash
-can leave encrypted orphans for a future collector.
+can leave encrypted orphans, collected at the next startup before editing begins.
 
 ## Development data
 
@@ -41,8 +41,8 @@ versioned, tested migration and recovery policy for all future schema changes.
 
 Extract repeated commands (metadata, move, trash, restore, lock), enforce
 permissions and invariants, persist atomically, then notify UI. Handle failures
-without leaving optimistic state inconsistent. Add orphan collection and lifecycle
-lock invalidation. Persist tasks/projects before adding their screens.
+without leaving optimistic state inconsistent. Startup orphan collection, recovery UI and lifecycle locking are implemented;
+validate their native behavior before release. Persist tasks/projects before adding their screens.
 
 [PremiumAccess](premium.md) defines feature boundaries; no store adapter exists.
 [Collaboration](collaboration.md) is a design target. No signaling, CRDT or replication

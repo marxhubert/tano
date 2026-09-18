@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/folder.dart';
@@ -305,7 +306,26 @@ class _EditNoteState extends State<EditNote>
     return total > 0 ? _currentFindIndex + 1 : 0;
   }
 
-  void _saveNote() {
+  Future<bool> _tryStorage(Future<void> Function() operation) async {
+    try {
+      await operation();
+      return true;
+    } catch (_) {
+      if (mounted) {
+        await showAdaptiveAlert(
+          context: context,
+          title: AppText.tr('load_error_title'),
+          message: AppText.tr('storage_recovery_message'),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _persistSafely(Note note) =>
+      _tryStorage(() => _viewModel.persistSavedNote(note));
+
+  Future<void> _saveNote() async {
     _cleanupEmptyChecklists();
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
@@ -317,7 +337,10 @@ class _EditNoteState extends State<EditNote>
     )) {
       showAdaptiveNotice(context, AppText.tr('content_empty'));
     } else {
-      Navigator.pop(context, NoteAction(kind: NoteActionKind.save, note: note));
+      if (await _persistSafely(note) && mounted) {
+        // The caller reloads; never pop a draft before its write succeeds.
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -331,12 +354,17 @@ class _EditNoteState extends State<EditNote>
   /// Moves the note to [folderId], or back home when null.
   Future<void> _moveTo(String? folderId) async {
     if (!mounted) return;
+    final previousFolderId = _viewModel.folderId;
     _viewModel.folderId = folderId;
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
     );
-    await _viewModel.persistSavedNote(note);
+    if (!await _persistSafely(note)) {
+      _viewModel.folderId = previousFolderId;
+      if (mounted) setState(() {});
+      return;
+    }
     if (!mounted) return;
     setState(() {});
     await FeedbackController.instance.impact();
@@ -470,7 +498,7 @@ class _EditNoteState extends State<EditNote>
       title: _titleController.text,
       content: _contentController.text,
     );
-    await _viewModel.persistSavedNote(note);
+    if (!await _persistSafely(note)) return;
     // Keep the undo/redo history so the user can still revert to the
     // pre-save state after saving in place. Rebuild to gray the save button.
     if (mounted) setState(() {});
@@ -523,7 +551,7 @@ class _EditNoteState extends State<EditNote>
       title: _titleController.text,
       content: _contentController.text,
     )) {
-      await _viewModel.persistSavedNote(currentNote);
+      if (!await _persistSafely(currentNote)) return;
     }
     if (!mounted) return;
 
@@ -653,11 +681,13 @@ class _EditNoteState extends State<EditNote>
 
   /// Deletes an attached file and persists the updated note.
   Future<void> _removeAttachment(String name) async {
-    await _attachmentsStore.remove(name);
+    // Persist the reference removal first. Startup GC protects other notes,
+    // covers and trash that might share this file.
+    final previous = List<String>.of(_viewModel.attachments);
     final List<String> updated = List<String>.of(_viewModel.attachments)
       ..remove(name);
     _viewModel.setAttachments(updated);
-    await _persistAttachments();
+    if (!await _persistAttachments()) _viewModel.setAttachments(previous);
   }
 
   /// Opens an attached file with the system's default app.
@@ -668,12 +698,12 @@ class _EditNoteState extends State<EditNote>
 
   /// Persists the current note (including its attachments) immediately, so
   /// attachment changes are never lost.
-  Future<void> _persistAttachments() async {
+  Future<bool> _persistAttachments() async {
     final Note note = _viewModel.buildNote(
       title: _titleController.text,
       content: _contentController.text,
     );
-    await _viewModel.persistSavedNote(note);
+    return _persistSafely(note);
   }
 
   /// Runs when the content field loses focus: removes checklists left empty.
@@ -720,7 +750,7 @@ class _EditNoteState extends State<EditNote>
       );
       if (confirm == true) {
         final Note note = _viewModel.buildNote(title: title, content: content);
-        await _viewModel.persistSavedNote(note);
+        return _persistSafely(note);
       }
     }
 
@@ -732,7 +762,7 @@ class _EditNoteState extends State<EditNote>
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) {
+        if (didPop || isPrivacyBlocked(context)) {
           return;
         }
         final bool canLeave = await _onWillPopCallback();
@@ -762,386 +792,409 @@ class _EditNoteState extends State<EditNote>
             _contentController.text,
           );
 
-          return GestureDetector(
-            onTap: () {
-              FocusScope.of(context).unfocus();
-              _fabKey.currentState?.closeVerticalMenu();
-            },
-            child: PageScaffold(
-              scaffoldKey: _scaffoldState,
-              // The title and the metadata line share the content's inset, so
-              // the three lines of the editor start on the same axis.
-              titlePaddingLeft: appPaddingMedium,
-              backgroundColor: immersiveBg,
-              // Once the note is scrolled, show its title in the app bar and
-              // slide it to the left while the undo/redo/save actions appear.
-              alignAppBarTitleLeft: _hasEdits,
-              title: widget.add
-                  ? AppText.tr('add_note')
-                  : AppText.tr('edit_note'),
-              titleController: _titleController,
-              titleFocusNode: _titleFocus,
-              titleHint: AppText.tr('title_here'),
-              titleOnChanged: (String _) => _recordEdit(),
-              onPop: () async {
-                final bool willPop = await _onWillPopCallback();
-                if (willPop && context.mounted) {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  } else {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/home',
-                      (Route<dynamic> route) => false,
-                    );
-                  }
-                }
+          return ProtectedContent(
+            protected: _viewModel.isLocked || widget.authenticated,
+            child: GestureDetector(
+              onTap: () {
+                FocusScope.of(context).unfocus();
+                _fabKey.currentState?.closeVerticalMenu();
               },
-              actions: [
-                // In find mode only "Cancel" is shown: every other app-bar
-                // action (edits, theme toggle) is hidden.
-                if (_isFindMode)
-                  CancelButton(onPressed: _exitFindMode)
-                else ...[
-                  // While undo/redo/save are visible, the theme toggle steps
-                  // aside to leave them the room.
-                  if (_hasEdits) ...[
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Symbols.undo),
-                      tooltip: AppText.tr('undo'),
-                      onPressed: _canUndo ? _undo : null,
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Symbols.redo),
-                      tooltip: AppText.tr('redo'),
-                      onPressed: _canRedo ? _redo : null,
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Symbols.save, size: 21.0),
-                      tooltip: AppText.tr('save'),
-                      onPressed: isDirty ? _save : null,
-                    ),
-                  ] else
-                    const ThemeToggleButton(),
+              child: PageScaffold(
+                scaffoldKey: _scaffoldState,
+                // The title and the metadata line share the content's inset, so
+                // the three lines of the editor start on the same axis.
+                titlePaddingLeft: appPaddingMedium,
+                backgroundColor: immersiveBg,
+                // Once the note is scrolled, show its title in the app bar and
+                // slide it to the left while the undo/redo/save actions appear.
+                alignAppBarTitleLeft: _hasEdits,
+                title: widget.add
+                    ? AppText.tr('add_note')
+                    : AppText.tr('edit_note'),
+                titleController: _titleController,
+                titleFocusNode: _titleFocus,
+                titleHint: AppText.tr('title_here'),
+                titleOnChanged: (String _) => _recordEdit(),
+                onPop: () async {
+                  final bool willPop = await _onWillPopCallback();
+                  if (willPop && context.mounted) {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/home',
+                        (Route<dynamic> route) => false,
+                      );
+                    }
+                  }
+                },
+                actions: [
+                  // In find mode only "Cancel" is shown: every other app-bar
+                  // action (edits, theme toggle) is hidden.
+                  if (_isFindMode)
+                    CancelButton(onPressed: _exitFindMode)
+                  else ...[
+                    // While undo/redo/save are visible, the theme toggle steps
+                    // aside to leave them the room.
+                    if (_hasEdits) ...[
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Symbols.undo),
+                        tooltip: AppText.tr('undo'),
+                        onPressed: _canUndo ? _undo : null,
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Symbols.redo),
+                        tooltip: AppText.tr('redo'),
+                        onPressed: _canRedo ? _redo : null,
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Symbols.save, size: 21.0),
+                        tooltip: AppText.tr('save'),
+                        onPressed: isDirty ? _save : null,
+                      ),
+                    ] else
+                      const ThemeToggleButton(),
+                  ],
                 ],
-              ],
-              slivers: [
-                SliverPadding(
-                  // Same inset as the title line and as the text below it.
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: appPaddingMedium,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: appPaddingMedium,
-                      ),
-                      child: MetadataLine(
-                        leading: Wrap(
-                          alignment: WrapAlignment.start,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.0,
-                          runSpacing: 4.0,
-                          children: [
-                            if (_viewModel.isLocked) ...[
-                              metadataGlyph(context, Symbols.lock),
-                              _metadataSeparator(context),
-                            ],
-                            Text(
-                              formatNoteDate(
-                                _viewModel.selectedDate.toString(),
-                              ),
-                              style: metadataLineStyle(context),
-                            ),
-                            _metadataSeparator(context),
-                            Text(
-                              '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
-                              style: metadataLineStyle(context),
-                            ),
-                          ],
-                        ),
-                        trailing: <Widget>[
-                          if (contentChecklistCount > 0)
-                            metadataItem(
-                              context,
-                              Symbols.check_box,
-                              'x$contentChecklistCount',
-                            ),
-                          if (_contentController.linkCount > 0)
-                            metadataItem(
-                              context,
-                              Symbols.sticky_note_2,
-                              'x${_contentController.linkCount}',
-                            ),
-                          if (_viewModel.attachments.isNotEmpty)
-                            metadataItem(
-                              context,
-                              Symbols.attach_file,
-                              'x${_viewModel.attachments.length}',
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (_viewModel.coverImage != null)
-                  SliverToBoxAdapter(
-                    child: ManageableCover(
-                      name: _viewModel.coverImage!,
-                      // Full image, full width: the whole picture, no crop.
-                      fit: BoxFit.fitWidth,
-                      lightDimAlpha: 0.0,
-                      // Tighter gap above, under the metadata line.
-                      padding: const EdgeInsets.only(
-                        top: appPaddingSmall,
-                        bottom: appPaddingMedium,
-                      ),
-                      onRemove: _removeCoverImage,
-                    ),
-                  ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    12.0,
-                    0.0,
-                    12.0,
-                    _viewModel.attachments.isEmpty ? 100.0 : 12.0,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: Listener(
-                      onPointerDown: (_) {
-                        _contentWasFocusedOnPointerDown =
-                            _contentFocus.hasFocus;
-                      },
-                      child: TextField(
-                        key: _contentFieldKey,
-                        maxLines: null,
-                        minLines: 10,
-                        showCursor: true,
-                        autofocus: widget.add,
-                        focusNode: _contentFocus,
-                        controller: _contentController,
-                        textInputAction: TextInputAction.newline,
-                        textCapitalization: TextCapitalization.sentences,
-                        style: const TextStyle(
-                          fontSize: TanoText.label,
-                          height: 1.8,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: AppText.tr('add_note'),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        inputFormatters: <TextInputFormatter>[
-                          AutoTaskItemFormatter(),
-                        ],
-                        onChanged: (String content) {
-                          _getNoteContentLength(content);
-                          _recordEdit();
-                        },
-                        onTap: _handleContentTap,
-                      ),
-                    ),
-                  ),
-                ),
-                if (_viewModel.attachments.isNotEmpty)
+                slivers: [
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      appPaddingMedium,
-                      0.0,
-                      appPaddingMedium,
-                      100.0,
+                    // Same inset as the title line and as the text below it.
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: appPaddingMedium,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Divider(height: 1.0),
-                          const SizedBox(height: 14.0),
-                          Row(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: appPaddingMedium,
+                        ),
+                        child: MetadataLine(
+                          leading: Wrap(
+                            alignment: WrapAlignment.start,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8.0,
+                            runSpacing: 4.0,
                             children: [
-                              Icon(
-                                Symbols.attach_file,
-                                size: 18.0,
-                                color: mutedTextColor(context),
-                              ),
-                              const SizedBox(width: appPaddingTight),
+                              if (_viewModel.isLocked) ...[
+                                metadataGlyph(context, Symbols.lock),
+                                _metadataSeparator(context),
+                              ],
                               Text(
-                                AppText.tr(
-                                  _viewModel.attachments.length > 1
-                                      ? 'attachments'
-                                      : 'attachment',
+                                formatNoteDate(
+                                  _viewModel.selectedDate.toString(),
                                 ),
-                                style: TextStyle(
-                                  fontSize: TanoText.label,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor(context),
-                                ),
+                                style: metadataLineStyle(context),
+                              ),
+                              _metadataSeparator(context),
+                              Text(
+                                '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                                style: metadataLineStyle(context),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10.0),
-                          for (final String name in _viewModel.attachments)
-                            _AttachmentRow(
-                              name: name,
-                              onOpen: () => _openAttachment(name),
-                              onRemove: () => _removeAttachment(name),
-                            ),
-                        ],
+                          trailing: <Widget>[
+                            if (contentChecklistCount > 0)
+                              metadataItem(
+                                context,
+                                Symbols.check_box,
+                                'x$contentChecklistCount',
+                              ),
+                            if (_contentController.linkCount > 0)
+                              metadataItem(
+                                context,
+                                Symbols.sticky_note_2,
+                                'x${_contentController.linkCount}',
+                              ),
+                            if (_viewModel.attachments.isNotEmpty)
+                              metadataItem(
+                                context,
+                                Symbols.attach_file,
+                                'x${_viewModel.attachments.length}',
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-              ],
-              floatingActionButtonLocation: const FlushEndFabLocation(),
-              floatingActionButton: AppFab(
-                key: _fabKey,
-                isEditorMode: true,
-                isAddMode: widget.add,
-                isImportant: _viewModel.important,
-                isLocked: _viewModel.isLocked,
-                canLock: _canLock,
-                currentCategory: _viewModel.category,
-                currentNoteId: _viewModel.id,
-                currentFolderId: _viewModel.folderId,
-                isFindMode: _isFindMode,
-                findCurrent: _findCurrent,
-                findTotal: _findTotal,
-                controller: _findController,
-                focusNode: _findFocusNode,
-                onSearchChanged: _onFindChanged,
-                onFindPrev: _prevOccurrence,
-                onFindNext: _nextOccurrence,
-                onFindReset: _clearFind,
-                onSave: _saveNote,
-                onColorLens:
-                    () {}, // Placeholder for animation triggering if needed
-                onColorSelected: (String colorName) async {
-                  _cleanupEmptyChecklists();
-                  _viewModel.setCategory(colorName);
-                  // Automatic immediate save of the theme change if valid
-                  await _viewModel.autoSaveThemeOrBookmark(
-                    title: _titleController.text,
-                    content: _contentController.text,
-                  );
-                },
-                onMore: () {}, // Placeholder for animation triggering if needed
-                onImageSelected: () {
-                  _selectCoverImage();
-                  _fabKey.currentState?.closeVerticalMenu();
-                },
-                onChecklistSelected: () {
-                  _insertChecklist();
-                  _fabKey.currentState?.closeVerticalMenu();
-                },
-                onLinkSelected: () {
-                  _fabKey.currentState?.closeVerticalMenu();
-                },
-                onNoteLinkSelected: (Note selectedNote) {
-                  final String linkPlaceholder =
-                      "[[${selectedNote.id}:${selectedNote.title}]]";
-                  final int cursorPosition = _contentController
-                      .snapPositionOutOfLink(
-                        _contentController.selection.baseOffset,
-                      );
-                  final String currentText = _contentController.text;
-
-                  String newText;
-                  int newCursorPosition;
-
-                  // If no cursor (keyboard closed), insert at the beginning
-                  if (cursorPosition <= 0) {
-                    final String separator = currentText.isEmpty ? '' : '\n';
-                    newText = '$linkPlaceholder $separator$currentText';
-                    newCursorPosition = linkPlaceholder.length + 1;
-                  } else {
-                    final String before = currentText.substring(
-                      0,
-                      cursorPosition,
-                    );
-                    final String after = currentText.substring(cursorPosition);
-                    newText = '$before$linkPlaceholder $after';
-                    newCursorPosition =
-                        cursorPosition + linkPlaceholder.length + 1;
-                  }
-
-                  _contentController.value = TextEditingValue(
-                    text: newText,
-                    selection: TextSelection.collapsed(
-                      offset: newCursorPosition,
+                  if (_viewModel.coverImage != null)
+                    SliverToBoxAdapter(
+                      child: ManageableCover(
+                        name: _viewModel.coverImage!,
+                        // Full image, full width: the whole picture, no crop.
+                        fit: BoxFit.fitWidth,
+                        lightDimAlpha: 0.0,
+                        // Tighter gap above, under the metadata line.
+                        padding: const EdgeInsets.only(
+                          top: appPaddingSmall,
+                          bottom: appPaddingMedium,
+                        ),
+                        onRemove: _removeCoverImage,
+                      ),
                     ),
-                  );
-                  _getNoteContentLength(newText);
-                  // A note-link insertion is a real edit: mark the note dirty.
-                  _recordEdit();
-                },
-                onAttachmentSelected: () {
-                  _fabKey.currentState?.closeVerticalMenu();
-                  _addAttachment();
-                },
-                onImportantSelected: () async {
-                  _viewModel.toggleImportant();
-                  await _viewModel.autoSaveThemeOrBookmark(
-                    title: _titleController.text,
-                    content: _contentController.text,
-                  );
-                },
-                onFindSelected: _enterFindMode,
-                onMoveTo: _moveTo,
-                onLockSelected: () async {
-                  // Locking takes effect immediately (there is no prompt).
-                  // Unlocking shows the system prompt, so close the keyboard
-                  // first.
-                  if (_viewModel.isLocked) {
-                    FocusScope.of(context).unfocus();
-                    await Future.delayed(const Duration(milliseconds: 200));
-                    if (!mounted) return;
-                  }
-
-                  final LockToggleResult result = await _viewModel.toggleLock();
-                  // The gesture lives in a builder, so guard its own context.
-                  if (!context.mounted) return;
-
-                  if (result == LockToggleResult.unavailable) {
-                    // No system credential: refuse rather than lock the note
-                    // forever.
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      12.0,
+                      0.0,
+                      12.0,
+                      _viewModel.attachments.isEmpty ? 100.0 : 12.0,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: Listener(
+                        onPointerDown: (_) {
+                          _contentWasFocusedOnPointerDown =
+                              _contentFocus.hasFocus;
+                        },
+                        child: TextField(
+                          key: _contentFieldKey,
+                          maxLines: null,
+                          minLines: 10,
+                          showCursor: true,
+                          autofocus: widget.add,
+                          focusNode: _contentFocus,
+                          controller: _contentController,
+                          textInputAction: TextInputAction.newline,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: const TextStyle(
+                            fontSize: TanoText.label,
+                            height: 1.8,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: AppText.tr('add_note'),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          inputFormatters: <TextInputFormatter>[
+                            AutoTaskItemFormatter(),
+                          ],
+                          onChanged: (String content) {
+                            _getNoteContentLength(content);
+                            _recordEdit();
+                          },
+                          onTap: _handleContentTap,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_viewModel.attachments.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        appPaddingMedium,
+                        0.0,
+                        appPaddingMedium,
+                        100.0,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(height: 1.0),
+                            const SizedBox(height: 14.0),
+                            Row(
+                              children: [
+                                Icon(
+                                  Symbols.attach_file,
+                                  size: 18.0,
+                                  color: mutedTextColor(context),
+                                ),
+                                const SizedBox(width: appPaddingTight),
+                                Text(
+                                  AppText.tr(
+                                    _viewModel.attachments.length > 1
+                                        ? 'attachments'
+                                        : 'attachment',
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: TanoText.label,
+                                    fontWeight: FontWeight.w600,
+                                    color: primaryTextColor(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10.0),
+                            for (final String name in _viewModel.attachments)
+                              _AttachmentRow(
+                                name: name,
+                                onOpen: () =>
+                                    _tryStorage(() => _openAttachment(name)),
+                                onRemove: () => _removeAttachment(name),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+                floatingActionButtonLocation: const FlushEndFabLocation(),
+                floatingActionButton: AppFab(
+                  key: _fabKey,
+                  isEditorMode: true,
+                  isAddMode: widget.add,
+                  isImportant: _viewModel.important,
+                  isLocked: _viewModel.isLocked,
+                  canLock: _canLock,
+                  currentCategory: _viewModel.category,
+                  currentNoteId: _viewModel.id,
+                  currentFolderId: _viewModel.folderId,
+                  isFindMode: _isFindMode,
+                  findCurrent: _findCurrent,
+                  findTotal: _findTotal,
+                  controller: _findController,
+                  focusNode: _findFocusNode,
+                  onSearchChanged: _onFindChanged,
+                  onFindPrev: _prevOccurrence,
+                  onFindNext: _nextOccurrence,
+                  onFindReset: _clearFind,
+                  onSave: _saveNote,
+                  onColorLens:
+                      () {}, // Placeholder for animation triggering if needed
+                  onColorSelected: (String colorName) async {
+                    _cleanupEmptyChecklists();
+                    _viewModel.setCategory(colorName);
+                    // Automatic immediate save of the theme change if valid
+                    if (!await _tryStorage(
+                      () => _viewModel.autoSaveThemeOrBookmark(
+                        title: _titleController.text,
+                        content: _contentController.text,
+                      ),
+                    )) {
+                      return;
+                    }
+                  },
+                  onMore:
+                      () {}, // Placeholder for animation triggering if needed
+                  onImageSelected: () {
+                    _tryStorage(_selectCoverImage);
                     _fabKey.currentState?.closeVerticalMenu();
-                    await showAdaptiveAlert(
-                      context: context,
-                      title: AppText.tr('lock_unavailable_title'),
-                      message: AppText.tr('lock_requires_device_lock'),
-                    );
-                    return;
-                  }
-                  // A cancelled authentication leaves the menu open so the
-                  // user can retry.
-                  if (result == LockToggleResult.cancelled) return;
+                  },
+                  onChecklistSelected: () {
+                    _insertChecklist();
+                    _fabKey.currentState?.closeVerticalMenu();
+                  },
+                  onLinkSelected: () {
+                    _fabKey.currentState?.closeVerticalMenu();
+                  },
+                  onNoteLinkSelected: (Note selectedNote) {
+                    final String linkPlaceholder =
+                        "[[${selectedNote.id}:${selectedNote.title}]]";
+                    final int cursorPosition = _contentController
+                        .snapPositionOutOfLink(
+                          _contentController.selection.baseOffset,
+                        );
+                    final String currentText = _contentController.text;
 
-                  // Persist silently, exactly like the bookmark: the lock is
-                  // effective immediately, no explicit save is needed.
-                  await _viewModel.autoSaveThemeOrBookmark(
-                    title: _titleController.text,
-                    content: _contentController.text,
-                  );
-                  _fabKey.currentState?.closeVerticalMenu();
-                  await FeedbackController.instance.success();
-                  if (!context.mounted) return;
-                  await showLockToast(
-                    context,
-                    locked: result == LockToggleResult.locked,
-                    folder: false,
-                  );
-                },
-                onDeleteSelected: () async {
-                  final bool? confirmDeletion = await getConfirmation(
-                    context: context,
-                    actionTitle: AppText.tr('delete_note'),
-                    action: AppText.tr('delete'),
-                  );
-                  if (confirmDeletion == true) {
-                    _deleteNote();
-                  }
-                },
+                    String newText;
+                    int newCursorPosition;
+
+                    // If no cursor (keyboard closed), insert at the beginning
+                    if (cursorPosition <= 0) {
+                      final String separator = currentText.isEmpty ? '' : '\n';
+                      newText = '$linkPlaceholder $separator$currentText';
+                      newCursorPosition = linkPlaceholder.length + 1;
+                    } else {
+                      final String before = currentText.substring(
+                        0,
+                        cursorPosition,
+                      );
+                      final String after = currentText.substring(
+                        cursorPosition,
+                      );
+                      newText = '$before$linkPlaceholder $after';
+                      newCursorPosition =
+                          cursorPosition + linkPlaceholder.length + 1;
+                    }
+
+                    _contentController.value = TextEditingValue(
+                      text: newText,
+                      selection: TextSelection.collapsed(
+                        offset: newCursorPosition,
+                      ),
+                    );
+                    _getNoteContentLength(newText);
+                    // A note-link insertion is a real edit: mark the note dirty.
+                    _recordEdit();
+                  },
+                  onAttachmentSelected: () {
+                    _fabKey.currentState?.closeVerticalMenu();
+                    _tryStorage(_addAttachment);
+                  },
+                  onImportantSelected: () async {
+                    _viewModel.toggleImportant();
+                    if (!await _tryStorage(
+                      () => _viewModel.autoSaveThemeOrBookmark(
+                        title: _titleController.text,
+                        content: _contentController.text,
+                      ),
+                    )) {
+                      return;
+                    }
+                  },
+                  onFindSelected: _enterFindMode,
+                  onMoveTo: _moveTo,
+                  onLockSelected: () async {
+                    // Locking takes effect immediately (there is no prompt).
+                    // Unlocking shows the system prompt, so close the keyboard
+                    // first.
+                    if (_viewModel.isLocked) {
+                      FocusScope.of(context).unfocus();
+                      await Future.delayed(const Duration(milliseconds: 200));
+                      if (!mounted) return;
+                    }
+
+                    final previousLock = _viewModel.isLocked;
+                    final LockToggleResult result = await _viewModel
+                        .toggleLock();
+                    // The gesture lives in a builder, so guard its own context.
+                    if (!context.mounted) return;
+
+                    if (result == LockToggleResult.unavailable) {
+                      // No system credential: refuse rather than lock the note
+                      // forever.
+                      _fabKey.currentState?.closeVerticalMenu();
+                      await showAdaptiveAlert(
+                        context: context,
+                        title: AppText.tr('lock_unavailable_title'),
+                        message: AppText.tr('lock_requires_device_lock'),
+                      );
+                      return;
+                    }
+                    // A cancelled authentication leaves the menu open so the
+                    // user can retry.
+                    if (result == LockToggleResult.cancelled) return;
+
+                    // Persist silently, exactly like the bookmark: the lock is
+                    // effective immediately, no explicit save is needed.
+                    if (!await _tryStorage(
+                      () => _viewModel.autoSaveThemeOrBookmark(
+                        title: _titleController.text,
+                        content: _contentController.text,
+                      ),
+                    )) {
+                      _viewModel.isLocked = previousLock;
+                      if (mounted) setState(() {});
+                      return;
+                    }
+                    _fabKey.currentState?.closeVerticalMenu();
+                    await FeedbackController.instance.success();
+                    if (!context.mounted) return;
+                    await showLockToast(
+                      context,
+                      locked: result == LockToggleResult.locked,
+                      folder: false,
+                    );
+                  },
+                  onDeleteSelected: () async {
+                    final bool? confirmDeletion = await getConfirmation(
+                      context: context,
+                      actionTitle: AppText.tr('delete_note'),
+                      action: AppText.tr('delete'),
+                    );
+                    if (confirmDeletion == true) {
+                      _deleteNote();
+                    }
+                  },
+                ),
               ),
             ),
           );

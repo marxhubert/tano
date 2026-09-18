@@ -27,10 +27,10 @@ class EditNoteViewModel extends ChangeNotifier {
     required this.repository,
     required this.add,
     this.initialNote,
-  })  : id = add ? const Uuid().v4() : (initialNote?.id ?? ''),
-        selectedDate = add
-            ? DateTime.now()
-            : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
+  }) : id = add ? const Uuid().v4() : (initialNote?.id ?? ''),
+       selectedDate = add
+           ? DateTime.now()
+           : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
     important = initialNote?.important ?? false;
     category = initialNote?.category ?? Note.defaultCategory;
     isDeleted = initialNote?.isDeleted ?? false;
@@ -64,7 +64,10 @@ class EditNoteViewModel extends ChangeNotifier {
   /// Loads the note data from the repository (refresh).
   Future<void> load() async {
     final notes = await repository.loadNotes();
-    final note = notes.firstWhere((n) => n.id == id, orElse: () => _initialNote);
+    final note = notes.firstWhere(
+      (n) => n.id == id,
+      orElse: () => _initialNote,
+    );
     _initialNote = note;
     category = note.category;
     important = note.important;
@@ -174,16 +177,20 @@ class EditNoteViewModel extends ChangeNotifier {
       content: _initialNote.content,
     );
     return current.title != initial.title ||
-          current.content != initial.content ||
-          important != _initialNote.important ||
-          category != _initialNote.category ||
-          isLocked != _initialNote.isLocked ||
-          coverImage != _initialNote.coverImage;
+        current.content != initial.content ||
+        important != _initialNote.important ||
+        category != _initialNote.category ||
+        isLocked != _initialNote.isLocked ||
+        coverImage != _initialNote.coverImage ||
+        folderId != _initialNote.folderId ||
+        !listEquals(attachments, _initialNote.attachments);
   }
 
   /// Business rule: a note is savable when at least its title or its content is not blank.
   bool isValid({required String title, required String content}) {
-    return title.trim().isNotEmpty || content.trim().isNotEmpty || coverImage != null;
+    return title.trim().isNotEmpty ||
+        content.trim().isNotEmpty ||
+        coverImage != null;
   }
 
   /// Persists a saved note.

@@ -180,6 +180,10 @@ class AppText {
     'import_clear_warning':
         'Cleartext exports are not protected. Keep them safe.',
     'quit_app': 'Quit',
+    'privacy_screen_locked':
+        "This content is locked. Authenticate to continue.",
+    'storage_recovery_message':
+        "Storage is temporarily unavailable. Unlock your device, check its free space, then retry. Your existing data will not be reset.",
     'load_error_title': 'Unable to load your notes',
     'load_error_message':
         'Something went wrong while opening the app. You can try again.',
@@ -418,6 +422,10 @@ class AppText {
     'import_clear_warning':
         "Les exports en clair ne sont pas protégés. Gardez-les en sécurité.",
     'quit_app': 'Quitter',
+    'privacy_screen_locked':
+        "Ce contenu est verrouillé. Authentifiez-vous pour continuer.",
+    'storage_recovery_message':
+        "Le stockage est indisponible. Déverrouillez l’appareil, vérifiez l’espace libre, puis réessayez. Vos données existantes ne seront pas réinitialisées.",
     'load_error_title': 'Impossible de charger vos notes',
     'load_error_message':
         "Une erreur est survenue à l'ouverture de l'application. Vous pouvez réessayer.",
@@ -658,6 +666,10 @@ class AppText {
     'import_clear_warning':
         'Tsy voaaro ny fanondranana mazava. Tano tsara izy ireo.',
     'quit_app': 'Hiala',
+    'privacy_screen_locked':
+        "Voahidy ity votoaty ity. Hamarino ny maha-ianao anao vao manohy.",
+    'storage_recovery_message':
+        "Tsy azo ampiasaina ny fitahirizana. Vohay ny fitaovana, jereo ny toerana malalaka, ary andramo indray. Tsy hofafana ny angonao.",
     'load_error_title': 'Tsy afaka naka ny naoty',
     'load_error_message':
         'Nisy olana teo am-panokafana ny rindranasa. Afaka manandrana indray ianao.',

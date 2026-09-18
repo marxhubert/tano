@@ -28,3 +28,12 @@ references, generate and inspect PNGs before accepting them.
 Initial 18 September consolidation: 316 passing tests including 20 goldens. Follow-up on 19 September: **320 tests pass**, including 20 goldens,
 with clean static analysis. The command output is the source of truth for counts. Native builds, SQLCipher/backup verification and captured
 Sentry envelopes are separate checks, not implied by Dart test success.
+
+## Step 2 validation
+
+333 tests pass, including 20 unchanged goldens. Static analysis is clean.
+Debug Android and unsigned debug iOS builds succeed. New scenarios cover lifecycle
+privacy, protected drafts/system Back, OS credential return, startup retries and
+partial initialization, unreadable preferences, save failure/retry, and orphan
+collection with shared/trash/corrupt references. See [step 2](consolidation-step-2.md).
+These builds do not replace real-device security checks.

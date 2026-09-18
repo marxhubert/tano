@@ -1,3 +1,8 @@
+import 'package:tano/features/splash/startup_gate.dart';
+import 'package:tano/shared/widgets/privacy_guard.dart';
+import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/services/attachment_maintenance.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/onboarding/onboarding_page.dart';
@@ -17,8 +22,12 @@ import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/core/services/crash_reports.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(StartupGate(initialize: initializeApplication, child: const Tano()));
+}
+
+Future<void> initializeApplication() async {
   await setupServiceLocator();
   await Future.wait([
     LocaleController.instance.init(),
@@ -30,13 +39,16 @@ void main() async {
     SearchHistoryController.instance.init(),
   ]);
 
-  // Crash reports are opt-in: without the user's consent the SDK is not even
-  // initialised, and nothing leaves the device. See docs/observability.md.
-  if (await CrashReports.hasConsent()) {
-    await CrashReports.start(appRunner: () => runApp(const Tano()));
-  } else {
-    runApp(const Tano());
+  final repository = getIt<NotesRepository>();
+  await repository.loadNotes();
+  if (repository is AttachmentReferenceSource) {
+    await AttachmentMaintenance(
+      source: repository as AttachmentReferenceSource,
+      store: getIt<AttachmentsStore>(),
+    ).collectAtStartup();
   }
+  // No routes or diagnostics before storage and consent are available.
+  if (await CrashReports.hasConsent()) await CrashReports.start();
 }
 
 class Tano extends StatelessWidget {
@@ -100,7 +112,7 @@ class Tano extends StatelessWidget {
                   system.scale(1.0) * TextScaleController.instance.scale,
                 ),
               ),
-              child: child ?? const SizedBox.shrink(),
+              child: PrivacyGuard(child: child ?? const SizedBox.shrink()),
             );
           },
           navigatorObservers: <NavigatorObserver>[routeObserver],
