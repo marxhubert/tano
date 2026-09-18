@@ -5,7 +5,7 @@ import 'package:tano/shared/widgets/theme.dart';
 /// watermark behind the message rather than as an object of their own.
 const double _emptyArtOpacity = 0.5;
 
-/// The empty-state illustrations.
+/// The stock illustrations: the empty screens, then the introduction.
 ///
 /// Drawn by Ghozi Muhtarom and published on Flaticon, which is why they are
 /// credited in CREDITS.md, at the root of the repository. Do not remove the
@@ -15,6 +15,12 @@ class EmptyArt {
   static const String folder = 'assets/icons/Ghozi_Muhtarom/empty-folder.png';
   static const String bin = 'assets/icons/Ghozi_Muhtarom/recycle-bin.png';
   static const String search = 'assets/icons/Ghozi_Muhtarom/empty.png';
+
+  // The three introduction screens, in the order they are shown.
+  static const String addToBox = 'assets/icons/Ghozi_Muhtarom/add-to-box.png';
+  static const String fileLock = 'assets/icons/Ghozi_Muhtarom/file-lock.png';
+  static const String organizedFolder =
+      'assets/icons/Ghozi_Muhtarom/organized-folder.png';
 }
 
 /// The one way to say "there is nothing here".

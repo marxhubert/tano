@@ -31,11 +31,15 @@ import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key, this.initialNotes});
+  const Home({super.key, this.initialNotes, this.openEditorOnLaunch = false});
 
   /// Notes already loaded by the splash screen. When null (legacy
   /// navigation flows), the view model falls back to loading them.
   final List<Note>? initialNotes;
+
+  /// Opens the editor as soon as the page appears, when there is no note yet.
+  /// The introduction sets it, so its last page does create the first note.
+  final bool openEditorOnLaunch;
 
   @override
   HomeState createState() {
@@ -75,6 +79,11 @@ class HomeState extends State<Home> with RouteAware {
     }
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
+    if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openNoteEditor(add: true, note: Note());
+      });
+    }
   }
 
   @override

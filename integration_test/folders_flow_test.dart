@@ -46,8 +46,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   Future<void> deleteNotePermanently(String id) async {}
   @override
   Future<void> deleteAllNotes() async {}
-  @override
-  Future<void> seedFixtures() async {}
 
   @override
   Future<List<Folder>> loadFolders() async => folders;

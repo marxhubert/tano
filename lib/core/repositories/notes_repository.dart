@@ -32,7 +32,4 @@ abstract class NotesRepository {
 
   /// Deletes all notes from storage.
   Future<void> deleteAllNotes();
-
-  /// Resets the database and seeds it with demo fixtures.
-  Future<void> seedFixtures();
 }

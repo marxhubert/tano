@@ -161,7 +161,6 @@ class AppText {
     'option_export_before_reset': 'Export my data first',
     'desc_export_before_reset':
         'Strongly recommended: deleted notes cannot be recovered. Export a copy first.',
-    'developer_reset': 'Developer reset',
     'export_data': 'Export data',
     'import_data': 'Import data',
     'export_action': 'Export',
@@ -305,6 +304,21 @@ class AppText {
     'lang_fr': 'FRENCH',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Delete photo',
+    'developer_reset': 'Developer reset',
+    // Introduction
+    'onboarding_skip': 'Skip',
+    'onboarding_next': 'Next',
+    'onboarding_start': 'Get started',
+    'onboarding_title_1': 'Every note in one place',
+    'onboarding_body_1':
+        'Write on the go. TanoNote works with no connection and keeps everything encrypted on your phone. No account, no tracking.',
+    'onboarding_title_2': 'Lock what matters',
+    'onboarding_body_2':
+        'Secure a note with your code or your fingerprint: it opens only once you are recognised.',
+    'onboarding_title_3': 'In order, with a way back',
+    'onboarding_body_3':
+        'Sort your notes into folders, and find everything you deleted in the trash — with one tap to undo.',
+    'onboarding_replay': 'Replay the introduction',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -359,7 +373,6 @@ class AppText {
     'option_export_before_reset': 'Exporter mes données avant',
     'desc_export_before_reset':
         'Fortement recommandé : une fois supprimées, vos notes ne peuvent pas être récupérées. Exportez-en une copie avant.',
-    'developer_reset': 'Réinitialisation développeur',
     'export_data': 'Exporter les données',
     'import_data': 'Importer des données',
     'export_action': 'Exporter',
@@ -504,6 +517,21 @@ class AppText {
     'lang_fr': 'FRANÇAIS',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Supprimer la photo',
+    'developer_reset': 'Réinitialisation développeur',
+    // Introduction
+    'onboarding_skip': 'Passer',
+    'onboarding_next': 'Suivant',
+    'onboarding_start': 'Commencer',
+    'onboarding_title_1': 'Toutes vos notes au même endroit',
+    'onboarding_body_1':
+        'Écrivez où que vous soyez. TanoNote fonctionne sans connexion et garde tout chiffré sur votre téléphone. Aucun compte, aucun suivi.',
+    'onboarding_title_2': 'Verrouillez ce qui compte',
+    'onboarding_body_2':
+        "Protégez une note par code ou par empreinte : elle ne s'ouvre qu'après vérification.",
+    'onboarding_title_3': "De l'ordre, et un retour en arrière",
+    'onboarding_body_3':
+        'Classez vos notes dans des dossiers et retrouvez dans la corbeille tout ce que vous supprimez — avec une annulation en un geste.',
+    'onboarding_replay': "Revoir l'introduction",
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -558,7 +586,6 @@ class AppText {
     'option_export_before_reset': 'Avoahy aloha ny angona',
     'desc_export_before_reset':
         'Tena atolotra: tsy azo averina ny naoty voafafa. Avoahy aloha ny kopian\'izy ireo.',
-    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
     'export_data': 'Avoaka ny angona',
     'import_data': 'Hampiditra angona',
     'export_action': 'Avoaka',
@@ -703,6 +730,21 @@ class AppText {
     'lang_fr': 'FRANTSAY',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Hamafa ny sary',
+    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    // Fampidirana
+    'onboarding_skip': 'Hitsambikina',
+    'onboarding_next': 'Manaraka',
+    'onboarding_start': 'Hanomboka',
+    'onboarding_title_1': "Ny naotinao rehetra amin'ny toerana iray",
+    'onboarding_body_1':
+        "Manorata na aiza na aiza ianao. Miasa tsy misy fifandraisana ny TanoNote ary mitazona ny zava-drehetra voaaro ao amin'ny findainao. Tsy misy kaonty, tsy misy fanaraha-maso.",
+    'onboarding_title_2': 'Hidio ny tena zava-dehibe',
+    'onboarding_body_2':
+        "Arovy amin'ny kaody na ny dian-tanana ny naoty iray: tsy misokatra izy raha tsy efa voamarina ianao.",
+    'onboarding_title_3': 'Fandaminana sy fiverenana',
+    'onboarding_body_3':
+        "Alamino ao anaty rakitra ny naotinao ary hita ao amin'ny fitoeram-pako izay rehetra voafafa — misy fanafoanana amin'ny tsindry iray.",
+    'onboarding_replay': 'Avereno jerena ny fanazavana',
   };
 
   /// Returns the string associated with [key] in the current language,

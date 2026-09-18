@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tano/features/notes/home_page.dart';
+import 'package:tano/features/onboarding/onboarding_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/features/lab/lab_page.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/onboarding_controller.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -19,6 +21,7 @@ void main() async {
     LocaleController.instance.init(),
     ThemeController.instance.init(),
     LanguageReferencesController.instance.init(),
+    OnboardingController.instance.init(),
   ]);
 
   // Crash reports are opt-in: without the user's consent the SDK is not even
@@ -81,7 +84,11 @@ class Tano extends StatelessWidget {
           ),
           themeMode: themeMode ?? ThemeController.instance.themeMode,
           navigatorObservers: <NavigatorObserver>[routeObserver],
-          home: const SplashScreen(),
+          // The introduction opens only on the very first run; after that the
+          // splash screen loads the notes and hands them to the home.
+          home: OnboardingController.instance.seen
+              ? const SplashScreen()
+              : const OnboardingPage(),
           routes: <String, WidgetBuilder>{
             '/home': (BuildContext context) => const Home(),
             '/settings': (BuildContext context) => const SettingsPage(),
