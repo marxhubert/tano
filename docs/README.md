@@ -21,6 +21,7 @@ Deux familles de documents.
 |---|---|
 | [Feuille de route](./roadmap.md) | Où on en est, ce qui vient ensuite |
 | [Fiches store](./store-listing.md) | Textes à coller dans les deux consoles, URL de la politique |
+| [Livraison](./livraison.md) | La recette de mise en ligne : version, keystore, build, tag |
 | [Backlog](./backlog.md) | Idées non planifiées |
 
 ## Conventions

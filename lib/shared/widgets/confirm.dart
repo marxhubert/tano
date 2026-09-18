@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-
 /// Shows an adaptive confirmation dialog (Material on Android, Cupertino on iOS).
 Future<bool?> getConfirmation({
   required BuildContext context,
@@ -13,11 +12,17 @@ Future<bool?> getConfirmation({
 }) async {
   final ThemeData theme = Theme.of(context);
   final bool isSave = action.toLowerCase() == AppText.tr('save').toLowerCase();
+  // Compared against the translated words: a dialog must never change colour
+  // with the language. This used to test actionTitle.contains('reset'), and
+  // the French word does not contain it: the reset action came out in the
+  // French and in Malagasy.
+  final String lowered = action.toLowerCase();
   final bool isDestructive =
-      action.toLowerCase() == AppText.tr('delete').toLowerCase() ||
-          actionTitle.toLowerCase().contains('reset');
+      lowered == AppText.tr('delete').toLowerCase() ||
+      lowered == AppText.tr('reset').toLowerCase();
 
-  if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
+  if (theme.platform == TargetPlatform.iOS ||
+      theme.platform == TargetPlatform.macOS) {
     return await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -31,7 +36,7 @@ Future<bool?> getConfirmation({
               isSave ? AppText.tr('quit') : AppText.tr('cancel'),
               style: TextStyle(
                 color: isSave ? Colors.red : primaryTextColor(context),
-                fontSize: 17.0,
+                fontSize: TanoText.listTitle,
               ),
             ),
           ),
@@ -43,7 +48,7 @@ Future<bool?> getConfirmation({
               action,
               style: TextStyle(
                 color: isDestructive ? Colors.red : tanoTeal,
-                fontSize: 17.0,
+                fontSize: TanoText.listTitle,
                 fontWeight: isDestructive ? FontWeight.normal : FontWeight.bold,
               ),
             ),
@@ -65,14 +70,14 @@ Future<bool?> getConfirmation({
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             (isSave ? AppText.tr('quit') : AppText.tr('cancel')).toUpperCase(),
-            style: TextStyle(color: isSave ? Colors.red : Colors.blue),
+            style: TextStyle(color: isSave ? Colors.red : tanoTeal),
           ),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
           child: Text(
             action.toUpperCase(),
-            style: TextStyle(color: isSave ? Colors.blue : Colors.red),
+            style: TextStyle(color: isSave ? tanoTeal : Colors.red),
           ),
         ),
       ],
@@ -90,7 +95,7 @@ Future<void> showAdaptiveAlert({
   final ThemeData theme = Theme.of(context);
   final bool isApple =
       theme.platform == TargetPlatform.iOS ||
-          theme.platform == TargetPlatform.macOS;
+      theme.platform == TargetPlatform.macOS;
 
   if (isApple) {
     await showCupertinoDialog<void>(
@@ -135,9 +140,7 @@ Future<void> showAdaptiveNotice(BuildContext context, String message) async {
     await showAdaptiveAlert(context: context, title: message);
     return;
   }
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(message)));
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// Shows a short message with a single action (e.g. "Undo"). Android gets a
@@ -232,8 +235,9 @@ Future<String?> showAdaptivePrompt({
   TextInputType? keyboardType,
   String? confirmLabel,
 }) async {
-  final TextEditingController controller =
-      TextEditingController(text: initialValue ?? '');
+  final TextEditingController controller = TextEditingController(
+    text: initialValue ?? '',
+  );
   final String confirm = confirmLabel ?? AppText.tr('save');
 
   return showPlatformDialog<String>(
@@ -247,7 +251,7 @@ Future<String?> showAdaptivePrompt({
               keyboardType: keyboardType,
               maxLength: maxLength,
               placeholder: hint,
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(appPaddingTight),
             )
           : TextField(
               controller: controller,
@@ -260,10 +264,7 @@ Future<String?> showAdaptivePrompt({
       final Widget content = message == null
           // A small gap between the title and the field, so they do not look
           // glued together when there is no message.
-          ? Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: field,
-            )
+          ? Padding(padding: const EdgeInsets.only(top: appPaddingTight), child: field)
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: isApple
@@ -288,13 +289,11 @@ Future<String?> showAdaptivePrompt({
         isApple
             ? CupertinoDialogAction(
                 isDefaultAction: true,
-                onPressed: () =>
-                    Navigator.pop(dialogContext, controller.text),
+                onPressed: () => Navigator.pop(dialogContext, controller.text),
                 child: Text(confirm),
               )
             : TextButton(
-                onPressed: () =>
-                    Navigator.pop(dialogContext, controller.text),
+                onPressed: () => Navigator.pop(dialogContext, controller.text),
                 child: Text(confirm),
               ),
       ];

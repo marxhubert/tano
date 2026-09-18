@@ -84,7 +84,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         return _VerticalMenuItem(
           icon: Symbols.sticky_note_2,
           iconSize: 20.0,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
@@ -129,7 +129,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.home,
           iconSize: 20.0,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           maxLines: 2,
           label: AppText.tr('no_folder'),
           onTap: () {
@@ -141,7 +141,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           _VerticalMenuItem(
             icon: Symbols.folder,
             iconSize: 20.0,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             maxLines: 2,
             label: folder.name,
             onTap: () {
@@ -178,7 +178,7 @@ mixin _FabMenusMixin on _FabStateMixin {
               ? ListSortCriteria.title
               : ListSortCriteria.date;
         }),
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(appPaddingTight),
         constraints: const BoxConstraints(),
       ),
       IconButton(
@@ -189,7 +189,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           color: Colors.white,
         ),
         onPressed: () => setState(() => _isAscending = !_isAscending),
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(appPaddingTight),
         constraints: const BoxConstraints(),
       ),
     ];
@@ -197,14 +197,14 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   Widget _buildColorMenu(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(sectionGap),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(color: Colors.white, fontSize: 17),
+            style: const TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -362,6 +362,8 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
+        // Nothing to link to when this is the only note.
+        enabled: !_notesLoaded || _availableNotes.isNotEmpty,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
           widget.onLinkSelected?.call();
@@ -406,8 +408,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.delete,
           label: capitalizedDelete,
-          iconColor: const Color(0xFFFF8A80),
-          textColor: const Color(0xFFFF8A80),
+          iconColor: TanoStates.error.dark,
+          textColor: TanoStates.error.dark,
           onTap: widget.onDeleteSelected,
         ),
       ]);
@@ -429,18 +431,22 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
+        // Nowhere to move to when the app holds no folder at all.
+        enabled: !_foldersLoaded || _hasFolders,
         onTap: () => _openMoveMenu(FabVerticalMenu.more),
       ),
       _VerticalMenuItem(
         icon: widget.isLocked ? Symbols.lock_open : Symbols.lock,
-        label: widget.isLocked ? AppText.tr('option_unlock') : AppText.tr('option_lock'),
+        label: widget.isLocked
+            ? AppText.tr('option_unlock')
+            : AppText.tr('option_lock'),
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(
         icon: Symbols.delete,
         label: capitalizedDelete,
-        iconColor: const Color(0xFFFF8A80),
-        textColor: const Color(0xFFFF8A80),
+        iconColor: TanoStates.error.dark,
+        textColor: TanoStates.error.dark,
         onTap: widget.onDeleteSelected,
       ),
     ]);
@@ -448,7 +454,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   Widget _buildVerticalList(List<Widget> children) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(appPaddingWide),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

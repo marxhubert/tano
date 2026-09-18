@@ -59,6 +59,11 @@ lib/generated_plugin_registrant.dart
 # Sentry auth token. Never commit it.
 sentry.properties
 
+# The identity a local build injects (see lib/shared/config/app_config.dart),
+# and also what --dart-define-from-file reads. Never commit the filled file:
+# this repository is public. identity.json.dist is the template that is.
+identity.json
+
 # Xcode keeps a second copy of the SwiftPM lockfile inside the project's own
 # workspace. The reference one lives in Runner.xcworkspace and is committed.
 /ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/

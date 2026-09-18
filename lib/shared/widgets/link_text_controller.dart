@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 /// Inline note-markdown helpers shared by the editor and the note cards.
 ///
@@ -609,7 +610,7 @@ class LinkTextEditingController extends TextEditingController {
         alignment: PlaceholderAlignment.middle,
         child: Icon(
           checked ? Symbols.check_box : Symbols.check_box_outline_blank,
-          size: (base.fontSize ?? 14.4) * 1.3,
+          size: (base.fontSize ?? TanoText.label) * 1.3,
           color: checked
               ? linkColor
               : Colors.grey.withValues(alpha: 0.65),
@@ -636,7 +637,7 @@ class LinkTextEditingController extends TextEditingController {
             offset: const Offset(-3, 0),
             child: Icon(
               Symbols.drag_indicator,
-              size: (base.fontSize ?? 14.4) * 1.2,
+              size: (base.fontSize ?? TanoText.label) * 1.2,
               color: Colors.grey.withValues(alpha: 0.7),
             ),
           ),
@@ -655,7 +656,7 @@ class LinkTextEditingController extends TextEditingController {
       final double scale =
           hashes.length == 1 ? 1.5 : (hashes.length == 2 ? 1.35 : 1.2);
       final TextStyle headingStyle = base.copyWith(
-        fontSize: (base.fontSize ?? 14.4) * scale,
+        fontSize: (base.fontSize ?? TanoText.label) * scale,
         fontWeight: FontWeight.bold,
       );
       _appendInlineSpans(children, heading.group(2)!, headingStyle, linkColor,
@@ -750,7 +751,7 @@ class LinkTextEditingController extends TextEditingController {
         style: linkStyle.copyWith(
           fontFamily: Symbols.sticky_note_2.fontFamily,
           package: Symbols.sticky_note_2.fontPackage,
-          fontSize: (style.fontSize ?? 14.4) * 0.9,
+          fontSize: (style.fontSize ?? TanoText.label) * 0.9,
         ),
       ),
     );

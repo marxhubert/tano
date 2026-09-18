@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'settings_widgets.dart';
 
@@ -20,7 +21,7 @@ class AppearanceSection extends StatelessWidget {
           title: AppText.tr('menu_theme'),
           tiles: <Widget>[
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              padding: const EdgeInsets.symmetric(vertical: sectionGap),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -76,33 +77,15 @@ class _ThemePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color screenBg = isDark
-        ? const Color(0xFF121212)
-        : const Color(0xFFF8F9FA);
+    final Color screenBg = isDark ? darkBackground : lightBackground;
 
-    final List<Color> mockColors = isDark
-        ? [
-            const Color(0xFF004D40),
-            const Color(0xFF827717),
-            const Color(0xFFBF360C),
-            const Color(0xFF4A148C),
-            const Color(0xFF880E4F),
-            const Color(0xFF01579B),
-            const Color(0xFF3E2723),
-            const Color(0xFF1B5E20),
-            const Color(0xFFAD1457),
-          ]
-        : [
-            const Color(0xFFE0F2F1),
-            const Color(0xFFFFF9C4),
-            const Color(0xFFFFE0B2),
-            const Color(0xFFF3E5F5),
-            const Color(0xFFFFEBEE),
-            const Color(0xFFE1F5FE),
-            const Color(0xFFF5F5DC),
-            const Color(0xFFF1F8E9),
-            const Color(0xFFFCE4EC),
-          ];
+    // Straight from the palette: a change there shows here, and the two can no
+    // longer drift apart. "nuage" is left out, it is the surface colour.
+    final List<Color> mockColors = <Color>[
+      for (final ({Color light, Color dark, String name}) pastel
+          in TanoPastels.all)
+        if (pastel.name != 'nuage') (isDark ? pastel.dark : pastel.light),
+    ];
 
     return GestureDetector(
       onTap: onTap,
@@ -181,7 +164,11 @@ class _ThemePreview extends StatelessWidget {
                       color: tanoTeal,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Symbols.add, size: 8, color: Colors.white),
+                    child: const Icon(
+                      Symbols.add,
+                      size: 8,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -191,17 +178,20 @@ class _ThemePreview extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 17.0,
+              fontSize: TanoText.listTitle,
               color: primaryTextColor(context),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           const SizedBox(height: 6),
-          Icon(
-            isSelected ? Symbols.check_circle : Symbols.circle,
-            color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.5),
-            size: 20,
-          ),
+          if (isSelected)
+            const CheckDisc(color: tanoAmber)
+          else
+            Icon(
+              Symbols.circle,
+              color: Colors.grey.withValues(alpha: 0.5),
+              size: 20,
+            ),
         ],
       ),
     );

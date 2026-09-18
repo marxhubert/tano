@@ -464,6 +464,12 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
+  Future<void> deleteAllFolders() async {
+    final db = await _database;
+    await db.delete('folders');
+  }
+
+  @override
   Future<void> seedFixtures() async {
     final db = await _database;
     await db.transaction((txn) async {

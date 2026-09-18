@@ -104,6 +104,9 @@ class _Repo implements NotesRepository, FoldersRepository {
     }
   }
   @override
+  Future<void> deleteAllFolders() async {}
+
+  @override
   Future<void> deleteFolderPermanently(String id) async {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);

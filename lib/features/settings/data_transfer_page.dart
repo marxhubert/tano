@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tano/features/settings/data_transfer.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
+import 'package:tano/shared/widgets/theme.dart';
 import 'widgets/settings_widgets.dart';
 
 /// Backup page: export the data to a `.tano` file or import one.
@@ -14,7 +15,7 @@ class DataTransferPage extends StatelessWidget {
       title: AppText.tr('data_transfer_title'),
       slivers: <Widget>[
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: appPaddingMedium),
           sliver: SliverList(
             delegate: SliverChildListDelegate(<Widget>[
               SettingsGroup(

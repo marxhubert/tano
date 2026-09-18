@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// One settings section: an optional title, a card of tiles and an optional
@@ -69,7 +69,7 @@ class SettingsSection extends StatelessWidget {
         style: TextStyle(
           color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           letterSpacing: -0.08,
         ),
       ),
@@ -109,7 +109,7 @@ class SettingsFooterText extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13.0,
+          fontSize: TanoText.label,
           color: mutedTextColor(context),
           height: 1.4,
         ),
@@ -150,7 +150,7 @@ class SettingsCard extends StatelessWidget {
           (Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withValues(alpha: 0.06)
               : Colors.black.withValues(alpha: 0.06)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(settingsCardRadius)),
       child: Column(children: dividedChildren),
     );
   }
@@ -178,7 +178,7 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: const VisualDensity(vertical: -2.0),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: appPaddingWide),
       dense: false,
       title: Text(
         title,
@@ -186,13 +186,13 @@ class SettingsTile extends StatelessWidget {
           color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
           fontWeight:
               fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
         ),
       ),
       trailing:
           trailing ??
           (selected
-              ? const Icon(Symbols.check_circle, color: tanoTeal, size: 20.0)
+              ? const CheckDisc()
               : null),
       onTap: onTap,
     );
@@ -215,11 +215,11 @@ class SettingsSwitchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: const VisualDensity(vertical: -2.0),
-      contentPadding: const EdgeInsets.only(left: 16.0, right: 10.0),
+      contentPadding: const EdgeInsets.only(left: appPaddingWide, right: 10.0),
       dense: false,
       title: Text(
         title,
-        style: TextStyle(color: primaryTextColor(context), fontSize: 17.0),
+        style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.listTitle),
       ),
       trailing: Transform.scale(
         scale: 0.8,

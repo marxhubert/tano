@@ -11,6 +11,7 @@ import 'package:tano/core/services/import_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 /// Asks how to export, then writes the `.tano` file where the user chooses.
 Future<void> exportData(BuildContext context) async {
@@ -90,21 +91,21 @@ Future<bool?> _showExportDialog(
             ),
           if (encrypted) ...<Widget>[
             if (isApple) ...<Widget>[
-              const SizedBox(height: 8.0),
+              const SizedBox(height: appPaddingTight),
               CupertinoTextField(
                 controller: passwordController,
                 obscureText: true,
                 placeholder: AppText.tr('export_password'),
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(appPaddingTight),
               ),
               if (error() != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6.0),
+                  padding: const EdgeInsets.only(top: appPaddingSmall),
                   child: Text(
                     error()!,
                     style: const TextStyle(
                       color: CupertinoColors.systemRed,
-                      fontSize: 12.0,
+                      fontSize: TanoText.tiny,
                     ),
                   ),
                 ),
@@ -119,20 +120,20 @@ Future<bool?> _showExportDialog(
                 ),
               ),
           ] else ...<Widget>[
-            if (isApple) const SizedBox(height: 8.0),
+            if (isApple) const SizedBox(height: appPaddingTight),
             Text(
               AppText.tr('import_clear_warning'),
-              style: const TextStyle(fontSize: 12.0),
+              style: const TextStyle(fontSize: TanoText.tiny),
             ),
             if (hasLockedNotes) ...<Widget>[
-              if (!isApple) const SizedBox(height: 8.0),
+              if (!isApple) const SizedBox(height: appPaddingTight),
               Text(
                 AppText.tr('export_locked_warning'),
                 style: TextStyle(
-                  fontSize: 12.0,
+                  fontSize: TanoText.tiny,
                   color: isApple
                       ? CupertinoColors.systemRed
-                      : const Color(0xFFE57373),
+                      : TanoStates.error.dark,
                 ),
               ),
             ],
@@ -151,8 +152,9 @@ Future<bool?> _showExportDialog(
 
         final Widget body = Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment:
-              isApple ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+          crossAxisAlignment: isApple
+              ? CrossAxisAlignment.stretch
+              : CrossAxisAlignment.start,
           children: content,
         );
         return isApple
@@ -189,8 +191,6 @@ Future<bool?> _showExportDialog(
     ),
   );
 }
-
-
 
 /// Picks a `.tano` file, asks for its password when needed, then merges it.
 Future<void> importData(BuildContext context) async {

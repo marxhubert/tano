@@ -14,6 +14,9 @@ const Color lightBackground = Color(0xFFF8F9FA);
 const Color darkBackground = Color(0xFF121212);
 
 // --- Palette des États (Tickets) ---
+/// The app has a single red. `error` carries both meanings: a real error, and a
+/// destructive action ("delete", "empty the bin", "delete the selection"). The
+/// light variant is the one read on the dark background and on the teal bars.
 class TanoStates {
   static const neutral = (light: Color(0xFF90A4AE), dark: Color(0xFF78909C));
   static const action = (light: Color(0xFF009688), dark: Color(0xFF4DB6AC));
@@ -45,25 +48,84 @@ class TanoPastels {
   static const nuage = (light: Color(0xFFECEFF1), dark: Color(0xFF263238));
 
   static List<({Color light, Color dark, String name})> get all => [
-        (light: menthe.light, dark: menthe.dark, name: 'menthe'),
-        (light: citron.light, dark: citron.dark, name: 'citron'),
-        (light: peche.light, dark: peche.dark, name: 'peche'),
-        (light: lavande.light, dark: lavande.dark, name: 'lavande'),
-        (light: rose.light, dark: rose.dark, name: 'rose'),
-        (light: azur.light, dark: azur.dark, name: 'azur'),
-        (light: sable.light, dark: sable.dark, name: 'sable'),
-        (light: sauge.light, dark: sauge.dark, name: 'sauge'),
-        (light: bonbon.light, dark: bonbon.dark, name: 'bonbon'),
-        (light: nuage.light, dark: nuage.dark, name: 'nuage'),
-      ];
+    (light: menthe.light, dark: menthe.dark, name: 'menthe'),
+    (light: citron.light, dark: citron.dark, name: 'citron'),
+    (light: peche.light, dark: peche.dark, name: 'peche'),
+    (light: lavande.light, dark: lavande.dark, name: 'lavande'),
+    (light: rose.light, dark: rose.dark, name: 'rose'),
+    (light: azur.light, dark: azur.dark, name: 'azur'),
+    (light: sable.light, dark: sable.dark, name: 'sable'),
+    (light: sauge.light, dark: sauge.dark, name: 'sauge'),
+    (light: bonbon.light, dark: bonbon.dark, name: 'bonbon'),
+    (light: nuage.light, dark: nuage.dark, name: 'nuage'),
+  ];
+}
+
+/// The three durations the app moves in: a fade, a change of shape, and a move
+/// the eye can follow. Everything else — a wait, a snackbar, the spinner — is a
+/// duration in time rather than a motion, and keeps its own value.
+class TanoMotion {
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration base = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 450);
 }
 
 // --- Dimensions & Layout ---
 const double appPaddingLarge = 18.0;
 const double appPaddingMedium = 12.0;
 const double appPaddingSmall = 6.0;
+
+/// The two gaps the code writes most, which the trio above does not cover:
+/// a tight one between two lines or around an icon, a wide one as the inner
+/// margin of a card or a list.
+const double appPaddingTight = 8.0;
+const double appPaddingWide = 16.0;
+
+/// The rhythm between two blocks of a screen. The About footer, for instance,
+/// is four of those.
+const double sectionGap = 24.0;
 const double appBorderRadius = 12.0;
 const double sectionBorderRadius = 24.0;
+
+/// Pill radius of the full-width buttons (reset, confirm).
+const double pillRadius = 55.0;
+
+/// Radius of a settings card.
+const double settingsCardRadius = 18.0;
+
+/// The app's type scale, outside the cards.
+///
+/// The cards have their own micro scale in `card_typography.dart`; everything
+/// else reads from here, so a size is never invented twice. Changing a value
+/// below moves every screen that uses it.
+///
+/// The splash keeps its own literals: its sizes are baked into the generated
+/// PNGs (`tool/generate_splash_logo.dart`), so they only move together.
+class TanoText {
+  /// Page title ("À propos", a folder name…).
+  static const double pageTitle = 24.0;
+
+  /// Label of an action in an action sheet.
+  static const double sheetAction = 20.0;
+
+  /// « TanoNote », in a dialog.
+  static const double wordmark = 18.0;
+
+  /// Title of a row: a setting, an action, a menu entry.
+  static const double listTitle = 17.0;
+
+  /// Body copy: paragraphs, dialog content.
+  static const double body = 16.0;
+
+  /// Secondary label: tile subtitles, dialog footnotes.
+  static const double label = 14.0;
+
+  /// Smallest text: mentions, counters, and the metadata line of a header.
+  static const double tiny = 12.0;
+
+  /// Counter drawn on a bar ("/12").
+  static const double badge = 10.0;
+}
 
 /// Number of columns for the note grids (home and trash).
 ///

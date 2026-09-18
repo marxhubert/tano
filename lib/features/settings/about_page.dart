@@ -86,6 +86,9 @@ class _AboutPageState extends State<AboutPage>
   @override
   Widget build(BuildContext context) {
     final Color textColor = primaryTextColor(context);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // The app has a single red, with a variant for each theme.
+    final Color red = isDark ? TanoStates.error.dark : TanoStates.error.light;
 
     final Widget tanoTitle = RichText(
       text: TextSpan(
@@ -93,7 +96,7 @@ class _AboutPageState extends State<AboutPage>
         style: TextStyle(
           fontWeight: FontWeight.w900,
           color: textColor,
-          fontSize: 24.0,
+          fontSize: TanoText.pageTitle,
           letterSpacing: -1.0,
         ),
         children: <TextSpan>[
@@ -102,7 +105,7 @@ class _AboutPageState extends State<AboutPage>
             style: TextStyle(
               fontWeight: FontWeight.w400,
               color: textColor,
-              fontSize: 24.0,
+              fontSize: TanoText.pageTitle,
               letterSpacing: -1.0,
             ),
           ),
@@ -111,16 +114,22 @@ class _AboutPageState extends State<AboutPage>
     );
 
     return PageScaffold(
-      title: 'About',
+      title: AppText.tr('about'),
       appBarTitleWidget: const TanoAppBarTitle(),
       titleWidget: Row(
         children: [
-          const SizedBox(
+          SizedBox(
             width: 40.0,
             height: 40.0,
             child: CircleAvatar(
-              backgroundColor: Colors.black87,
-              child: Icon(Symbols.bookmark, size: 24.0, color: Colors.white),
+              // The mark inverts with the theme: a dark disc with a white
+              // bookmark on the light screens, the other way round on the dark.
+              backgroundColor: isDark ? Colors.white : Colors.black87,
+              child: Icon(
+                Symbols.bookmark,
+                size: 24.0,
+                color: isDark ? Colors.black87 : Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 6.0),
@@ -129,7 +138,7 @@ class _AboutPageState extends State<AboutPage>
       ),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: sectionGap),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -146,7 +155,7 @@ class _AboutPageState extends State<AboutPage>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: mutedTextColor(context),
-                          fontSize: 14.0,
+                          fontSize: TanoText.label,
                         ),
                       ),
                     ),
@@ -169,7 +178,7 @@ class _AboutPageState extends State<AboutPage>
                         AppText.tr('option_update'),
                         style: TextStyle(
                           color: _isCheckingUpdate ? tanoTeal : Colors.grey,
-                          fontSize: 14.0,
+                          fontSize: TanoText.label,
                         ),
                       ),
                       style: TextButton.styleFrom(
@@ -194,16 +203,16 @@ class _AboutPageState extends State<AboutPage>
                   AppText.tr('about_description'),
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16.0,
+                    fontSize: TanoText.body,
                     height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: appPaddingWide),
                 Text(
                   AppText.tr('about_cta'),
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16.0,
+                    fontSize: TanoText.body,
                     height: 1.6,
                   ),
                 ),
@@ -212,7 +221,7 @@ class _AboutPageState extends State<AboutPage>
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 24.0),
+          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, sectionGap),
           sliver: SliverToBoxAdapter(
             child: SettingsGroup(
               // The paragraphs above already breathe; keep the gap tight.
@@ -228,40 +237,47 @@ class _AboutPageState extends State<AboutPage>
                     Symbols.star,
                     color: tanoAmber,
                     size: 20,
+                    fill: 1.0,
                   ),
                 ),
-                SettingsTile(
-                  title: 'Buy Me a Coffee',
-                  selected: false,
-                  onTap: () =>
-                      _launchUrl('https://www.buymeacoffee.com/marxhubert'),
-                  trailing: const Icon(
-                    Symbols.coffee,
-                    color: Colors.grey,
-                    size: 20,
+                // Only what this build configured: a fork that names no
+                // support page shows no support page.
+                if (AppConfig.coffeeUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.coffeeName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.coffeeUrl),
+                    trailing: Icon(
+                      Symbols.coffee,
+                      color: isDark ? Colors.white : Colors.black,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
-                SettingsTile(
-                  title: 'GitHub Sponsors',
-                  selected: false,
-                  onTap: () =>
-                      _launchUrl('https://github.com/sponsors/shikamarx'),
-                  trailing: const Icon(
-                    Symbols.favorite,
-                    color: Colors.grey,
-                    size: 20,
+                if (AppConfig.sponsorUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.sponsorName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.sponsorUrl),
+                    trailing: Icon(
+                      Symbols.favorite,
+                      color: red,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
-                SettingsTile(
-                  title: 'PayPal',
-                  selected: false,
-                  onTap: () => _launchUrl('https://paypal.me/marxhubert'),
-                  trailing: const Icon(
-                    Symbols.credit_card,
-                    color: Colors.grey,
-                    size: 20,
+                if (AppConfig.paypalUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.paypalName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.paypalUrl),
+                    trailing: const Icon(
+                      Symbols.credit_card,
+                      color: tanoTeal,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -271,12 +287,12 @@ class _AboutPageState extends State<AboutPage>
           sliver: SliverToBoxAdapter(
             child: Text(
               AppText.tr('about_more'),
-              style: TextStyle(color: textColor, fontSize: 16.0, height: 1.6),
+              style: TextStyle(color: textColor, fontSize: TanoText.body, height: 1.6),
             ),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 0.0),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -322,11 +338,14 @@ class _AboutPageState extends State<AboutPage>
         SliverFillRemaining(
           hasScrollBody: false,
           child: Container(
-            padding: const EdgeInsets.only(top: 90.0, bottom: 24.0),
+            padding: const EdgeInsets.only(top: 4 * sectionGap, bottom: sectionGap),
             alignment: Alignment.bottomCenter,
             child: Text(
-              '© 2026, Marx Hubert',
-              style: TextStyle(color: mutedTextColor(context), fontSize: 12.0),
+              // A build that names no author shows the year alone.
+              AppConfig.authorName.isEmpty
+                  ? '© ${AppConfig.year}'
+                  : '© ${AppConfig.year}, ${AppConfig.authorName}',
+              style: TextStyle(color: mutedTextColor(context), fontSize: TanoText.tiny),
             ),
           ),
         ),

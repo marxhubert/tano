@@ -20,13 +20,13 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/no_record.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/empty_state.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, this.initialNotes});
@@ -336,22 +336,30 @@ class HomeState extends State<Home> with RouteAware {
     );
   }
 
+  /// True when the page has nothing to show: the illustration is then the only
+  /// content, and it has to hold its place when the keyboard opens.
+  bool get _isEmptyHome =>
+      _viewModel.folders.isEmpty && _viewModel.notes.isEmpty;
+
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
       if (_viewModel.hasSearchQuery) {
         return SliverFillRemaining(
           hasScrollBody: false,
-          child: Center(
-            child: Text(
-              AppText.tr('no_note_found'),
-              style: const TextStyle(fontSize: 12.0),
-            ),
+          child: emptyState(
+            context,
+            AppText.tr('no_note_found'),
+            image: EmptyArt.search,
           ),
         );
       }
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: noRecordFound(context),
+        child: emptyState(
+            context,
+            AppText.tr('no_data'),
+            image: EmptyArt.box,
+          ),
       );
     }
 
@@ -412,7 +420,7 @@ class HomeState extends State<Home> with RouteAware {
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
+        padding: const EdgeInsets.only(bottom: appPaddingTight),
         // The content sits in a 12px sliver padding: adding 6 lines the notes
         // title up with the page title (18px).
         child: SectionTitleLine(
@@ -529,7 +537,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_list'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: 20.0,
+                fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -543,7 +551,7 @@ class HomeState extends State<Home> with RouteAware {
               AppText.tr('menu_grid'),
               style: TextStyle(
                 color: tanoTeal,
-                fontSize: 20.0,
+                fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -555,7 +563,7 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoTeal, fontSize: 20.0),
+              style: const TextStyle(color: tanoTeal, fontSize: TanoText.sheetAction),
             ),
           ),
         ],
@@ -566,7 +574,7 @@ class HomeState extends State<Home> with RouteAware {
           },
           child: Text(
             AppText.tr('cancel'),
-            style: TextStyle(color: primaryTextColor(context), fontSize: 20.0),
+            style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.sheetAction),
           ),
         ),
       ),
@@ -602,6 +610,7 @@ class HomeState extends State<Home> with RouteAware {
         return PageScaffold(
           title: AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
+          freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,

@@ -13,7 +13,7 @@ Widget buildFolderGridContent({
 }) {
   return Padding(
     // Grid padding 8, gap under a cover 4, metadata 4 from the bottom.
-    padding: EdgeInsets.fromLTRB(8.0, hasCover ? 4.0 : 8.0, 8.0, 4.0),
+    padding: EdgeInsets.fromLTRB(appPaddingTight, hasCover ? 4.0 : appPaddingTight, appPaddingTight, 4.0),
     child: SizedBox(
       width: double.infinity,
       child: Column(
@@ -47,7 +47,7 @@ Widget buildFolderListContent({
   required bool hasCover,
 }) {
   return Padding(
-    padding: const EdgeInsets.all(12.0),
+    padding: const EdgeInsets.all(appPaddingMedium),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
