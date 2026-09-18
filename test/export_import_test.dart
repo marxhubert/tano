@@ -65,8 +65,6 @@ class _InMemoryRepository implements NotesRepository {
   @override
   Future<void> deleteAllNotes() async => notes.clear();
 
-  @override
-  Future<void> seedFixtures() async {}
 }
 
 Note _note({

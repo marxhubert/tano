@@ -40,8 +40,6 @@ class _EmptyRepository implements NotesRepository {
   @override
   Future<void> deleteAllNotes() async {}
 
-  @override
-  Future<void> seedFixtures() async {}
 }
 
 void main() {

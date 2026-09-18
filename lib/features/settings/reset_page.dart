@@ -66,11 +66,13 @@ class _ResetPageState extends State<ResetPage> {
                   // --- SECTION 3: EXPORT (only when data will be deleted) ---
                   if (_deleteData) ...<Widget>[
                     SettingsGroup(
-                      color: Colors.red.withValues(alpha: 0.12),
+                      color: tanoAmber.withValues(alpha: 0.7),
                       tiles: [
                         SettingsTile(
                           title: AppText.tr('option_export_before_reset'),
                           selected: false,
+                          // The label must stay readable on the solid amber.
+                          textColor: Colors.black,
                           onTap: () => exportData(context),
                         ),
                       ],
@@ -126,8 +128,7 @@ class _ResetPageState extends State<ResetPage> {
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
+                    ),                    SizedBox(
                       width: double.infinity,
                       height: 54.0,
                       child: ElevatedButton(

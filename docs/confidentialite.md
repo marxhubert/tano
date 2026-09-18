@@ -22,7 +22,7 @@
 |---|---|
 | Data stored on your device | Notes, dossiers, tâches, projets, pièces jointes et préférences restent dans le stockage privé de l'app |
 | Encryption at rest | Base SQLCipher + pièces jointes chiffrées ; la clé vit dans le stockage sécurisé du système (voir [securite.md](./securite.md)) |
-| Crash reports (optional) | Sentry, **désactivé par défaut**, activé seulement par l'interrupteur « {option_bug_report} » ; erreur, version, modèle et OS — jamais l'IP, jamais d'identifiant stable, jamais de contenu de note |
+| Crash reports (optional) | Sentry, **désactivé par défaut**, activé seulement par l'interrupteur « {option_bug_report} » ; erreur, version, modèle et OS — jamais l'IP, jamais d'identifiant, jamais de contenu de note |
 | No tracking, no ads | Aucun analytics, aucune publicité, aucun traceur tiers, aucune vente |
 | Deleting your data | Tout s'efface depuis les paramètres ; rien n'est conservé côté éditeur |
 

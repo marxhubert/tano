@@ -3,6 +3,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'widgets/appearance_section.dart';
+import 'widgets/feedback_section.dart';
 import 'widgets/sorting_section.dart';
 import 'widgets/language_section.dart';
 import 'widgets/about_section.dart';
@@ -42,6 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const AppearanceSection(),
+                const FeedbackSection(),
                 SortingSection(viewModel: _viewModel),
                 const LanguageSection(),
                 AboutSection(viewModel: _viewModel),

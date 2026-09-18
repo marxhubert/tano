@@ -14,8 +14,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **287 tests** verts (dont 20 goldens, joués en
+- `flutter analyze` 0 issue, **300 tests** verts (dont 20 goldens, joués en
   local), CI `analyze` + `test` + un build de débogage des deux cibles.
+- **Premier lancement** : une introduction de 3 écrans, rejouable depuis
+  À propos, sur une base **vide** (plus de données de démonstration).
+- **Suppression** : une annulation unique pour la note comme pour le dossier.
 - Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
   dialogues, couvertures, FAB, nettoyage, accessibilité).
 
@@ -28,12 +31,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
 - [x] **Manifeste de confidentialité** : `ios/Runner/PrivacyInfo.xcprivacy`,
   déclaré et câblé dans la cible Runner.
-- [ ] **Fiches store** : la page de politique est prête à publier
-  (`site/privacy/`, GitHub Pages) et tous les textes à coller sont dans
-  [store-listing.md](./store-listing.md) — il reste à les saisir dans les deux
-  consoles.
+- [x] **Fiches store** : tout est prêt (page de politique dans `site/privacy/`,
+  textes dans [store-listing.md](./store-listing.md)). La saisie dans les deux
+  consoles se fera le moment venu, à la demande.
 - [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
-  identifiant stable, zéro breadcrumb (voir
+  identifiant, zéro breadcrumb (voir
   [observabilité](./observabilite.md)).
 - [x] **Mises à jour** : store-native (Play In-App Updates + lookup App Store),
   entrée « Vérifier les mises à jour » dans À propos. Voir
@@ -51,16 +53,25 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 - [x] **Golden tests** des cartes (grille/liste, thèmes, états) —
   `test/golden/`, vingt images, hors CI. Voir [tests](./tests.md).
-- [ ] Étendre les **tests d'intégration** (dossiers, export/import, verrou).
-- [ ] **Logs** silencieux en release ; erreurs utilisateur uniformisées.
+- [x] Étendre les **tests d'intégration** (dossiers, export/import, verrou) :
+  cinq scénarios sur appareil, dont l'aller-retour `.tano` sur **deux bases
+  chiffrées réelles**.
+- [x] **Logs** silencieux en release (`appLog` derrière `kDebugMode`, plus aucun
+  `debugPrint` qui traîne) ; erreurs utilisateur uniformisées.
 
 ## 3. UX grand public
 
-- [ ] **Onboarding** (2-3 écrans, ou état vide pédagogique).
-- [ ] **Undo uniformisé** (le dossier n'a pas l'undo de l'accueil).
-- [ ] **Feedback** sur déplacement / verrouillage.
-- [ ] **Réglages** : taille de texte, retour haptique / son.
-- [ ] **Recherche** : historique + filtres (catégorie, favori, dates).
+- [x] **Onboarding** : trois écrans au premier lancement, rejouables depuis
+  À propos. La base démarre vide.
+- [x] **Undo uniformisé** : une seule annulation, partagée par l'accueil et le
+  dossier.
+- [x] **Feedback** sur déplacement / verrouillage : un avis court après
+  l'action. Android garde son SnackBar, iOS a un toast qui s'efface seul.
+- [x] **Réglages** : quatre tailles de texte (appliquées par-dessus l'échelle du
+  système) et deux interrupteurs, retour haptique et son.
+- [x] **Recherche** : l'historique des requêtes récentes, proposé quand le
+  champ est vide, effaçable d'un geste. Les filtres (catégorie, favori, dates)
+  sont écartés pour l'instant.
 
 ## 4. Cœur produit
 

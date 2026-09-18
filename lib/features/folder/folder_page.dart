@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
+import 'package:tano/shared/widgets/undo_delete.dart';
+import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
@@ -11,6 +13,7 @@ import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -27,6 +30,7 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
 
 /// Shows the notes filed in a single folder and its organisation actions.
@@ -258,6 +262,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         return;
       }
       await _save(_folder.copyWith(isLocked: true));
+      if (!mounted) return;
+      await FeedbackController.instance.success();
+      if (!mounted) return;
+      await showLockToast(context, locked: true, folder: true);
       return;
     }
     final bool authenticated = await getIt<AuthService>().authenticate(
@@ -265,6 +273,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     if (!authenticated || !mounted) return;
     await _save(_folder.copyWith(isLocked: false));
+    if (!mounted) return;
+    await FeedbackController.instance.success();
+    if (!mounted) return;
+    await showLockToast(context, locked: false, folder: true);
   }
 
   Future<void> _delete() async {
@@ -320,8 +332,19 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     if (confirm != true || !mounted) return;
     final NotesRepository repository = getIt<NotesRepository>();
-    for (final String id in _selection.ids) {
-      await repository.trashNote(id);
+
+    // Keep what leaves, with its place, so the undo can put it back exactly
+    // where it was - the same accounting the home page does.
+    final List<int> indexes = <int>[];
+    final List<Note> removed = <Note>[];
+    for (int i = 0; i < _notes.length; i++) {
+      if (_selection.contains(_notes[i].id)) {
+        indexes.add(i);
+        removed.add(_notes[i]);
+      }
+    }
+    for (final Note note in removed) {
+      await repository.trashNote(note.id);
     }
     if (!mounted) return;
     setState(() {
@@ -330,6 +353,22 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
+    if (removed.isNotEmpty) {
+      showUndoDelete(
+        context,
+        repository: repository,
+        batch: DeletedBatch(notes: removed, indexes: indexes),
+        onRestored: () async {
+          if (!mounted) return;
+          setState(() {
+            // From the end, so an insertion never shifts a place still to come.
+            for (int i = indexes.length - 1; i >= 0; i--) {
+              _notes.insert(indexes[i].clamp(0, _notes.length), removed[i]);
+            }
+          });
+        },
+      );
+    }
   }
 
   /// Moves the selected notes to [folderId], or back home when null.
@@ -345,11 +384,16 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             : note.copyWith(folderId: folderId),
       );
     }
+    final int count = selected.length;
     if (!mounted) return;
     setState(_selection.exit);
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
     await _load();
+    if (!mounted) return;
+    await FeedbackController.instance.impact();
+    if (!mounted) return;
+    await showMovedToast(context, count: count, folderId: folderId);
   }
 
   /// Notes shown: the folder content, filtered by the local search. A locked

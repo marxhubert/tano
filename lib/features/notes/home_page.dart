@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/widgets/toast.dart';
+import 'package:tano/shared/widgets/undo_delete.dart';
+import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
 import 'package:tano/features/notes/widgets/folder_list_view.dart';
@@ -24,16 +28,21 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key, this.initialNotes});
+  const Home({super.key, this.initialNotes, this.openEditorOnLaunch = false});
 
   /// Notes already loaded by the splash screen. When null (legacy
   /// navigation flows), the view model falls back to loading them.
   final List<Note>? initialNotes;
+
+  /// Opens the editor as soon as the page appears, when there is no note yet.
+  /// The introduction sets it, so its last page does create the first note.
+  final bool openEditorOnLaunch;
 
   @override
   HomeState createState() {
@@ -73,6 +82,11 @@ class HomeState extends State<Home> with RouteAware {
     }
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
+    if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openNoteEditor(add: true, note: Note());
+      });
+    }
   }
 
   @override
@@ -218,6 +232,9 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   void _exitSearchMode() {
+    // Leaving the search is what makes it a search: remember the query before
+    // the field is emptied.
+    SearchHistoryController.instance.add(_searchController.text);
     _clearSearch();
     // Release the search focus so the keyboard closes immediately.
     _searchFocusNode.unfocus();
@@ -315,25 +332,26 @@ class HomeState extends State<Home> with RouteAware {
 
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
-    // The message reflects what was actually removed: notes, folders, or both.
-    final List<String> parts = <String>[
-      if (_viewModel.lastDeletedFolders.isNotEmpty)
-        AppText.count(
-          _viewModel.lastDeletedFolders.length,
-          'folder',
-          'folders',
-        ),
-      if (_viewModel.lastDeletedNotes.isNotEmpty)
-        AppText.count(_viewModel.lastDeletedNotes.length, 'note', 'notes'),
-    ];
-    showAdaptiveNoticeWithAction(
-      context: context,
-      message: parts.isEmpty
-          ? AppText.tr('note_deleted')
-          : '${parts.join(' & ')} ${AppText.tr('deleted')}',
-      actionLabel: AppText.tr('undo'),
-      onAction: _viewModel.undoLastDelete,
+    final DeletedBatch? batch = _viewModel.lastDeletedBatch;
+    if (batch == null || batch.isEmpty) return;
+    // The same notice, the same words and the same restore as a folder page.
+    showUndoDelete(
+      context,
+      repository: getIt<NotesRepository>(),
+      batch: batch,
+      onRestored: _viewModel.reinsertLastDeleted,
     );
+  }
+
+  /// Moves the selection, then says where it went. The block that left is not
+  /// always where the eye is looking.
+  Future<void> _moveSelectedTo(String? folderId) async {
+    final int count = _viewModel.selected.length;
+    await _viewModel.moveSelectedTo(folderId);
+    if (!mounted) return;
+    await FeedbackController.instance.impact();
+    if (!mounted) return;
+    await showMovedToast(context, count: count, folderId: folderId);
   }
 
   /// True when the page has nothing to show: the illustration is then the only
@@ -388,8 +406,63 @@ class HomeState extends State<Home> with RouteAware {
     }
   }
 
+  /// The recent searches, shown while the field is empty: the shortcut a
+  /// search screen is expected to offer.
+  Widget _searchHistorySliver(List<String> entries) {
+    return SliverList(
+      delegate: SliverChildListDelegate(<Widget>[
+        for (final String query in entries)
+          InkWell(
+            borderRadius: BorderRadius.circular(appBorderRadius),
+            onTap: () {
+              _searchController.text = query;
+              _viewModel.setSearchQuery(query);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: appPaddingSmall,
+                vertical: appPaddingMedium,
+              ),
+              child: Text(
+                query,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: TanoText.body,
+                  color: primaryTextColor(context),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  /// True while the field is open on an empty query with something to offer.
+  bool get _showSearchHistory =>
+      _isSearchMode &&
+      !_viewModel.hasSearchQuery &&
+      SearchHistoryController.instance.entries.isNotEmpty;
+
+  /// The "Clear" action, in the metadata slot of the title line.
+  Widget _clearHistoryButton() {
+    return TextButton(
+      onPressed: () => SearchHistoryController.instance.clear(),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(AppText.tr('clear'), style: titleMetadataStyle(context)),
+    );
+  }
+
   /// Home content: the folder group on top, then the unfiled notes.
   Widget _buildHomeContent() {
+    // While the field is empty, the recent searches stand in for the list.
+    if (_showSearchHistory) {
+      return _searchHistorySliver(SearchHistoryController.instance.entries);
+    }
     final List<Folder> folders = _viewModel.folders;
     final List<Note> notes = _viewModel.notes;
     final String viewLayout = _viewModel.viewLayout;
@@ -605,17 +678,23 @@ class HomeState extends State<Home> with RouteAware {
       listenable: Listenable.merge(<Listenable>[
         _viewModel,
         LocaleController.instance,
+        SearchHistoryController.instance,
       ]),
       builder: (BuildContext context, Widget? child) {
         return PageScaffold(
-          title: AppText.tr(_viewModel.pageTitleKey),
+          title: _showSearchHistory
+              ? AppText.tr('search_history')
+              : AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
           freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerMetadata: _pageMetadata,
+          headerMetadata: _showSearchHistory ? null : _pageMetadata,
+          headerMetadataWidget: _showSearchHistory
+              ? _clearHistoryButton()
+              : null,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(appPaddingMedium),
@@ -660,11 +739,13 @@ class HomeState extends State<Home> with RouteAware {
                 );
                 if (confirmDeletion == true) {
                   await _viewModel.deleteSelected();
+                  await FeedbackController.instance.impact();
+                  if (!mounted) return;
                   _showUndoSnackBar();
                 }
               }
             },
-            onMoveTo: _viewModel.moveSelectedTo,
+            onMoveTo: _moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

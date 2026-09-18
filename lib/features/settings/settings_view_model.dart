@@ -5,6 +5,10 @@ import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/text_scale_controller.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/core/services/crash_reports.dart';
@@ -92,9 +96,6 @@ class SettingsViewModel extends ChangeNotifier {
           await (repository as FoldersRepository).deleteAllFolders();
         }
         await getIt<AttachmentsStore>().deleteAll();
-        // Ensure we don't auto-seed fixtures on next load
-        final SecurePreferences prefs = await SecurePreferences.getInstance();
-        await prefs.setBool('database_initial_seed_done', true);
       }
 
       if (deletePrefs) {
@@ -108,6 +109,10 @@ class SettingsViewModel extends ChangeNotifier {
           LocaleController.instance.init(),
           ThemeController.instance.init(),
           LanguageReferencesController.instance.init(),
+          OnboardingController.instance.init(),
+          TextScaleController.instance.init(),
+          FeedbackController.instance.init(),
+          SearchHistoryController.instance.init(),
         ]);
       }
 
@@ -127,38 +132,8 @@ class SettingsViewModel extends ChangeNotifier {
     await performHardReset(deleteData: true, deletePrefs: true);
   }
 
-  Future<void> developerReset() async {
-    _isResetting = true;
-    notifyListeners();
-    final startTime = DateTime.now();
-    try {
-      // 1. Delete all notes from DB
-      await getIt<NotesRepository>().deleteAllNotes();
-
-      // 2. Clear all preferences (theme, language, sorting, etc.)
-      final SecurePreferences prefs = await SecurePreferences.getInstance();
-      await prefs.clear();
-      await _revokeConsent();
-
-      // 3. Re-seed fixtures
-      await getIt<NotesRepository>().seedFixtures();
-
-      // 4. Re-init core controllers to reflect default state
-      await Future.wait([
-        LocaleController.instance.init(),
-        ThemeController.instance.init(),
-        LanguageReferencesController.instance.init(),
-      ]);
-
-      // 5. Ensure the spinner lasts at least 1.2 seconds
-      final elapsed = DateTime.now().difference(startTime);
-      const minDuration = Duration(milliseconds: 1200);
-      if (elapsed < minDuration) {
-        await Future.delayed(minDuration - elapsed);
-      }
-    } finally {
-      _isResetting = false;
-      notifyListeners();
-    }
-  }
+  /// Wipes the data and the preferences without asking, so a fresh first launch
+  /// can be replayed — the introduction included — while developing.
+  Future<void> developerReset() =>
+      performHardReset(deleteData: true, deletePrefs: true);
 }

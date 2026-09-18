@@ -161,7 +161,6 @@ class AppText {
     'option_export_before_reset': 'Export my data first',
     'desc_export_before_reset':
         'Strongly recommended: deleted notes cannot be recovered. Export a copy first.',
-    'developer_reset': 'Developer reset',
     'export_data': 'Export data',
     'import_data': 'Import data',
     'export_action': 'Export',
@@ -242,7 +241,7 @@ class AppText {
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report':
-        'Help us improve TanoNote by sending anonymous crash reports. No IP address, no stable identifier, no note content — and you can turn it off at any time.',
+        'Help us improve TanoNote by sending anonymous crash reports. No IP address, no identifier, no note content — and you can turn it off at any time.',
     'desc_recycle_bin':
         'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
     'desc_reset_data':
@@ -286,7 +285,7 @@ class AppText {
         'The database and the attachments are encrypted on the device. The key is kept in the secure storage of the system and never leaves it.',
     'privacy_crash_title': 'Crash reports (optional)',
     'privacy_crash_body':
-        'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no stable identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
+        'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
     'privacy_updates_title': 'Update check',
     'privacy_updates_body':
         'When you open the About screen, the app asks the store whether a newer version exists. The only thing carried is the name of the app — no account, no identifier, and nothing kept. The check can also be started by hand from that screen.',
@@ -305,6 +304,39 @@ class AppText {
     'lang_fr': 'FRENCH',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Delete photo',
+    'developer_reset': 'Developer reset',
+    // Introduction
+    'onboarding_skip': 'Skip',
+    'onboarding_next': 'Next',
+    'onboarding_start': 'Get started',
+    'onboarding_title_1': 'Every note in one place',
+    'onboarding_body_1':
+        'Write on the go. TanoNote works with no connection and keeps everything encrypted on your phone. No account, no tracking.',
+    'onboarding_title_2': 'Lock what matters',
+    'onboarding_body_2':
+        'Secure a note with your code or your fingerprint: it opens only once you are recognised.',
+    'onboarding_title_3': 'In order, with a way back',
+    'onboarding_body_3':
+        'Sort your notes into folders, and find everything you deleted in the trash — with one tap to undo.',
+    'onboarding_replay': 'Replay the introduction',
+    // Feedback and text
+    'menu_feedback': 'Feedback and text',
+    'text_size': 'Text size',
+    'text_size_small': 'Small',
+    'text_size_normal': 'Normal',
+    'text_size_large': 'Large',
+    'text_size_extra_large': 'Larger',
+    'feedback_haptics': 'Haptic feedback',
+    'feedback_sound': 'Sound',
+    'moved_to': 'moved to {folder}',
+    'moved_home': 'moved back to Home',
+    'moved': 'moved',
+    'note_locked': 'Note locked',
+    'note_unlocked': 'Note unlocked',
+    'folder_locked': 'Folder locked',
+    'folder_unlocked': 'Folder unlocked',
+    // Search
+    'search_history': 'Recent searches',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -359,7 +391,6 @@ class AppText {
     'option_export_before_reset': 'Exporter mes données avant',
     'desc_export_before_reset':
         'Fortement recommandé : une fois supprimées, vos notes ne peuvent pas être récupérées. Exportez-en une copie avant.',
-    'developer_reset': 'Réinitialisation développeur',
     'export_data': 'Exporter les données',
     'import_data': 'Importer des données',
     'export_action': 'Exporter',
@@ -441,7 +472,7 @@ class AppText {
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report':
-        'Aidez-nous à améliorer TanoNote en envoyant des rapports d\'erreur anonymes. Aucune adresse IP, aucun identifiant stable, aucun contenu de note — et vous pouvez le désactiver à tout moment.',
+        'Aidez-nous à améliorer TanoNote en envoyant des rapports d\'erreur anonymes. Aucune adresse IP, aucun identifiant, aucun contenu de note — et vous pouvez le désactiver à tout moment.',
     'desc_recycle_bin':
         'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
     'desc_reset_data':
@@ -485,7 +516,7 @@ class AppText {
         "La base de données et les pièces jointes sont chiffrées sur l'appareil. La clé est conservée dans le stockage sécurisé du système et n'en sort jamais.",
     'privacy_crash_title': 'Rapports de crash (facultatif)',
     'privacy_crash_body':
-        "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant stable et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
+        "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
     'privacy_updates_title': 'Vérification des mises à jour',
     'privacy_updates_body':
         "Quand vous ouvrez l'écran À propos, l'application demande au store s'il existe une version plus récente. La seule chose transmise est le nom de l'application — aucun compte, aucun identifiant, rien de conservé. La vérification peut aussi être lancée à la main depuis ce même écran.",
@@ -504,6 +535,39 @@ class AppText {
     'lang_fr': 'FRANÇAIS',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Supprimer la photo',
+    'developer_reset': 'Réinitialisation développeur',
+    // Introduction
+    'onboarding_skip': 'Passer',
+    'onboarding_next': 'Suivant',
+    'onboarding_start': 'Commencer',
+    'onboarding_title_1': 'Toutes vos notes au même endroit',
+    'onboarding_body_1':
+        'Écrivez où que vous soyez. TanoNote fonctionne sans connexion et garde tout chiffré sur votre téléphone. Aucun compte, aucun suivi.',
+    'onboarding_title_2': 'Verrouillez ce qui compte',
+    'onboarding_body_2':
+        "Protégez une note par code ou par empreinte : elle ne s'ouvre qu'après vérification.",
+    'onboarding_title_3': "De l'ordre, et un retour en arrière",
+    'onboarding_body_3':
+        'Classez vos notes dans des dossiers et retrouvez dans la corbeille tout ce que vous supprimez — avec une annulation en un geste.',
+    'onboarding_replay': "Revoir l'introduction",
+    // Retours et texte
+    'menu_feedback': 'Retours et texte',
+    'text_size': 'Taille du texte',
+    'text_size_small': 'Petit',
+    'text_size_normal': 'Normal',
+    'text_size_large': 'Grand',
+    'text_size_extra_large': 'Plus grand',
+    'feedback_haptics': 'Retour haptique',
+    'feedback_sound': 'Son',
+    'moved_to': 'déplacé(e) vers {folder}',
+    'moved_home': "ramené(e) à l'accueil",
+    'moved': 'déplacé(e)',
+    'note_locked': 'Note verrouillée',
+    'note_unlocked': 'Note déverrouillée',
+    'folder_locked': 'Dossier verrouillé',
+    'folder_unlocked': 'Dossier déverrouillé',
+    // Recherche
+    'search_history': 'Recherches récentes',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -558,7 +622,6 @@ class AppText {
     'option_export_before_reset': 'Avoahy aloha ny angona',
     'desc_export_before_reset':
         'Tena atolotra: tsy azo averina ny naoty voafafa. Avoahy aloha ny kopian\'izy ireo.',
-    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
     'export_data': 'Avoaka ny angona',
     'import_data': 'Hampiditra angona',
     'export_action': 'Avoaka',
@@ -640,7 +703,7 @@ class AppText {
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report':
-        'Ampio izahay hanatsara ny TanoNote amin\'ny fandefasana tatitra momba ny olana tsy misy anarana. Tsy misy adiresy IP, tsy misy famantarana maharitra ary tsy misy votoatin\'ny naoty — ary azonao atao ny mamono azy rehefa tianao.',
+        'Ampio izahay hanatsara ny TanoNote amin\'ny fandefasana tatitra momba ny olana tsy misy anarana. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin\'ny naoty — ary azonao atao ny mamono azy rehefa tianao.',
     'desc_recycle_bin':
         'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
     'desc_reset_data':
@@ -684,7 +747,7 @@ class AppText {
         "Ny banky angona sy ny rakitra ampiana dia afenina ao amin'ny finday. Ny fanalahidy dia tehirizina ao amin'ny fitahirizana azo antoka an'ny rafitra ary tsy mivoaka mihitsy.",
     'privacy_crash_title': 'Tatitra momba ny olana (tsy voatery)',
     'privacy_crash_body':
-        "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana maharitra ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
+        "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
     'privacy_updates_title': 'Fanamarinana ny fanavaozana',
     'privacy_updates_body':
         "Rehefa manokatra ny efijery Momba ny ianao dia manontany ny store ny rindrankajy raha misy dikan-teny vaovao. Ny anaran'ny rindrankajy ihany no alefa — tsy misy kaonty, tsy misy famantarana, ary tsy misy tehirizina. Azo atao koa ny manamarina amin'ny tanana avy amin'io efijery io.",
@@ -703,6 +766,39 @@ class AppText {
     'lang_fr': 'FRANTSAY',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Hamafa ny sary',
+    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    // Fampidirana
+    'onboarding_skip': 'Hitsambikina',
+    'onboarding_next': 'Manaraka',
+    'onboarding_start': 'Hanomboka',
+    'onboarding_title_1': "Ny naotinao rehetra amin'ny toerana iray",
+    'onboarding_body_1':
+        "Manorata na aiza na aiza ianao. Miasa tsy misy fifandraisana ny TanoNote ary mitazona ny zava-drehetra voaaro ao amin'ny findainao. Tsy misy kaonty, tsy misy fanaraha-maso.",
+    'onboarding_title_2': 'Hidio ny tena zava-dehibe',
+    'onboarding_body_2':
+        "Arovy amin'ny kaody na ny dian-tanana ny naoty iray: tsy misokatra izy raha tsy efa voamarina ianao.",
+    'onboarding_title_3': 'Fandaminana sy fiverenana',
+    'onboarding_body_3':
+        "Alamino ao anaty rakitra ny naotinao ary hita ao amin'ny fitoeram-pako izay rehetra voafafa — misy fanafoanana amin'ny tsindry iray.",
+    'onboarding_replay': 'Avereno jerena ny fanazavana',
+    // Famaliana sy lahatsoratra
+    'menu_feedback': 'Famaliana sy lahatsoratra',
+    'text_size': "Haben'ny soratra",
+    'text_size_small': 'Kely',
+    'text_size_normal': 'Antonony',
+    'text_size_large': 'Lehibe',
+    'text_size_extra_large': 'Lehibe kokoa',
+    'feedback_haptics': 'Fihovitrovitra',
+    'feedback_sound': 'Feo',
+    'moved_to': "nafindra tany amin'ny {folder}",
+    'moved_home': "naverina tany amin'ny fandraisana",
+    'moved': 'nafindra',
+    'note_locked': 'Voahidy ny naoty',
+    'note_unlocked': 'Novahana ny naoty',
+    'folder_locked': 'Voahidy ny rakitra',
+    'folder_unlocked': 'Novahana ny rakitra',
+    // Fikarohana
+    'search_history': 'Fikarohana vao haingana',
   };
 
   /// Returns the string associated with [key] in the current language,

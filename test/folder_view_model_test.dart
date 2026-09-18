@@ -57,8 +57,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
       .toList();
   @override
   Future<void> deleteAllNotes() async => notes.clear();
-  @override
-  Future<void> seedFixtures() async {}
 
   @override
   Future<List<Folder>> loadFolders() async =>
@@ -271,12 +269,13 @@ void main() {
       expect(vm.notes, isEmpty);
       expect(vm.folders, isEmpty);
 
-      await vm.undoLastDelete();
+      // Storage is restored by the batch, through showUndoDelete; the view model
+      // only puts things back on screen.
+      await vm.reinsertLastDeleted();
 
       // Both the note and the folder come back.
       expect(vm.notes.map((Note n) => n.id), contains('n1'));
       expect(vm.folders.map((Folder f) => f.id), <String>['f1']);
-      expect(repo.folders.single.isDeleted, isFalse);
     });
 
     test('moving a selected note files it in the target folder', () async {

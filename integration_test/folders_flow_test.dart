@@ -46,8 +46,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   Future<void> deleteNotePermanently(String id) async {}
   @override
   Future<void> deleteAllNotes() async {}
-  @override
-  Future<void> seedFixtures() async {}
 
   @override
   Future<List<Folder>> loadFolders() async => folders;
@@ -137,5 +135,46 @@ void main() {
       findsWidgets,
     );
     expect(find.text('Perso'), findsWidgets);
+  });
+  testWidgets('moves a note into a folder, then opens the folder', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await LocaleController.instance.init();
+    await ThemeController.instance.init();
+    PackageInfo.setMockInitialValues(
+      appName: 'tano',
+      packageName: 'com.marxhubert.tanonote',
+      version: '0.9.0',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+    if (getIt.isRegistered<NotesRepository>()) {
+      await getIt.unregister<NotesRepository>();
+    }
+    final _Repo repository = _Repo();
+    repository.folders.add(
+      Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+    );
+    getIt.registerSingleton<NotesRepository>(repository);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // File the note through the selection FAB: the real gesture, not a call.
+    await tester.longPress(find.text('Free note'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.drive_file_move));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Perso'));
+    await tester.pumpAndSettle();
+
+    expect(repository.notes.single.folderId, 'f1');
+
+    // The folder now holds it, and opening it shows the note.
+    await tester.tap(find.text('Perso').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Free note'), findsWidgets);
   });
 }

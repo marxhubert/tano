@@ -26,6 +26,7 @@ class AboutSection extends StatelessWidget {
                 );
               },
             ),
+
             SettingsSwitchTile(
               title: AppText.tr('option_bug_report'),
               value: viewModel.bugReportEnabled,
