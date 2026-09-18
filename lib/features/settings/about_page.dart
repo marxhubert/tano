@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/services/update_service.dart';
+import 'package:tano/features/onboarding/onboarding_page.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -271,9 +272,10 @@ class _AboutPageState extends State<AboutPage>
                     title: AppConfig.paypalName,
                     selected: false,
                     onTap: () => _launchUrl(AppConfig.paypalUrl),
+                    // PayPal keeps its own blue, whatever the theme.
                     trailing: const Icon(
                       Symbols.credit_card,
-                      color: tanoTeal,
+                      color: Colors.blue,
                       size: 20,
                       fill: 1.0,
                     ),
@@ -332,6 +334,36 @@ class _AboutPageState extends State<AboutPage>
                   ],
                 );
               },
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            appPaddingMedium,
+            0.0,
+            appPaddingMedium,
+            0.0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: SettingsGroup(
+              tiles: [
+                SettingsTile(
+                  title: AppText.tr('onboarding_replay'),
+                  selected: false,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (BuildContext onboardingContext) =>
+                            OnboardingPage(
+                              onFinished: () =>
+                                  Navigator.of(onboardingContext).pop(),
+                            ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),

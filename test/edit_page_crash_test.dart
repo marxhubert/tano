@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/main.dart';
@@ -80,11 +79,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     notes.clear();
   }
 
-  @override
-  Future<void> seedFixtures() async {
-    notes.clear();
-    notes.addAll(buildNotesFixtures());
-  }
 }
 
 void main() {

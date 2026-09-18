@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
-import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/sqlite_notes_repository.dart';
 
 void main() {
@@ -30,17 +30,23 @@ void main() {
   });
 
   group('SQLiteNotesRepository', () {
-    test('seeds demo notes and folders on first launch', () async {
+    test('a fresh install starts empty', () async {
       final notes = await repository.loadNotes();
 
-      expect(notes, hasLength(buildNotesFixtures().length));
-      expect(notes.every((n) => !n.isDeleted), isTrue);
-      expect(await repository.loadFolders(), hasLength(5));
+      expect(notes, isEmpty);
+      expect(await repository.loadFolders(), isEmpty);
     });
 
     test('deleteAllFolders empties the folders, trashed or not', () async {
-      await repository.loadNotes(); // seeds the demo data
-      expect(await repository.loadFolders(), hasLength(5));
+      await repository.upsertFolder(
+        Folder(id: 'f1', name: 'One', date: '2026-01-01 00:00:00.000'),
+      );
+      await repository.upsertFolder(
+        Folder(id: 'f2', name: 'Two', date: '2026-01-02 00:00:00.000'),
+      );
+      await repository.trashFolder('f2');
+      expect(await repository.loadFolders(), hasLength(1));
+      expect(await repository.loadTrashFolders(), hasLength(1));
 
       await repository.deleteAllFolders();
 

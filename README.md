@@ -132,7 +132,7 @@ lib/
 ├── main.dart
 ├── core/
 │   ├── models/          # Note, Folder, JSON codecs
-│   ├── repositories/    # Encrypted SQLite storage, attachments, fixtures
+│   ├── repositories/    # Encrypted SQLite storage, attachments
 │   └── services/        # Authentication, cipher, export / import
 ├── features/
 │   ├── notes/           # Home: notes and folders, search, sorting

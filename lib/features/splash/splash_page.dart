@@ -15,7 +15,11 @@ import 'package:tano/shared/widgets/theme.dart';
 /// device), it shows a dedicated error state with "Retry" and "Quit" instead of
 /// leaving the user in front of an endless loader.
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, this.openEditorWhenEmpty = false});
+
+  /// Opens the note editor once the home is in place, when there is no note
+  /// yet. The introduction uses it, so that its "first note" promise is kept.
+  final bool openEditorWhenEmpty;
 
   @override
   SplashScreenState createState() => SplashScreenState();
@@ -39,7 +43,10 @@ class SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (BuildContext context) => Home(initialNotes: notes),
+          builder: (BuildContext context) => Home(
+            initialNotes: notes,
+            openEditorOnLaunch: widget.openEditorWhenEmpty,
+          ),
         ),
       );
     } catch (error) {

@@ -55,8 +55,6 @@ class _FlakyRepository implements NotesRepository {
   @override
   Future<void> deleteAllNotes() async {}
 
-  @override
-  Future<void> seedFixtures() async {}
 }
 
 void main() {

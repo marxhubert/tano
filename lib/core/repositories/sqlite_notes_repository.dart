@@ -2,14 +2,12 @@ import 'dart:io';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/app_log.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
-import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
 /// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
@@ -347,22 +345,12 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
 
-    // 1. Check if database is empty and if we should seed (first-run only)
-    final bool hasSeeded = prefs.getBool('database_initial_seed_done') ?? false;
-
-    if (!hasSeeded) {
-      final List<Map<String, dynamic>> existing = await db.query('notes');
-      if (existing.isEmpty) {
-        final List<Note> migrated = await _handleMigration(db);
-        await prefs.setBool('database_initial_seed_done', true);
-        return migrated.where((n) => !n.isDeleted).toList();
-      } else {
-        // If notes already exist (e.g. from a previous version without the flag),
-        // we just mark it as done.
-        await prefs.setBool('database_initial_seed_done', true);
-      }
+    // A fresh install starts empty. The only thing that can fill an empty
+    // database on its own is the one-off import of the legacy JSON file.
+    final List<Map<String, dynamic>> existing = await db.query('notes');
+    if (existing.isEmpty) {
+      await _handleMigration(db);
     }
 
     final List<Map<String, dynamic>> active = await db.query(
@@ -469,22 +457,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     await db.delete('folders');
   }
 
-  @override
-  Future<void> seedFixtures() async {
-    final db = await _database;
-    await db.transaction((txn) async {
-      await txn.delete('notes');
-      await txn.delete('folders');
-      final TanoFixtures fixtures = buildFixtures();
-      for (final folder in fixtures.folders) {
-        await txn.insert('folders', folder.toJson());
-      }
-      for (final note in fixtures.notes) {
-        await txn.insert('notes', note.toJson());
-      }
-    });
-  }
-
   /// Migrates data from the old JSON file if it exists.
   Future<List<Note>> _handleMigration(Database db) async {
     try {
@@ -512,18 +484,8 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       appLog('SQLite: Migration error: $e');
     }
 
-    // Default seed if no legacy data found
-    appLog('SQLite: Seeding default notes...');
-    final TanoFixtures fixtures = buildFixtures();
-    await db.transaction((txn) async {
-      for (final folder in fixtures.folders) {
-        await txn.insert('folders', folder.toJson());
-      }
-      for (final note in fixtures.notes) {
-        await txn.insert('notes', note.toJson());
-      }
-    });
-    return fixtures.notes;
+    // Nothing to migrate: a fresh install simply starts empty.
+    return <Note>[];
   }
 }
 

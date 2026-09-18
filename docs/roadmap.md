@@ -14,8 +14,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **287 tests** verts (dont 20 goldens, joués en
+- `flutter analyze` 0 issue, **284 tests** verts (dont 20 goldens, joués en
   local), CI `analyze` + `test` + un build de débogage des deux cibles.
+- **Premier lancement** : une introduction de 3 écrans, rejouable depuis
+  À propos, sur une base **vide** (plus de données de démonstration).
+- **Suppression** : une annulation unique pour la note comme pour le dossier.
 - Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
   dialogues, couvertures, FAB, nettoyage, accessibilité).
 
@@ -56,8 +59,10 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 ## 3. UX grand public
 
-- [ ] **Onboarding** (2-3 écrans, ou état vide pédagogique).
-- [ ] **Undo uniformisé** (le dossier n'a pas l'undo de l'accueil).
+- [x] **Onboarding** : trois écrans au premier lancement, rejouables depuis
+  À propos. La base démarre vide.
+- [x] **Undo uniformisé** : une seule annulation, partagée par l'accueil et le
+  dossier.
 - [ ] **Feedback** sur déplacement / verrouillage.
 - [ ] **Réglages** : taille de texte, retour haptique / son.
 - [ ] **Recherche** : historique + filtres (catégorie, favori, dates).

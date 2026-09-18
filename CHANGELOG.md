@@ -18,9 +18,16 @@ Older releases are described on the
 - The About page reads its identity from the build (see the README, "Identity").
   A build that names no author shows no author and no support page.
 - The Malagasy word look-up opens from the language references.
+- An introduction of three screens on the first launch, reachable again from
+  About: what the app is, the lock that protects a note, and where things are
+  kept.
+- One undo for every deletion: the home list and the folder page now build the
+  same notice and put the notes back the same way.
 
 ### Changed
 
+- **The app ships empty.** The demo folders and notes that used to fill a fresh
+  install are gone; the first launch opens the introduction on a blank slate.
 - **The core was rebuilt** around `lib/core`, `lib/features` and `lib/shared`:
   unified cards (`EntityCard`), list rendering (`EntitySliver`), selection
   (`SelectionController`), dialogs, covers and a rewritten FAB.

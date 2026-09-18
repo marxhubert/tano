@@ -57,8 +57,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
       .toList();
   @override
   Future<void> deleteAllNotes() async => notes.clear();
-  @override
-  Future<void> seedFixtures() async {}
 
   @override
   Future<List<Folder>> loadFolders() async =>
