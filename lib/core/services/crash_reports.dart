@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:tano/shared/config/app_config.dart';
+import 'package:tano/shared/config/app_log.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 
 /// Anonymous crash reporting, gated by the "allow bug report" switch.
@@ -49,7 +50,7 @@ class CrashReports {
     } catch (error) {
       // Crash reporting must never keep the app from starting.
       _initialised = false;
-      debugPrint('CrashReports: the SDK did not start ($error)');
+      appLog('CrashReports: the SDK did not start ($error)');
       if (appRunner != null) appRunner();
     }
   }
@@ -61,7 +62,7 @@ class CrashReports {
     try {
       await Sentry.close();
     } catch (error) {
-      debugPrint('CrashReports: the SDK did not close cleanly ($error)');
+      appLog('CrashReports: the SDK did not close cleanly ($error)');
     }
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/services/installation_key.dart';
+import 'package:tano/shared/config/app_log.dart';
 import 'package:tano/core/services/local_cipher.dart';
 
 /// Encrypted replacement for [SharedPreferences].
@@ -46,7 +47,7 @@ class SecurePreferences {
             ),
           );
         } catch (error) {
-          debugPrint('SecurePreferences: cannot read "$name" ($error)');
+          appLog('SecurePreferences: cannot read "$name" ($error)');
         }
       } else if (raw != null) {
         // Value written before encryption: keep it, re-encrypt it below.
@@ -66,7 +67,7 @@ class SecurePreferences {
     try {
       return await InstallationKey.instance.preferencesKey();
     } catch (error) {
-      debugPrint('SecurePreferences: secure storage unavailable ($error)');
+      appLog('SecurePreferences: secure storage unavailable ($error)');
       return _fallbackKey;
     }
   }
