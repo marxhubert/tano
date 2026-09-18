@@ -296,7 +296,7 @@ class AppText {
     'privacy_delete_title': 'Deleting your data',
     'privacy_delete_body':
         'Everything can be erased from the settings. Because nothing is kept on our side, deleting the app or its data is enough: there is no request to send and no copy left elsewhere.',
-    'privacy_updated': 'Last updated: September 2026',
+    'privacy_updated': 'Last updated: September {year}',
     'licenses': 'Licenses',
     'license_disclaimer':
         'This has been translated from the original English version by an AI, then reviewed and verified by a human. However, translation errors may still occur. We apologize in advance and thank you for your understanding.',
@@ -495,7 +495,7 @@ class AppText {
     'privacy_delete_title': 'Supprimer vos données',
     'privacy_delete_body':
         "Tout s'efface depuis les paramètres. Comme rien n'est conservé de notre côté, supprimer l'application ou ses données suffit : aucune demande à envoyer, aucune copie ailleurs.",
-    'privacy_updated': 'Dernière mise à jour : septembre 2026',
+    'privacy_updated': 'Dernière mise à jour : septembre {year}',
     'licenses': 'Licences',
     'license_disclaimer':
         "Ceci a été traduit de la version originale anglaise par une IA, puis relu et vérifié par un humain. Toutefois, des erreurs de traduction peuvent encore subsister. Nous nous en excusons par avance et vous remercions de votre compréhension.",
@@ -694,7 +694,7 @@ class AppText {
     'privacy_delete_title': 'Famafana ny angonao',
     'privacy_delete_body':
         "Afaka fafana ao amin'ny fikirana ny zavatra rehetra. Satria tsy misy tehirizina any aminay, dia ampy ny mamafa ny rindrankajy na ny angona: tsy misy fangatahana alefa, ary tsy misy dika mitovy any an-kafa.",
-    'privacy_updated': 'Farany nohavaozina: Septambra 2026',
+    'privacy_updated': 'Farany nohavaozina: Septambra {year}',
     'licenses': 'Lisansa',
     'license_disclaimer':
         "Ity dia nadika avy tamin'ny dikan-teny anglisy tany am-boalohany tamin'ny alalan'ny AI, nefa efa novakiana sy nohamarinin'olombelona. Na izany aza, mety mbola hisy ny hadisoana amin'ny fandikan-teny. Mifona mialoha izahay ary misaotra anareo amin'ny fahatakarana.",

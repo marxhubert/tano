@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// One settings section: an optional title, a card of tiles and an optional
@@ -192,7 +192,7 @@ class SettingsTile extends StatelessWidget {
       trailing:
           trailing ??
           (selected
-              ? const Icon(Symbols.check_circle, color: tanoBlue, size: 20.0)
+              ? const CheckDisc()
               : null),
       onTap: onTap,
     );

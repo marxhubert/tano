@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -31,7 +32,10 @@ class _LicensesPageState extends State<LicensesPage> {
       final text = await rootBundle.loadString('assets/licenses/$langToLoad.txt');
       if (mounted) {
         setState(() {
-          _licenseText = text;
+          // The text carries the identity as placeholders: the app fills them.
+          _licenseText = text
+              .replaceAll('{year}', '${AppConfig.year}')
+              .replaceAll('{author}', AppConfig.authorName);
           _isLoading = false;
         });
       }
@@ -82,7 +86,7 @@ class _LicensesPageState extends State<LicensesPage> {
                       ),
                     ),
                     Text(
-                      '2026',
+                      '${AppConfig.year}',
                       style: TextStyle(
                         color: mutedTextColor(context),
                         fontSize: TanoText.label,

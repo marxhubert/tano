@@ -21,4 +21,4 @@ Zava-dehibe ny mahafantatra fa ireto angona ireto dia tsy mitonona anarana tante
 Amin'ny fampiasanao ny TanoNote, ianao dia manampy anay hamorona fitaovana tsara kokoa ho an'ny rehetra sady mitazona ny fiainanao manokana ho tsiambaratelo.
 
 Misaotra amin'ny fitokisanao.
-© 2026, Marx Hubert
+© {year}, {author}

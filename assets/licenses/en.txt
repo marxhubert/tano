@@ -21,4 +21,4 @@ It is important to note that this data is entirely anonymous. We do not collect 
 By using TanoNote, you help us build a better tool for everyone while keeping your private life private.
 
 Thank you for your trust.
-© 2026, Marx Hubert
+© {year}, {author}
