@@ -29,7 +29,7 @@ class CancelButton extends StatelessWidget {
           style: const TextStyle(
             fontWeight: FontWeight.w400,
             fontSize: appBarTextSize,
-            color: tanoBlue,
+            color: tanoTeal,
           ),
         ),
       ),

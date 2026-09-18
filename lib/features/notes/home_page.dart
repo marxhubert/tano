@@ -536,7 +536,7 @@ class HomeState extends State<Home> with RouteAware {
             child: Text(
               AppText.tr('menu_list'),
               style: TextStyle(
-                color: tanoBlue,
+                color: tanoTeal,
                 fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
               ),
@@ -550,7 +550,7 @@ class HomeState extends State<Home> with RouteAware {
             child: Text(
               AppText.tr('menu_grid'),
               style: TextStyle(
-                color: tanoBlue,
+                color: tanoTeal,
                 fontSize: TanoText.sheetAction,
                 fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
               ),
@@ -563,7 +563,7 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoBlue, fontSize: TanoText.sheetAction),
+              style: const TextStyle(color: tanoTeal, fontSize: TanoText.sheetAction),
             ),
           ),
         ],

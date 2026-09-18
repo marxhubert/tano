@@ -69,7 +69,7 @@ class _CoverImageState extends State<CoverImage> {
         // Fade the cover in so a card does not pop when it appears.
         if (!snapshot.hasData) {
           return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+            duration: TanoMotion.base,
             child: widget.expand
                 ? const _CoverPlaceholder(
                     key: ValueKey<String>('cover-placeholder'),
@@ -95,7 +95,7 @@ class _CoverImageState extends State<CoverImage> {
           ),
         );
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: TanoMotion.base,
           child: widget.expand
               // Background: fill the box it is given.
               ? Stack(

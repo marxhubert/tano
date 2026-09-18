@@ -34,11 +34,19 @@ Widget emptyState(BuildContext context, String message, {String? image}) {
           if (image != null) ...<Widget>[
             Opacity(
               opacity: _emptyArtOpacity,
-              child: Image.asset(
-                image,
-                width: 96.0,
-                height: 96.0,
-                fit: BoxFit.contain,
+              child: ColorFiltered(
+                // The drawings have no colour of their own: they take the app's,
+                // so a change of identity carries them along.
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
+                child: Image.asset(
+                  image,
+                  width: 96.0,
+                  height: 96.0,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(height: appPaddingMedium),

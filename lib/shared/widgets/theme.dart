@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 const Object fabTapGroup = Object();
 
 // --- Identité Visuelle (30%) ---
-const Color tanoBlue = Color(0xFF2D74FF);
+const Color tanoTeal = Color(0xFF009688);
 const Color tanoAmber = Color(0xFFFF9800);
 const Color tanoAmberDark = Color(0xFFFFB74D);
 
@@ -16,10 +16,10 @@ const Color darkBackground = Color(0xFF121212);
 // --- Palette des États (Tickets) ---
 /// The app has a single red. `error` carries both meanings: a real error, and a
 /// destructive action ("delete", "empty the bin", "delete the selection"). The
-/// light variant is the one read on the dark background and on the blue bars.
+/// light variant is the one read on the dark background and on the teal bars.
 class TanoStates {
   static const neutral = (light: Color(0xFF90A4AE), dark: Color(0xFF78909C));
-  static const action = (light: Color(0xFF2D74FF), dark: Color(0xFF77A5FF));
+  static const action = (light: Color(0xFF009688), dark: Color(0xFF4DB6AC));
   static const success = (light: Color(0xFF4CAF50), dark: Color(0xFF81C784));
   static const warning = (light: Color(0xFFFF9800), dark: Color(0xFFFFB74D));
   static const error = (light: Color(0xFFE53935), dark: Color(0xFFE57373));
@@ -59,6 +59,15 @@ class TanoPastels {
     (light: bonbon.light, dark: bonbon.dark, name: 'bonbon'),
     (light: nuage.light, dark: nuage.dark, name: 'nuage'),
   ];
+}
+
+/// The three durations the app moves in: a fade, a change of shape, and a move
+/// the eye can follow. Everything else — a wait, a snackbar, the spinner — is a
+/// duration in time rather than a motion, and keeps its own value.
+class TanoMotion {
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration base = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 450);
 }
 
 // --- Dimensions & Layout ---

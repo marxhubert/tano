@@ -95,7 +95,7 @@ class _EditNoteState extends State<EditNote>
 
     _highlightBlinkController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: TanoMotion.slow,
     )..addListener(() {
         _contentController.searchBlinkValue = _highlightBlinkController.value;
       });
@@ -237,7 +237,7 @@ class _EditNoteState extends State<EditNote>
           viewport.getOffsetToReveal(editable, 0.5, rect: rect);
       Scrollable.of(fieldContext).position.animateTo(
         revealed.offset,
-        duration: const Duration(milliseconds: 200),
+        duration: TanoMotion.base,
         curve: Curves.easeInOut,
       );
     });
