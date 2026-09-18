@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_update/in_app_update.dart' as play;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tano/shared/config/app_log.dart';
 
 /// What the store answered about the build installed on this device.
 enum UpdateStatus {
@@ -78,7 +79,7 @@ class UpdateService {
         update = AppUpdate.unknown;
       }
     } catch (error) {
-      debugPrint('UpdateService: check failed ($error)');
+      appLog('UpdateService: check failed ($error)');
       update = AppUpdate.unknown;
     }
 
@@ -101,7 +102,7 @@ class UpdateService {
         await play.InAppUpdate.performImmediateUpdate();
         return;
       } catch (error) {
-        debugPrint('UpdateService: in-app update failed ($error)');
+        appLog('UpdateService: in-app update failed ($error)');
       }
       await launchUrl(await _playPage(), mode: LaunchMode.externalApplication);
     }

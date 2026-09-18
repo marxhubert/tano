@@ -1,106 +1,69 @@
 # Tests & qualité
 
-Objectif : renforcer la confiance dans le code, prévenir les régressions et
-automatiser la qualité.
+Comment les tests sont organisés, comment on les lance, et ce qu'ils ne couvrent
+pas. Ce document décrit l'état **réel** ; les décisions de fond vivent dans la
+[feuille de route](./roadmap.md).
 
-L'application possède déjà une **bonne base de tests unitaires**. Ce plan vise à
-combler les manques identifiés.
+## Les familles de tests
 
----
+| Famille | Où | Ce qu'elle vérifie |
+|---|---|---|
+| Unitaires et ViewModels | `test/*_test.dart` | Tri, sélection, édition, recherche, formats de date |
+| Dépôts | `test/sqlite_notes_repository_test.dart` | La vraie base chiffrée, sur un fichier temporaire |
+| Export / import | `test/export_import_test.dart` | L'aller-retour `.tano`, en clair et chiffré |
+| Widgets | `test/*_test.dart` | Les écrans réels, avec des faux en mémoire |
+| Goldens | `test/golden/` | Les cartes, vingt images, jamais en CI |
+| Intégration | `integration_test/` | L'app entière sur un appareil : dossiers, verrou |
 
-## 1. Tests unitaires (ViewModels & modèles)
+**287 tests** dans `flutter test` (goldens compris), plus les deux fichiers
+d'intégration, qui demandent un appareil ou un simulateur.
 
-### 🟠 S — Tester les cas limites des ViewModels
-- `HomeViewModel` : tri par favoris, tri par catégorie, `toggleFavorite` sur un
-  index hors bornes, `selectAll`/`clearSelection`, suppression avec liste vide.
-- `EditNoteViewModel` : `isValid` avec contenu vide, `isDirty` sur changement de
-  titre uniquement, génération d'id unique.
-- `SearchViewModel` : requête avec espaces, accents, casse, note sans titre.
+## Les lancer
 
-### 🟠 S — Tester le nouveau modèle `Note` immuable
-- `copyWith`, sérialisation/désérialisation des nouveaux champs (`updatedAt`),
-  valeur par défaut de `category`.
+    flutter analyze                      # doit rester à 0
+    flutter test                         # tout, goldens compris
+    flutter test --exclude-tags golden   # ce que fait la CI
+    flutter test integration_test        # sur un appareil
 
----
+## Les goldens
 
-## 2. Tests du repository fichier (intégration)
+Ils comparent des pixels, donc ils dépendent de la machine : ils sont générés et
+relus **en local**, et la CI les exclut (`dart_test.yaml` déclare le tag).
 
-### 🔴 M — Test d'intégration de `FileNotesRepository`
-- **Constat** : aucun test n'exerce la lecture/écriture réelle sur disque.
-- **Proposition** : injecter un répertoire temporaire (`Directory.systemTemp`)
-  et vérifier :
-  - la création du fichier au premier `loadNotes()` (seeding des fixtures) ;
-  - la persistance puis la relecture (`saveNotes` → `loadNotes`) ;
-  - l'écriture atomique (pas de fichier partiel) ;
-  - la lecture d'un fichier corrompu (erreur explicite, pas de crash).
-- **Bénéfice** : couvre le chemin de persistance réel, le plus critique.
+    flutter test --update-goldens test/golden/
 
----
+puis **regarder les PNG**. Le diff git dit combien d'octets ont bougé ; l'image
+dit quoi. Les vraies polices sont chargées par `test/golden/golden_setup.dart` —
+Roboto depuis le cache de Flutter, Material Symbols depuis le paquet résolu. Sans
+elles, tout serait des rectangles.
 
-## 3. Tests de widgets et golden tests
+## Les conventions des tests de widgets
 
-### ✅ — Golden tests des cartes *(faits)*
-- **Où** : `test/golden/entity_card_golden_test.dart`, 20 images dans
-  `test/golden/goldens/`.
-- **Quoi** : les quatre types (note, dossier, tâche, projet) × grille et liste ×
-  thème clair et sombre, plus deux planches d'états — normal, important,
-  verrouillé, en sélection et sélectionné.
-- **Lancer** : `flutter test test/golden/`
-- **Après un changement voulu** : `flutter test --update-goldens test/golden/`
-  puis **regarder les PNG**. Le diff git dit combien d'octets ont bougé, l'image
-  dit quoi.
-- **Polices** : les vraies sont chargées par `test/golden/golden_setup.dart` —
-  Roboto depuis le cache de Flutter, Material Symbols depuis le paquet que
-  `pub` a résolu. Sans elles, tout serait des rectangles.
-- **Hors CI** : le rendu du texte dépend de la machine. La CI les exclut
-  (`flutter test --exclude-tags golden`, tag déclaré dans `dart_test.yaml`).
-- **Limite connue** : l'extrait de note est dessiné par un `RichText`, qui
-  n'hérite pas de la police du thème. Il apparaît donc en blocs : sa **boîte**
-  est couverte par l'image, ses retours à la ligne non.
+- Un faux dépôt en mémoire plutôt que la base, branché par
+  `getIt.registerSingleton`.
+- `SharedPreferences.setMockInitialValues` et `PackageInfo.setMockInitialValues`
+  avant de pomper l'app.
+- `LocaleController.instance.init()` et `ThemeController.instance.init()` en
+  tête, comme le fait `main`.
+- `AuthService` remplacé dans `getIt` : le prompt biométrique ne se pilote pas.
 
-### 🟠 S — Tests de la réactivité de la langue et du thème
-- **Proposition** : vérifier que le changement de langue rebuild l'UI
-  (après refactor de `LocaleController` en `ChangeNotifier`).
+## Ce que les tests ne couvrent pas
 
----
+- **Le sélecteur de fichiers** de l'export : c'est un dialogue système. C'est la
+  limite du test d'export — tout ce qui est en dessous (l'archive, le
+  chiffrement, la fusion, les pièces jointes) est couvert au niveau des services,
+  dans `test/export_import_test.dart`.
+- **Le vrai prompt biométrique** : remplacé par un faux qui répond, pour vérifier
+  ce que l'app fait de la réponse.
+- **Le trousseau du système** : `flutter_secure_storage` n'existe pas sous
+  `flutter test`, donc les tests exercent son chemin de repli. C'est visible dans
+  la sortie (« secure storage unavailable ») et c'est attendu.
 
-## 4. Isolation et état global
+## Ce qui est exigé
 
-### 🟠 M — Réinitialiser les singletons entre tests
-- **Constat** : `ThemeController.instance` / `LocaleController.instance` gardent
-  leur état entre les tests.
-- **Proposition** : ajouter une méthode `reset()` ou injecter des instances neuves
-  dans `Tano` (voir plan architecture). À défaut, un `tearDown` qui restaure
-  l'état par défaut.
-
----
-
-## 5. Automatisation de la qualité
-
-### 🟠 S — CI (GitHub Actions)
-- **Proposition** : pipeline qui exécute `flutter analyze` + `flutter test` à
-  chaque PR, et `flutter build apk`/`build ios --no-codesign` pour valider la
-  compilation.
-- **Bénéfice** : détection précoce des régressions.
-
-### 🟠 S — Règles d'analyse plus strictes
-- **Proposition** : activer des lints supplémentaires dans `analysis_options.yaml`
-  (`unawaited_futures`, `prefer_const_constructors`, `require_trailing_commas`)
-  et traiter les warnings.
-- **Bénéfice** : code plus homogène.
-
-### 🟢 S — `dart format` en pre-commit
-- **Proposition** : ajouter un hook de formatage automatique.
-
----
-
-## 6. Indicateurs de qualité cibles
-
-| Indicateur | Cible |
+| Règle | Comment |
 |---|---|
-| Couverture des ViewModels | ≥ 90 % |
-| Couverture du repository | ≥ 80 % |
-| `flutter analyze` | 0 erreur, 0 warning |
-| Tests verts en CI | requis avant merge |
-
-> Voir la [feuille de route](./roadmap.md) pour l'ordre de mise en œuvre.
+| `flutter analyze` à 0 | La CI, à chaque PR |
+| Tests verts | La CI, avant tout merge |
+| Goldens relus à l'œil | En local, après tout changement voulu |
+| Les deux cibles compilent | La CI : `build apk` sur Ubuntu, `build ios --no-codesign` sur macOS |
