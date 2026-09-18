@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/theme_controller.dart';
+import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'settings_widgets.dart';
 
@@ -183,11 +184,14 @@ class _ThemePreview extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Icon(
-            isSelected ? Symbols.check_circle : Symbols.circle,
-            color: isSelected ? tanoAmber : Colors.grey.withValues(alpha: 0.5),
-            size: 20,
-          ),
+          if (isSelected)
+            const CheckDisc(color: tanoAmber)
+          else
+            Icon(
+              Symbols.circle,
+              color: Colors.grey.withValues(alpha: 0.5),
+              size: 20,
+            ),
         ],
       ),
     );

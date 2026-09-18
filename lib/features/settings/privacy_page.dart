@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -43,7 +44,12 @@ class PrivacyPage extends StatelessWidget {
               for (final (String title, String body) in sections)
                 _Section(titleKey: title, bodyKey: body),
               const SizedBox(height: 32.0),
-              _Paragraph(text: AppText.tr('privacy_updated'), muted: true),
+              _Paragraph(
+                text: AppText.tr('privacy_updated', <String, String>{
+                  'year': '${AppConfig.year}',
+                }),
+                muted: true,
+              ),
             ]),
           ),
         ),

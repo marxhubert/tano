@@ -728,6 +728,9 @@ class _EditNoteState extends State<EditNote>
             },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
+              // The title and the metadata line share the content's inset, so
+              // the three lines of the editor start on the same axis.
+              titlePaddingLeft: appPaddingMedium,
               backgroundColor: immersiveBg,
               // Once the note is scrolled, show its title in the app bar and
               // slide it to the left while the undo/redo/save actions appear.
@@ -784,8 +787,9 @@ class _EditNoteState extends State<EditNote>
               ],
               slivers: [
                 SliverPadding(
+                  // Same inset as the title line and as the text below it.
                   padding: const EdgeInsets.symmetric(
-                    horizontal: appPaddingLarge,
+                    horizontal: appPaddingMedium,
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -12,7 +13,7 @@ class LanguageReferencesPage extends StatelessWidget {
 
   String _buildUrl(String word) {
     final String normalized = word.toLowerCase().replaceAll('-', '');
-    return 'https://malagasyword.org/bins/teny2/$normalized';
+    return '${AppConfig.malagasyWordUrl}$normalized';
   }
 
   Future<void> _launchUrl(String word) async {

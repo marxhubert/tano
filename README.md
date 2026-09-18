@@ -67,6 +67,22 @@ flutter build appbundle
 flutter build ipa
 ```
 
+### Identity
+
+The repository carries no personal information: the author's name, the contact
+address and the support links are read from the build, and a build that passes
+none shows no author and offers no support page. `identity.json.dist` is the
+template — copy it, fill it in, and point the tool at it. The filled file is
+ignored by git, the template is not.
+
+```bash
+cp identity.json.dist identity.json   # then fill it in
+
+flutter run --dart-define-from-file=identity.json
+flutter build appbundle --dart-define-from-file=identity.json
+flutter build ipa --dart-define-from-file=identity.json
+```
+
 ## Tests
 
 ```bash

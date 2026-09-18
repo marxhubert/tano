@@ -86,6 +86,9 @@ class _AboutPageState extends State<AboutPage>
   @override
   Widget build(BuildContext context) {
     final Color textColor = primaryTextColor(context);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // The app has a single red, with a variant for each theme.
+    final Color red = isDark ? TanoStates.error.dark : TanoStates.error.light;
 
     final Widget tanoTitle = RichText(
       text: TextSpan(
@@ -111,16 +114,22 @@ class _AboutPageState extends State<AboutPage>
     );
 
     return PageScaffold(
-      title: 'About',
+      title: AppText.tr('about'),
       appBarTitleWidget: const TanoAppBarTitle(),
       titleWidget: Row(
         children: [
-          const SizedBox(
+          SizedBox(
             width: 40.0,
             height: 40.0,
             child: CircleAvatar(
-              backgroundColor: Colors.black87,
-              child: Icon(Symbols.bookmark, size: 24.0, color: Colors.white),
+              // The mark inverts with the theme: a dark disc with a white
+              // bookmark on the light screens, the other way round on the dark.
+              backgroundColor: isDark ? Colors.white : Colors.black87,
+              child: Icon(
+                Symbols.bookmark,
+                size: 24.0,
+                color: isDark ? Colors.black87 : Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 6.0),
@@ -228,40 +237,47 @@ class _AboutPageState extends State<AboutPage>
                     Symbols.star,
                     color: tanoAmber,
                     size: 20,
+                    fill: 1.0,
                   ),
                 ),
-                SettingsTile(
-                  title: 'Buy Me a Coffee',
-                  selected: false,
-                  onTap: () =>
-                      _launchUrl('https://www.buymeacoffee.com/marxhubert'),
-                  trailing: const Icon(
-                    Symbols.coffee,
-                    color: Colors.grey,
-                    size: 20,
+                // Only what this build configured: a fork that names no
+                // support page shows no support page.
+                if (AppConfig.coffeeUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.coffeeName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.coffeeUrl),
+                    trailing: Icon(
+                      Symbols.coffee,
+                      color: isDark ? Colors.white : Colors.black,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
-                SettingsTile(
-                  title: 'GitHub Sponsors',
-                  selected: false,
-                  onTap: () =>
-                      _launchUrl('https://github.com/sponsors/shikamarx'),
-                  trailing: const Icon(
-                    Symbols.favorite,
-                    color: Colors.grey,
-                    size: 20,
+                if (AppConfig.sponsorUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.sponsorName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.sponsorUrl),
+                    trailing: Icon(
+                      Symbols.favorite,
+                      color: red,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
-                SettingsTile(
-                  title: 'PayPal',
-                  selected: false,
-                  onTap: () => _launchUrl('https://paypal.me/marxhubert'),
-                  trailing: const Icon(
-                    Symbols.credit_card,
-                    color: Colors.grey,
-                    size: 20,
+                if (AppConfig.paypalUrl.isNotEmpty)
+                  SettingsTile(
+                    title: AppConfig.paypalName,
+                    selected: false,
+                    onTap: () => _launchUrl(AppConfig.paypalUrl),
+                    trailing: const Icon(
+                      Symbols.credit_card,
+                      color: tanoBlue,
+                      size: 20,
+                      fill: 1.0,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -325,7 +341,10 @@ class _AboutPageState extends State<AboutPage>
             padding: const EdgeInsets.only(top: 4 * sectionGap, bottom: sectionGap),
             alignment: Alignment.bottomCenter,
             child: Text(
-              '© 2026, Marx Hubert',
+              // A build that names no author shows the year alone.
+              AppConfig.authorName.isEmpty
+                  ? '© ${AppConfig.year}'
+                  : '© ${AppConfig.year}, ${AppConfig.authorName}',
               style: TextStyle(color: mutedTextColor(context), fontSize: TanoText.tiny),
             ),
           ),

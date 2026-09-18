@@ -137,7 +137,6 @@ Widget metadataItem(
           color: iconColor ?? mutedTextColor(context),
           fill: fill,
         ),
-        const SizedBox(width: 2.0),
         Text(label, style: metadataLineStyle(context)),
       ],
     );

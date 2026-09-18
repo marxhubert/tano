@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 const Object fabTapGroup = Object();
 
 // --- Identité Visuelle (30%) ---
-const Color tanoTeal = Color(0xFF009688);
 const Color tanoBlue = Color(0xFF2D74FF);
 const Color tanoAmber = Color(0xFFFF9800);
 const Color tanoAmberDark = Color(0xFFFFB74D);

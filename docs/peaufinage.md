@@ -291,6 +291,56 @@ blanc, le bleu gagne aussi (4,16 contre 3,67). Quatre goldens ont été
 régénérés : le rond de sélection des cartes est teinté avec la couleur
 principale.
 
+### Quatre retouches d'interface
+
+- **Éditeur** : la ligne de titre et la ligne des métadonnées prennent la même
+  marge que le texte — `appPaddingMedium` (12) au lieu de `appPaddingLarge` —,
+  donc les trois commencent sur le même axe. Les autres pages gardent la leur.
+- **Ligne des métadonnées** : plus d'écart entre le glyphe et son compteur
+  (`metadataItem` perd son `SizedBox(width: 2)`) ; ces compteurs ne vivent que
+  dans l'éditeur — cases cochées, liens, pièces jointes.
+- **Réglages** : la coche de la ligne sélectionnée devient une **pastille pleine**
+  avec la coche en blanc, et celle de l'aperçu de thème prend la même forme, en
+  ambre.
+- **Sélection dans l'accueil** : la même pastille, à 24 px, remplace la coche
+  filaire posée sur son rond blanc.
+
+`CheckDisc` (`lib/shared/widgets/check_disc.dart`) porte les trois. Le glyphe
+rempli de Material découpe sa coche à la couleur du dessous : un rond blanc passe
+donc derrière la pastille pour que la coche reste blanche en thème sombre. Quatre
+goldens régénérés — c'est le seul endroit de l'app où la sélection se voit.
+
+### L'identité au même endroit, et l'année en direct
+
+`AppConfig` centralise ce qui était écrit dans les pages : les adresses que
+l'app ouvre, les noms des services — des marques, qui ne se traduisent pas — et
+l'année, lue à l'horloge (`AppConfig.year`). Plus aucune URL n'est écrite dans
+`lib/` en dehors de ce fichier.
+
+- **Rien de personnel n'est écrit dans le dépôt.** Le nom de l'auteur, son
+  adresse, son compte GitHub et les adresses de soutien sont lus à la
+  compilation (`String.fromEnvironment`) : un build qui n'en passe aucun
+  n'affiche ni auteur ni page de soutien — les tuiles disparaissent, et le ©
+  se réduit à l'année. La recette est dans le README (« Identity ») :
+  `identity.json.dist` est le modèle versionné, `identity.json` le fichier local
+  que git ignore. Les pages publiées de `site/privacy/`, elles, gardent l'éditeur
+  et son contact : une politique de confidentialité doit les nommer.
+- Les dates affichées ne sont plus écrites : le © d'À propos, l'année de
+  l'en-tête des licences, le « dernière mise à jour » de la politique et le ©
+  des trois textes embarqués, qui portent maintenant `{year}` et `{author}`,
+  remplis au chargement.
+- La page À propos s'appelait « About » en dur : elle lit `AppText.tr('about')`.
+
+### À propos : la marque et les icônes
+
+- Le logo — le disque et son signet — **s'inverse** en thème sombre : le disque
+  noir devient blanc, le signet blanc devient noir.
+- Les quatre icônes de soutien passent en **plein** (`fill: 1.0`) et prennent
+  chacune sa couleur : l'étoile Premium en ambre, le café noir en clair et blanc
+  en sombre, le cœur GitHub dans le rouge de l'app (avec sa variante par thème),
+  et la carte PayPal dans le bleu de l'app. Vérifié sur un rendu des deux thèmes
+  hors app : le disque et le signet s'inversent bien, et les couleurs suivent.
+
 ## 6. Animations
 
 | Point | Détail |
