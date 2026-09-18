@@ -42,7 +42,8 @@ class _LicensesPageState extends State<LicensesPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _licenseText = 'Error loading license content.';
+          // The same words as every other loading failure in the app.
+          _licenseText = AppText.tr('load_error_message');
           _isLoading = false;
         });
       }
