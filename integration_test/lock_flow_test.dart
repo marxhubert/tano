@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/models/folder.dart';
@@ -149,5 +150,37 @@ void main() {
 
     expect(auth.calls, greaterThan(0));
     expect(find.byType(EditNote), findsNothing);
+  });
+  testWidgets('the editor locks a note, then unlocks it', (
+    WidgetTester tester,
+  ) async {
+    final _Repo repository = _Repo(
+      notes: <Note>[
+        Note(
+          id: 'n1',
+          title: 'Journal',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      ],
+    );
+    final _FakeAuth auth = _FakeAuth();
+    await _pumpApp(tester, repository: repository, auth: auth);
+
+    await tester.tap(find.text('Journal'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lock'));
+    await tester.pumpAndSettle();
+    expect(repository.notes.single.isLocked, isTrue);
+
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unlock'));
+    await tester.pumpAndSettle();
+    expect(auth.calls, greaterThan(0));
+    expect(repository.notes.single.isLocked, isFalse);
   });
 }

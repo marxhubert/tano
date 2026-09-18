@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:tano/shared/config/app_log.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 
 /// The last queries the user searched for, newest first.
@@ -68,7 +69,7 @@ class SearchHistoryController extends ChangeNotifier {
             .toList(growable: true);
       }
     } catch (error) {
-      debugPrint('SearchHistory: cannot read the stored list ($error)');
+      appLog('SearchHistory: cannot read the stored list ($error)');
     }
     return <String>[];
   }

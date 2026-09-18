@@ -53,8 +53,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 
 - [x] **Golden tests** des cartes (grille/liste, thèmes, états) —
   `test/golden/`, vingt images, hors CI. Voir [tests](./tests.md).
-- [ ] Étendre les **tests d'intégration** (dossiers, export/import, verrou).
-- [ ] **Logs** silencieux en release ; erreurs utilisateur uniformisées.
+- [x] Étendre les **tests d'intégration** (dossiers, export/import, verrou) :
+  cinq scénarios sur appareil, dont l'aller-retour `.tano` sur **deux bases
+  chiffrées réelles**.
+- [x] **Logs** silencieux en release (`appLog` derrière `kDebugMode`, plus aucun
+  `debugPrint` qui traîne) ; erreurs utilisateur uniformisées.
 
 ## 3. UX grand public
 

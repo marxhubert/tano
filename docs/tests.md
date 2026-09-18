@@ -13,9 +13,9 @@ pas. Ce document décrit l'état **réel** ; les décisions de fond vivent dans 
 | Export / import | `test/export_import_test.dart` | L'aller-retour `.tano`, en clair et chiffré |
 | Widgets | `test/*_test.dart` | Les écrans réels, avec des faux en mémoire |
 | Goldens | `test/golden/` | Les cartes, vingt images, jamais en CI |
-| Intégration | `integration_test/` | L'app entière sur un appareil : dossiers, verrou |
+| Intégration | `integration_test/` | Sur un appareil : dossiers, verrou, export/import |
 
-**300 tests** dans `flutter test` (goldens compris), plus les deux fichiers
+**300 tests** dans `flutter test` (goldens compris), plus les trois fichiers
 d'intégration, qui demandent un appareil ou un simulateur.
 
 ## Les lancer
