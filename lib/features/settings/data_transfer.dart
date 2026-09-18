@@ -1,3 +1,5 @@
+import 'package:tano/core/models/note_access_policy.dart';
+import 'package:tano/core/models/folder.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +7,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
+import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/core/services/archive_validation.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/export_service.dart';
 import 'package:tano/core/services/import_service.dart';
@@ -15,7 +20,22 @@ import 'package:tano/shared/widgets/theme.dart';
 
 /// Asks how to export, then writes the `.tano` file where the user chooses.
 Future<void> exportData(BuildContext context) async {
-  final List<Note> notes = await getIt<NotesRepository>().loadNotes();
+  final repository = getIt<NotesRepository>();
+  final folders = repository is FoldersRepository
+      ? await (repository as FoldersRepository).loadFolders()
+      : <Folder>[];
+  final access = NoteAccessPolicy(folders);
+  final List<Note> notes = (await repository.loadNotes())
+      .where(access.isReachable)
+      .map(
+        (note) => access.requiresAuthentication(note)
+            ? note.copyWith(isLocked: true)
+            : note,
+      )
+      .toList();
+  if (notes.any((note) => note.isLocked)) {
+    if (!await getIt<AuthService>().authenticate()) return;
+  }
   if (!context.mounted) return;
   final int lockedCount = notes.where((Note n) => n.isLocked).length;
 
@@ -33,11 +53,13 @@ Future<void> exportData(BuildContext context) async {
     hasLockedNotes: lockedCount > 0,
   );
 
+  final password = passwordController.text;
+  passwordController.dispose();
   if (confirmed != true || !context.mounted) return;
 
   final Uint8List bytes = await ExportService().build(
     notes: notes,
-    password: encrypted ? passwordController.text : null,
+    password: encrypted ? password : null,
     unlockLockedNotes: !encrypted,
   );
   final String stamp = DateTime.now().toIso8601String().split('T').first;
@@ -201,6 +223,16 @@ Future<void> importData(BuildContext context) async {
   final String? path = file?.path;
   if (path == null || !context.mounted) return;
 
+  if (await File(path).length() > ArchiveValidation.maxArchiveBytes) {
+    if (context.mounted) {
+      showAdaptiveAlert(
+        context: context,
+        title: AppText.tr('import_failed'),
+        message: AppText.tr('import_too_large'),
+      );
+    }
+    return;
+  }
   final Uint8List data = await File(path).readAsBytes();
   if (!context.mounted) return;
 

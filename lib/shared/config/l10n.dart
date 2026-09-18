@@ -174,6 +174,7 @@ class AppText {
     'import_password_title': 'Encrypted export',
     'import_password_message': 'Enter the password of this export.',
     'import_failed': 'Import failed',
+    'import_too_large': 'This export exceeds the 64 MiB limit.',
     'import_done':
         '{added} notes added, {skipped} skipped, {unlocked} unlocked.',
     'import_clear_warning':
@@ -202,6 +203,13 @@ class AppText {
     'about_cta':
         'Help us grow and improve TanoNote! Your support allows us to keep the app free and private for everyone. Consider taking action below:',
     'about_premium': 'Get Premium version',
+    'premium_projects': "Projects",
+    'premium_sharing': "Sharing",
+    'premium_collaboration': "Collaboration",
+    'premium_intro':
+        "Premium will include projects, sharing and collaboration.",
+    'premium_unavailable':
+        "These features are in development. Purchases are not available yet.",
     'about_more': 'You may also want (anonymously):',
     'close_button': 'Close',
     // Accessibility labels for icon-only actions.
@@ -241,7 +249,7 @@ class AppText {
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report':
-        'Help us improve TanoNote by sending anonymous crash reports. No IP address, no identifier, no note content — and you can turn it off at any time.',
+        "Send optional crash diagnostics without note content or a persistent user identifier. You can withdraw consent at any time.",
     'desc_recycle_bin':
         'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
     'desc_reset_data':
@@ -273,10 +281,10 @@ class AppText {
     'language_references': 'Language References',
     'attachment': 'Attachment',
     'attachments': 'Attachments',
-    // Privacy policy. The canonical text lives in docs/confidentialite.md.
+    // Privacy policy. The canonical text lives in docs/privacy.md.
     'privacy': 'Privacy policy',
     'privacy_intro':
-        'TanoNote has no account and no server. Everything you write stays on your device; nothing is sent anywhere unless you explicitly allow it.',
+        "TanoNote requires no account. Your notes and folders are stored locally. Optional diagnostics and update checks use external services.",
     'privacy_local_title': 'Data stored on your device',
     'privacy_local_body':
         'Your notes, folders, attachments and preferences are saved locally, in the private storage of the app.',
@@ -285,16 +293,16 @@ class AppText {
         'The database and the attachments are encrypted on the device. The key is kept in the secure storage of the system and never leaves it.',
     'privacy_crash_title': 'Crash reports (optional)',
     'privacy_crash_body':
-        'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
+        "Off by default. With “{option_bug_report}” enabled, configured builds send filtered exception types, stack symbols, app version, device model, OS version and configured device region (not precise location) to Sentry (Functional Software, Inc.). Note content, free-form error messages and persistent user identifiers are excluded. Network services necessarily receive your IP address; its retention must be restricted by the service configuration. Withdrawing consent stops new captures; already queued or transmitted reports may remain.",
     'privacy_updates_title': 'Update check',
     'privacy_updates_body':
-        'When you open the About screen, the app asks the store whether a newer version exists. The only thing carried is the name of the app — no account, no identifier, and nothing kept. The check can also be started by hand from that screen.',
+        "When you request an update check from About, the app contacts the App Store or Google Play. No note content is sent. The store processes the network metadata of this request.",
     'privacy_tracking_title': 'No tracking, no ads',
     'privacy_tracking_body':
         'TanoNote contains no usage analytics, no advertising and no third-party tracker, and never sells or shares your data. Nothing is collected until you turn the crash reports on.',
     'privacy_delete_title': 'Deleting your data',
     'privacy_delete_body':
-        'Everything can be erased from the settings. Because nothing is kept on our side, deleting the app or its data is enough: there is no request to send and no copy left elsewhere.',
+        "Settings can delete local app data. This does not erase exported files, copies held by other applications or diagnostics already sent. Known pre-release plaintext backups are discarded when local storage opens.",
     'privacy_updated': 'Last updated: September {year}',
     'licenses': 'Licenses',
     'license_disclaimer':
@@ -404,6 +412,7 @@ class AppText {
     'import_password_title': 'Export chiffré',
     'import_password_message': "Saisissez le mot de passe de cet export.",
     'import_failed': "Échec de l'import",
+    'import_too_large': "Cet export dépasse la limite de 64 Mio.",
     'import_done':
         '{added} notes ajoutées, {skipped} ignorées, {unlocked} déverrouillées.',
     'import_clear_warning':
@@ -432,6 +441,13 @@ class AppText {
     'about_cta':
         "Aidez-nous à faire grandir et améliorer TanoNote ! Votre soutien nous permet de garder l'application gratuite et privée pour tous. Voici comment vous pouvez nous aider :",
     'about_premium': "Passer à la version Premium",
+    'premium_projects': "Projets",
+    'premium_sharing': "Partage",
+    'premium_collaboration': "Collaboration",
+    'premium_intro':
+        "Premium comprendra les projets, le partage et la collaboration.",
+    'premium_unavailable':
+        "Ces fonctionnalités sont en développement. Les achats ne sont pas encore disponibles.",
     'about_more': "Vous pouvez également (et de façon anonyme) :",
     'close_button': 'Fermer',
     // Accessibility labels for icon-only actions.
@@ -472,7 +488,7 @@ class AppText {
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report':
-        'Aidez-nous à améliorer TanoNote en envoyant des rapports d\'erreur anonymes. Aucune adresse IP, aucun identifiant, aucun contenu de note — et vous pouvez le désactiver à tout moment.',
+        "Envoyez des diagnostics facultatifs sans contenu de note ni identifiant persistant d’usager. Vous pouvez retirer votre consentement à tout moment.",
     'desc_recycle_bin':
         'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
     'desc_reset_data':
@@ -504,10 +520,10 @@ class AppText {
     'language_references': 'Références Linguistiques',
     'attachment': 'Pièce jointe',
     'attachments': 'Pièces jointes',
-    // Police de confidentialité. Le texte de référence vit dans docs/confidentialite.md.
+    // Police de confidentialité. Le texte de référence vit dans docs/privacy.md.
     'privacy': 'Confidentialité',
     'privacy_intro':
-        "TanoNote n'a ni compte ni serveur. Tout ce que vous écrivez reste sur votre appareil ; rien n'est envoyé sans votre accord explicite.",
+        "TanoNote ne nécessite aucun compte. Vos notes et dossiers sont stockés localement. Les diagnostics facultatifs et la vérification des mises à jour utilisent des services externes.",
     'privacy_local_title': 'Données stockées sur votre appareil',
     'privacy_local_body':
         "Vos notes, dossiers, pièces jointes et préférences sont enregistrés localement, dans l'espace privé de l'application.",
@@ -516,16 +532,16 @@ class AppText {
         "La base de données et les pièces jointes sont chiffrées sur l'appareil. La clé est conservée dans le stockage sécurisé du système et n'en sort jamais.",
     'privacy_crash_title': 'Rapports de crash (facultatif)',
     'privacy_crash_body':
-        "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
+        "Désactivés par défaut. Avec « {option_bug_report} », les versions configurées envoient à Sentry (Functional Software, Inc.) des types d’erreurs, symboles de pile filtrés, version de l’app, modèle de l’appareil, version de l’OS et région configurée (pas de localisation précise). Le contenu des notes, les messages d’erreur libres et les identifiants persistants d’usagers sont exclus. Les services réseau reçoivent nécessairement votre adresse IP ; sa conservation doit être limitée par leur configuration. Le retrait du consentement arrête les nouvelles captures ; des rapports déjà en attente ou transmis peuvent subsister.",
     'privacy_updates_title': 'Vérification des mises à jour',
     'privacy_updates_body':
-        "Quand vous ouvrez l'écran À propos, l'application demande au store s'il existe une version plus récente. La seule chose transmise est le nom de l'application — aucun compte, aucun identifiant, rien de conservé. La vérification peut aussi être lancée à la main depuis ce même écran.",
+        "Lorsque vous demandez une vérification depuis À propos, l’app contacte l’App Store ou Google Play. Aucun contenu de note n’est transmis. Le store traite les métadonnées réseau de cette requête.",
     'privacy_tracking_title': 'Aucun pistage, aucune publicité',
     'privacy_tracking_body':
         "TanoNote ne contient ni analyse d'usage, ni publicité, ni traceur tiers, et ne vend ni ne partage vos données. Rien n'est collecté tant que vous n'activez pas les rapports de crash.",
     'privacy_delete_title': 'Supprimer vos données',
     'privacy_delete_body':
-        "Tout s'efface depuis les paramètres. Comme rien n'est conservé de notre côté, supprimer l'application ou ses données suffit : aucune demande à envoyer, aucune copie ailleurs.",
+        "Les paramètres permettent de supprimer les données locales de l’app. Cela n’efface pas les exports, les copies détenues par d’autres applications ni les diagnostics déjà envoyés. Les anciennes sauvegardes de test en clair sont supprimées à l’ouverture du stockage local.",
     'privacy_updated': 'Dernière mise à jour : septembre {year}',
     'licenses': 'Licences',
     'license_disclaimer':
@@ -636,6 +652,7 @@ class AppText {
     'import_password_message':
         'Ampidiro ny teny miafina amin\'ity fanondranana ity.',
     'import_failed': 'Tsy nahomby ny fampidirana',
+    'import_too_large': 'Mihoatra ny fetra 64 MiB ity rakitra ity.',
     'import_done':
         '{added} naoty nampidirina, {skipped} nolavina, {unlocked} navahana.',
     'import_clear_warning':
@@ -664,6 +681,13 @@ class AppText {
     'about_cta':
         "Ampio izahay hampandroso sy hanatsara hatrany ny TanoNote! Ny fanohananao dia mamela anay hihazona ity fitaovana ity ho maimaim-poana sy hanaja ny tsiambaratelon'ny rehetra. Azonao atao ireto manaraka ireto:",
     'about_premium': "Hividy ny dikan-teny Premium",
+    'premium_projects': "Tetikasa",
+    'premium_sharing': "Fizarana",
+    'premium_collaboration': "Fiaraha-miasa",
+    'premium_intro':
+        "Tafiditra ao amin’ny Premium ny tetikasa, ny fizarana ary ny fiaraha-miasa.",
+    'premium_unavailable':
+        "Mbola eo am-pamolavolana ireo fiasa ireo. Tsy mbola misy ny fividianana.",
     'about_more': "Azonao atao koa (sady tsy mila anarana) ny:",
     'close_button': 'Hidio',
     // Accessibility labels for icon-only actions.
@@ -703,7 +727,7 @@ class AppText {
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report':
-        'Ampio izahay hanatsara ny TanoNote amin\'ny fandefasana tatitra momba ny olana tsy misy anarana. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin\'ny naoty — ary azonao atao ny mamono azy rehefa tianao.',
+        "Alefaso raha tianao ny tatitra ara-teknika tsy misy votoatin’ny naoty na famantarana maharitra ny mpampiasa. Azonao esorina amin’ny fotoana rehetra ny fanekenao.",
     'desc_recycle_bin':
         'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
     'desc_reset_data':
@@ -735,10 +759,10 @@ class AppText {
     'language_references': 'Rakiteny tsotra',
     'attachment': 'Rakitra ampiana',
     'attachments': 'Rakitra ampiana',
-    // Politikan'ny tsiambaratelo. Ny lahatsoratra fototra dia ao amin'ny docs/confidentialite.md.
+    // Politikan'ny tsiambaratelo. Ny lahatsoratra fototra dia ao amin'ny docs/privacy.md.
     'privacy': 'Tsiambaratelo',
     'privacy_intro':
-        "Ny TanoNote dia tsy manana kaonty na serivera. Izay rehetra soratanao dia mijanona ao amin'ny findainao; tsy misy alefa raha tsy manaiky ianao.",
+        "Tsy mila kaonty ny TanoNote. Tehirizina eo an-toerana ny naoty sy ny lahatahiry. Mampiasa tolotra ivelany ny tatitra tsy voatery sy ny fanamarinana fanavaozana.",
     'privacy_local_title': "Angona tehirizina ao amin'ny findainao",
     'privacy_local_body':
         "Ny naoty, ny rakitra, ny rakitra ampiana ary ny fikirana dia tehirizina eo an-toerana, ao amin'ny fitahirizana manokana an'ny rindrankajy.",
@@ -747,16 +771,16 @@ class AppText {
         "Ny banky angona sy ny rakitra ampiana dia afenina ao amin'ny finday. Ny fanalahidy dia tehirizina ao amin'ny fitahirizana azo antoka an'ny rafitra ary tsy mivoaka mihitsy.",
     'privacy_crash_title': 'Tatitra momba ny olana (tsy voatery)',
     'privacy_crash_body':
-        "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
+        "Tsy mandeha raha tsy manaiky ianao. Raha velomina ny « {option_bug_report} », dia afaka mandefa karazana hadisoana, marika ara-teknika voasivana, dikan-tenin’ny app, modelin’ny fitaovana, dikan-tenin’ny OS ary faritra voafidy (fa tsy toerana marina) any amin’ny Sentry (Functional Software, Inc.) ny app voakirakira amin’izany. Tsy tafiditra ny votoatin’ny naoty, ny hafatra malalaka na ny famantarana maharitra ny mpampiasa. Hitan’ny tolotra tambajotra ny adiresy IP; mila ferana amin’ny fikirany ny fitahirizana azy. Mijanona ny fanangonana vaovao rehefa esorina ny fanekena, fa mety mbola hisy tatitra efa nalefa na miandry.",
     'privacy_updates_title': 'Fanamarinana ny fanavaozana',
     'privacy_updates_body':
-        "Rehefa manokatra ny efijery Momba ny ianao dia manontany ny store ny rindrankajy raha misy dikan-teny vaovao. Ny anaran'ny rindrankajy ihany no alefa — tsy misy kaonty, tsy misy famantarana, ary tsy misy tehirizina. Azo atao koa ny manamarina amin'ny tanana avy amin'io efijery io.",
+        "Rehefa mangataka fanamarinana ao amin’ny Momba ny ianao dia mifandray amin’ny App Store na Google Play ny app. Tsy alefa ny votoatin’ny naoty. Ny store no mikarakara ny metadata momba ilay fifandraisana.",
     'privacy_tracking_title': 'Tsy misy fanarahana, tsy misy doka',
     'privacy_tracking_body':
         "Ny TanoNote dia tsy misy fandinihana fampiasana, tsy misy doka ary tsy misy mpanara-maso avy any ivelany; tsy mivarotra na mizara ny angonao izy. Tsy misy angonina raha tsy velonao ny tatitra momba ny olana.",
     'privacy_delete_title': 'Famafana ny angonao',
     'privacy_delete_body':
-        "Afaka fafana ao amin'ny fikirana ny zavatra rehetra. Satria tsy misy tehirizina any aminay, dia ampy ny mamafa ny rindrankajy na ny angona: tsy misy fangatahana alefa, ary tsy misy dika mitovy any an-kafa.",
+        "Afaka mamafa ny angona eo an-toerana ao amin’ny fikirana ianao. Tsy mamafa ny rakitra naondrana, ny kopia any amin’ny app hafa na ny tatitra efa nalefa izany. Fafana rehefa misokatra ny fitahirizana ireo tahiry fitsapana tranainy tsy voafina.",
     'privacy_updated': 'Farany nohavaozina: Septambra {year}',
     'licenses': 'Lisansa',
     'license_disclaimer':

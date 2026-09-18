@@ -13,7 +13,7 @@ import 'package:tano/shared/config/secure_preferences.dart';
 /// personal data, no identifier, no performance trace, no session
 /// replay, no log and not a single breadcrumb.
 ///
-/// See `docs/observabilite.md` and `docs/confidentialite.md`.
+/// See `docs/observability.md` and `docs/privacy.md`.
 class CrashReports {
   CrashReports._();
 
@@ -44,6 +44,10 @@ class CrashReports {
   /// SDK has to wrap the whole application.
   static Future<void> start({VoidCallback? appRunner}) async {
     if (_initialised) return;
+    if (AppConfig.sentryDsn.isEmpty) {
+      appRunner?.call();
+      return;
+    }
     _initialised = true;
     try {
       await SentryFlutter.init(_configure, appRunner: appRunner);
@@ -78,11 +82,16 @@ class CrashReports {
     options.sendDefaultPii = false;
     options.maxBreadcrumbs = 0;
     options.beforeBreadcrumb = (_, _) => null;
-    options.beforeSend = scrub;
+    options.beforeSend = (event, hint) =>
+        _initialised ? scrub(event, hint) : null;
 
     // No tracing, profiling, replay, log nor session tracking.
     options.tracesSampleRate = null;
     options.enableLogs = false;
+    options.enableAutoSessionTracking = false;
+    // Native crash envelopes can bypass the Dart sanitizer. Re-enable only
+    // after an equivalent native filtering path has been verified on devices.
+    options.enableNativeCrashHandling = false;
     options.replay.sessionSampleRate = 0.0;
     options.replay.onErrorSampleRate = 0.0;
     options.enableAutoNativeBreadcrumbs = false;
@@ -95,10 +104,78 @@ class CrashReports {
   /// Defence in depth: whatever an integration adds later, an event never
   /// leaves with a user, a request (which carries the IP) or a breadcrumb.
   @visibleForTesting
-  static SentryEvent? scrub(SentryEvent event, Hint hint) {
-    event.user = null;
-    event.request = null;
-    event.breadcrumbs = null;
-    return event;
+  static SentryEvent? scrub(
+    SentryEvent event,
+    Hint hint, {
+    String? countryCode,
+  }) {
+    final device = event.contexts.device;
+    final os = event.contexts.operatingSystem;
+    final country =
+        countryCode ?? PlatformDispatcher.instance.locale.countryCode;
+    final region = country != null && RegExp(r'^[A-Z]{2}$').hasMatch(country)
+        ? country
+        : null;
+    return SentryEvent(
+      eventId: event.eventId,
+      timestamp: event.timestamp,
+      platform: event.platform,
+      release: event.release,
+      dist: event.dist,
+      level: event.level,
+      tags: region == null ? null : {'device_region': region},
+      contexts: Contexts(
+        device: device == null
+            ? null
+            : SentryDevice(
+                model: _technical(device.model),
+                manufacturer: _technical(device.manufacturer),
+                arch: _technical(device.arch),
+                simulator: device.simulator,
+              ),
+        operatingSystem: os == null
+            ? null
+            : SentryOperatingSystem(
+                name: _technical(os.name),
+                version: _technical(os.version),
+              ),
+      ),
+      exceptions: event.exceptions
+          ?.map(
+            (exception) => SentryException(
+              type: _symbol(exception.type),
+              value: null,
+              stackTrace: exception.stackTrace == null
+                  ? null
+                  : SentryStackTrace(
+                      frames: exception.stackTrace!.frames
+                          .map(
+                            (frame) => SentryStackFrame(
+                              function: _symbol(frame.function),
+                              lineNo: frame.lineNo,
+                              colNo: frame.colNo,
+                              inApp: frame.inApp,
+                            ),
+                          )
+                          .toList(),
+                    ),
+            ),
+          )
+          .toList(),
+    );
   }
+
+  // Only SDK-supplied technical fields; never a hostname, serial or raw OS dump.
+  static String? _technical(String? value) =>
+      value != null &&
+          value.length <= 80 &&
+          RegExp(r'^[a-zA-Z0-9 ._,()+-]+$').hasMatch(value)
+      ? value
+      : null;
+
+  // Keep compiler symbols, never exception values, paths or free-form text.
+  static String? _symbol(String? value) =>
+      value != null && RegExp(r'^[a-zA-Z_$][a-zA-Z0-9_$.<>]*$').hasMatch(value)
+      ? value
+      : null;
 }

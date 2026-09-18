@@ -1,3 +1,6 @@
+import 'package:tano/core/models/note_access_policy.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -76,12 +79,23 @@ class _EditNoteState extends State<EditNote>
   late final AnimationController _highlightBlinkController;
 
   // Undo/redo history of snapshots.
-  final List<({String title, String content, String? coverImage})> _history = [];
+  final List<({String title, String content, String? coverImage})> _history =
+      [];
   int _historyIndex = 0;
+
+  bool _canLock = false;
+
+  Future<void> _loadLockCapability() async {
+    final available =
+        getIt.isRegistered<AuthService>() &&
+        await getIt<AuthService>().isAvailable();
+    if (mounted) setState(() => _canLock = available);
+  }
 
   @override
   void initState() {
     super.initState();
+    _loadLockCapability();
     _viewModel = EditNoteViewModel(
       repository: getIt<NotesRepository>(),
       add: widget.add,
@@ -89,30 +103,29 @@ class _EditNoteState extends State<EditNote>
     );
     _titleController.text =
         widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
-    
+
     _contentController = LinkTextEditingController(
       text: widget.noteAction.note?.content ?? '',
       linkColor: tanoAmber,
     );
 
-    _highlightBlinkController = AnimationController(
-      vsync: this,
-      duration: TanoMotion.slow,
-    )..addListener(() {
-        _contentController.searchBlinkValue = _highlightBlinkController.value;
-      });
+    _highlightBlinkController =
+        AnimationController(
+          vsync: this,
+          duration: TanoMotion.slow,
+        )..addListener(() {
+          _contentController.searchBlinkValue = _highlightBlinkController.value;
+        });
 
     _loadActiveNoteIds();
     _contentFocus.addListener(_onContentFocusChanged);
     _contentFocusHadFocus = _contentFocus.hasFocus;
     _noteContentLength = widget.noteAction.note?.content.length ?? 0;
-    _history.add(
-      (
-        title: _titleController.text,
-        content: _contentController.text,
-        coverImage: _viewModel.coverImage,
-      ),
-    );
+    _history.add((
+      title: _titleController.text,
+      content: _contentController.text,
+      coverImage: _viewModel.coverImage,
+    ));
   }
 
   Future<void> _loadActiveNoteIds() async {
@@ -227,16 +240,20 @@ class _EditNoteState extends State<EditNote>
       final RenderEditable? editable = _findRenderEditable(root);
       if (editable == null) return;
       final Rect rect = _rangeRect(editable, start, length);
-      final RenderAbstractViewport? viewport =
-          RenderAbstractViewport.maybeOf(editable);
+      final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(
+        editable,
+      );
       if (viewport == null) return;
 
       // When the whole note already fits on screen, centring the occurrence
       // produces a pointless bounce: just keep the current scroll position.
       if (_isOccurrenceVisible(viewport, editable, rect)) return;
 
-      final RevealedOffset revealed =
-          viewport.getOffsetToReveal(editable, 0.5, rect: rect);
+      final RevealedOffset revealed = viewport.getOffsetToReveal(
+        editable,
+        0.5,
+        rect: rect,
+      );
       Scrollable.of(fieldContext).position.animateTo(
         revealed.offset,
         duration: TanoMotion.base,
@@ -300,10 +317,7 @@ class _EditNoteState extends State<EditNote>
     )) {
       showAdaptiveNotice(context, AppText.tr('content_empty'));
     } else {
-      Navigator.pop(
-        context,
-        NoteAction(kind: NoteActionKind.save, note: note),
-      );
+      Navigator.pop(context, NoteAction(kind: NoteActionKind.save, note: note));
     }
   }
 
@@ -332,11 +346,11 @@ class _EditNoteState extends State<EditNote>
 
   /// The thin "|" separating two metadata values.
   Widget _metadataSeparator(BuildContext context) => Text(
-        '|',
-        style: metadataLineStyle(
-          context,
-        ).copyWith(color: mutedTextColor(context).withValues(alpha: 0.3)),
-      );
+    '|',
+    style: metadataLineStyle(
+      context,
+    ).copyWith(color: mutedTextColor(context).withValues(alpha: 0.3)),
+  );
 
   void _getNoteContentLength(String content) {
     setState(() {
@@ -473,15 +487,27 @@ class _EditNoteState extends State<EditNote>
     final notes = await repository.loadNotes();
     if (!mounted) return;
 
-    final targetNote =
-        notes.firstWhere((n) => n.id == noteId, orElse: () => Note());
+    final targetNote = notes.firstWhere(
+      (n) => n.id == noteId,
+      orElse: () => Note(),
+    );
     if (targetNote.id.isEmpty || !mounted) return;
 
-    // Authentication carries over to linked notes: being allowed to read this
-    // note already proves the user unlocked the chain, so following a link to
-    // another locked note must not prompt again.
-    bool authenticated = widget.authenticated;
-    if (targetNote.isLocked && !authenticated) {
+    final folders = repository is FoldersRepository
+        ? await (repository as FoldersRepository).loadFolders()
+        : <Folder>[];
+    final access = NoteAccessPolicy(folders);
+    if (!access.isReachable(targetNote) || !mounted) return;
+
+    // Only the already-open locked folder grants inherited access. A link
+    // from any other note must authenticate its own protected destination.
+    final sourceFolderId = _viewModel.folderId;
+    bool authenticated =
+        widget.authenticated &&
+        sourceFolderId != null &&
+        sourceFolderId == targetNote.folderId &&
+        folders.any((folder) => folder.id == sourceFolderId && folder.isLocked);
+    if (access.requiresAuthentication(targetNote) && !authenticated) {
       authenticated = await getIt<AuthService>().authenticate(
         reason: AppText.tr('auth_reason'),
       );
@@ -532,15 +558,18 @@ class _EditNoteState extends State<EditNote>
     if (title != null) {
       // The title is edited inline: put the caret at the end of the title
       // text so typing lands right next to the drag handle.
-      _contentController.selection =
-          TextSelection.collapsed(offset: title.lineEnd);
+      _contentController.selection = TextSelection.collapsed(
+        offset: title.lineEnd,
+      );
       return;
     }
     final String? toggled = toggleTaskItemAt(_contentController.text, offset);
     if (toggled != null) {
       _contentController.value = TextEditingValue(
         text: toggled,
-        selection: TextSelection.collapsed(offset: offset.clamp(0, toggled.length)),
+        selection: TextSelection.collapsed(
+          offset: offset.clamp(0, toggled.length),
+        ),
       );
       _getNoteContentLength(toggled);
       _recordEdit();
@@ -588,9 +617,7 @@ class _EditNoteState extends State<EditNote>
   }
 
   Future<void> _selectCoverImage() async {
-    final result = await FilePicker.pickFile(
-      type: FileType.image,
-    );
+    final result = await FilePicker.pickFile(type: FileType.image);
     if (result == null) return;
     final String? sourcePath = result.path;
     if (sourcePath == null) return;
@@ -603,7 +630,7 @@ class _EditNoteState extends State<EditNote>
   Future<void> _removeCoverImage() async {
     final String? name = _viewModel.coverImage;
     if (name == null) return;
-    // We don't necessarily want to delete the file from disk here if it might 
+    // We don't necessarily want to delete the file from disk here if it might
     // be used as an attachment too, but for simplicity we can just unset it.
     // If it's a dedicated cover image, we could call _attachmentsStore.remove(name).
     _viewModel.setCoverImage(null);
@@ -618,7 +645,8 @@ class _EditNoteState extends State<EditNote>
     if (sourcePath == null) return;
 
     final String name = await _attachmentsStore.import(sourcePath, file.name);
-    final List<String> updated = List<String>.of(_viewModel.attachments)..add(name);
+    final List<String> updated = List<String>.of(_viewModel.attachments)
+      ..add(name);
     _viewModel.setAttachments(updated);
     await _persistAttachments();
   }
@@ -626,7 +654,8 @@ class _EditNoteState extends State<EditNote>
   /// Deletes an attached file and persists the updated note.
   Future<void> _removeAttachment(String name) async {
     await _attachmentsStore.remove(name);
-    final List<String> updated = List<String>.of(_viewModel.attachments)..remove(name);
+    final List<String> updated = List<String>.of(_viewModel.attachments)
+      ..remove(name);
     _viewModel.setAttachments(updated);
     await _persistAttachments();
   }
@@ -662,8 +691,10 @@ class _EditNoteState extends State<EditNote>
     final String before = _contentController.text;
     final String cleaned = cleanEmptyChecklists(before);
     if (cleaned == before) return;
-    final int caret =
-        _contentController.selection.baseOffset.clamp(0, cleaned.length);
+    final int caret = _contentController.selection.baseOffset.clamp(
+      0,
+      cleaned.length,
+    );
     _contentController.setTextForRestore(cleaned);
     _contentController.selection = TextSelection.collapsed(offset: caret);
     _getNoteContentLength(cleaned);
@@ -718,14 +749,18 @@ class _EditNoteState extends State<EditNote>
             true,
             brightness: Theme.of(context).brightness,
           );
-          final Color immersiveBg =
-              getImmersiveBackgroundColor(noteColor, isDark: isDark);
+          final Color immersiveBg = getImmersiveBackgroundColor(
+            noteColor,
+            isDark: isDark,
+          );
 
           final bool isDirty = _viewModel.isDirty(
             title: _titleController.text,
             content: _contentController.text,
           );
-          final int contentChecklistCount = checklistCount(_contentController.text);
+          final int contentChecklistCount = checklistCount(
+            _contentController.text,
+          );
 
           return GestureDetector(
             onTap: () {
@@ -741,8 +776,9 @@ class _EditNoteState extends State<EditNote>
               // Once the note is scrolled, show its title in the app bar and
               // slide it to the left while the undo/redo/save actions appear.
               alignAppBarTitleLeft: _hasEdits,
-              title:
-                  widget.add ? AppText.tr('add_note') : AppText.tr('edit_note'),
+              title: widget.add
+                  ? AppText.tr('add_note')
+                  : AppText.tr('edit_note'),
               titleController: _titleController,
               titleFocusNode: _titleFocus,
               titleHint: AppText.tr('title_here'),
@@ -799,7 +835,9 @@ class _EditNoteState extends State<EditNote>
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: appPaddingMedium),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: appPaddingMedium,
+                      ),
                       child: MetadataLine(
                         leading: Wrap(
                           alignment: WrapAlignment.start,
@@ -812,7 +850,9 @@ class _EditNoteState extends State<EditNote>
                               _metadataSeparator(context),
                             ],
                             Text(
-                              formatNoteDate(_viewModel.selectedDate.toString()),
+                              formatNoteDate(
+                                _viewModel.selectedDate.toString(),
+                              ),
                               style: metadataLineStyle(context),
                             ),
                             _metadataSeparator(context),
@@ -884,7 +924,10 @@ class _EditNoteState extends State<EditNote>
                         controller: _contentController,
                         textInputAction: TextInputAction.newline,
                         textCapitalization: TextCapitalization.sentences,
-                        style: const TextStyle(fontSize: TanoText.label, height: 1.8),
+                        style: const TextStyle(
+                          fontSize: TanoText.label,
+                          height: 1.8,
+                        ),
                         decoration: InputDecoration(
                           hintText: AppText.tr('add_note'),
                           border: InputBorder.none,
@@ -904,7 +947,12 @@ class _EditNoteState extends State<EditNote>
                 ),
                 if (_viewModel.attachments.isNotEmpty)
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 100.0),
+                    padding: const EdgeInsets.fromLTRB(
+                      appPaddingMedium,
+                      0.0,
+                      appPaddingMedium,
+                      100.0,
+                    ),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -920,9 +968,11 @@ class _EditNoteState extends State<EditNote>
                               ),
                               const SizedBox(width: appPaddingTight),
                               Text(
-                                AppText.tr(_viewModel.attachments.length > 1
-                                    ? 'attachments'
-                                    : 'attachment'),
+                                AppText.tr(
+                                  _viewModel.attachments.length > 1
+                                      ? 'attachments'
+                                      : 'attachment',
+                                ),
                                 style: TextStyle(
                                   fontSize: TanoText.label,
                                   fontWeight: FontWeight.w600,
@@ -950,6 +1000,7 @@ class _EditNoteState extends State<EditNote>
                 isAddMode: widget.add,
                 isImportant: _viewModel.important,
                 isLocked: _viewModel.isLocked,
+                canLock: _canLock,
                 currentCategory: _viewModel.category,
                 currentNoteId: _viewModel.id,
                 currentFolderId: _viewModel.folderId,
@@ -963,7 +1014,8 @@ class _EditNoteState extends State<EditNote>
                 onFindNext: _nextOccurrence,
                 onFindReset: _clearFind,
                 onSave: _saveNote,
-                onColorLens: () {}, // Placeholder for animation triggering if needed
+                onColorLens:
+                    () {}, // Placeholder for animation triggering if needed
                 onColorSelected: (String colorName) async {
                   _cleanupEmptyChecklists();
                   _viewModel.setCategory(colorName);
@@ -986,28 +1038,38 @@ class _EditNoteState extends State<EditNote>
                   _fabKey.currentState?.closeVerticalMenu();
                 },
                 onNoteLinkSelected: (Note selectedNote) {
-                  final String linkPlaceholder = "[[${selectedNote.id}:${selectedNote.title}]]";
-                  final int cursorPosition = _contentController.snapPositionOutOfLink(_contentController.selection.baseOffset);
+                  final String linkPlaceholder =
+                      "[[${selectedNote.id}:${selectedNote.title}]]";
+                  final int cursorPosition = _contentController
+                      .snapPositionOutOfLink(
+                        _contentController.selection.baseOffset,
+                      );
                   final String currentText = _contentController.text;
-                  
+
                   String newText;
                   int newCursorPosition;
-                  
+
                   // If no cursor (keyboard closed), insert at the beginning
                   if (cursorPosition <= 0) {
                     final String separator = currentText.isEmpty ? '' : '\n';
                     newText = '$linkPlaceholder $separator$currentText';
                     newCursorPosition = linkPlaceholder.length + 1;
                   } else {
-                    final String before = currentText.substring(0, cursorPosition);
+                    final String before = currentText.substring(
+                      0,
+                      cursorPosition,
+                    );
                     final String after = currentText.substring(cursorPosition);
                     newText = '$before$linkPlaceholder $after';
-                    newCursorPosition = cursorPosition + linkPlaceholder.length + 1;
+                    newCursorPosition =
+                        cursorPosition + linkPlaceholder.length + 1;
                   }
-                  
+
                   _contentController.value = TextEditingValue(
                     text: newText,
-                    selection: TextSelection.collapsed(offset: newCursorPosition),
+                    selection: TextSelection.collapsed(
+                      offset: newCursorPosition,
+                    ),
                   );
                   _getNoteContentLength(newText);
                   // A note-link insertion is a real edit: mark the note dirty.

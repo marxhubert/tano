@@ -1,3 +1,4 @@
+import 'package:tano/core/models/content_entity.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -9,9 +10,7 @@ import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-/// The kind of entity a card shows. Not used by the layout itself; it lets
-/// callers and tests tell cards apart, and hosts future type-specific tweaks.
-enum EntityKind { note, folder, task, project }
+export 'package:tano/core/models/content_entity.dart' show EntityKind;
 
 /// The only three card heights allowed by the design, shared by notes and
 /// folders:

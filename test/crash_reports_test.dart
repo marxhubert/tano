@@ -91,4 +91,67 @@ void main() {
     await prefs.setBool(CrashReports.preferenceKey, false);
     expect(await CrashReports.hasConsent(), isFalse);
   });
+  test(
+    'free-form messages, exception values, paths and contexts are stripped',
+    () {
+      final event = SentryEvent(
+        message: SentryMessage('private note'),
+        serverName: 'personal phone',
+        tags: {'note': 'private'},
+        exceptions: [
+          SentryException(
+            type: 'FormatException',
+            value: 'private note',
+            stackTrace: SentryStackTrace(
+              frames: [
+                SentryStackFrame(
+                  absPath: '/Users/private/file',
+                  function: 'parse',
+                  vars: {'note': 'private'},
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+      final result = CrashReports.scrub(event, Hint())!;
+      expect(result.message, isNull);
+      expect(result.serverName, isNull);
+      expect(result.tags?.keys ?? [], isNot(contains('note')));
+      expect(result.exceptions!.single.value, isNull);
+      expect(
+        result.exceptions!.single.stackTrace!.frames.single.function,
+        'parse',
+      );
+      expect(result.toJson().toString(), isNot(contains('private')));
+    },
+  );
+  test(
+    'keeps diagnostic device and OS fields but strips personal identifiers',
+    () {
+      final event = SentryEvent(
+        contexts: Contexts(
+          device: SentryDevice(
+            model: 'Pixel 8',
+            manufacturer: 'Google',
+            name: 'Private phone',
+            deviceUniqueIdentifier: 'secret-id',
+          ),
+          operatingSystem: SentryOperatingSystem(
+            name: 'Android',
+            version: '16',
+            rawDescription: 'private dump',
+          ),
+        ),
+      );
+      final result = CrashReports.scrub(event, Hint(), countryCode: 'MU')!;
+      expect(result.contexts.device!.model, 'Pixel 8');
+      expect(result.contexts.device!.name, isNull);
+      expect(result.contexts.device!.deviceUniqueIdentifier, isNull);
+      expect(result.contexts.operatingSystem!.version, '16');
+      expect(result.contexts.operatingSystem!.rawDescription, isNull);
+      expect(result.tags, {'device_region': 'MU'});
+      expect(result.user, isNull);
+    },
+  );
 }

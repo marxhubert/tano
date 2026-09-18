@@ -76,4 +76,32 @@ void main() {
     expect(await File(await store.pathOf(name)).exists(), isFalse);
     expect(await File(plainPath).exists(), isFalse);
   });
+  test('untrusted names cannot escape the attachment store', () async {
+    for (final name in [
+      '../outside',
+      '/tmp/outside',
+      r'..\outside',
+      '.',
+      '..',
+    ]) {
+      await expectLater(
+        store.writeIfAbsent(name, Uint8List(1)),
+        throwsA(isA<FormatException>()),
+      );
+      await expectLater(store.read(name), throwsA(isA<FormatException>()));
+      await expectLater(store.remove(name), throwsA(isA<FormatException>()));
+    }
+  });
+
+  test('reset removes plaintext left by a previous process', () async {
+    await store.writeIfAbsent('private.txt', Uint8List.fromList([1, 2, 3]));
+    final plain = await store.materialize('private.txt');
+    final restarted = AttachmentsStore(
+      documentsDirectory: () async => tempDir,
+      cacheDirectory: () async => tempDir,
+      keyProvider: () async => Uint8List(32),
+    );
+    await restarted.deleteAll();
+    expect(await File(plain).exists(), isFalse);
+  });
 }

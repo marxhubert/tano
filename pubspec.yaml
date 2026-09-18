@@ -83,5 +83,4 @@ sentry:
   upload_debug_symbols: true
   # Web only; TanoNote ships on Android and iOS.
   upload_source_maps: false
-  project: flutter
-  org: railovy
+  # Supply SENTRY_PROJECT and SENTRY_ORG in the release environment.

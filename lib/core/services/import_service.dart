@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:archive/archive.dart';
+import 'package:uuid/uuid.dart';
+import 'package:tano/core/services/archive_validation.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
@@ -46,10 +46,10 @@ class ImportService {
     AttachmentsStore? attachments,
     AuthService? auth,
     Argon2Params argon2 = const Argon2Params(),
-  })  : _repository = repository,
-        _attachments = attachments ?? getIt<AttachmentsStore>(),
-        _auth = auth ?? getIt<AuthService>(),
-        _argon2 = argon2;
+  }) : _repository = repository,
+       _attachments = attachments ?? getIt<AttachmentsStore>(),
+       _auth = auth ?? getIt<AuthService>(),
+       _argon2 = argon2;
 
   final NotesRepository _repository;
   final AttachmentsStore _attachments;
@@ -68,61 +68,116 @@ class ImportService {
 
   /// Merges the export in [data] into the repository.
   Future<ImportResult> import(Uint8List data, {String? password}) async {
+    if (data.length > ArchiveValidation.maxArchiveBytes) {
+      throw const ImportException('Export too large');
+    }
     final Uint8List zipped = await _openArchive(data, password);
 
-    final Archive archive;
+    late final Map<String, Uint8List> files;
+    late final List<Note> incoming;
     try {
-      archive = ZipDecoder().decodeBytes(zipped);
-    } catch (_) {
-      throw const ImportException('Not a valid .tano export');
-    }
-
-    ArchiveFile? manifest;
-    for (final ArchiveFile file in archive.files) {
-      if (file.name == ExportService.manifestName) {
-        manifest = file;
-        break;
+      files = ArchiveValidation.read(zipped);
+      final manifest = files[ExportService.manifestName];
+      if (manifest == null) throw const FormatException('Missing manifest');
+      final decoded = jsonDecode(utf8.decode(manifest));
+      if (decoded is! Map<String, dynamic> ||
+          decoded['version'] != 1 ||
+          decoded['notes'] is! List) {
+        throw const FormatException('Unsupported manifest');
       }
+      final rows = decoded['notes'] as List;
+      if (rows.length > 10000) throw const FormatException('Too many notes');
+      incoming = rows
+          .map((row) => Note.fromJson(row as Map<String, dynamic>))
+          .toList();
+      for (final note in incoming) {
+        if (note.id.trim().isEmpty || note.id.length > 256) {
+          throw const FormatException('Invalid note id');
+        }
+        for (final name in [
+          ...note.attachments,
+          if (note.coverImage != null) note.coverImage!,
+        ]) {
+          AttachmentsStore.validateName(name);
+          if (!files.containsKey('${ExportService.attachmentsFolder}$name')) {
+            throw const FormatException('Missing attachment');
+          }
+        }
+      }
+    } catch (_) {
+      throw const ImportException('Invalid or unsupported .tano export');
     }
-    final Uint8List? manifestBytes = manifest?.readBytes();
-    if (manifestBytes == null) {
-      throw const ImportException('Export is missing its manifest');
-    }
-
-    final List<Note> incoming = decodeNotes(utf8.decode(manifestBytes));
-    final Set<String> existingIds = (await _repository.loadNotes())
-        .map((Note note) => note.id)
-        .toSet();
-    final bool canLock = await _auth.isAvailable();
-
-    int added = 0;
-    int skipped = 0;
-    int unlocked = 0;
-    for (final Note note in incoming) {
-      if (existingIds.contains(note.id)) {
+    final existingIds = <String>{
+      for (final note in await _repository.loadNotes()) note.id,
+      for (final note in await _repository.loadTrashNotes()) note.id,
+    };
+    final canLock = await _auth.isAvailable();
+    final pending = <Note>[];
+    var skipped = 0;
+    var unlocked = 0;
+    for (var note in incoming) {
+      if (!existingIds.add(note.id)) {
         skipped++;
         continue;
       }
-      Note toStore = note;
       if (note.isLocked && !canLock) {
-        toStore = note.copyWith(isLocked: false);
+        note = note.copyWith(isLocked: false);
         unlocked++;
       }
-      await _repository.upsertNote(toStore);
-      added++;
+      // v1 does not carry folders; never attach an import to an unrelated
+      // local folder just because their identifiers happen to match.
+      pending.add(note.withoutFolder());
     }
-
-    int attachments = 0;
-    for (final ArchiveFile file in archive.files) {
-      if (!file.name.startsWith(ExportService.attachmentsFolder)) continue;
-      final String name = file.name.substring(
-        ExportService.attachmentsFolder.length,
-      );
-      if (name.isEmpty) continue;
-      final Uint8List? bytes = file.readBytes();
-      if (bytes == null) continue;
-      if (await _attachments.writeIfAbsent(name, bytes)) attachments++;
+    final created = <String>[];
+    final names = <String, String>{};
+    try {
+      for (final note in pending) {
+        for (final name in [
+          ...note.attachments,
+          if (note.coverImage != null) note.coverImage!,
+        ]) {
+          if (names.containsKey(name)) continue;
+          final bytes = files['${ExportService.attachmentsFolder}$name']!;
+          var target = name;
+          while (!await _attachments.writeIfAbsent(target, bytes)) {
+            target = '${const Uuid().v4()}_$name';
+          }
+          created.add(target);
+          names[name] = target;
+        }
+      }
+      final toStore = pending
+          .map(
+            (note) => note.copyWith(
+              attachments: note.attachments
+                  .map((name) => names[name]!)
+                  .toList(),
+              coverImage: note.coverImage == null
+                  ? null
+                  : names[note.coverImage],
+            ),
+          )
+          .toList();
+      if (_repository is AtomicNoteImporter) {
+        // A concurrent collision aborts the complete batch, not a partial import.
+        await (_repository as AtomicNoteImporter).insertImportedNotes(toStore);
+      } else {
+        // Compatibility for alternate repositories; production uses SQLite's
+        // atomic implementation. Such adapters must provide atomic imports.
+        for (final note in toStore) {
+          await _repository.upsertNote(note);
+        }
+      }
+    } catch (_) {
+      if (_repository is AtomicNoteImporter) {
+        for (final name in created) {
+          await _attachments.remove(name);
+        }
+      }
+      rethrow;
     }
+    final added = pending.length;
+    final attachments = created.length;
 
     return ImportResult(
       added: added,
@@ -136,6 +191,9 @@ class ImportService {
     // A cleartext export is a plain ZIP.
     if (!isEncrypted(data)) return data;
 
+    if (data[ExportService.magic.length] != ExportService.version) {
+      throw const ImportException('Unsupported export version');
+    }
     if (password == null || password.isEmpty) {
       throw const ImportException('This export is encrypted');
     }
@@ -150,8 +208,11 @@ class ImportService {
     final Uint8List payload = data.sublist(
       saltStart + ExportService.saltLength,
     );
-    final Uint8List key =
-        await ExportService.deriveKey(password, salt, params: _argon2);
+    final Uint8List key = await ExportService.deriveKey(
+      password,
+      salt,
+      params: _argon2,
+    );
     try {
       return await LocalCipher.decrypt(payload, key);
     } catch (_) {

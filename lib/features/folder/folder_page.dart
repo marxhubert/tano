@@ -1,3 +1,4 @@
+import 'package:tano/core/models/note_access_policy.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -72,9 +73,19 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         : null;
   }
 
+  bool _canLock = false;
+
+  Future<void> _loadLockCapability() async {
+    final available =
+        getIt.isRegistered<AuthService>() &&
+        await getIt<AuthService>().isAvailable();
+    if (mounted) setState(() => _canLock = available);
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadLockCapability();
     _folder = widget.folder;
     _titleFocusNode.addListener(_onTitleFocusChanged);
     _loadPreferences();
@@ -127,10 +138,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   /// Notes sorted like the home screen: pinned first, then the chosen
   /// criterion. Without this the folder kept the raw repository order.
   List<Note> _sorted(List<Note> notes) => NoteSorting(
-        by: _sortBy,
-        secondaryBy: _secondarySortBy,
-        ascending: _sortAscending,
-      ).sort(notes);
+    by: _sortBy,
+    secondaryBy: _secondarySortBy,
+    ascending: _sortAscending,
+  ).sort(notes);
 
   Future<void> _load() async {
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
@@ -175,8 +186,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Future<void> _save(Folder folder) async {
-    final Folder updated =
-        folder.copyWith(updatedAt: DateTime.now().toString());
+    final Folder updated = folder.copyWith(
+      updatedAt: DateTime.now().toString(),
+    );
     await _foldersRepository?.upsertFolder(updated);
     if (!mounted) return;
     setState(() => _folder = updated);
@@ -379,9 +391,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         .toList();
     for (final Note note in selected) {
       await repository.upsertNote(
-        folderId == null
-            ? note.withoutFolder()
-            : note.copyWith(folderId: folderId),
+        note.copyWith(folderId: folderId, updatedAt: DateTime.now().toString()),
       );
     }
     final int count = selected.length;
@@ -402,10 +412,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     final String query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return _notes;
     return _notes
-        .where((Note note) =>
-            !note.isLocked &&
-            (note.title.toLowerCase().contains(query) ||
-                note.content.toLowerCase().contains(query)))
+        .where(
+          (Note note) =>
+              NoteAccessPolicy([
+                _folder,
+              ]).isSearchableInFolder(note, _folder.id) &&
+              (note.title.toLowerCase().contains(query) ||
+                  note.content.toLowerCase().contains(query)),
+        )
         .toList();
   }
 
@@ -459,18 +473,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       sliver: SliverToBoxAdapter(
         child: Padding(
           // Tight gap below, towards the cover image.
-          padding: const EdgeInsets.only(
-            top: appPaddingMedium,
-            bottom: 6.0,
-          ),
+          padding: const EdgeInsets.only(top: appPaddingMedium, bottom: 6.0),
           child: MetadataLine(
             leading: Text(
               _noteCountLabel(_notes.length),
               style: metadataLineStyle(context),
             ),
             trailing: <Widget>[
-              if (_folder.isLocked)
-                metadataGlyph(context, Symbols.lock),
+              if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
               if (_folder.important)
                 metadataGlyph(
                   context,
@@ -503,9 +513,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     return PageScaffold(
       backgroundColor: immersiveBg,
       // The folder name is always the page title, even in selection mode.
-      title: _resultsVisible
-          ? AppText.tr('search_results')
-          : _folder.name,
+      title: _resultsVisible ? AppText.tr('search_results') : _folder.name,
       headerMetadata: _headerMetadata,
       // Nothing but the illustration: it must hold its place.
       freezeBody: !_loading && _visibleNotes.isEmpty,
@@ -573,6 +581,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         focusNode: _searchFocusNode,
         isImportant: _folder.important,
         isLocked: _folder.isLocked,
+        canLock: _canLock,
         isTitleEditing: _isEditingTitle,
         currentCategory: _folder.category,
         currentFolderId: _folder.id,
@@ -701,4 +710,3 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
   }
 }
-

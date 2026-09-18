@@ -17,10 +17,10 @@ class AttachmentsStore {
     Future<Directory> Function()? documentsDirectory,
     Future<Directory> Function()? cacheDirectory,
     Future<Uint8List> Function()? keyProvider,
-  })  : _documentsDirectory =
-            documentsDirectory ?? getApplicationDocumentsDirectory,
-        _cacheDirectory = cacheDirectory ?? getTemporaryDirectory,
-        _keyProvider = keyProvider ?? InstallationKey.instance.filesKey;
+  }) : _documentsDirectory =
+           documentsDirectory ?? getApplicationDocumentsDirectory,
+       _cacheDirectory = cacheDirectory ?? getTemporaryDirectory,
+       _keyProvider = keyProvider ?? InstallationKey.instance.filesKey;
 
   final Future<Directory> Function() _documentsDirectory;
   final Future<Directory> Function() _cacheDirectory;
@@ -54,21 +54,25 @@ class AttachmentsStore {
 
   /// Absolute path of the stored (encrypted) attachment.
   Future<String> pathOf(String name) async {
+    validateName(name);
     final Directory dir = await _dir();
     return p.join(dir.path, name);
   }
 
   /// Decrypts a stored attachment and returns its bytes (used by export).
   Future<Uint8List> read(String name) async {
+    validateName(name);
     final Directory dir = await _dir();
-    final Uint8List encrypted =
-        await File(p.join(dir.path, name)).readAsBytes();
+    final Uint8List encrypted = await File(
+      p.join(dir.path, name),
+    ).readAsBytes();
     return LocalCipher.decrypt(encrypted, await _keyProvider());
   }
 
   /// Encrypts [bytes] under [name] unless a file already exists. Returns
   /// whether it wrote a new file (used by import).
   Future<bool> writeIfAbsent(String name, Uint8List bytes) async {
+    validateName(name);
     final Directory dir = await _dir();
     final File file = File(p.join(dir.path, name));
     if (await file.exists()) return false;
@@ -83,12 +87,14 @@ class AttachmentsStore {
   /// Decrypts [name] into the cache and returns the plaintext path, for the
   /// system viewer or image widgets. The copy is reused until [remove].
   Future<String> materialize(String name) async {
+    validateName(name);
     final String? cached = _materialized[name];
     if (cached != null && await File(cached).exists()) return cached;
 
     final Directory dir = await _dir();
-    final Uint8List encrypted =
-        await File(p.join(dir.path, name)).readAsBytes();
+    final Uint8List encrypted = await File(
+      p.join(dir.path, name),
+    ).readAsBytes();
     final Uint8List clear = await LocalCipher.decrypt(
       encrypted,
       await _keyProvider(),
@@ -116,21 +122,42 @@ class AttachmentsStore {
     if (await dir.exists()) {
       await dir.delete(recursive: true);
     }
-    _materialized.clear();
+    await clearMaterialized();
   }
 
   Future<void> remove(String name) async {
+    validateName(name);
     final Directory dir = await _dir();
     final File file = File(p.join(dir.path, name));
     if (await file.exists()) {
       await file.delete();
     }
-    final String? temp = _materialized.remove(name);
-    if (temp != null) {
-      final File tempFile = File(temp);
-      if (await tempFile.exists()) {
-        await tempFile.delete();
-      }
+    _materialized.remove(name);
+    final temp = File(
+      p.join((await _cacheDirectory()).path, 'tano_attachments', name),
+    );
+    if (await temp.exists()) await temp.delete();
+  }
+
+  /// Removes plaintext copies, including leftovers from earlier processes.
+  Future<void> clearMaterialized() async {
+    final cache = Directory(
+      p.join((await _cacheDirectory()).path, 'tano_attachments'),
+    );
+    if (await cache.exists()) await cache.delete(recursive: true);
+    _materialized.clear();
+  }
+
+  /// Stored names are opaque leaf names, never paths from an imported archive.
+  static void validateName(String name) {
+    if (name.trim().isEmpty ||
+        name == '.' ||
+        name == '..' ||
+        name.contains('/') ||
+        name.contains('\\') ||
+        name.contains(':') ||
+        name.codeUnits.any((c) => c < 32 || c == 127)) {
+      throw const FormatException('Invalid attachment name');
     }
   }
 
@@ -153,6 +180,8 @@ class AttachmentsStore {
   /// Keeps only the base name so a picked path cannot escape the directory.
   String _sanitize(String name) {
     final String base = p.basename(name);
-    return base.trim().isEmpty ? 'fichier' : base;
+    final result = base.trim().isEmpty ? 'fichier' : base;
+    validateName(result);
+    return result;
   }
 }
