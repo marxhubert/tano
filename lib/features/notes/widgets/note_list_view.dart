@@ -62,8 +62,10 @@ class NoteListView extends StatelessWidget {
         }
         return await confirmDelete();
       },
-      onDismissed: (direction) {
-        viewModel.removeNote(note.id);
+      onDismissed: (direction) async {
+        // Wait for the deletion to be recorded: the undo notice is built from
+        // what the view model just removed, so it must exist by then.
+        await viewModel.removeNote(note.id);
         onShowUndoSnackBar();
       },
       child: EntityCard(
