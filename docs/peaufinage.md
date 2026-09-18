@@ -23,7 +23,7 @@ hexadécimales → 0** : plus une seule couleur écrite à la main hors de
 | Fait | Détail |
 |---|---|
 | La palette n'est plus recopiée | `appearance_section.dart` listait les **20 valeurs** des pastels et des fonds. Elle lit maintenant `TanoPastels.all` et `darkBackground` / `lightBackground` : l'aperçu de thème ne peut plus diverger de la palette réelle. |
-| Le rouge des actions destructrices | `0xFFFF8A80`, écrit **8 fois** (`trash_page`, `fab_bars`, `fab_menus`, `data_management_section`), est devenu **`tanoDanger`**. |
+| Le rouge des actions destructrices | `0xFFFF8A80`, écrit **8 fois** (`trash_page`, `fab_bars`, `fab_menus`, `data_management_section`), a rejoint `TanoStates.error` : l'app a **un seul rouge**, qui porte les deux sens, l'erreur et l'action destructrice. |
 | Le seul écart vraiment visible | **`Colors.blue`** (3× : `confirm.dart`, `info.dart`) → **`tanoTeal`**. Un bouton bleu dans une app teal. |
 | Le dernier hexadécimal | `data_transfer.dart:135` réécrivait `TanoStates.error.dark` → il l'importe. |
 
@@ -39,13 +39,13 @@ En lisant le code, deux constats se sont révélés faux :
 - les **`Colors.grey`** sont volontairement indépendants du thème (état inactif,
   bouton de développement). Un jeton n'apporterait rien.
 
-### Reste à arbitrer, plus tard
+### Tranché depuis
 
-- `app_fab.dart:378` dessine une bordure `white 0.22 / black 0.08` là où
-  `cardBorderColor` dit `0.22 / 0.16`. Les rapprocher **change le rendu**, et le
-  FAB n'est pas couvert par les goldens : à décider à l'œil.
-- `TanoStates.error` et `tanoDanger` sont deux rouges. Les fusionner est un choix
-  visuel, pas un rangement.
+- La règle du FAB garde son poids (`white 0.22 / black 0.08`) et les cartes le
+  leur (`0.22 / 0.16`) : les deux arêtes restent telles quelles. C'est un choix,
+  pas un oubli — l'écart ne se voit qu'en thème clair, et il ne gêne pas.
+- ~~`TanoStates.error` et `tanoDanger` sont deux rouges.~~ **Tranché** : un seul
+  rouge, `TanoStates.error`.
 
 ## 2. Typographie
 
@@ -279,17 +279,19 @@ C'était déjà le cas : `currentFolderId` est retiré de la liste à l'ouvertur
 menu, comme le note le contrat d'`AppFab`. Rien à corriger, donc, mais cinq
 tests le verrouillent maintenant (`test/fab_menu_test.dart`).
 
-### Le bleu des icônes comme couleur principale — **essai**
+### Le teal, et les dessins qui le suivent — **tranché**
 
-Les quatre illustrations partagent un bleu franc, `#2D74FF` (mesuré sur les
-PNG : c'est la couleur exacte de leur aplat, le trait étant en `#738BAB`). Le
-jeton est devenu `tanoBlue` — le renommer évitait de garder « teal » sur une
-couleur bleue — et `TanoStates.action` suit. Les contrastes mesurés donnent
-`#2D74FF` au-dessus du teal sur fond clair (3,94 contre 3,48) et en dessous sur
-fond sombre (4,51 contre 5,10) ; sur le panneau du FAB, où le contenu est
-blanc, le bleu gagne aussi (4,16 contre 3,67). Quatre goldens ont été
-régénérés : le rond de sélection des cartes est teinté avec la couleur
-principale.
+Le bleu des illustrations (`#2D74FF`, mesuré sur leurs PNG) a été essayé, puis
+abandonné : la marque reste le **teal**, `#009688`, et `#4DB6AC` sur les surfaces
+sombres pour `TanoStates.action`. Le jeton a repris son nom — `tanoTeal` —, les
+vingt-deux endroits qui le lisent suivent, et quatre goldens ont été régénérés.
+
+Les illustrations, elles, ne gardent pas leur bleu : elles sont **chromatisées**
+(`ColorFiltered` + `BlendMode.srcIn`), donc teintes à la couleur de la marque.
+Elles perdent leurs deux tons — l'aplat et le trait — et deviennent un filigrane
+d'une seule couleur, toujours à 50 % d'opacité (`_emptyArtOpacity`, le réglage
+si le trait paraît trop pâle ou trop appuyé). C'est ce qui permet à la marque de
+changer un jour sans que les quatre dessins jurent à côté.
 
 ### Quatre retouches d'interface
 
@@ -343,20 +345,42 @@ l'année, lue à l'horloge (`AppConfig.year`). Plus aucune URL n'est écrite dan
 
 ## 6. Animations
 
-| Point | Détail |
-|---|---|
-| Durées | 150 (2) · 200 (4) · 220 · 250 · 450 (3) · 1200 (2, volontaire pour le reset) → **6 valeurs pour 3 intentions** | Trois jetons : `fast`, `base`, `slow` |
-| Transitions | 16 `Navigator.push`, 3 `AnimatedSwitcher`, 1 `AnimatedContainer`, **0 `Hero`** | Voir si l'ouverture d'une note mérite un `Hero` |
+**Fait.** Sept animations écrites avec six durées différentes lisent maintenant
+**trois jetons** (`TanoMotion`, dans `theme.dart`) :
+
+| Jeton | Valeur | Ce qu'il porte |
+|---|---|---|
+| `TanoMotion.fast` | 150 ms | les deux fondus du FAB |
+| `TanoMotion.base` | 250 ms | le morphing du FAB (ex-250), l'échange d'icônes (ex-220), les fondus de couverture et d'éditeur (ex-200) |
+| `TanoMotion.slow` | 450 ms | l'entrée en scène de l'éditeur |
+
+Ce qui garde sa valeur, et pourquoi : **une attente n'est pas une animation**.
+Le délai de 200 ms avant le déverrouillage, les deux 450 ms qui laissent le
+défilement se poser, les 1200 ms du reset — volontairement long, c'est un
+effacement —, le tour de 1 s du spinner de mise à jour et les 3 s du bandeau ne
+disent pas la même chose qu'une transition. Les tokeniser les aurait fait passer
+pour la même intention.
+
+Reste ouvert : **aucun `Hero`** aujourd'hui. La question est de savoir si
+l'ouverture d'une note en mérite un — c'est un changement de comportement, pas
+un rangement, et il n'est pas couvert par les goldens.
 
 ---
 
 ## Ordre proposé
 
-1. ~~**Couleurs**~~ — **fait** (voir plus haut).
-2. ~~**Typographie**~~ — **fait** (voir plus haut) ; la réduction attend ton
-   arbitrage.
-3. ~~**Espacements et rayons**~~ — **fait** ; les trois écarts (10, 9, 90)
-   attendent ton arbitrage.
+1. ~~**Couleurs**~~ — **fait**, et tranché : le teal reste la marque, les
+   illustrations le suivent.
+2. ~~**Typographie**~~ — **fait** : huit tailles, `small` et `caption` retirées
+   (trois textes gagnent un pixel).
+3. ~~**Espacements et rayons**~~ — **fait** : les jetons couvrent l'usage, et les
+   littéraux qui restent sont contextuels, ce qui est leur nature. Le pied de
+   page d'À propos est passé de 90 à 4 × `sectionGap`.
 4. ~~**iOS**~~ — **rien à faire** ; un fichier mort supprimé au passage.
-5. ~~**États**~~ — **fait** ; reste l'illustration de l'accueil à trancher.
-6. **Animations** — les durées, puis éventuellement les transitions.
+5. ~~**États**~~ — **fait** : une seule façon de dire « il n'y a rien ici », avec
+   ses quatre illustrations.
+6. ~~**Animations**~~ — **fait** : trois jetons de durée. Reste la question du
+   `Hero` à l'ouverture d'une note.
+
+Les six lots sont donc faits. Une seule question reste ouverte, dans le lot 6 :
+le `Hero` à l'ouverture d'une note.

@@ -14,7 +14,7 @@ Future<bool?> getConfirmation({
   final bool isSave = action.toLowerCase() == AppText.tr('save').toLowerCase();
   // Compared against the translated words: a dialog must never change colour
   // with the language. This used to test actionTitle.contains('reset'), and
-  // the French word does not contain it: the reset action came out blue in
+  // the French word does not contain it: the reset action came out in the
   // French and in Malagasy.
   final String lowered = action.toLowerCase();
   final bool isDestructive =
@@ -47,7 +47,7 @@ Future<bool?> getConfirmation({
             child: Text(
               action,
               style: TextStyle(
-                color: isDestructive ? Colors.red : tanoBlue,
+                color: isDestructive ? Colors.red : tanoTeal,
                 fontSize: TanoText.listTitle,
                 fontWeight: isDestructive ? FontWeight.normal : FontWeight.bold,
               ),
@@ -70,14 +70,14 @@ Future<bool?> getConfirmation({
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             (isSave ? AppText.tr('quit') : AppText.tr('cancel')).toUpperCase(),
-            style: TextStyle(color: isSave ? Colors.red : tanoBlue),
+            style: TextStyle(color: isSave ? Colors.red : tanoTeal),
           ),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
           child: Text(
             action.toUpperCase(),
-            style: TextStyle(color: isSave ? tanoBlue : Colors.red),
+            style: TextStyle(color: isSave ? tanoTeal : Colors.red),
           ),
         ),
       ],

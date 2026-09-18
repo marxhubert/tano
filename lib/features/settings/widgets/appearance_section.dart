@@ -115,7 +115,7 @@ class _ThemePreview extends StatelessWidget {
                   height: 18,
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: tanoBlue,
+                      color: tanoTeal,
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(11.0),
                       ),
@@ -161,7 +161,7 @@ class _ThemePreview extends StatelessWidget {
                     width: 14,
                     height: 14,
                     decoration: const BoxDecoration(
-                      color: tanoBlue,
+                      color: tanoTeal,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

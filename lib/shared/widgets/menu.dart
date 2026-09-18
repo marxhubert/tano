@@ -81,7 +81,7 @@ Widget popupButton({
           popupItem.value == sort ||
           popupItem.value == lang);
   
-  final Color activeColor = isSelected ? tanoBlue : primaryTextColor(context);
+  final Color activeColor = isSelected ? tanoTeal : primaryTextColor(context);
 
   final Widget label = Text(
     popupItem.title,
@@ -101,7 +101,7 @@ Widget popupButton({
     trailing: icon != null
         ? Icon(
             icon.icon,
-            color: isSelected ? tanoBlue : mutedTextColor(context),
+            color: isSelected ? tanoTeal : mutedTextColor(context),
             size: 20.0,
           )
         : null,

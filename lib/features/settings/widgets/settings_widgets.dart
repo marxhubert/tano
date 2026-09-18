@@ -183,7 +183,7 @@ class SettingsTile extends StatelessWidget {
       title: Text(
         title,
         style: TextStyle(
-          color: textColor ?? (selected ? tanoBlue : primaryTextColor(context)),
+          color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
           fontWeight:
               fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
           fontSize: TanoText.listTitle,
@@ -226,7 +226,7 @@ class SettingsSwitchTile extends StatelessWidget {
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: tanoBlue,
+          activeThumbColor: tanoTeal,
         ),
       ),
     );

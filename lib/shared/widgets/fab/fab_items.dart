@@ -113,7 +113,7 @@ class _EditorAction extends StatelessWidget {
     // behind it already signals the active state.
     final Color base = color ?? Colors.white;
     // When disabled, every action borrows the neutral dimmed colour: a red
-    // "delete" at 35% would be invisible on the blue FAB.
+    // "delete" at 35% would be invisible on the teal FAB.
     final Color iconColor =
         onTap == null ? Colors.white.withValues(alpha: 0.35) : base;
     // The bar splits into equal, gapless full-height zones: each action fills

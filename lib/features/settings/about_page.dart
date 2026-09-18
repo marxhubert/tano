@@ -171,13 +171,13 @@ class _AboutPageState extends State<AboutPage>
                         child: Icon(
                           Symbols.update,
                           size: 16.0,
-                          color: _isCheckingUpdate ? tanoBlue : Colors.grey,
+                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
                         ),
                       ),
                       label: Text(
                         AppText.tr('option_update'),
                         style: TextStyle(
-                          color: _isCheckingUpdate ? tanoBlue : Colors.grey,
+                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
                           fontSize: TanoText.label,
                         ),
                       ),
@@ -273,7 +273,7 @@ class _AboutPageState extends State<AboutPage>
                     onTap: () => _launchUrl(AppConfig.paypalUrl),
                     trailing: const Icon(
                       Symbols.credit_card,
-                      color: tanoBlue,
+                      color: tanoTeal,
                       size: 20,
                       fill: 1.0,
                     ),

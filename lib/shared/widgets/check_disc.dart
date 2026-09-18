@@ -33,7 +33,7 @@ class CheckDisc extends StatelessWidget {
           Symbols.check_circle,
           fill: 1.0,
           size: size,
-          color: color ?? tanoBlue,
+          color: color ?? tanoTeal,
         ),
       ],
     );

@@ -398,7 +398,7 @@ class AppFabState extends State<AppFab>
       // resting form (circular when the page has a reduce action).
       onTapOutside: (_) => collapse(),
       child: AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      duration: TanoMotion.base,
       curve: Curves.easeInOut,
       height: currentHeight,
       width: currentWidth,
@@ -489,7 +489,7 @@ class AppFabState extends State<AppFab>
                   top: 0,
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 150),
+                    duration: TanoMotion.fast,
                     child: _buildVerticalMenuContent(
                       context,
                       targetExpandedWidth,
@@ -502,11 +502,11 @@ class AppFabState extends State<AppFab>
                 height: barHeight,
                 child: AnimatedOpacity(
                   opacity: showContent ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 150),
+                  duration: TanoMotion.fast,
                   // Only the icons swap: the FAB box itself does not move.
                   // The outgoing set zooms out while the incoming zooms in.
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
+                    duration: TanoMotion.base,
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
                     transitionBuilder:
