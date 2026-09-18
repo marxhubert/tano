@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -6,7 +6,7 @@ import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-/// Cover image of a note or folder, materialized from the encrypted store.
+/// Cover image of a note or folder, decoded in memory from the encrypted store.
 ///
 /// It is meant to sit behind the card content: it never intercepts taps and
 /// shows a neutral placeholder until the file has been read.
@@ -39,17 +39,17 @@ class CoverImage extends StatefulWidget {
 }
 
 class _CoverImageState extends State<CoverImage> {
-  // Shared store so the materialized-path cache is reused across every card.
+  // Covers never need a plaintext copy on disk.
   AttachmentsStore get _store => getIt<AttachmentsStore>();
 
-  late Future<String> _path = _store.materialize(widget.name);
+  late Future<Uint8List> _bytes = _store.read(widget.name);
   bool _errorReported = false;
 
   @override
   void didUpdateWidget(CoverImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.name != widget.name) {
-      _path = _store.materialize(widget.name);
+      _bytes = _store.read(widget.name);
       _errorReported = false;
     }
   }
@@ -57,9 +57,9 @@ class _CoverImageState extends State<CoverImage> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return FutureBuilder<String>(
-      future: _path,
-      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+    return FutureBuilder<Uint8List>(
+      future: _bytes,
+      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
         if (snapshot.hasError && !_errorReported) {
           _errorReported = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,8 +78,8 @@ class _CoverImageState extends State<CoverImage> {
           );
         }
 
-        final Widget image = Image.file(
-          File(snapshot.data!),
+        final Widget image = Image.memory(
+          snapshot.data!,
           fit: widget.fit,
           width: widget.expand ? null : double.infinity,
           // Decode at most a screen-wide bitmap: covers never show bigger,
@@ -106,7 +106,10 @@ class _CoverImageState extends State<CoverImage> {
               // Full image: keep the aspect ratio and dim only the image.
               : Stack(
                   key: const ValueKey<String>('cover'),
-                  children: <Widget>[image, Positioned.fill(child: dim)],
+                  children: <Widget>[
+                    image,
+                    Positioned.fill(child: dim),
+                  ],
                 ),
         );
       },

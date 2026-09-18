@@ -31,7 +31,7 @@ void main() async {
   ]);
 
   // Crash reports are opt-in: without the user's consent the SDK is not even
-  // initialised, and nothing leaves the device. See docs/observabilite.md.
+  // initialised, and nothing leaves the device. See docs/observability.md.
   if (await CrashReports.hasConsent()) {
     await CrashReports.start(appRunner: () => runApp(const Tano()));
   } else {

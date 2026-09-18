@@ -16,6 +16,8 @@ Future<void> setupServiceLocator() async {
     ),
   );
   // Shared stores and services: a single instance for the whole app.
-  getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
+  final attachments = AttachmentsStore();
+  await attachments.clearMaterialized();
+  getIt.registerSingleton<AttachmentsStore>(attachments);
   getIt.registerLazySingleton<AuthService>(() => AuthService());
 }

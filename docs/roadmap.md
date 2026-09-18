@@ -1,93 +1,41 @@
-# Feuille de route
+# Consolidation roadmap
 
-> **Plan vivant.** Où en est TanoNote, ce qui vient ensuite et dans quel ordre.
-> Les idées non planifiées vivent dans [backlog.md](./backlog.md).
+Updated 19 September 2026. The app has never shipped; old test data is disposable.
 
-TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
+## Completed in this consolidation
 
-## État actuel
+- Archive bounds/path validation, import collision handling and SQLite batch rollback.
+- Search/navigation/export parent-folder access policy and explicit lock rules.
+- Removal of fixed fallback keys; single-flight key/database initialization.
+- Plaintext temporary-cache cleanup and memory-only cover decoding.
+- Removal of legacy plaintext data recovery and known test backups.
+- Common entity/sorting/category/copy semantics.
+- Consent-gated diagnostic allowlist, including coarse device/OS/locale-region data.
+- Premium policy foundation for projects, sharing and collaboration; no billing yet.
+- English documentation and filenames, updated current/future distinction.
 
-- Cœur **note + dossiers** stable : cartes unifiées (`EntityCard`), listes
-  (`EntitySliver`), sélection (`SelectionController`), corbeille, verrou
-  biométrie, couvertures, pièces jointes, checklist basique.
-- Persistance **SQLite chiffrée** (`sqflite_sqlcipher`, schéma v7) ; export /
-  import `.tano` chiffré (AES-GCM, PBKDF2).
-- FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
-  (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **300 tests** verts (dont 20 goldens, joués en
-  local), CI `analyze` + `test` + un build de débogage des deux cibles.
-- **Premier lancement** : une introduction de 3 écrans, rejouable depuis
-  À propos, sur une base **vide** (plus de données de démonstration).
-- **Suppression** : une annulation unique pour la note comme pour le dossier.
-- Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
-  dialogues, couvertures, FAB, nettoyage, accessibilité).
+## Before first public release
 
-## 1. Livraison store *(bloquant)*
+1. Validate native encryption, backup/restore, key loss, app-switcher protection and
+   authentication-session invalidation.
+2. Add recovery UI, normalize persistence failures, complete orphan/reset handling.
+3. Inspect Sentry envelopes, queues and service-side non-retention settings before
+   configuring a production DSN.
+4. Establish a non-destructive migration policy for all data created after release.
+5. Test native builds, distribution signing and store declarations.
 
-- [x] **Permissions iOS** : `NSFaceIDUsageDescription` en place. Ni
-  photothèque ni caméra nécessaires — PHPicker, vérifié dans le paquet.
-  Voir [confidentialité](./confidentialite.md).
-- [x] **Confidentialité in-app** : politique FR / EN / MG (`PrivacyPage`),
-  accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
-- [x] **Manifeste de confidentialité** : `ios/Runner/PrivacyInfo.xcprivacy`,
-  déclaré et câblé dans la cible Runner.
-- [x] **Fiches store** : tout est prêt (page de politique dans `site/privacy/`,
-  textes dans [store-listing.md](./store-listing.md)). La saisie dans les deux
-  consoles se fera le moment venu, à la demande.
-- [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
-  identifiant, zéro breadcrumb (voir
-  [observabilité](./observabilite.md)).
-- [x] **Mises à jour** : store-native (Play In-App Updates + lookup App Store),
-  entrée « Vérifier les mises à jour » dans À propos. Voir
-  [observabilité](./observabilite.md).
-- [x] **Release, la préparation** : `CHANGELOG.md` en place, version passée en
-  `0.9.0-beta`, et la signature Android branchée sur un keystore qui vit hors du
-  dépôt. La recette complète est dans [livraison](./livraison.md).
-- [ ] **Release, le jour J** : tag `v0.9.0-beta`, build signé Play / App Store.
-- [x] **CI** : job de *build* — `flutter build apk --debug` sur Ubuntu et
-  `flutter build ios --debug --no-codesign` sur macOS.
-- [x] **README racine** : SQLite chiffré, `core/features/shared`, dossiers,
-  verrou, export, couvertures, plus une entrée vers `docs/`.
+## Domain and backup work
 
-## 2. Qualité
+Extract transaction-aware commands; add format v2 with folders/relations and tested
+round-trips; measure large-data search/pagination and move expensive work off the UI.
+Persist tasks and projects before building full Kanban workflows. Specify task status,
+columns, stable ordering, deadlines, ownership and note relationships.
 
-- [x] **Golden tests** des cartes (grille/liste, thèmes, états) —
-  `test/golden/`, vingt images, hors CI. Voir [tests](./tests.md).
-- [x] Étendre les **tests d'intégration** (dossiers, export/import, verrou) :
-  cinq scénarios sur appareil, dont l'aller-retour `.tano` sur **deux bases
-  chiffrées réelles**.
-- [x] **Logs** silencieux en release (`appLog` derrière `kDebugMode`, plus aucun
-  `debugPrint` qui traîne) ; erreurs utilisateur uniformisées.
+## Premium and collaboration
 
-## 3. UX grand public
+Choose billing later and implement verified entitlements/restoration. Follow
+[collaboration](collaboration.md) for peer authentication, remote transport, permissions,
+replication and conflict testing. No central content storage. Premium is independent
+from a collaborator's permission to a shared resource.
 
-- [x] **Onboarding** : trois écrans au premier lancement, rejouables depuis
-  À propos. La base démarre vide.
-- [x] **Undo uniformisé** : une seule annulation, partagée par l'accueil et le
-  dossier.
-- [x] **Feedback** sur déplacement / verrouillage : un avis court après
-  l'action. Android garde son SnackBar, iOS a un toast qui s'efface seul.
-- [x] **Réglages** : quatre tailles de texte (appliquées par-dessus l'échelle du
-  système) et deux interrupteurs, retour haptique et son.
-- [x] **Recherche** : l'historique des requêtes récentes, proposé quand le
-  champ est vide, effaçable d'un geste. Les filtres (catégorie, favori, dates)
-  sont écartés pour l'instant.
-
-## 4. Cœur produit
-
-- [ ] **Checklist avancée** (réordonnable, liée à une note ou un ticket).
-- [ ] **Projets / Kanban** (colonnes, drag & drop, statut/ordre).
-
-## 5. Collaboration *(plus tard)*
-
-- [ ] **Dossiers hiérarchiques** (arborescence, `parent_id`).
-- [ ] **Synchronisation P2P** temps réel, chiffrée de bout en bout.
-
-> Le **prototype de synchronisation** doit être validé **avant** de construire
-> le Kanban, pour éviter une refonte coûteuse. Détails techniques :
-> [architecture.md](./architecture.md).
-
-## Ordre recommandé
-
-`1 → 2 → 3 → 4`, puis `5`. Chaque étape livre de la valeur seule ; la
-livraison store (1) est le prérequis à toute diffusion.
+Use `develop` for integration and PRs into protected `master` for release promotion.

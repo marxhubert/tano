@@ -13,14 +13,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// export/import only.
 class InstallationKey {
   InstallationKey({FlutterSecureStorage? storage})
-      : _storage =
-            storage ??
-            const FlutterSecureStorage(
-              iOptions: IOSOptions(
-                // Never migrated to another device, never synced to iCloud.
-                accessibility: KeychainAccessibility.first_unlock_this_device,
-              ),
-            );
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            iOptions: IOSOptions(
+              // Never migrated to another device, never synced to iCloud.
+              accessibility: KeychainAccessibility.first_unlock_this_device,
+            ),
+          );
 
   /// App-wide instance.
   static final InstallationKey instance = InstallationKey();
@@ -36,13 +36,23 @@ class InstallationKey {
   Future<String> databasePassphrase() => _value(_databaseKeyName);
 
   /// 32-byte key used to encrypt attachments and cover images.
-  Future<Uint8List> filesKey() async => base64Decode(await _value(_filesKeyName));
+  Future<Uint8List> filesKey() async =>
+      base64Decode(await _value(_filesKeyName));
 
   /// 32-byte key used to encrypt preference values.
   Future<Uint8List> preferencesKey() async =>
       base64Decode(await _value(_preferencesKeyName));
 
-  Future<String> _value(String name) async {
+  final Map<String, Future<String>> _pending = {};
+
+  Future<String> _value(String name) => _pending.putIfAbsent(
+    name,
+    () => _readOrCreate(name).whenComplete(() {
+      _pending.remove(name);
+    }),
+  );
+
+  Future<String> _readOrCreate(String name) async {
     final String? cached = _cache[name];
     if (cached != null) return cached;
 

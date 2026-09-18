@@ -41,9 +41,8 @@ class AppConfig {
   static const String githubAccount = String.fromEnvironment('GITHUB_ACCOUNT');
 
   /// GitHub Sponsors page, or an empty string when no account is configured.
-  static String get sponsorUrl => githubAccount.isEmpty
-      ? ''
-      : 'https://github.com/sponsors/$githubAccount';
+  static String get sponsorUrl =>
+      githubAccount.isEmpty ? '' : 'https://github.com/sponsors/$githubAccount';
 
   /// "Buy Me a Coffee" page. Empty when the build sets none.
   static const String coffeeUrl = String.fromEnvironment('COFFEE_URL');
@@ -71,9 +70,5 @@ class AppConfig {
   /// Override it at build time with
   /// `--dart-define=SENTRY_DSN=https://...`, for instance to point a build at
   /// another Sentry project.
-  static const String sentryDsn = String.fromEnvironment(
-    'SENTRY_DSN',
-    defaultValue:
-        'https://97c35557c83918e734d7117ec75dee10@o4512097538211840.ingest.de.sentry.io/4512097551122512',
-  );
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 }

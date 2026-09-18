@@ -204,7 +204,10 @@ mixin _FabMenusMixin on _FabStateMixin {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: TanoText.listTitle,
+            ),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -403,6 +406,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           label: widget.isLocked
               ? AppText.tr('option_unlock')
               : AppText.tr('option_lock'),
+          enabled: widget.canLock,
           onTap: widget.onLockSelected,
         ),
         _VerticalMenuItem(
@@ -440,6 +444,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         label: widget.isLocked
             ? AppText.tr('option_unlock')
             : AppText.tr('option_lock'),
+        enabled: widget.canLock,
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(

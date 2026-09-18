@@ -19,13 +19,6 @@ class SecurePreferences {
 
   static const String _prefix = 'enc:v1:';
 
-  /// Fallback key used when the OS secure storage is unavailable (unit tests,
-  /// degraded devices). Preferences are not sensitive, so degrading to a fixed
-  /// key is preferable to losing them.
-  static final Uint8List _fallbackKey = Uint8List.fromList(
-    List<int>.generate(32, (int i) => i),
-  );
-
   final SharedPreferences _prefs;
   final Uint8List _key;
   final Map<String, Object?> _cache;
@@ -63,14 +56,9 @@ class SecurePreferences {
     return instance;
   }
 
-  static Future<Uint8List> _resolveKey() async {
-    try {
-      return await InstallationKey.instance.preferencesKey();
-    } catch (error) {
-      appLog('SecurePreferences: secure storage unavailable ($error)');
-      return _fallbackKey;
-    }
-  }
+  // A missing keystore is an error, never permission to use a public key.
+  static Future<Uint8List> _resolveKey() =>
+      InstallationKey.instance.preferencesKey();
 
   bool containsKey(String key) => _cache.containsKey(key);
 
@@ -101,7 +89,9 @@ class SecurePreferences {
   Future<void> _write(String key, Object? value) async {
     _cache[key] = value;
     final Uint8List encrypted = await LocalCipher.encrypt(
-      Uint8List.fromList(utf8.encode(jsonEncode(<String, Object?>{'v': value}))),
+      Uint8List.fromList(
+        utf8.encode(jsonEncode(<String, Object?>{'v': value})),
+      ),
       _key,
     );
     await _prefs.setString(key, '$_prefix${base64Encode(encrypted)}');

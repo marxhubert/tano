@@ -52,7 +52,6 @@ class _InMemoryRepository implements NotesRepository {
   @override
   Future<void> restoreNote(String id) async {}
 
-
   @override
   Future<void> toggleLock(String id, {String? password}) async {}
 
@@ -64,7 +63,6 @@ class _InMemoryRepository implements NotesRepository {
 
   @override
   Future<void> deleteAllNotes() async => notes.clear();
-
 }
 
 Note _note({
@@ -93,10 +91,10 @@ void main() {
   final Uint8List key = Uint8List.fromList(List<int>.filled(32, 9));
 
   AttachmentsStore makeStore(Directory dir) => AttachmentsStore(
-        documentsDirectory: () async => dir,
-        cacheDirectory: () async => dir,
-        keyProvider: () async => key,
-      );
+    documentsDirectory: () async => dir,
+    cacheDirectory: () async => dir,
+    keyProvider: () async => key,
+  );
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -107,6 +105,34 @@ void main() {
     targetAttachments = makeStore(targetDir);
   });
 
+  test(
+    'attachment collisions preserve both contents and remap the imported note',
+    () async {
+      await sourceAttachments.writeIfAbsent(
+        'same.txt',
+        Uint8List.fromList([1, 2]),
+      );
+      await targetAttachments.writeIfAbsent(
+        'same.txt',
+        Uint8List.fromList([9]),
+      );
+      final data = await ExportService(attachments: sourceAttachments).build(
+        notes: [
+          _note(attachments: ['same.txt']),
+        ],
+      );
+      await ImportService(
+        repository: repository,
+        attachments: targetAttachments,
+        auth: _FakeAuth(),
+      ).import(data);
+      final name = repository.notes.single.attachments.single;
+      expect(name, isNot('same.txt'));
+      expect(await targetAttachments.read('same.txt'), [9]);
+      expect(await targetAttachments.read(name), [1, 2]);
+    },
+  );
+
   tearDown(() async {
     for (final Directory dir in <Directory>[sourceDir, targetDir]) {
       if (await dir.exists()) await dir.delete(recursive: true);
@@ -114,43 +140,45 @@ void main() {
   });
 
   // Cheap Argon2id parameters: the production cost times the tests out.
-  ExportService exporter() => ExportService(
-        attachments: sourceAttachments,
-        argon2: Argon2Params.fast,
-      );
+  ExportService exporter() =>
+      ExportService(attachments: sourceAttachments, argon2: Argon2Params.fast);
   ImportService importer({bool canLock = false}) => ImportService(
-        repository: repository,
-        attachments: targetAttachments,
-        auth: _FakeAuth(available: canLock),
-        argon2: Argon2Params.fast,
+    repository: repository,
+    attachments: targetAttachments,
+    auth: _FakeAuth(available: canLock),
+    argon2: Argon2Params.fast,
+  );
+
+  test(
+    'cleartext export is a plain ZIP and round-trips notes + attachments',
+    () async {
+      final File file = File('${sourceDir.path}/src.txt')
+        ..writeAsStringSync('attachment bytes');
+      final String name = await sourceAttachments.import(file.path, 'src.txt');
+
+      final Uint8List bytes = await exporter().build(
+        notes: <Note>[
+          _note(attachments: <String>[name]),
+        ],
       );
 
-  test('cleartext export is a plain ZIP and round-trips notes + attachments',
-      () async {
-    final File file = File('${sourceDir.path}/src.txt')
-      ..writeAsStringSync('attachment bytes');
-    final String name = await sourceAttachments.import(file.path, 'src.txt');
+      // Plain ZIP magic "PK".
+      expect(bytes.sublist(0, 2), <int>[0x50, 0x4B]);
+      expect(ImportService.isEncrypted(bytes), isFalse);
 
-    final Uint8List bytes = await exporter().build(
-      notes: <Note>[_note(attachments: <String>[name])],
-    );
+      final ImportResult result = await importer().import(bytes);
+      expect(result.added, 1);
+      expect(result.attachments, 1);
 
-    // Plain ZIP magic "PK".
-    expect(bytes.sublist(0, 2), <int>[0x50, 0x4B]);
-    expect(ImportService.isEncrypted(bytes), isFalse);
-
-    final ImportResult result = await importer().import(bytes);
-    expect(result.added, 1);
-    expect(result.attachments, 1);
-
-    final List<Note> imported = await repository.loadNotes();
-    expect(imported.single.title, 'Alpha');
-    expect(imported.single.attachments, contains(name));
-    expect(
-      utf8.decode(await targetAttachments.read(name)),
-      'attachment bytes',
-    );
-  });
+      final List<Note> imported = await repository.loadNotes();
+      expect(imported.single.title, 'Alpha');
+      expect(imported.single.attachments, contains(name));
+      expect(
+        utf8.decode(await targetAttachments.read(name)),
+        'attachment bytes',
+      );
+    },
+  );
 
   test('encrypted export needs the right password', () async {
     final Uint8List bytes = await exporter().build(
@@ -189,8 +217,9 @@ void main() {
     expect(result.added, 1);
     expect(result.skipped, 1);
 
-    final List<String> titles =
-        (await repository.loadNotes()).map((Note n) => n.title).toList();
+    final List<String> titles = (await repository.loadNotes())
+        .map((Note n) => n.title)
+        .toList();
     expect(titles, containsAll(<String>['Existing', 'Imported b']));
     expect(titles, isNot(contains('Imported a')));
   });
@@ -205,30 +234,68 @@ void main() {
     expect((await repository.loadNotes()).single.isLocked, isFalse);
   });
 
-  test('locked notes are unlocked on import when the device cannot lock',
-      () async {
-    final Uint8List bytes = await exporter().build(
-      notes: <Note>[_note(isLocked: true)],
-      password: 'secret123',
-    );
-    final ImportResult result = await importer(canLock: false).import(
-      bytes,
-      password: 'secret123',
-    );
-    expect(result.unlocked, 1);
-    expect((await repository.loadNotes()).single.isLocked, isFalse);
-  });
+  test(
+    'locked notes are unlocked on import when the device cannot lock',
+    () async {
+      final Uint8List bytes = await exporter().build(
+        notes: <Note>[_note(isLocked: true)],
+        password: 'secret123',
+      );
+      final ImportResult result = await importer(
+        canLock: false,
+      ).import(bytes, password: 'secret123');
+      expect(result.unlocked, 1);
+      expect((await repository.loadNotes()).single.isLocked, isFalse);
+    },
+  );
 
   test('locked notes stay locked on import when the device can lock', () async {
     final Uint8List bytes = await exporter().build(
       notes: <Note>[_note(isLocked: true)],
       password: 'secret123',
     );
-    final ImportResult result = await importer(canLock: true).import(
-      bytes,
-      password: 'secret123',
-    );
+    final ImportResult result = await importer(
+      canLock: true,
+    ).import(bytes, password: 'secret123');
     expect(result.unlocked, 0);
     expect((await repository.loadNotes()).single.isLocked, isTrue);
+  });
+  test('duplicate ids in an import never overwrite the first note', () async {
+    final bytes = await exporter().build(
+      notes: [
+        _note(id: 'same', title: 'First'),
+        _note(id: 'same', title: 'Second'),
+      ],
+    );
+    final result = await importer().import(bytes);
+    expect(result.added, 1);
+    expect(result.skipped, 1);
+    expect(repository.notes.single.title, 'First');
+  });
+
+  test('an import cannot overwrite a note in the trash', () async {
+    repository.notes.add(
+      _note(id: 'trashed', title: 'Keep').copyWith(isDeleted: true),
+    );
+    final bytes = await exporter().build(
+      notes: [_note(id: 'trashed', title: 'Replace')],
+    );
+    final result = await importer().import(bytes);
+    expect(result.added, 0);
+    expect(repository.notes.single.title, 'Keep');
+    expect(repository.notes.single.isDeleted, isTrue);
+  });
+
+  test('unsupported encrypted container versions are rejected', () async {
+    final bytes = await exporter().build(
+      notes: [_note()],
+      password: 'secret123',
+    );
+    bytes[ExportService.magic.length] = 99;
+    await expectLater(
+      importer().import(bytes, password: 'secret123'),
+      throwsA(isA<ImportException>()),
+    );
+    expect(repository.notes, isEmpty);
   });
 }

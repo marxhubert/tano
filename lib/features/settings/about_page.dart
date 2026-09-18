@@ -1,3 +1,4 @@
+import 'package:tano/features/premium/premium_page.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -139,7 +140,10 @@ class _AboutPageState extends State<AboutPage>
       ),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: sectionGap),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20.0,
+            vertical: sectionGap,
+          ),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -222,7 +226,12 @@ class _AboutPageState extends State<AboutPage>
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, sectionGap),
+          padding: const EdgeInsets.fromLTRB(
+            appPaddingMedium,
+            0.0,
+            appPaddingMedium,
+            sectionGap,
+          ),
           sliver: SliverToBoxAdapter(
             child: SettingsGroup(
               // The paragraphs above already breathe; keep the gap tight.
@@ -232,7 +241,11 @@ class _AboutPageState extends State<AboutPage>
                   title: AppText.tr('about_premium'),
                   selected: false,
                   onTap: () {
-                    // TODO: Implement Premium
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PremiumPage(),
+                      ),
+                    );
                   },
                   trailing: const Icon(
                     Symbols.star,
@@ -289,12 +302,21 @@ class _AboutPageState extends State<AboutPage>
           sliver: SliverToBoxAdapter(
             child: Text(
               AppText.tr('about_more'),
-              style: TextStyle(color: textColor, fontSize: TanoText.body, height: 1.6),
+              style: TextStyle(
+                color: textColor,
+                fontSize: TanoText.body,
+                height: 1.6,
+              ),
             ),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 0.0),
+          padding: const EdgeInsets.fromLTRB(
+            appPaddingMedium,
+            0.0,
+            appPaddingMedium,
+            0.0,
+          ),
           sliver: SliverToBoxAdapter(
             child: ListenableBuilder(
               listenable: _viewModel,
@@ -370,14 +392,20 @@ class _AboutPageState extends State<AboutPage>
         SliverFillRemaining(
           hasScrollBody: false,
           child: Container(
-            padding: const EdgeInsets.only(top: 4 * sectionGap, bottom: sectionGap),
+            padding: const EdgeInsets.only(
+              top: 4 * sectionGap,
+              bottom: sectionGap,
+            ),
             alignment: Alignment.bottomCenter,
             child: Text(
               // A build that names no author shows the year alone.
               AppConfig.authorName.isEmpty
                   ? '© ${AppConfig.year}'
                   : '© ${AppConfig.year}, ${AppConfig.authorName}',
-              style: TextStyle(color: mutedTextColor(context), fontSize: TanoText.tiny),
+              style: TextStyle(
+                color: mutedTextColor(context),
+                fontSize: TanoText.tiny,
+              ),
             ),
           ),
         ),
