@@ -95,7 +95,7 @@ class _EditNoteState extends State<EditNote>
 
     _highlightBlinkController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: TanoMotion.slow,
     )..addListener(() {
         _contentController.searchBlinkValue = _highlightBlinkController.value;
       });
@@ -237,7 +237,7 @@ class _EditNoteState extends State<EditNote>
           viewport.getOffsetToReveal(editable, 0.5, rect: rect);
       Scrollable.of(fieldContext).position.animateTo(
         revealed.offset,
-        duration: const Duration(milliseconds: 200),
+        duration: TanoMotion.base,
         curve: Curves.easeInOut,
       );
     });
@@ -728,6 +728,9 @@ class _EditNoteState extends State<EditNote>
             },
             child: PageScaffold(
               scaffoldKey: _scaffoldState,
+              // The title and the metadata line share the content's inset, so
+              // the three lines of the editor start on the same axis.
+              titlePaddingLeft: appPaddingMedium,
               backgroundColor: immersiveBg,
               // Once the note is scrolled, show its title in the app bar and
               // slide it to the left while the undo/redo/save actions appear.
@@ -784,12 +787,13 @@ class _EditNoteState extends State<EditNote>
               ],
               slivers: [
                 SliverPadding(
+                  // Same inset as the title line and as the text below it.
                   padding: const EdgeInsets.symmetric(
-                    horizontal: appPaddingLarge,
+                    horizontal: appPaddingMedium,
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      padding: const EdgeInsets.symmetric(vertical: appPaddingMedium),
                       child: MetadataLine(
                         leading: Wrap(
                           alignment: WrapAlignment.start,
@@ -874,7 +878,7 @@ class _EditNoteState extends State<EditNote>
                         controller: _contentController,
                         textInputAction: TextInputAction.newline,
                         textCapitalization: TextCapitalization.sentences,
-                        style: const TextStyle(fontSize: 14.4, height: 1.8),
+                        style: const TextStyle(fontSize: TanoText.label, height: 1.8),
                         decoration: InputDecoration(
                           hintText: AppText.tr('add_note'),
                           border: InputBorder.none,
@@ -894,7 +898,7 @@ class _EditNoteState extends State<EditNote>
                 ),
                 if (_viewModel.attachments.isNotEmpty)
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 100.0),
+                    padding: const EdgeInsets.fromLTRB(appPaddingMedium, 0.0, appPaddingMedium, 100.0),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,13 +912,13 @@ class _EditNoteState extends State<EditNote>
                                 size: 18.0,
                                 color: mutedTextColor(context),
                               ),
-                              const SizedBox(width: 8.0),
+                              const SizedBox(width: appPaddingTight),
                               Text(
                                 AppText.tr(_viewModel.attachments.length > 1
                                     ? 'attachments'
                                     : 'attachment'),
                                 style: TextStyle(
-                                  fontSize: 14.4,
+                                  fontSize: TanoText.label,
                                   fontWeight: FontWeight.w600,
                                   color: primaryTextColor(context),
                                 ),
@@ -1105,7 +1109,7 @@ class _AttachmentRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14.0,
+                  fontSize: TanoText.label,
                   color: primaryTextColor(context),
                 ),
               ),

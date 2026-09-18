@@ -14,8 +14,8 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **279 tests** verts (dont 20 goldens, joués en
-  local), CI `analyze` + `test`.
+- `flutter analyze` 0 issue, **287 tests** verts (dont 20 goldens, joués en
+  local), CI `analyze` + `test` + un build de débogage des deux cibles.
 - Chantier de **refactoring du cœur terminé** (cartes, slivers, sélection,
   dialogues, couvertures, FAB, nettoyage, accessibilité).
 
@@ -38,10 +38,14 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
 - [x] **Mises à jour** : store-native (Play In-App Updates + lookup App Store),
   entrée « Vérifier les mises à jour » dans À propos. Voir
   [observabilité](./observabilite.md).
-- [ ] **Release** : CHANGELOG, bump de version, tag, build signé Play / App Store.
-- [ ] **CI** : job de *build* (`build apk` / `build ios --no-codesign`).
-- [ ] **README racine** : à réécrire (SQLite chiffré, `core/features/shared`,
-  dossiers, verrou, export, couvertures).
+- [x] **Release, la préparation** : `CHANGELOG.md` en place, version passée en
+  `0.9.0-beta`, et la signature Android branchée sur un keystore qui vit hors du
+  dépôt. La recette complète est dans [livraison](./livraison.md).
+- [ ] **Release, le jour J** : tag `v0.9.0-beta`, build signé Play / App Store.
+- [x] **CI** : job de *build* — `flutter build apk --debug` sur Ubuntu et
+  `flutter build ios --debug --no-codesign` sur macOS.
+- [x] **README racine** : SQLite chiffré, `core/features/shared`, dossiers,
+  verrou, export, couvertures, plus une entrée vers `docs/`.
 
 ## 2. Qualité
 

@@ -1,7 +1,7 @@
 name: tano
 description: TanoNote - Notes, tasks and projects manager.
 publish_to: 'none'
-version: 0.8.4-beta
+version: 0.9.0-beta
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/config/malagasy_refs.json
     - assets/licenses/
+    - assets/icons/Ghozi_Muhtarom/
 
 # Sentry dart plugin: uploads the debug symbols so that release stack traces
 # stay readable. Needs SENTRY_AUTH_TOKEN (or sentry.properties, git-ignored)

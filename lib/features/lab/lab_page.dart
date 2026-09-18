@@ -89,7 +89,7 @@ class LabPage extends StatelessWidget {
             cardBuilder: (BuildContext context, Note note) => _card(note, true),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
+        const SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
       ],
     );
   }
@@ -147,7 +147,7 @@ class _SectionTitle extends StatelessWidget {
           style: TextStyle(
             color: mutedTextColor(context),
             fontWeight: FontWeight.bold,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             letterSpacing: -0.08,
           ),
         ),

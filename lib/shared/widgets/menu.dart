@@ -62,13 +62,13 @@ Widget popupButton({
   }
   if ('header' == popupItem.value) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(appPaddingWide, appPaddingWide, appPaddingWide, 0.0),
       child: Text(
         popupItem.title,
         style: TextStyle(
           color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
-          fontSize: 17.0,
+          fontSize: TanoText.listTitle,
           letterSpacing: -0.08,
         ),
       ),
@@ -87,14 +87,14 @@ Widget popupButton({
     popupItem.title,
     style: TextStyle(
       color: activeColor,
-      fontSize: 17.0,
+      fontSize: TanoText.listTitle,
       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
     ),
     overflow: TextOverflow.ellipsis,
   );
 
   return ListTile(
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+    contentPadding: const EdgeInsets.symmetric(horizontal: appPaddingWide),
     visualDensity: const VisualDensity(vertical: -1.0),
     dense: false,
     title: label,

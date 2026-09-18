@@ -48,7 +48,7 @@ class _SubMenuLayout extends StatelessWidget {
                 ),
                 label: Text(
                   title,
-                  style: TextStyle(color: Colors.white, fontSize: 17.0),
+                  style: TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -219,6 +219,7 @@ class _VerticalMenuItem extends StatelessWidget {
     this.fontSize = 17.0,
     this.maxLines,
     this.fill,
+    this.enabled = true,
   });
 
   final IconData icon;
@@ -233,24 +234,34 @@ class _VerticalMenuItem extends StatelessWidget {
   /// Material Symbols FILL axis: 0 = outlined, 1 = filled.
   final double? fill;
 
+  /// A refused entry keeps its place in the menu — the list never reshuffles —
+  /// but it reads muted and does not react to a tap.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
+    final Color? muted = enabled ? null : Colors.white.withValues(alpha: 0.38);
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: appPaddingMedium, horizontal: 4.0),
         child: Row(
           crossAxisAlignment: maxLines != null
               ? CrossAxisAlignment.start
               : CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.white, size: iconSize, fill: fill),
-            const SizedBox(width: 8.0),
+            Icon(
+              icon,
+              color: muted ?? iconColor ?? Colors.white,
+              size: iconSize,
+              fill: fill,
+            ),
+            const SizedBox(width: appPaddingTight),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: textColor ?? Colors.white,
+                  color: muted ?? textColor ?? Colors.white,
                   fontSize: fontSize,
                 ),
                 maxLines: maxLines,

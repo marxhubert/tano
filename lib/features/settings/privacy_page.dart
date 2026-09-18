@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -31,7 +32,7 @@ class PrivacyPage extends StatelessWidget {
       actions: const <Widget>[ThemeToggleButton()],
       slivers: <Widget>[
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(20.0, appPaddingTight, 20.0, 0.0),
           sliver: SliverToBoxAdapter(
             child: _Paragraph(text: AppText.tr('privacy_intro')),
           ),
@@ -43,7 +44,12 @@ class PrivacyPage extends StatelessWidget {
               for (final (String title, String body) in sections)
                 _Section(titleKey: title, bodyKey: body),
               const SizedBox(height: 32.0),
-              _Paragraph(text: AppText.tr('privacy_updated'), muted: true),
+              _Paragraph(
+                text: AppText.tr('privacy_updated', <String, String>{
+                  'year': '${AppConfig.year}',
+                }),
+                muted: true,
+              ),
             ]),
           ),
         ),
@@ -62,7 +68,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24.0),
+      padding: const EdgeInsets.only(top: sectionGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -70,7 +76,7 @@ class _Section extends StatelessWidget {
             AppText.tr(titleKey),
             style: TextStyle(
               color: primaryTextColor(context),
-              fontSize: 17.0,
+              fontSize: TanoText.listTitle,
               fontWeight: FontWeight.bold,
             ),
           ),

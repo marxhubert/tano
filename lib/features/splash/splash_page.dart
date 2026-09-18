@@ -84,7 +84,7 @@ class SplashScreenState extends State<SplashScreen> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Icon(Symbols.error, size: 48.0, color: muted),
-          const SizedBox(height: 16.0),
+          const SizedBox(height: appPaddingWide),
           Text(
             AppText.tr('load_error_title'),
             textAlign: TextAlign.center,
@@ -94,7 +94,7 @@ class SplashScreenState extends State<SplashScreen> {
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8.0),
+          const SizedBox(height: appPaddingTight),
           Text(
             AppText.tr('load_error_message'),
             textAlign: TextAlign.center,
@@ -111,7 +111,7 @@ class SplashScreenState extends State<SplashScreen> {
               color: muted.withValues(alpha: 0.7),
             ),
           ),
-          const SizedBox(height: 24.0),
+          const SizedBox(height: sectionGap),
           SizedBox(
             width: double.infinity,
             child: FilledButton(

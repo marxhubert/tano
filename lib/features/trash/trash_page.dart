@@ -16,6 +16,7 @@ import 'package:tano/shared/widgets/folder_card_bodies.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/empty_state.dart';
 
 class TrashPage extends StatefulWidget {
   const TrashPage({super.key});
@@ -64,13 +65,15 @@ class _TrashPageState extends State<TrashPage> {
         return PageScaffold(
           title: AppText.tr('option_recycle_bin'),
           headerMetadata: _headerMetadata,
+          // Nothing but the illustration: it must hold its place.
+          freezeBody: !_isLoading && _viewModel.isEmpty,
           actions: [
             if (!_viewModel.isEmpty)
               IconButton(
                 tooltip: AppText.tr('empty_trash'),
-                icon: const Icon(
+                icon: Icon(
                   Symbols.delete_sweep,
-                  color: Color(0xFFFF8A80),
+                  color: TanoStates.error.dark,
                   size: 22.0,
                 ),
                 onPressed: () async {
@@ -84,6 +87,18 @@ class _TrashPageState extends State<TrashPage> {
                   }
                 },
               ),
+            // The empty screen has nothing left to do but leave, so the way
+            // home sits here, icon only, rather than in the body.
+            if (_viewModel.isEmpty)
+              IconButton(
+                icon: const Icon(Symbols.home),
+                tooltip: AppText.tr('home'),
+                onPressed: () {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/home', (route) => false);
+                },
+              ),
           ],
           slivers: [
             if (_isLoading)
@@ -92,40 +107,10 @@ class _TrashPageState extends State<TrashPage> {
               )
             else if (_viewModel.isEmpty)
               SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(AppText.tr('no_note_found')),
-                      const SizedBox(height: 16),
-                      // Same shape as the "Check for update" action in About:
-                      // just an icon and a label, no chrome.
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pushNamedAndRemoveUntil('/home', (route) => false);
-                        },
-                        icon: Icon(
-                          Symbols.in_home_mode,
-                          size: 16.0,
-                          color: mutedTextColor(context),
-                        ),
-                        label: Text(
-                          AppText.tr('home'),
-                          style: TextStyle(
-                            color: mutedTextColor(context),
-                            fontSize: 14.0,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: emptyState(
+                  context,
+                  AppText.tr('trash_empty'),
+                  image: EmptyArt.bin,
                 ),
               )
             else ...<Widget>[
@@ -202,7 +187,7 @@ class _TrashPageState extends State<TrashPage> {
           style: TextStyle(
             color: mutedTextColor(context),
             fontWeight: FontWeight.bold,
-            fontSize: 17.0,
+            fontSize: TanoText.listTitle,
             letterSpacing: -0.08,
           ),
         ),
@@ -304,7 +289,7 @@ class _TrashPageState extends State<TrashPage> {
     final Widget delete = _TrashAction(
       icon: Symbols.delete_forever,
       onTap: onDelete,
-      color: const Color(0xFFFF8A80),
+      color: TanoStates.error.dark,
     );
     if (_isListLayout) {
       return Positioned(
@@ -364,7 +349,7 @@ class _TrashAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(6.0),
+        padding: const EdgeInsets.all(appPaddingSmall),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.8),
           shape: BoxShape.circle,

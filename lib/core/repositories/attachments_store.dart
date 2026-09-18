@@ -107,6 +107,18 @@ class AttachmentsStore {
   }
 
   /// Deletes the stored attachment and any materialized plaintext copy.
+  /// Deletes every stored attachment, the encrypted files and the
+  /// materialized copies. A hard reset calls it, so a wipe leaves nothing
+  /// behind on the disk.
+  Future<void> deleteAll() async {
+    final Directory docs = await _documentsDirectory();
+    final Directory dir = Directory(p.join(docs.path, 'attachments'));
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+    }
+    _materialized.clear();
+  }
+
   Future<void> remove(String name) async {
     final Directory dir = await _dir();
     final File file = File(p.join(dir.path, name));

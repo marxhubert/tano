@@ -4,7 +4,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/card_typography.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
+import 'package:tano/shared/widgets/check_disc.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// The kind of entity a card shows. Not used by the layout itself; it lets
@@ -230,7 +232,7 @@ class EntityCard extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.topRight,
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(appPaddingTight),
                           child: _selectionIcon(isDark),
                         ),
                       ),
@@ -331,7 +333,7 @@ class EntityCard extends StatelessWidget {
     );
     final String shownTitle = title.isEmpty ? AppText.tr('no_title') : title;
     final TextStyle titleStyle = TextStyle(
-      fontSize: 11.0,
+      fontSize: cardTitleSize,
       fontWeight: FontWeight.bold,
       color: textColor,
     );
@@ -348,7 +350,7 @@ class EntityCard extends StatelessWidget {
                   subtitle!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 9.0, color: metaColor),
+                  style: TextStyle(fontSize: cardMetaSize, color: metaColor),
                 ),
               ),
             ],
@@ -407,17 +409,7 @@ class EntityCard extends StatelessWidget {
     if (!isSelected) {
       return Icon(Symbols.circle, size: 24.0, color: color);
     }
-    return Stack(
-      alignment: Alignment.center,
-      children: <Widget>[
-        const SizedBox(
-          width: 18.0,
-          height: 18.0,
-          child: CircleAvatar(backgroundColor: Colors.white, radius: 100.0),
-        ),
-        Icon(Symbols.check_circle, size: 24.0, color: color),
-      ],
-    );
+    return CheckDisc(size: 24.0, color: color);
   }
 }
 

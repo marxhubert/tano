@@ -26,6 +26,10 @@ abstract class FoldersRepository {
 
   /// Deletes a trashed folder and the notes it contains for good.
   Future<void> deleteFolderPermanently(String id);
+
+  /// Deletes every folder for good, trashed or not. The hard reset takes the
+  /// folders and the notes together.
+  Future<void> deleteAllFolders();
 }
 
 /// A repository with no folders at all.
@@ -47,6 +51,9 @@ class EmptyFoldersRepository implements FoldersRepository {
   Future<void> restoreFolder(String id) async {}
   @override
   Future<void> deleteFolderPermanently(String id) async {}
+
+  @override
+  Future<void> deleteAllFolders() async {}
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }

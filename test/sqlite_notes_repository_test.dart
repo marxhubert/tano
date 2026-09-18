@@ -38,6 +38,16 @@ void main() {
       expect(await repository.loadFolders(), hasLength(5));
     });
 
+    test('deleteAllFolders empties the folders, trashed or not', () async {
+      await repository.loadNotes(); // seeds the demo data
+      expect(await repository.loadFolders(), hasLength(5));
+
+      await repository.deleteAllFolders();
+
+      expect(await repository.loadFolders(), isEmpty);
+      expect(await repository.loadTrashFolders(), isEmpty);
+    });
+
     test('migrates notes from the legacy JSON file', () async {
       final legacyNotes = <Note>[
         Note(

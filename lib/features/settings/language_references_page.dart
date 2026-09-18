@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -12,7 +13,7 @@ class LanguageReferencesPage extends StatelessWidget {
 
   String _buildUrl(String word) {
     final String normalized = word.toLowerCase().replaceAll('-', '');
-    return 'https://malagasyword.org/bins/teny2/$normalized';
+    return '${AppConfig.malagasyWordUrl}$normalized';
   }
 
   Future<void> _launchUrl(String word) async {
@@ -34,12 +35,12 @@ class LanguageReferencesPage extends StatelessWidget {
       actions: const [ThemeToggleButton()],
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(18.0, 12.0, 18.0, 0.0),
+          padding: const EdgeInsets.fromLTRB(appPaddingLarge, appPaddingMedium, appPaddingLarge, 0.0),
           sliver: SliverToBoxAdapter(
             child: Text(
               "Natao ity hanazavana ireo teny sy fiteny nampiasaina ato amin'ity rindrankajy ity. Niezahana ho voambolana malagasy ofisialy, saingy misy fiteny mifanendrika bebe kokoa amin'ny angaly tiana havoitra. \n\nIreto izy ireo raha mahaliana anao ny heviny. Araho ny rohy ho fanampim-panazavana misimisy kokoa.",
               style: TextStyle(
-                fontSize: 13.0,
+                fontSize: TanoText.label,
                 color: mutedTextColor(context),
                 height: 1.5,
               ),
@@ -47,7 +48,7 @@ class LanguageReferencesPage extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: appPaddingLarge, vertical: sectionGap),
           sliver: SliverList.separated(
             itemCount: refs.length,
             separatorBuilder: (context, index) => Divider(
@@ -59,7 +60,7 @@ class LanguageReferencesPage extends StatelessWidget {
               final ref = refs[index];
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                padding: const EdgeInsets.symmetric(vertical: appPaddingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -71,7 +72,7 @@ class LanguageReferencesPage extends StatelessWidget {
                             TextSpan(
                               style: TextStyle(
                                 color: mutedTextColor(context),
-                                fontSize: 13.0,
+                                fontSize: TanoText.label,
                                 fontWeight: FontWeight.normal,
                               ),
                               children: [
@@ -80,7 +81,7 @@ class LanguageReferencesPage extends StatelessWidget {
                                   text: ref.word,
                                   style: TextStyle(
                                     color: primaryTextColor(context),
-                                    fontSize: 17.0,
+                                    fontSize: TanoText.listTitle,
                                   ),
                                 ),
                               ],
@@ -103,7 +104,7 @@ class LanguageReferencesPage extends StatelessWidget {
                       ref.description,
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.label,
                         height: 1.4,
                       ),
                     ),

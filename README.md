@@ -1,6 +1,6 @@
 # TanoNote
 
-[![Version](https://img.shields.io/badge/version-0.8.4--beta-orange)](https://github.com/marxhubert/tano/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0--beta-orange)](https://github.com/marxhubert/tano/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-brightgreen)](https://flutter.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
@@ -60,11 +60,32 @@ flutter run
 ## Build
 
 ```bash
+# Add --dart-define-from-file=identity.json to name the build (see below).
+
 # Android (App Bundle for the Play Store)
 flutter build appbundle
 
 # iOS (requires macOS and Xcode)
 flutter build ipa
+```
+
+The full recipe — keystore, archive, tag, release — lives in
+[docs/livraison.md](docs/livraison.md).
+
+### Identity
+
+The repository carries no personal information: the author's name, the contact
+address and the support links are read from the build, and a build that passes
+none shows no author and offers no support page. `identity.json.dist` is the
+template — copy it, fill it in, and point the tool at it. The filled file is
+ignored by git, the template is not.
+
+```bash
+cp identity.json.dist identity.json   # then fill it in
+
+flutter run --dart-define-from-file=identity.json
+flutter build appbundle --dart-define-from-file=identity.json
+flutter build ipa --dart-define-from-file=identity.json
 ```
 
 ## Tests
@@ -80,8 +101,11 @@ flutter test
 flutter test integration_test
 ```
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs `flutter analyze`
-and `flutter test` on every push to `master` and on every pull request.
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs `flutter analyze`,
+`flutter test` (the golden tests are compared locally: they depend on how the
+host rasterises text) and a debug build of both targets — Android on Ubuntu, iOS
+on macOS without a signing profile — on every push to `master` and on every pull
+request.
 
 ## Technologies
 
@@ -121,6 +145,13 @@ lib/
     ├── config/          # Localisation, theme, service locator, preferences
     └── widgets/         # Cards, floating action button, dialogs, layout
 ```
+
+## Documentation
+
+`docs/` holds the reference (architecture, security, components, privacy) and the
+steering documents: [roadmap](docs/roadmap.md), [backlog](docs/backlog.md),
+[store listings](docs/store-listing.md) and [release](docs/livraison.md). The
+polish audit that closed this cycle is in [peaufinage](docs/peaufinage.md).
 
 ## Contributing
 

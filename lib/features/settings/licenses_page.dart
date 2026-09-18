@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:tano/shared/config/app_config.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -31,7 +32,10 @@ class _LicensesPageState extends State<LicensesPage> {
       final text = await rootBundle.loadString('assets/licenses/$langToLoad.txt');
       if (mounted) {
         setState(() {
-          _licenseText = text;
+          // The text carries the identity as placeholders: the app fills them.
+          _licenseText = text
+              .replaceAll('{year}', '${AppConfig.year}')
+              .replaceAll('{author}', AppConfig.authorName);
           _isLoading = false;
         });
       }
@@ -65,7 +69,7 @@ class _LicensesPageState extends State<LicensesPage> {
       ],
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 16.0),
+          padding: const EdgeInsets.fromLTRB(20.0, appPaddingTight, 20.0, appPaddingWide),
           sliver: SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,31 +81,31 @@ class _LicensesPageState extends State<LicensesPage> {
                       langName,
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.label,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      '2026',
+                      '${AppConfig.year}',
                       style: TextStyle(
                         color: mutedTextColor(context),
-                        fontSize: 13.0,
+                        fontSize: TanoText.label,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
                 if (_currentLang != 'en' && !_showingOriginal) ...[
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   Text(
                     AppText.tr('license_disclaimer'),
                     style: TextStyle(
-                      fontSize: 13.0,
+                      fontSize: TanoText.label,
                       color: mutedTextColor(context),
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   TextButton(
                     onPressed: _toggleOriginal,
                     style: TextButton.styleFrom(
@@ -119,7 +123,7 @@ class _LicensesPageState extends State<LicensesPage> {
                     ),
                   ),
                 ] else if (_showingOriginal && _currentLang != 'en') ...[
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: appPaddingWide),
                   TextButton(
                     onPressed: _toggleOriginal,
                     style: TextButton.styleFrom(
@@ -150,7 +154,7 @@ class _LicensesPageState extends State<LicensesPage> {
                     _licenseText,
                     style: TextStyle(
                       color: primaryTextColor(context),
-                      fontSize: 16.0,
+                      fontSize: TanoText.body,
                       height: 1.6,
                     ),
                   ),
