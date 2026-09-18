@@ -14,7 +14,7 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   import `.tano` chiffré (AES-GCM, PBKDF2).
 - FAB refondu (zones, menus de 2nd degré, couleur partagée), accessibilité
   (libellés sur toutes les actions-icônes), DI via `getIt`.
-- `flutter analyze` 0 issue, **294 tests** verts (dont 20 goldens, joués en
+- `flutter analyze` 0 issue, **300 tests** verts (dont 20 goldens, joués en
   local), CI `analyze` + `test` + un build de débogage des deux cibles.
 - **Premier lancement** : une introduction de 3 écrans, rejouable depuis
   À propos, sur une base **vide** (plus de données de démonstration).
@@ -31,12 +31,11 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   accessible depuis À propos. Voir [confidentialité](./confidentialite.md).
 - [x] **Manifeste de confidentialité** : `ios/Runner/PrivacyInfo.xcprivacy`,
   déclaré et câblé dans la cible Runner.
-- [ ] **Fiches store** : la page de politique est prête à publier
-  (`site/privacy/`, GitHub Pages) et tous les textes à coller sont dans
-  [store-listing.md](./store-listing.md) — il reste à les saisir dans les deux
-  consoles.
+- [x] **Fiches store** : tout est prêt (page de politique dans `site/privacy/`,
+  textes dans [store-listing.md](./store-listing.md)). La saisie dans les deux
+  consoles se fera le moment venu, à la demande.
 - [x] **Rapports de crash** : Sentry derrière le consentement, sans IP ni
-  identifiant stable, zéro breadcrumb (voir
+  identifiant, zéro breadcrumb (voir
   [observabilité](./observabilite.md)).
 - [x] **Mises à jour** : store-native (Play In-App Updates + lookup App Store),
   entrée « Vérifier les mises à jour » dans À propos. Voir
@@ -67,7 +66,9 @@ TanoNote : **notes, tâches et projets**, 100 % hors-ligne, chiffré au repos.
   l'action. Android garde son SnackBar, iOS a un toast qui s'efface seul.
 - [x] **Réglages** : quatre tailles de texte (appliquées par-dessus l'échelle du
   système) et deux interrupteurs, retour haptique et son.
-- [ ] **Recherche** : historique + filtres (catégorie, favori, dates).
+- [x] **Recherche** : l'historique des requêtes récentes, proposé quand le
+  champ est vide, effaçable d'un geste. Les filtres (catégorie, favori, dates)
+  sont écartés pour l'instant.
 
 ## 4. Cœur produit
 

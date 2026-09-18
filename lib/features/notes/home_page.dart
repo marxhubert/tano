@@ -28,6 +28,7 @@ import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
@@ -231,6 +232,9 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   void _exitSearchMode() {
+    // Leaving the search is what makes it a search: remember the query before
+    // the field is emptied.
+    SearchHistoryController.instance.add(_searchController.text);
     _clearSearch();
     // Release the search focus so the keyboard closes immediately.
     _searchFocusNode.unfocus();
@@ -402,8 +406,63 @@ class HomeState extends State<Home> with RouteAware {
     }
   }
 
+  /// The recent searches, shown while the field is empty: the shortcut a
+  /// search screen is expected to offer.
+  Widget _searchHistorySliver(List<String> entries) {
+    return SliverList(
+      delegate: SliverChildListDelegate(<Widget>[
+        for (final String query in entries)
+          InkWell(
+            borderRadius: BorderRadius.circular(appBorderRadius),
+            onTap: () {
+              _searchController.text = query;
+              _viewModel.setSearchQuery(query);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: appPaddingSmall,
+                vertical: appPaddingMedium,
+              ),
+              child: Text(
+                query,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: TanoText.body,
+                  color: primaryTextColor(context),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  /// True while the field is open on an empty query with something to offer.
+  bool get _showSearchHistory =>
+      _isSearchMode &&
+      !_viewModel.hasSearchQuery &&
+      SearchHistoryController.instance.entries.isNotEmpty;
+
+  /// The "Clear" action, in the metadata slot of the title line.
+  Widget _clearHistoryButton() {
+    return TextButton(
+      onPressed: () => SearchHistoryController.instance.clear(),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(AppText.tr('clear'), style: titleMetadataStyle(context)),
+    );
+  }
+
   /// Home content: the folder group on top, then the unfiled notes.
   Widget _buildHomeContent() {
+    // While the field is empty, the recent searches stand in for the list.
+    if (_showSearchHistory) {
+      return _searchHistorySliver(SearchHistoryController.instance.entries);
+    }
     final List<Folder> folders = _viewModel.folders;
     final List<Note> notes = _viewModel.notes;
     final String viewLayout = _viewModel.viewLayout;
@@ -619,17 +678,23 @@ class HomeState extends State<Home> with RouteAware {
       listenable: Listenable.merge(<Listenable>[
         _viewModel,
         LocaleController.instance,
+        SearchHistoryController.instance,
       ]),
       builder: (BuildContext context, Widget? child) {
         return PageScaffold(
-          title: AppText.tr(_viewModel.pageTitleKey),
+          title: _showSearchHistory
+              ? AppText.tr('search_history')
+              : AppText.tr(_viewModel.pageTitleKey),
           isHome: true,
           freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerMetadata: _pageMetadata,
+          headerMetadata: _showSearchHistory ? null : _pageMetadata,
+          headerMetadataWidget: _showSearchHistory
+              ? _clearHistoryButton()
+              : null,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(appPaddingMedium),

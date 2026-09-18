@@ -7,6 +7,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/text_scale_controller.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -111,6 +112,7 @@ class SettingsViewModel extends ChangeNotifier {
           OnboardingController.instance.init(),
           TextScaleController.instance.init(),
           FeedbackController.instance.init(),
+          SearchHistoryController.instance.init(),
         ]);
       }
 

@@ -241,7 +241,7 @@ class AppText {
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report':
-        'Help us improve TanoNote by sending anonymous crash reports. No IP address, no stable identifier, no note content — and you can turn it off at any time.',
+        'Help us improve TanoNote by sending anonymous crash reports. No IP address, no identifier, no note content — and you can turn it off at any time.',
     'desc_recycle_bin':
         'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
     'desc_reset_data':
@@ -285,7 +285,7 @@ class AppText {
         'The database and the attachments are encrypted on the device. The key is kept in the secure storage of the system and never leaves it.',
     'privacy_crash_title': 'Crash reports (optional)',
     'privacy_crash_body':
-        'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no stable identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
+        'Off by default. If you turn on “{option_bug_report}”, technical data about a crash — the error, the app version, the device model and the OS version — is sent to Sentry (Functional Software, Inc.) so the bug can be fixed. No IP address, no identifier and no note content is sent, and no account is created. Turning the switch back off stops every future report.',
     'privacy_updates_title': 'Update check',
     'privacy_updates_body':
         'When you open the About screen, the app asks the store whether a newer version exists. The only thing carried is the name of the app — no account, no identifier, and nothing kept. The check can also be started by hand from that screen.',
@@ -335,6 +335,8 @@ class AppText {
     'note_unlocked': 'Note unlocked',
     'folder_locked': 'Folder locked',
     'folder_unlocked': 'Folder unlocked',
+    // Search
+    'search_history': 'Recent searches',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -470,7 +472,7 @@ class AppText {
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report':
-        'Aidez-nous à améliorer TanoNote en envoyant des rapports d\'erreur anonymes. Aucune adresse IP, aucun identifiant stable, aucun contenu de note — et vous pouvez le désactiver à tout moment.',
+        'Aidez-nous à améliorer TanoNote en envoyant des rapports d\'erreur anonymes. Aucune adresse IP, aucun identifiant, aucun contenu de note — et vous pouvez le désactiver à tout moment.',
     'desc_recycle_bin':
         'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
     'desc_reset_data':
@@ -514,7 +516,7 @@ class AppText {
         "La base de données et les pièces jointes sont chiffrées sur l'appareil. La clé est conservée dans le stockage sécurisé du système et n'en sort jamais.",
     'privacy_crash_title': 'Rapports de crash (facultatif)',
     'privacy_crash_body':
-        "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant stable et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
+        "Désactivés par défaut. Si vous activez « {option_bug_report} », des données techniques sur le plantage — l'erreur, la version de l'application, le modèle de l'appareil et la version du système — sont envoyées à Sentry (Functional Software, Inc.) pour corriger le bug. Aucune adresse IP, aucun identifiant et aucun contenu de note ne sont transmis, et aucun compte n'est créé. Désactiver l'interrupteur arrête définitivement tout envoi.",
     'privacy_updates_title': 'Vérification des mises à jour',
     'privacy_updates_body':
         "Quand vous ouvrez l'écran À propos, l'application demande au store s'il existe une version plus récente. La seule chose transmise est le nom de l'application — aucun compte, aucun identifiant, rien de conservé. La vérification peut aussi être lancée à la main depuis ce même écran.",
@@ -564,6 +566,8 @@ class AppText {
     'note_unlocked': 'Note déverrouillée',
     'folder_locked': 'Dossier verrouillé',
     'folder_unlocked': 'Dossier déverrouillé',
+    // Recherche
+    'search_history': 'Recherches récentes',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -699,7 +703,7 @@ class AppText {
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report':
-        'Ampio izahay hanatsara ny TanoNote amin\'ny fandefasana tatitra momba ny olana tsy misy anarana. Tsy misy adiresy IP, tsy misy famantarana maharitra ary tsy misy votoatin\'ny naoty — ary azonao atao ny mamono azy rehefa tianao.',
+        'Ampio izahay hanatsara ny TanoNote amin\'ny fandefasana tatitra momba ny olana tsy misy anarana. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin\'ny naoty — ary azonao atao ny mamono azy rehefa tianao.',
     'desc_recycle_bin':
         'Ireo naoty voafafa dia voatahiry ao amin\'ny fitoeram-pako mandritra ny 30 andro alohan\'ny hamafana azy tanteraka.',
     'desc_reset_data':
@@ -743,7 +747,7 @@ class AppText {
         "Ny banky angona sy ny rakitra ampiana dia afenina ao amin'ny finday. Ny fanalahidy dia tehirizina ao amin'ny fitahirizana azo antoka an'ny rafitra ary tsy mivoaka mihitsy.",
     'privacy_crash_title': 'Tatitra momba ny olana (tsy voatery)',
     'privacy_crash_body':
-        "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana maharitra ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
+        "Tsy mandeha raha tsy velona. Raha velonao ny « {option_bug_report} », dia alefa any amin'ny Sentry (Functional Software, Inc.) ny angona ara-teknika momba ny olana — ny hadisoana, ny dikan-teny, ny modely finday ary ny dikan-tenin'ny rafitra — mba ahafahana manamboatra azy. Tsy misy adiresy IP, tsy misy famantarana ary tsy misy votoatin'ny naoty alefa, ary tsy misy kaonty noforonina. Raha averinao ho tsy velona ny bokotra dia mijanona tsy mandeha intsony ny fandefasana.",
     'privacy_updates_title': 'Fanamarinana ny fanavaozana',
     'privacy_updates_body':
         "Rehefa manokatra ny efijery Momba ny ianao dia manontany ny store ny rindrankajy raha misy dikan-teny vaovao. Ny anaran'ny rindrankajy ihany no alefa — tsy misy kaonty, tsy misy famantarana, ary tsy misy tehirizina. Azo atao koa ny manamarina amin'ny tanana avy amin'io efijery io.",
@@ -793,6 +797,8 @@ class AppText {
     'note_unlocked': 'Novahana ny naoty',
     'folder_locked': 'Voahidy ny rakitra',
     'folder_unlocked': 'Novahana ny rakitra',
+    // Fikarohana
+    'search_history': 'Fikarohana vao haingana',
   };
 
   /// Returns the string associated with [key] in the current language,

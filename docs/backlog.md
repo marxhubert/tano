@@ -18,6 +18,9 @@
 - **Grille responsive** : largeur max par tuile (tablettes / grands écrans).
 - **Animations de transition** : layout (`AnimatedSwitcher`), ajout/suppression.
 - **États vides et erreurs** plus guidants.
+- **Tutoriel au lancement** : au-delà des trois écrans d'introduction, un guide
+  pratique des gestes et de la création de la première note. À mettre en place
+  le moment venu, une fois la première note créée depuis un accueil vide.
 - **Couleurs codées en dur** : auditer leur lisibilité en thème sombre.
 
 ## Technique
