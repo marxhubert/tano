@@ -316,7 +316,10 @@ class AppText {
     'lang_fr': 'FRENCH',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Delete photo',
-    'developer_reset': 'Developer reset',
+    if (kDebugMode) 'developer_reset': 'Developer reset',
+    if (kDebugMode)
+      'developer_reset_failed':
+          'Reset could not finish. Some data may already have been replaced. Retry to reload all demo data.',
     // Introduction
     'onboarding_skip': 'Skip',
     'onboarding_next': 'Next',
@@ -559,7 +562,10 @@ class AppText {
     'lang_fr': 'FRANÇAIS',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Supprimer la photo',
-    'developer_reset': 'Réinitialisation développeur',
+    if (kDebugMode) 'developer_reset': 'Réinitialisation développeur',
+    if (kDebugMode)
+      'developer_reset_failed':
+          'La réinitialisation a échoué. Certaines données ont peut-être déjà été remplacées. Réessayez pour recharger toutes les données de démonstration.',
     // Introduction
     'onboarding_skip': 'Passer',
     'onboarding_next': 'Suivant',
@@ -802,7 +808,10 @@ class AppText {
     'lang_fr': 'FRANTSAY',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Hamafa ny sary',
-    'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    if (kDebugMode) 'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    if (kDebugMode)
+      'developer_reset_failed':
+          'Tsy vita ny famerenana. Mety efa niova ny angona sasany. Andramo indray hampidirana ny angona andrana rehetra.',
     // Fampidirana
     'onboarding_skip': 'Hitsambikina',
     'onboarding_next': 'Manaraka',

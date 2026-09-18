@@ -37,3 +37,23 @@ privacy, protected drafts/system Back, OS credential return, startup retries and
 partial initialization, unreadable preferences, save failure/retry, and orphan
 collection with shared/trash/corrupt references. See [step 2](consolidation-step-2.md).
 These builds do not replace real-device security checks.
+
+## Developer fixtures
+
+In a debug build, open Settings > Reset data > Developer reset and confirm.
+This replaces all notes, folders, attachments and preferences with synthetic
+fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
+populated folder, with long text, bookmarks, themes, note links and checklists.
+Locked fixtures are enabled only when the device has a system credential.
+The button is hidden and the operation rejected in profile/release builds.
+Normal reset and first launch keep an empty database. Fixtures currently cover
+notes and folders; tasks will be added with task persistence.
+
+Run `flutter test test/developer_reset_test.dart` to check replacement,
+repeatability, reference integrity and both device-lock capability states.
+
+Release exclusion check: `flutter build apk --release --target-platform
+android-arm64 --analyze-size` was verified locally. The AOT size report excludes
+`notes_fixtures.dart`, `buildFixtures`, `TanoFixtures` and `developerReset`;
+the APK contains no fixture assets or developer-reset labels. Fixture insertion
+and localized developer-reset strings also use compile-time `kDebugMode` guards.
