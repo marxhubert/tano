@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/models/folder.dart';
@@ -58,7 +59,7 @@ class HomeViewModel extends ChangeNotifier {
   late final SelectionController _selection;
   String _actionButtons = 'add';
   /// Notes and folders removed by the last delete, so undo can restore both.
-  ({List<Note> notes, List<int> indexes, List<Folder> folders})? _lastDeleted;
+  DeletedBatch? _lastDeleted;
 
   /// Notes currently displayed: unfiled notes, or the search results.
   List<Note> get notes => List<Note>.unmodifiable(_visibleNotes());
@@ -293,7 +294,11 @@ class HomeViewModel extends ChangeNotifier {
       }
     }
     _allNotes.removeWhere((Note note) => _selection.contains(note.id));
-    _lastDeleted = (notes: removed, indexes: indexes, folders: deletedFolders);
+    _lastDeleted = DeletedBatch(
+      notes: removed,
+      indexes: indexes,
+      folders: deletedFolders,
+    );
     _selection.exit();
   }
 
@@ -318,37 +323,28 @@ class HomeViewModel extends ChangeNotifier {
     final Note note = _allNotes[index];
     await repository.trashNote(id);
     _allNotes.removeAt(index);
-    _lastDeleted = (
-      notes: <Note>[note],
-      indexes: <int>[index],
-      folders: const <Folder>[],
-    );
+    _lastDeleted = DeletedBatch(notes: <Note>[note], indexes: <int>[index]);
     notifyListeners();
   }
 
-  /// Notes removed by the last delete (empty when nothing was deleted).
-  List<Note> get lastDeletedNotes =>
-      _lastDeleted?.notes ?? const <Note>[];
+  /// What the last delete removed, or null when there is nothing to put back.
+  DeletedBatch? get lastDeletedBatch => _lastDeleted;
 
-  /// Folders removed by the last delete (empty when nothing was deleted).
-  List<Folder> get lastDeletedFolders =>
-      _lastDeleted?.folders ?? const <Folder>[];
-
-  /// Puts back everything the last delete removed: notes and folders.
-  Future<void> undoLastDelete() async {
-    final ({List<Note> notes, List<int> indexes, List<Folder> folders})?
-        record = _lastDeleted;
-    if (record == null) return;
-    for (int i = 0; i < record.notes.length; i++) {
-      final Note note = record.notes[i];
-      await repository.restoreNote(note.id);
-      final int index = record.indexes[i] > _allNotes.length
+  /// Puts the last deletion back on screen.
+  ///
+  /// Storage is restored by the batch itself, through [showUndoDelete]: this only
+  /// reinserts in the visible list and forgets.
+  Future<void> reinsertLastDeleted() async {
+    final DeletedBatch? batch = _lastDeleted;
+    if (batch == null) return;
+    for (int i = 0; i < batch.notes.length; i++) {
+      final Note note = batch.notes[i];
+      final int index = batch.indexes[i] > _allNotes.length
           ? _allNotes.length
-          : record.indexes[i];
+          : batch.indexes[i];
       _allNotes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
     }
-    for (final Folder folder in record.folders) {
-      await _foldersRepository?.restoreFolder(folder.id);
+    for (final Folder folder in batch.folders) {
       _folders.add(folder.copyWith(isDeleted: false));
     }
     _sort();
@@ -424,10 +420,9 @@ class HomeViewModel extends ChangeNotifier {
         if (index != -1) {
           final Note removed = _allNotes.removeAt(index);
           await repository.trashNote(originalId);
-          _lastDeleted = (
+          _lastDeleted = DeletedBatch(
             notes: <Note>[removed],
             indexes: <int>[index],
-            folders: const <Folder>[],
           );
         }
         break;

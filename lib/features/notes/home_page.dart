@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/widgets/undo_delete.dart';
+import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
 import 'package:tano/features/notes/widgets/folder_list_view.dart';
@@ -315,24 +317,14 @@ class HomeState extends State<Home> with RouteAware {
 
   void _showUndoSnackBar() {
     ScaffoldMessenger.of(context).clearSnackBars();
-    // The message reflects what was actually removed: notes, folders, or both.
-    final List<String> parts = <String>[
-      if (_viewModel.lastDeletedFolders.isNotEmpty)
-        AppText.count(
-          _viewModel.lastDeletedFolders.length,
-          'folder',
-          'folders',
-        ),
-      if (_viewModel.lastDeletedNotes.isNotEmpty)
-        AppText.count(_viewModel.lastDeletedNotes.length, 'note', 'notes'),
-    ];
-    showAdaptiveNoticeWithAction(
-      context: context,
-      message: parts.isEmpty
-          ? AppText.tr('note_deleted')
-          : '${parts.join(' & ')} ${AppText.tr('deleted')}',
-      actionLabel: AppText.tr('undo'),
-      onAction: _viewModel.undoLastDelete,
+    final DeletedBatch? batch = _viewModel.lastDeletedBatch;
+    if (batch == null || batch.isEmpty) return;
+    // The same notice, the same words and the same restore as a folder page.
+    showUndoDelete(
+      context,
+      repository: getIt<NotesRepository>(),
+      batch: batch,
+      onRestored: _viewModel.reinsertLastDeleted,
     );
   }
 
