@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/confirm.dart';
@@ -54,6 +55,7 @@ class NoteListView extends StatelessWidget {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           viewModel.toggleFavorite(note.id);
+          FeedbackController.instance.tap();
           return false;
         }
         if (note.isLocked) {

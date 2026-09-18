@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
@@ -337,6 +339,17 @@ class HomeState extends State<Home> with RouteAware {
     );
   }
 
+  /// Moves the selection, then says where it went. The block that left is not
+  /// always where the eye is looking.
+  Future<void> _moveSelectedTo(String? folderId) async {
+    final int count = _viewModel.selected.length;
+    await _viewModel.moveSelectedTo(folderId);
+    if (!mounted) return;
+    await FeedbackController.instance.impact();
+    if (!mounted) return;
+    await showMovedToast(context, count: count, folderId: folderId);
+  }
+
   /// True when the page has nothing to show: the illustration is then the only
   /// content, and it has to hold its place when the keyboard opens.
   bool get _isEmptyHome =>
@@ -661,11 +674,13 @@ class HomeState extends State<Home> with RouteAware {
                 );
                 if (confirmDeletion == true) {
                   await _viewModel.deleteSelected();
+                  await FeedbackController.instance.impact();
+                  if (!mounted) return;
                   _showUndoSnackBar();
                 }
               }
             },
-            onMoveTo: _viewModel.moveSelectedTo,
+            onMoveTo: _moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

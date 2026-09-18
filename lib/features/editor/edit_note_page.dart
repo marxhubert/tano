@@ -8,6 +8,7 @@ import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -22,6 +23,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/toast.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
@@ -321,7 +323,11 @@ class _EditNoteState extends State<EditNote>
       content: _contentController.text,
     );
     await _viewModel.persistSavedNote(note);
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    await FeedbackController.instance.impact();
+    if (!mounted) return;
+    await showMovedToast(context, count: 1, folderId: folderId);
   }
 
   /// The thin "|" separating two metadata values.
@@ -1056,6 +1062,13 @@ class _EditNoteState extends State<EditNote>
                     content: _contentController.text,
                   );
                   _fabKey.currentState?.closeVerticalMenu();
+                  await FeedbackController.instance.success();
+                  if (!context.mounted) return;
+                  await showLockToast(
+                    context,
+                    locked: result == LockToggleResult.locked,
+                    folder: false,
+                  );
                 },
                 onDeleteSelected: () async {
                   final bool? confirmDeletion = await getConfirmation(
