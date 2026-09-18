@@ -53,6 +53,7 @@ class PageScaffold extends StatefulWidget {
     this.freezeBody = false,
     this.alignAppBarTitleLeft = false,
     this.headerMetadata,
+    this.headerMetadataWidget,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.scaffoldKey,
@@ -85,6 +86,9 @@ class PageScaffold extends StatefulWidget {
   final bool alignAppBarTitleLeft;
   /// Small metadata printed at the right of the body title line.
   final String? headerMetadata;
+
+  /// Tappable metadata for the same slot, when a plain string will not do.
+  final Widget? headerMetadataWidget;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final GlobalKey<ScaffoldState>? scaffoldKey;
@@ -237,6 +241,7 @@ class _PageScaffoldState extends State<PageScaffold> {
           child: SectionTitleLine(
             titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
             metadata: widget.headerMetadata,
+            metadataWidget: widget.headerMetadataWidget,
             padding: EdgeInsets.fromLTRB(
               widget.titlePaddingLeft ?? appPaddingLarge,
               appPaddingMedium,

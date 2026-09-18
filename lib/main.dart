@@ -8,6 +8,7 @@ import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/text_scale_controller.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -26,6 +27,7 @@ void main() async {
     OnboardingController.instance.init(),
     TextScaleController.instance.init(),
     FeedbackController.instance.init(),
+    SearchHistoryController.instance.init(),
   ]);
 
   // Crash reports are opt-in: without the user's consent the SDK is not even

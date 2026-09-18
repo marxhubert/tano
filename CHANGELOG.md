@@ -27,6 +27,8 @@ Older releases are described on the
   SnackBar; iOS gets a toast that fades away on its own instead of an alert.
 - The settings offer four text sizes, and switches for the haptic feedback and
   the sound. The chosen size multiplies the system's own text scale.
+- Leaving the search remembers the query: the recent ones are offered while the
+  field is empty, and can be cleared in one tap.
 
 ### Changed
 

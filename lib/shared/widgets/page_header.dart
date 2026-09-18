@@ -35,6 +35,7 @@ class SectionTitleLine extends StatelessWidget {
     this.title,
     this.titleWidget,
     this.metadata,
+    this.metadataWidget,
     this.padding = EdgeInsets.zero,
     this.titleStyle,
   });
@@ -47,6 +48,9 @@ class SectionTitleLine extends StatelessWidget {
 
   /// Small right-aligned metadata (count, selection message, ...).
   final String? metadata;
+
+  /// Tappable metadata (a "Clear" action, ...). Wins over [metadata].
+  final Widget? metadataWidget;
 
   final EdgeInsetsGeometry padding;
   final TextStyle? titleStyle;
@@ -71,7 +75,12 @@ class SectionTitleLine extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
               ),
-              if (metadata != null)
+              if (metadataWidget != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: appPaddingMedium),
+                  child: metadataWidget,
+                )
+              else if (metadata != null)
                 Padding(
                   padding: const EdgeInsets.only(left: appPaddingMedium),
                   child: ConstrainedBox(

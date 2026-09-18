@@ -10,7 +10,7 @@ import 'package:tano/shared/config/secure_preferences.dart';
 /// Nothing is initialised and nothing leaves the device until that switch is
 /// on: the consent is read before `runApp`, and the SDK is closed as soon as
 /// the switch goes back off. The configuration is deliberately bare — no
-/// personal data, no stable identifier, no performance trace, no session
+/// personal data, no identifier, no performance trace, no session
 /// replay, no log and not a single breadcrumb.
 ///
 /// See `docs/observabilite.md` and `docs/confidentialite.md`.

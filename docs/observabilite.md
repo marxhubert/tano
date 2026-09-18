@@ -7,7 +7,7 @@
 
 - **Pas de feedback in-app** : les avis et notes des stores suffisent, surtout
   pour les premiers clients.
-- **Rapports de crash via Sentry**, **sans IP ni identifiant stable**, et
+- **Rapports de crash via Sentry**, **sans IP ni identifiant**, et
   **rien n'est envoyé sans le consentement** de l'utilisateur.
 - **Mises à jour natives aux stores** : aucune infrastructure à maintenir.
 - **Aucune collecte « premier lancement »** : Sentry porte déjà le contexte
@@ -83,9 +83,9 @@ Pas de domaine pour l'instant : la politique vit donc **dans l'app**.
 - une entrée : À propos → Confidentialité, en tête de la carte légale (avant
   Licences) ;
 - le paragraphe « rapports de crash » cite le libellé de l'interrupteur et
-  rappelle l'absence d'IP et d'identifiant stable ;
+  rappelle l'absence d'IP et d'identifiant ;
 - `desc_bug_report` dit désormais explicitement « sans adresse IP ni
-  identifiant stable » ;
+  identifiant » ;
 - texte canonique et réponses « Data safety » / « App Privacy » à recopier :
   [confidentialite.md](./confidentialite.md).
 
