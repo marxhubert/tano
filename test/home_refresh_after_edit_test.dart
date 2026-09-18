@@ -16,6 +16,7 @@ class _InMemoryNotesRepository implements NotesRepository {
   _InMemoryNotesRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
 
   final List<Note> notes;
+  bool failWrites = false;
 
   @override
   Future<List<Note>> loadNotes() async =>
@@ -27,6 +28,7 @@ class _InMemoryNotesRepository implements NotesRepository {
 
   @override
   Future<void> upsertNote(Note note) async {
+    if (failWrites) throw StateError('private SQL error containing note data');
     final index = notes.indexWhere((n) => n.id == note.id);
     if (index == -1) {
       notes.add(note);
@@ -54,7 +56,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-
   @override
   Future<void> toggleLock(String id, {String? password}) async {
     final index = notes.indexWhere((n) => n.id == id);
@@ -71,10 +72,12 @@ class _InMemoryNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> searchNotes(String query) async {
     return notes
-        .where((n) =>
-            !n.isDeleted &&
-            (n.title.toLowerCase().contains(query.toLowerCase()) ||
-                n.content.toLowerCase().contains(query.toLowerCase())))
+        .where(
+          (n) =>
+              !n.isDeleted &&
+              (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                  n.content.toLowerCase().contains(query.toLowerCase())),
+        )
         .toList();
   }
 
@@ -82,7 +85,6 @@ class _InMemoryNotesRepository implements NotesRepository {
   Future<void> deleteAllNotes() async {
     notes.clear();
   }
-
 }
 
 void main() {
@@ -100,6 +102,34 @@ void main() {
     if (getIt.isRegistered<NotesRepository>()) {
       await getIt.unregister<NotesRepository>();
     }
+  });
+
+  testWidgets('failed save keeps the draft open and retry succeeds', (
+    tester,
+  ) async {
+    final repository = _InMemoryNotesRepository([
+      Note(id: 'retry', title: 'Original', content: 'Body'),
+    ]);
+    getIt.registerSingleton<NotesRepository>(repository);
+    await tester.pumpWidget(const Tano());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Original'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Unsaved draft');
+    await tester.pumpAndSettle();
+    repository.failWrites = true;
+    await tester.tap(find.byIcon(Symbols.save));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.textContaining('private SQL'), findsNothing);
+    expect(repository.notes.single.title, 'Original');
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Unsaved draft'), findsOneWidget);
+    repository.failWrites = false;
+    await tester.tap(find.byIcon(Symbols.save));
+    await tester.pumpAndSettle();
+    expect(repository.notes.single.title, 'Unsaved draft');
   });
 
   testWidgets('home reflects edits saved through the back button', (
@@ -184,7 +214,9 @@ void main() {
     expect(find.text('Fresh note'), findsOneWidget);
   });
 
-  testWidgets('saving an untitled note settles the dirty state', (tester) async {
+  testWidgets('saving an untitled note settles the dirty state', (
+    tester,
+  ) async {
     final repository = _InMemoryNotesRepository();
     getIt.registerSingleton<NotesRepository>(repository);
 

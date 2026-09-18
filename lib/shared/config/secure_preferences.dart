@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tano/core/services/installation_key.dart';
-import 'package:tano/shared/config/app_log.dart';
 import 'package:tano/core/services/local_cipher.dart';
 
 /// Encrypted replacement for [SharedPreferences].
@@ -39,8 +38,10 @@ class SecurePreferences {
               key,
             ),
           );
-        } catch (error) {
-          appLog('SecurePreferences: cannot read "$name" ($error)');
+        } catch (_) {
+          // Do not silently replace unreadable preferences (including consent)
+          // with defaults or overwrite them on a later save.
+          throw const FormatException('Encrypted preferences are unavailable');
         }
       } else if (raw != null) {
         // Value written before encryption: keep it, re-encrypt it below.
@@ -77,24 +78,28 @@ class SecurePreferences {
   Future<void> setString(String key, String value) => _write(key, value);
 
   Future<void> remove(String key) async {
+    if (!await _prefs.remove(key)) {
+      throw StateError('Preference removal failed');
+    }
     _cache.remove(key);
-    await _prefs.remove(key);
   }
 
   Future<void> clear() async {
+    if (!await _prefs.clear()) throw StateError('Preference reset failed');
     _cache.clear();
-    await _prefs.clear();
   }
 
   Future<void> _write(String key, Object? value) async {
-    _cache[key] = value;
     final Uint8List encrypted = await LocalCipher.encrypt(
       Uint8List.fromList(
         utf8.encode(jsonEncode(<String, Object?>{'v': value})),
       ),
       _key,
     );
-    await _prefs.setString(key, '$_prefix${base64Encode(encrypted)}');
+    if (!await _prefs.setString(key, '$_prefix${base64Encode(encrypted)}')) {
+      throw StateError('Preference write failed');
+    }
+    _cache[key] = value;
   }
 
   static Object? _decode(Uint8List bytes) =>

@@ -13,12 +13,15 @@ Updated 19 September 2026. The app has never shipped; old test data is disposabl
 - Consent-gated diagnostic allowlist, including coarse device/OS/locale-region data.
 - Premium policy foundation for projects, sharing and collaboration; no billing yet.
 - English documentation and filenames, updated current/future distinction.
+- Lifecycle privacy guard and native snapshot covers; draft-preserving reauthentication.
+- Non-destructive startup retry and editor write-failure recovery.
+- Startup orphan collection using complete references, including trash and covers.
 
 ## Before first public release
 
 1. Validate native encryption, backup/restore, key loss, app-switcher protection and
    authentication-session invalidation.
-2. Add recovery UI, normalize persistence failures, complete orphan/reset handling.
+2. Extend transaction-aware recovery to remaining commands and validate exhaustive reset.
 3. Inspect Sentry envelopes, queues and service-side non-retention settings before
    configuring a production DSN.
 4. Establish a non-destructive migration policy for all data created after release.
@@ -39,3 +42,5 @@ replication and conflict testing. No central content storage. Premium is indepen
 from a collaborator's permission to a shared resource.
 
 Use `develop` for integration and PRs into protected `master` for release promotion.
+
+Implementation details and limits: [consolidation step 2](consolidation-step-2.md).

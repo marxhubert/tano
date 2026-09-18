@@ -24,5 +24,62 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "TanoPrivacy") {
+      let channel = FlutterMethodChannel(name: "tano/privacy", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        guard call.method == "frameReady" else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        TanoSnapshotCover.releaseActiveCovers()
+        result(nil)
+      }
+    }
+  }
+}
+
+// UIKit covers the last Flutter frame synchronously before a scene snapshot.
+// Flutter releases this only after painting its own resumed privacy frame.
+private enum TanoSnapshotCover {
+  static var covers: [UIWindow: UIView] = [:]
+
+  static func cover(_ scene: UIScene) {
+    guard let windowScene = scene as? UIWindowScene else { return }
+    for window in windowScene.windows where covers[window] == nil {
+      let cover = UIView(frame: window.bounds)
+      cover.backgroundColor = .systemBackground
+      cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      window.addSubview(cover)
+      covers[window] = cover
+    }
+  }
+
+  static func releaseActiveCovers() {
+    for window in Array(covers.keys) where window.windowScene?.activationState == .foregroundActive {
+      covers.removeValue(forKey: window)?.removeFromSuperview()
+    }
+  }
+
+  static func remove(_ scene: UIScene) {
+    for window in Array(covers.keys) where window.windowScene === scene {
+      covers.removeValue(forKey: window)?.removeFromSuperview()
+    }
+  }
+}
+
+class TanoSceneDelegate: FlutterSceneDelegate {
+  override func sceneWillResignActive(_ scene: UIScene) {
+    TanoSnapshotCover.cover(scene)
+    super.sceneWillResignActive(scene)
+  }
+
+  override func sceneDidEnterBackground(_ scene: UIScene) {
+    TanoSnapshotCover.cover(scene)
+    super.sceneDidEnterBackground(scene)
+  }
+
+  override func sceneDidDisconnect(_ scene: UIScene) {
+    TanoSnapshotCover.remove(scene)
+    super.sceneDidDisconnect(scene)
   }
 }

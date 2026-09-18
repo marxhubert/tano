@@ -11,7 +11,7 @@ import 'package:tano/core/services/local_cipher.dart';
 ///
 /// Only the stored file name is persisted on the note. The plaintext is never
 /// written to that directory: it is materialized on demand into the cache for
-/// the system viewer or image widgets.
+/// the system viewer. Covers are decoded in memory.
 class AttachmentsStore {
   AttachmentsStore({
     Future<Directory> Function()? documentsDirectory,
@@ -85,7 +85,7 @@ class AttachmentsStore {
   }
 
   /// Decrypts [name] into the cache and returns the plaintext path, for the
-  /// system viewer or image widgets. The copy is reused until [remove].
+  /// system viewer. The copy is reused until removal or startup cleanup.
   Future<String> materialize(String name) async {
     validateName(name);
     final String? cached = _materialized[name];
@@ -112,7 +112,6 @@ class AttachmentsStore {
     return file.path;
   }
 
-  /// Deletes the stored attachment and any materialized plaintext copy.
   /// Deletes every stored attachment, the encrypted files and the
   /// materialized copies. A hard reset calls it, so a wipe leaves nothing
   /// behind on the disk.
@@ -146,6 +145,26 @@ class AttachmentsStore {
     );
     if (await cache.exists()) await cache.delete(recursive: true);
     _materialized.clear();
+  }
+
+  /// Startup-only collection. Do not call while an editor/import can be active.
+  /// Never follows links or recursively deletes unexpected directories.
+  Future<int> removeUnreferenced(Set<String> referenced) async {
+    for (final name in referenced) {
+      validateName(name);
+    }
+    final directory = await _dir();
+    final entries = await directory.list(followLinks: false).toList();
+    var removed = 0;
+    for (final entry in entries) {
+      if (entry is! File) continue;
+      final name = p.basename(entry.path);
+      validateName(name);
+      if (referenced.contains(name)) continue;
+      await remove(name);
+      removed++;
+    }
+    return removed;
   }
 
   /// Stored names are opaque leaf names, never paths from an imported archive.

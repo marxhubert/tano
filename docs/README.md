@@ -6,6 +6,7 @@ repository is public, including documents not deployed to GitHub Pages.
 ## Current implementation and decisions
 
 - [Audit and follow-up](audit-2026-09-18.md)
+- [Consolidation step 2](consolidation-step-2.md): lifecycle privacy, recovery and file collection
 - [Product rules](product-rules.md), [architecture](architecture.md), [modularity](modularity.md)
 - [Security](security.md), [privacy](privacy.md), [observability](observability.md)
 - [Folders](folders.md), [Premium](premium.md), [roadmap](roadmap.md)

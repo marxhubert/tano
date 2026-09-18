@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:tano/core/services/attachment_maintenance.dart';
 import 'dart:io';
 
 import 'package:path/path.dart';
@@ -10,7 +12,11 @@ import 'package:tano/core/repositories/notes_repository.dart';
 
 /// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
 class SQLiteNotesRepository
-    implements NotesRepository, FoldersRepository, AtomicNoteImporter {
+    implements
+        NotesRepository,
+        FoldersRepository,
+        AtomicNoteImporter,
+        AttachmentReferenceSource {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
     String? databasePath,
@@ -227,6 +233,35 @@ class SQLiteNotesRepository
     if (!exists) {
       await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
     }
+  }
+
+  @override
+  Future<Set<String>> referencedAttachments() async {
+    final db = await _database;
+    return db.transaction((txn) async {
+      final names = <String>{};
+      // No trash filter: deleted notes/folders remain restorable.
+      for (final row in await txn.query(
+        'notes',
+        columns: ['attachments', 'coverImage'],
+      )) {
+        final raw = row['attachments'];
+        if (raw != null) {
+          final decoded = jsonDecode(raw as String);
+          if (decoded is! List || decoded.any((name) => name is! String)) {
+            throw const FormatException('Invalid attachment references');
+          }
+          names.addAll(decoded.cast<String>());
+        }
+        final cover = row['coverImage'];
+        if (cover != null) names.add(cover as String);
+      }
+      for (final row in await txn.query('folders', columns: ['coverImage'])) {
+        final cover = row['coverImage'];
+        if (cover != null) names.add(cover as String);
+      }
+      return names;
+    });
   }
 
   @override
