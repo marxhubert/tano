@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/app_log.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
@@ -492,7 +492,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       final File legacyFile = File('${directory.path}/local_persistence.json');
 
       if (legacyFile.existsSync()) {
-        debugPrint('SQLite: Migrating from legacy JSON file...');
+        appLog('SQLite: Migrating from legacy JSON file...');
         final String contents = await legacyFile.readAsString();
         final List<Note> legacyNotes = decodeNotes(contents);
 
@@ -504,16 +504,16 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
           });
           // Rename or delete to avoid re-migration
           await legacyFile.rename('${legacyFile.path}.bak');
-          debugPrint('SQLite: Migration successful.');
+          appLog('SQLite: Migration successful.');
           return legacyNotes;
         }
       }
     } catch (e) {
-      debugPrint('SQLite: Migration error: $e');
+      appLog('SQLite: Migration error: $e');
     }
 
     // Default seed if no legacy data found
-    debugPrint('SQLite: Seeding default notes...');
+    appLog('SQLite: Seeding default notes...');
     final TanoFixtures fixtures = buildFixtures();
     await db.transaction((txn) async {
       for (final folder in fixtures.folders) {

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/app_log.dart';
 
 /// Gates locked notes behind the device's own authentication.
 ///
@@ -24,7 +24,7 @@ class AuthService {
     try {
       return await _auth.isDeviceSupported();
     } catch (error) {
-      debugPrint('AuthService: device capability check failed ($error)');
+      appLog('AuthService: device capability check failed ($error)');
       return false;
     }
   }
@@ -45,10 +45,10 @@ class AuthService {
       );
     } on LocalAuthException catch (error) {
       // Covers rejection, cancelation and lockout.
-      debugPrint('AuthService: authentication failed (${error.code.name})');
+      appLog('AuthService: authentication failed (${error.code.name})');
       return false;
     } catch (error) {
-      debugPrint('AuthService: authentication failed ($error)');
+      appLog('AuthService: authentication failed ($error)');
       return false;
     }
   }
