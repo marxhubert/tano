@@ -14,6 +14,7 @@ Deux familles de documents.
 | [Confidentialité](./confidentialite.md) | Politique in-app, déclarations Play / App Store |
 | [Modularité](./modularite.md) | Services et découpage gratuit / premium |
 | [Dossiers](./dossiers.md) | Contrat de l'organisation en dossiers |
+| [Tests](./tests.md) | Familles de tests, conventions, ce qui n'est pas couvert |
 
 ## Pilotage
 
