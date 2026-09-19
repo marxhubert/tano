@@ -440,8 +440,9 @@ class LinkTextEditingController extends TextEditingController {
     String text,
     TextStyle? style,
     Color linkColor,
-    Set<String> activeNoteIds,
-  ) {
+    Set<String> activeNoteIds, {
+    double checklistIndent = 16,
+  }) {
     if (text.isEmpty) return TextSpan(style: style);
 
     final List<InlineSpan> children = <InlineSpan>[];
@@ -458,6 +459,7 @@ class LinkTextEditingController extends TextEditingController {
         linkColor,
         activeNoteIds,
         isChecklistTitle,
+        checklistIndent,
       );
       if (i < lines.length - 1) {
         children.add(TextSpan(text: '\n', style: style));
@@ -621,6 +623,7 @@ class LinkTextEditingController extends TextEditingController {
     Color linkColor,
     Set<String> activeNoteIds,
     bool isChecklistTitle,
+    double checklistIndent,
   ) {
     final TextStyle base = style ?? const TextStyle();
 
@@ -632,7 +635,7 @@ class LinkTextEditingController extends TextEditingController {
       children.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: const SizedBox(width: 16, height: 1),
+          child: SizedBox(width: checklistIndent, height: 1),
         ),
       );
       children.add(

@@ -103,6 +103,45 @@ Folder _folder({String? coverImage}) => Folder(
 );
 
 void main() {
+  for (final list in [false, true]) {
+    for (final cover in [false, true]) {
+      testWidgets(
+        'task card counts description links and respects cover: $list/$cover',
+        (tester) async {
+          final note = Note(
+            id: 'task',
+            kind: EntityKind.task,
+            title: 'Task title',
+            description: '[[n:Note]]',
+            content: List.generate(4, (i) => '- [ ] [[n:Note]]').join('\n'),
+          );
+          final builder = list ? buildNoteListContent : buildNoteGridContent;
+          await tester.pumpWidget(
+            _host(
+              builder(
+                note: note,
+                textColor: Colors.black,
+                activeNoteIds: {'n'},
+                hasCover: cover,
+              ),
+              width: 300,
+            ),
+          );
+          expect(find.text('x5'), findsOneWidget);
+          final checkbox = find.byIcon(Symbols.check_box_outline_blank);
+          expect(checkbox, cover ? findsNothing : findsNWidgets(4));
+          if (!cover) {
+            expect(
+              tester.getTopLeft(checkbox.first).dx,
+              closeTo(tester.getTopLeft(find.text('Task title')).dx, 0.1),
+            );
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   setUp(() {
     if (!getIt.isRegistered<AttachmentsStore>()) {
       getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());

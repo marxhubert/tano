@@ -53,15 +53,15 @@ Widget buildNoteGridContent({
                         : note.content,
                     textColor: textColor,
                     activeNoteIds: activeNoteIds,
+                    isTask: note.isTask,
                   ),
                 ),
             ],
           ),
         ),
         NoteCounts(
-          content: note.isTask
-              ? TaskContent.preview(note.content)
-              : note.content,
+          content: note.content,
+          description: note.isTask ? note.description : '',
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
           taskCount: note.isTask
@@ -115,18 +115,20 @@ Widget buildNoteListContent({
         ),
         const SizedBox(height: 4.0),
         Expanded(
-          child: _noteExcerpt(
-            content: note.isTask
-                ? TaskContent.preview(note.content)
-                : note.content,
-            textColor: textColor,
-            activeNoteIds: activeNoteIds,
-          ),
+          child: hasCover && note.isTask
+              ? const SizedBox.shrink()
+              : _noteExcerpt(
+                  content: note.isTask
+                      ? TaskContent.preview(note.content)
+                      : note.content,
+                  textColor: textColor,
+                  activeNoteIds: activeNoteIds,
+                  isTask: note.isTask,
+                ),
         ),
         NoteCounts(
-          content: note.isTask
-              ? TaskContent.preview(note.content)
-              : note.content,
+          content: note.content,
+          description: note.isTask ? note.description : '',
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
           taskCount: note.isTask
@@ -146,6 +148,7 @@ Widget _noteExcerpt({
   required String content,
   required Color textColor,
   required Set<String> activeNoteIds,
+  bool isTask = false,
 }) {
   return LayoutBuilder(
     builder: (BuildContext context, BoxConstraints constraints) {
@@ -162,6 +165,7 @@ Widget _noteExcerpt({
             cardContentStyle(textColor),
             tanoAmber,
             activeNoteIds,
+            checklistIndent: isTask ? 0 : 16,
           ),
         ),
       );
@@ -177,11 +181,13 @@ class NoteCounts extends StatelessWidget {
     required this.content,
     required this.color,
     this.attachmentCount = 0,
+    this.description = '',
     this.taskCount,
     this.isImportant = false,
   });
 
   final String content;
+  final String description;
   final Color color;
   final int attachmentCount;
   final int? taskCount;
@@ -192,7 +198,7 @@ class NoteCounts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int checklists = taskCount ?? checklistCount(content);
-    final int links = linkCountIn(content);
+    final int links = linkCountIn(content) + linkCountIn(description);
     final bool hasCounts = checklists > 0 || links > 0 || attachmentCount > 0;
     if (!hasCounts && !isImportant) {
       return const SizedBox.shrink();
