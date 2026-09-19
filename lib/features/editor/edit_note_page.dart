@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:tano/core/models/task.dart';
+import 'package:tano/features/editor/task_list_editor.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -53,11 +56,19 @@ class EditNote extends StatefulWidget {
 }
 
 class _EditNoteState extends State<EditNote>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final EditNoteViewModel _viewModel;
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _titleController = TextEditingController();
   late final LinkTextEditingController _contentController;
+  final _descriptionController = LinkTextEditingController(
+    linkColor: tanoAmber,
+  );
+  bool _descriptionWasActive = false;
+  final _descriptionFocus = FocusNode();
+  bool _showDescription = false;
+  Timer? _centerTimer;
+  double _taskScrollPadding = 100;
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _contentFocus = FocusNode();
   bool _contentFocusHadFocus = false;
@@ -72,6 +83,7 @@ class _EditNoteState extends State<EditNote>
   int _noteContentLength = 0;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
+  final _taskEditorKey = GlobalKey<TaskListEditorState>();
   final GlobalKey _contentFieldKey = GlobalKey();
   final TextEditingController _findController = TextEditingController();
   final FocusNode _findFocusNode = FocusNode();
@@ -80,11 +92,101 @@ class _EditNoteState extends State<EditNote>
   late final AnimationController _highlightBlinkController;
 
   // Undo/redo history of snapshots.
-  final List<({String title, String content, String? coverImage})> _history =
-      [];
+  final List<
+    ({String title, String content, String description, String? coverImage})
+  >
+  _history = [];
   int _historyIndex = 0;
 
   bool _canLock = false;
+
+  @override
+  void didChangeMetrics() => _queueCenterTaskFocus();
+
+  /// Center the active caret after keyboard/FAB animations have settled.
+  /// Use the outer document scrollable, not the nested reorderable list.
+  int get _editorLinkCount =>
+      _contentController.linkCount +
+      (_viewModel.isTask ? _descriptionController.linkCount : 0);
+
+  void _queueCenterTaskFocus() {
+    if (!_viewModel.isTask && !_isFindMode) return;
+    _centerTimer?.cancel();
+    _centerTimer = Timer(const Duration(milliseconds: 320), () {
+      if (!mounted) return;
+      final focusContext = _isFindMode
+          ? (_viewModel.isTask
+                ? _taskEditorKey.currentState?.selectedRowContext
+                : _contentFieldKey.currentContext)
+          : (_viewModel.isTask
+                ? _taskEditorKey.currentState?.focusedRowContext ??
+                      FocusManager.instance.primaryFocus?.context
+                : FocusManager.instance.primaryFocus?.context);
+      final root = focusContext?.findRenderObject();
+      final fab = _fabKey.currentContext?.findRenderObject();
+      final editorContext = _viewModel.isTask
+          ? _taskEditorKey.currentContext
+          : _contentFieldKey.currentContext;
+      if (root == null || fab is! RenderBox || editorContext == null) {
+        return;
+      }
+      final editable = _findRenderEditable(root);
+      if (editable == null || !editable.attached) return;
+      final selection = editable.selection;
+      if ((selection == null || !selection.isValid) &&
+          (_isFindMode || (editable.text?.toPlainText().isNotEmpty ?? false))) {
+        return;
+      }
+      final effectiveSelection = selection != null && selection.isValid
+          ? selection
+          : const TextSelection.collapsed(offset: 0);
+      final caret = _isFindMode
+          ? _rangeRect(
+              editable,
+              effectiveSelection.start,
+              effectiveSelection.end - effectiveSelection.start,
+            )
+          : editable.getLocalRectForCaret(effectiveSelection.extent);
+      final y = editable.localToGlobal(caret.center).dy;
+      final top = MediaQuery.paddingOf(context).top + kToolbarHeight;
+      final bottom = fab.localToGlobal(Offset.zero).dy;
+      if (bottom <= top) return;
+      final viewportBottom =
+          MediaQuery.sizeOf(context).height -
+          MediaQuery.viewInsetsOf(context).bottom;
+      final padding = (viewportBottom - bottom + (bottom - top) / 2).clamp(
+        100.0,
+        MediaQuery.sizeOf(context).height,
+      );
+      if ((padding - _taskScrollPadding).abs() > 1) {
+        setState(() => _taskScrollPadding = padding);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _queueCenterTaskFocus();
+        });
+        return;
+      }
+
+      final position = Scrollable.maybeOf(editorContext)?.position;
+      if (position == null || !position.hasContentDimensions) return;
+      final target = (position.pixels + y - (top + bottom) / 2).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if ((target - position.pixels).abs() > 1) {
+        position
+            .animateTo(
+              target,
+              duration: TanoMotion.base,
+              curve: Curves.easeInOut,
+            )
+            .then((_) {
+              // EditableText may reveal a newly attached caret after this scroll.
+              // Recheck once layout and its own reveal animation have settled.
+              if (mounted) _queueCenterTaskFocus();
+            });
+      }
+    });
+  }
 
   Future<void> _loadLockCapability() async {
     final available =
@@ -96,12 +198,20 @@ class _EditNoteState extends State<EditNote>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadLockCapability();
     _viewModel = EditNoteViewModel(
       repository: getIt<NotesRepository>(),
       add: widget.add,
       initialNote: widget.noteAction.note,
     );
+    _descriptionController.text = _viewModel.description;
+    _showDescription = _viewModel.description.isNotEmpty;
+    _descriptionFocus.addListener(() {
+      if (_descriptionFocus.hasFocus) _descriptionWasActive = true;
+      _queueCenterTaskFocus();
+    });
+    _titleFocus.addListener(_queueCenterTaskFocus);
     _titleController.text =
         widget.noteAction.note?.title.replaceAll('\n', ' ') ?? '';
 
@@ -125,6 +235,7 @@ class _EditNoteState extends State<EditNote>
     _history.add((
       title: _titleController.text,
       content: _contentController.text,
+      description: _descriptionController.text,
       coverImage: _viewModel.coverImage,
     ));
   }
@@ -135,6 +246,7 @@ class _EditNoteState extends State<EditNote>
     if (mounted) {
       setState(() {
         _contentController.activeNoteIds = notes.map((n) => n.id).toSet();
+        _descriptionController.activeNoteIds = _contentController.activeNoteIds;
       });
     }
   }
@@ -142,6 +254,10 @@ class _EditNoteState extends State<EditNote>
   @override
   void dispose() {
     _contentFocus.removeListener(_onContentFocusChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _centerTimer?.cancel();
+    _descriptionController.dispose();
+    _descriptionFocus.dispose();
     _titleController.dispose();
     _contentController.dispose();
     _titleFocus.dispose();
@@ -232,53 +348,7 @@ class _EditNoteState extends State<EditNote>
   }
 
   void _scrollToOccurrence(int start, int length) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final BuildContext? fieldContext = _contentFieldKey.currentContext;
-      if (fieldContext == null) return;
-      final RenderObject? root = fieldContext.findRenderObject();
-      if (root == null) return;
-      final RenderEditable? editable = _findRenderEditable(root);
-      if (editable == null) return;
-      final Rect rect = _rangeRect(editable, start, length);
-      final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(
-        editable,
-      );
-      if (viewport == null) return;
-
-      // When the whole note already fits on screen, centring the occurrence
-      // produces a pointless bounce: just keep the current scroll position.
-      if (_isOccurrenceVisible(viewport, editable, rect)) return;
-
-      final RevealedOffset revealed = viewport.getOffsetToReveal(
-        editable,
-        0.5,
-        rect: rect,
-      );
-      Scrollable.of(fieldContext).position.animateTo(
-        revealed.offset,
-        duration: TanoMotion.base,
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  bool _isOccurrenceVisible(
-    RenderAbstractViewport viewport,
-    RenderEditable editable,
-    Rect rect,
-  ) {
-    final RenderBox viewportBox = viewport as RenderBox;
-    final double viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
-    final double viewportBottom = viewportTop + viewportBox.size.height;
-
-    final double occTop = editable.localToGlobal(rect.topLeft).dy;
-    final double occBottom = editable.localToGlobal(rect.bottomRight).dy;
-
-    // Keep room for the FAB overlay at the bottom.
-    const double bottomInset = 90.0;
-
-    return occTop >= viewportTop && occBottom <= viewportBottom - bottomInset;
+    _queueCenterTaskFocus();
   }
 
   RenderEditable? _findRenderEditable(RenderObject root) {
@@ -402,10 +472,12 @@ class _EditNoteState extends State<EditNote>
     final current = (
       title: _titleController.text,
       content: _contentController.text,
+      description: _descriptionController.text,
       coverImage: _viewModel.coverImage,
     );
     final last = _history[_historyIndex];
-    if (last.title == current.title &&
+    if (last.description == current.description &&
+        last.title == current.title &&
         last.content == current.content &&
         last.coverImage == current.coverImage) {
       return; // no actual change
@@ -426,9 +498,12 @@ class _EditNoteState extends State<EditNote>
   /// Whether [current] continues the same "word"/"space"/"newline" typing run
   /// as [old].
   bool _shouldCoalesce(
-    ({String title, String content, String? coverImage}) old,
-    ({String title, String content, String? coverImage}) current,
+    ({String title, String content, String description, String? coverImage})
+    old,
+    ({String title, String content, String description, String? coverImage})
+    current,
   ) {
+    if (old.description != current.description) return false;
     final bool titleChanged = old.title != current.title;
     final bool contentChanged = old.content != current.content;
     final bool coverChanged = old.coverImage != current.coverImage;
@@ -479,6 +554,9 @@ class _EditNoteState extends State<EditNote>
   void _restoreHistory() {
     final snapshot = _history[_historyIndex];
     _titleController.text = snapshot.title;
+    _descriptionController.text = snapshot.description;
+    _viewModel.description = snapshot.description;
+    _showDescription = snapshot.description.isNotEmpty;
     _contentController.setTextForRestore(snapshot.content);
     _viewModel.setCoverImage(snapshot.coverImage);
     _getNoteContentLength(snapshot.content);
@@ -504,11 +582,12 @@ class _EditNoteState extends State<EditNote>
     if (mounted) setState(() {});
   }
 
-  Future<void> _handleLinkTap() async {
-    final offset = _contentController.selection.baseOffset;
+  Future<void> _handleLinkTap([LinkTextEditingController? source]) async {
+    final controller = source ?? _contentController;
+    final offset = controller.selection.baseOffset;
     if (offset < 0) return;
 
-    final String? noteId = _contentController.getLinkIdAt(offset);
+    final String? noteId = controller.getLinkIdAt(offset);
     if (noteId == null || !mounted) return;
 
     final repository = getIt<NotesRepository>();
@@ -627,6 +706,10 @@ class _EditNoteState extends State<EditNote>
   /// Inserts a checklist block (title line + one empty item) at the current
   /// caret, or at the end of the note when there is no focus.
   void _insertChecklist() {
+    if (_viewModel.isTask) {
+      _taskEditorKey.currentState?.addItem();
+      return;
+    }
     final int caret = _contentController.selection.isValid
         ? _contentController.selection.baseOffset
         : -1;
@@ -719,6 +802,7 @@ class _EditNoteState extends State<EditNote>
   /// heading). Called before saves and when focus leaves the content field.
   void _cleanupEmptyChecklists() {
     final String before = _contentController.text;
+    if (_viewModel.isTask) return;
     final String cleaned = cleanEmptyChecklists(before);
     if (cleaned == before) return;
     final int caret = _contentController.selection.baseOffset.clamp(
@@ -809,8 +893,8 @@ class _EditNoteState extends State<EditNote>
                 // slide it to the left while the undo/redo/save actions appear.
                 alignAppBarTitleLeft: _hasEdits,
                 title: widget.add
-                    ? AppText.tr('add_note')
-                    : AppText.tr('edit_note'),
+                    ? AppText.tr(_viewModel.isTask ? 'add_task' : 'add_note')
+                    : AppText.tr(_viewModel.isTask ? 'edit_task' : 'edit_note'),
                 titleController: _titleController,
                 titleFocusNode: _titleFocus,
                 titleHint: AppText.tr('title_here'),
@@ -889,23 +973,33 @@ class _EditNoteState extends State<EditNote>
                               ),
                               _metadataSeparator(context),
                               Text(
-                                '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
+                                _viewModel.isTask
+                                    ? '${TaskContent.savedItems(_contentController.text).length} ${AppText.tr('tasks')}'
+                                    : '${_noteContentLength.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]} ")} ${AppText.tr('chars')}',
                                 style: metadataLineStyle(context),
                               ),
                             ],
                           ),
                           trailing: <Widget>[
-                            if (contentChecklistCount > 0)
+                            if (_viewModel.isTask && _viewModel.important)
+                              metadataGlyph(
+                                context,
+                                Symbols.label_important,
+                                fill: 1,
+                                color: tanoAmber,
+                              ),
+
+                            if (!_viewModel.isTask && contentChecklistCount > 0)
                               metadataItem(
                                 context,
                                 Symbols.check_box,
                                 'x$contentChecklistCount',
                               ),
-                            if (_contentController.linkCount > 0)
+                            if (_editorLinkCount > 0)
                               metadataItem(
                                 context,
                                 Symbols.sticky_note_2,
-                                'x${_contentController.linkCount}',
+                                'x$_editorLinkCount',
                               ),
                             if (_viewModel.attachments.isNotEmpty)
                               metadataItem(
@@ -922,8 +1016,8 @@ class _EditNoteState extends State<EditNote>
                     SliverToBoxAdapter(
                       child: ManageableCover(
                         name: _viewModel.coverImage!,
-                        // Full image, full width: the whole picture, no crop.
-                        fit: BoxFit.fitWidth,
+                        height: 160,
+                        fit: BoxFit.cover,
                         lightDimAlpha: 0.0,
                         // Tighter gap above, under the metadata line.
                         padding: const EdgeInsets.only(
@@ -933,48 +1027,101 @@ class _EditNoteState extends State<EditNote>
                         onRemove: _removeCoverImage,
                       ),
                     ),
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      12.0,
-                      0.0,
-                      12.0,
-                      _viewModel.attachments.isEmpty ? 100.0 : 12.0,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: Listener(
-                        onPointerDown: (_) {
-                          _contentWasFocusedOnPointerDown =
-                              _contentFocus.hasFocus;
-                        },
+                  if (_viewModel.isTask && _showDescription)
+                    SliverPadding(
+                      padding: const EdgeInsets.only(
+                        left: appPaddingMedium,
+                        right: appPaddingMedium,
+                        bottom: 8,
+                      ),
+                      sliver: SliverToBoxAdapter(
                         child: TextField(
-                          key: _contentFieldKey,
+                          key: const ValueKey('task-description'),
+                          controller: _descriptionController,
+                          focusNode: _descriptionFocus,
+                          maxLength: 500,
+                          onTap: () {
+                            _descriptionWasActive = true;
+                            _handleLinkTap(_descriptionController);
+                          },
                           maxLines: null,
-                          minLines: 10,
-                          showCursor: true,
-                          autofocus: widget.add,
-                          focusNode: _contentFocus,
-                          controller: _contentController,
-                          textInputAction: TextInputAction.newline,
-                          textCapitalization: TextCapitalization.sentences,
                           style: const TextStyle(
                             fontSize: TanoText.label,
                             height: 1.8,
                           ),
                           decoration: InputDecoration(
-                            hintText: AppText.tr('add_note'),
+                            hintText: AppText.tr('description'),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
                           ),
-                          inputFormatters: <TextInputFormatter>[
-                            AutoTaskItemFormatter(),
-                          ],
-                          onChanged: (String content) {
-                            _getNoteContentLength(content);
+                          onChanged: (_) {
+                            _viewModel.description =
+                                _descriptionController.text;
                             _recordEdit();
+                            _queueCenterTaskFocus();
                           },
-                          onTap: _handleContentTap,
                         ),
                       ),
+                    ),
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      12.0,
+                      0.0,
+                      12.0,
+                      _viewModel.attachments.isEmpty
+                          ? _taskScrollPadding
+                          : 12.0,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _viewModel.isTask
+                          ? TaskListEditor(
+                              key: _taskEditorKey,
+                              controller: _contentController,
+                              autofocus: widget.add,
+                              onChanged: _recordEdit,
+                              onCaretChanged: () {
+                                if (!_descriptionFocus.hasFocus &&
+                                    !_isFindMode) {
+                                  _descriptionWasActive = false;
+                                }
+                                _queueCenterTaskFocus();
+                              },
+                              onTapText: _handleContentTap,
+                            )
+                          : Listener(
+                              onPointerDown: (_) {
+                                _contentWasFocusedOnPointerDown =
+                                    _contentFocus.hasFocus;
+                              },
+                              child: TextField(
+                                key: _contentFieldKey,
+                                maxLines: null,
+                                minLines: 10,
+                                showCursor: true,
+                                autofocus: widget.add,
+                                focusNode: _contentFocus,
+                                controller: _contentController,
+                                textInputAction: TextInputAction.newline,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                style: const TextStyle(
+                                  fontSize: TanoText.label,
+                                  height: 1.8,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: AppText.tr('add_note'),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                inputFormatters: <TextInputFormatter>[
+                                  AutoTaskItemFormatter(),
+                                ],
+                                onChanged: (String content) {
+                                  _getNoteContentLength(content);
+                                  _recordEdit();
+                                },
+                                onTap: _handleContentTap,
+                              ),
+                            ),
                     ),
                   ),
                   if (_viewModel.attachments.isNotEmpty)
@@ -1033,6 +1180,15 @@ class _EditNoteState extends State<EditNote>
                   isAddMode: widget.add,
                   isImportant: _viewModel.important,
                   isLocked: _viewModel.isLocked,
+                  isTaskMode: _viewModel.isTask,
+                  onLayoutChanged: _queueCenterTaskFocus,
+                  onDescriptionSelected: () {
+                    _fabKey.currentState?.closeVerticalMenu();
+                    setState(() => _showDescription = true);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _descriptionFocus.requestFocus();
+                    });
+                  },
                   canLock: _canLock,
                   currentCategory: _viewModel.category,
                   currentNoteId: _viewModel.id,
@@ -1078,6 +1234,45 @@ class _EditNoteState extends State<EditNote>
                   onNoteLinkSelected: (Note selectedNote) {
                     final String linkPlaceholder =
                         "[[${selectedNote.id}:${selectedNote.title}]]";
+                    if (_viewModel.isTask) {
+                      if (_descriptionWasActive && _showDescription) {
+                        final rawOffset =
+                            _descriptionController.selection.baseOffset;
+                        final offset = _descriptionController
+                            .snapPositionOutOfLink(
+                              rawOffset.clamp(
+                                0,
+                                _descriptionController.text.length,
+                              ),
+                            );
+                        final text = _descriptionController.text.replaceRange(
+                          offset,
+                          offset,
+                          linkPlaceholder,
+                        );
+                        if (text.characters.length > 500) {
+                          showTanoToast(
+                            context,
+                            AppText.tr('description_limit'),
+                          );
+                          return;
+                        }
+                        _descriptionController.value = TextEditingValue(
+                          text: text,
+                          selection: TextSelection.collapsed(
+                            offset: offset + linkPlaceholder.length,
+                          ),
+                        );
+                        _viewModel.description = text;
+                        _recordEdit();
+                        _descriptionFocus.requestFocus();
+                      } else {
+                        _taskEditorKey.currentState?.insertText(
+                          linkPlaceholder,
+                        );
+                      }
+                      return;
+                    }
                     final int cursorPosition = _contentController
                         .snapPositionOutOfLink(
                           _contentController.selection.baseOffset,

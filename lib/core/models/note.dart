@@ -7,16 +7,20 @@ import 'dart:convert';
 /// fall back to [date] for data written before those columns existed.
 class Note implements ContentEntity {
   @override
-  EntityKind get kind => EntityKind.note;
+  final EntityKind kind;
+
+  bool get isTask => kind == EntityKind.task;
   @override
   String get label => title;
   @override
   bool get isImportant => important;
 
   Note({
+    this.kind = EntityKind.note,
     this.id = '',
     this.title = '',
     this.content = '',
+    this.description = '',
     this.date = '',
     String? createdAt,
     String? updatedAt,
@@ -28,13 +32,15 @@ class Note implements ContentEntity {
     this.attachments = const <String>[],
     this.coverImage,
     this.folderId,
-  }) : createdAt = createdAt ?? date,
+  }) : assert(kind == EntityKind.note || kind == EntityKind.task),
+       createdAt = createdAt ?? date,
        updatedAt = updatedAt ?? date;
 
   @override
   final String id;
   final String title;
   final String content;
+  final String description;
   @override
   final String date;
 
@@ -68,9 +74,11 @@ class Note implements ContentEntity {
   final List<String> attachments;
 
   factory Note.fromJson(Map<String, dynamic> json) => Note(
+    kind: _readKind(json['kind']),
     id: json['id'] as String? ?? '',
     title: json['title'] as String? ?? '',
     content: json['content'] as String? ?? '',
+    description: json['description'] as String? ?? '',
     date: json['date'] as String? ?? '',
     createdAt: json['createdAt'] as String?,
     updatedAt: json['updatedAt'] as String?,
@@ -84,10 +92,18 @@ class Note implements ContentEntity {
     folderId: json['folderId'] as String?,
   );
 
+  static EntityKind _readKind(Object? value) => switch (value) {
+    null || 'note' => EntityKind.note,
+    'task' => EntityKind.task,
+    _ => throw const FormatException('Unsupported document kind'),
+  };
+
   Map<String, dynamic> toJson() => {
+    'kind': kind.name,
     'id': id,
     'title': title,
     'content': content,
+    'description': description,
     'date': date,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
@@ -130,6 +146,7 @@ class Note implements ContentEntity {
     String? id,
     String? title,
     String? content,
+    String? description,
     String? date,
     String? createdAt,
     String? updatedAt,
@@ -143,9 +160,11 @@ class Note implements ContentEntity {
     Object? folderId = unchangedField,
   }) {
     return Note(
+      kind: kind,
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
+      description: description ?? this.description,
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

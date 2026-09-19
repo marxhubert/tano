@@ -29,10 +29,10 @@ Updated 19 September 2026. The app has never shipped; old test data is disposabl
 
 ## Domain and backup work
 
-Extract transaction-aware commands; add format v2 with folders/relations and tested
-round-trips; measure large-data search/pagination and move expensive work off the UI.
-Persist tasks and projects before building full Kanban workflows. Specify task status,
-columns, stable ordering, deadlines, ownership and note relationships.
+Task lists now share note editing and storage; see [task lists](tasks.md).
+Manifest v2 preserves task types. A future format must carry folders and relations.
+Extract transaction-aware commands, measure large-data search/pagination and move
+expensive work off the UI. Project persistence remains separate future work.
 
 ## Premium and collaboration
 

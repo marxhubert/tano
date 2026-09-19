@@ -18,7 +18,8 @@ folder grants inherited access only inside that same folder, not to arbitrary li
 Export offers encrypted and cleartext files. Both require legitimate access to
 protected source objects. In a cleartext export, encrypted local content is decoded
 and object lock flags are cleared. In a password-encrypted export, lock flags remain.
-The current v1 format supports notes and attachments, not folders/tasks/projects.
+The current manifests support notes (v1) and task lists (v2), with attachments.
+Neither carries folders or projects. Task lists are free and follow note access rules.
 These rules apply to those future objects when their format and persistence ship.
 
 Import preserves locks on a device with a credential. On a device without one, it

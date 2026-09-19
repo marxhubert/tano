@@ -1,3 +1,4 @@
+import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/note.dart';
@@ -17,7 +18,12 @@ Widget buildNoteGridContent({
 }) {
   return Container(
     // Grid padding 8; gap under a cover 4; metadata 4 from the bottom.
-    padding: EdgeInsets.fromLTRB(appPaddingTight, hasCover ? 4.0 : appPaddingTight, appPaddingTight, 4.0),
+    padding: EdgeInsets.fromLTRB(
+      appPaddingTight,
+      hasCover ? 4.0 : appPaddingTight,
+      appPaddingTight,
+      4.0,
+    ),
     child: Column(
       // Metadata always left-aligned, body top-aligned.
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +48,9 @@ Widget buildNoteGridContent({
               if (!hasCover)
                 Expanded(
                   child: _noteExcerpt(
-                    content: note.content,
+                    content: note.isTask
+                        ? TaskContent.preview(note.content)
+                        : note.content,
                     textColor: textColor,
                     activeNoteIds: activeNoteIds,
                   ),
@@ -51,9 +59,14 @@ Widget buildNoteGridContent({
           ),
         ),
         NoteCounts(
-          content: note.content,
+          content: note.isTask
+              ? TaskContent.preview(note.content)
+              : note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
+          taskCount: note.isTask
+              ? TaskContent.savedItems(note.content).length
+              : null,
           isImportant: note.important,
         ),
       ],
@@ -71,7 +84,12 @@ Widget buildNoteListContent({
 }) {
   return Padding(
     // List padding 12, but the metadata sits 4 from the bottom.
-    padding: const EdgeInsets.fromLTRB(appPaddingMedium, appPaddingMedium, appPaddingMedium, 4.0),
+    padding: const EdgeInsets.fromLTRB(
+      appPaddingMedium,
+      appPaddingMedium,
+      appPaddingMedium,
+      4.0,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -98,15 +116,22 @@ Widget buildNoteListContent({
         const SizedBox(height: 4.0),
         Expanded(
           child: _noteExcerpt(
-            content: note.content,
+            content: note.isTask
+                ? TaskContent.preview(note.content)
+                : note.content,
             textColor: textColor,
             activeNoteIds: activeNoteIds,
           ),
         ),
         NoteCounts(
-          content: note.content,
+          content: note.isTask
+              ? TaskContent.preview(note.content)
+              : note.content,
           color: textColor.withValues(alpha: 0.6),
           attachmentCount: note.attachments.length,
+          taskCount: note.isTask
+              ? TaskContent.savedItems(note.content).length
+              : null,
           isImportant: note.important,
         ),
       ],
@@ -152,22 +177,23 @@ class NoteCounts extends StatelessWidget {
     required this.content,
     required this.color,
     this.attachmentCount = 0,
+    this.taskCount,
     this.isImportant = false,
   });
 
   final String content;
   final Color color;
   final int attachmentCount;
+  final int? taskCount;
 
   /// Whether the note is bookmarked: shows the amber marker first.
   final bool isImportant;
 
   @override
   Widget build(BuildContext context) {
-    final int checklists = checklistCount(content);
+    final int checklists = taskCount ?? checklistCount(content);
     final int links = linkCountIn(content);
-    final bool hasCounts =
-        checklists > 0 || links > 0 || attachmentCount > 0;
+    final bool hasCounts = checklists > 0 || links > 0 || attachmentCount > 0;
     if (!hasCounts && !isImportant) {
       return const SizedBox.shrink();
     }

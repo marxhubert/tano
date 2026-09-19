@@ -21,3 +21,5 @@ repository is public, including documents not deployed to GitHub Pages.
 The app has never been published. Existing development data is disposable; no
 production-data migration is required. This exception must end before the first
 public release. Old documents and removed plans remain available in git history.
+
+- [Task lists](tasks.md): free checklist documents, shared editing and persistence.

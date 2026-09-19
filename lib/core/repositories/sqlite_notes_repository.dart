@@ -52,7 +52,7 @@ class SQLiteNotesRepository
     return _db!;
   }
 
-  static const int _schemaVersion = 7;
+  static const int _schemaVersion = 9;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -116,8 +116,10 @@ class SQLiteNotesRepository
     await db.execute('''
       CREATE TABLE notes (
         id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'task')),
         title TEXT,
         content TEXT,
+        description TEXT NOT NULL DEFAULT '',
         date TEXT,
         important INTEGER,
         category TEXT,
@@ -153,6 +155,22 @@ class SQLiteNotesRepository
     int oldVersion,
     int newVersion,
   ) async {
+    if (oldVersion < 9) {
+      await _addColumnIfMissing(
+        db,
+        'notes',
+        'description',
+        "TEXT NOT NULL DEFAULT ''",
+      );
+    }
+    if (oldVersion < 8) {
+      await _addColumnIfMissing(
+        db,
+        'notes',
+        'kind',
+        "TEXT NOT NULL DEFAULT 'note'",
+      );
+    }
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0',
@@ -464,8 +482,8 @@ class SQLiteNotesRepository
     final List<Map<String, dynamic>> results = await db.query(
       'notes',
       where:
-          "(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
-      whereArgs: ['%$escaped%', '%$escaped%'],
+          "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
+      whereArgs: ['%$escaped%', '%$escaped%', '%$escaped%'],
     );
     return results.map((json) => Note.fromJson(json)).toList();
   }

@@ -1,3 +1,4 @@
+import 'package:tano/core/models/task.dart';
 import 'dart:math';
 
 import 'package:tano/core/models/folder.dart';
@@ -178,6 +179,39 @@ TanoFixtures buildFixtures({required bool canLock, DateTime? now}) {
     notes[i] = notes[i].copyWith(content: content.toString());
   }
 
+  notes.addAll([
+    Task(
+      id: 'fixture-task-shopping',
+      title: 'Shopping',
+      date: baseDate.toString(),
+      category: 'menthe',
+      content: '- [ ] Apples\n- [ ] Bread\n- [x] Rice',
+    ),
+    Task(
+      id: 'fixture-task-weekend',
+      title: 'Weekend',
+      date: baseDate.toString(),
+      category: 'azur',
+      important: true,
+      content: '- [ ] Read a book\n- [ ] Go for a walk\n- [x] Water plants',
+      folderId: folders.first.id,
+    ),
+    Task(
+      id: 'fixture-task-complete',
+      title: 'All done',
+      date: baseDate.toString(),
+      category: 'lavande',
+      content: '- [x] Clean desk\n- [x] Sort papers',
+    ),
+    Task(
+      id: 'fixture-task-private',
+      title: 'Private checklist',
+      date: baseDate.toString(),
+      isLocked: canLock,
+      content: '- [ ] Review personal documents',
+      folderId: folders[2].id,
+    ),
+  ]);
   return TanoFixtures(folders: folders, notes: notes);
 }
 

@@ -46,8 +46,7 @@ fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
 populated folder, with long text, bookmarks, themes, note links and checklists.
 Locked fixtures are enabled only when the device has a system credential.
 The button is hidden and the operation rejected in profile/release builds.
-Normal reset and first launch keep an empty database. Fixtures currently cover
-notes and folders; tasks will be added with task persistence.
+Normal reset and first launch keep an empty database. Fixtures cover notes, folders and four task lists (mixed, completed and locked).
 
 Run `flutter test test/developer_reset_test.dart` to check replacement,
 repeatability, reference integrity and both device-lock capability states.
@@ -57,3 +56,5 @@ android-arm64 --analyze-size` was verified locally. The AOT size report excludes
 `notes_fixtures.dart`, `buildFixtures`, `TanoFixtures` and `developerReset`;
 the APK contains no fixture assets or developer-reset labels. Fixture insertion
 and localized developer-reset strings also use compile-time `kDebugMode` guards.
+
+Task-list behavior and focused tests: [Task lists](tasks.md).

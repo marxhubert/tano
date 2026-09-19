@@ -24,6 +24,17 @@ TextEditingValue _backspace(String text, int cursor) {
 }
 
 void main() {
+  test('long link labels retain exact source offsets', () {
+    final source = '[[id:${'x' * 31}]]';
+    final span = LinkTextEditingController.buildMarkdownTextSpan(
+      source,
+      const TextStyle(fontSize: 20),
+      Colors.teal,
+      {'id'},
+    );
+    expect(span.toPlainText().length, source.length);
+  });
+
   group('LinkTextEditingController', () {
     test('markdown rendering preserves 1:1 length mapping', () {
       final texts = <String>[
@@ -39,8 +50,11 @@ void main() {
           Colors.amber,
           {'id1'},
         );
-        expect(span.toPlainText().length, text.length,
-            reason: '1:1 mapping broken for: $text');
+        expect(
+          span.toPlainText().length,
+          text.length,
+          reason: '1:1 mapping broken for: $text',
+        );
       }
     });
 
@@ -58,13 +72,16 @@ void main() {
       expect(c.text, '');
     });
 
-    test('one backspace deletes link + trailing space (cursor after space)', () {
-      final c = _linkController('[[id1:title1]] ', 15);
+    test(
+      'one backspace deletes link + trailing space (cursor after space)',
+      () {
+        final c = _linkController('[[id1:title1]] ', 15);
 
-      c.value = _backspace('[[id1:title1]] ', 15);
+        c.value = _backspace('[[id1:title1]] ', 15);
 
-      expect(c.text, '');
-    });
+        expect(c.text, '');
+      },
+    );
 
     test('backspace inside the link deletes the whole link, not one char', () {
       final c = _linkController('a [[id1:title1]] b', 9);

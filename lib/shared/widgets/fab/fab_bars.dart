@@ -15,8 +15,8 @@ mixin _FabBarsMixin on _FabStateMixin {
     return _buildHomeBar(context, isExpanded, targetWidth);
   }
 
-  /// Home bar: the "+" opens the extended form with the two creation actions
-  /// (folder, note) then the reduce chevron.
+  /// Home bar: the "+" opens the extended form with the three creation actions
+  /// (folder, note, task) then the reduce chevron.
   Widget _buildHomeBar(
     BuildContext context,
     bool isExpanded,
@@ -43,6 +43,14 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
+        icon: Symbols.format_list_bulleted_add,
+        label: AppText.tr('add_task'),
+        onTap: () {
+          setState(() => _isManuallyExpanded = false);
+          widget.onAddTask?.call();
+        },
+      ),
+      _EditorAction(
         icon: Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
@@ -61,7 +69,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       return IconButton(
         icon: Icon(Symbols.more_horiz, color: Colors.white, weight: 900.0),
         tooltip: AppText.tr('more'),
-        onPressed: () => setState(() => _isManuallyExpanded = true),
+        onPressed: _expand,
       );
     }
 
@@ -146,7 +154,10 @@ mixin _FabBarsMixin on _FabStateMixin {
     return TapRegion(
       onTapOutside: (_) => widget.focusNode?.unfocus(),
       child: Container(
-        padding: const EdgeInsets.only(left: appPaddingWide, right: appPaddingTight),
+        padding: const EdgeInsets.only(
+          left: appPaddingWide,
+          right: appPaddingTight,
+        ),
         child: Row(
           spacing: 8.0,
           children: <Widget>[
@@ -158,7 +169,10 @@ mixin _FabBarsMixin on _FabStateMixin {
                 cursorColor: Colors.white,
                 cursorWidth: 1.0,
                 cursorHeight: 16.0,
-                style: const TextStyle(color: Colors.white, fontSize: TanoText.body),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: TanoText.body,
+                ),
                 decoration: InputDecoration(
                   hintText: ' ${AppText.tr('search')}',
                   hintStyle: const TextStyle(color: Colors.white70),
@@ -187,7 +201,7 @@ mixin _FabBarsMixin on _FabStateMixin {
     return IconButton(
       icon: const Icon(Symbols.add_2, color: Colors.white, size: 22.0),
       tooltip: AppText.tr('add'),
-      onPressed: () => setState(() => _isManuallyExpanded = true),
+      onPressed: _expand,
     );
   }
 
@@ -243,7 +257,10 @@ mixin _FabBarsMixin on _FabStateMixin {
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
               textInputAction: TextInputAction.search,
-              style: const TextStyle(color: Colors.white, fontSize: TanoText.body),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: TanoText.body,
+              ),
               decoration: InputDecoration(
                 isCollapsed: true,
                 hintText: AppText.tr('find_in_note'),
@@ -350,7 +367,10 @@ mixin _FabBarsMixin on _FabStateMixin {
       child: Center(
         child: RichText(
           text: TextSpan(
-            style: const TextStyle(color: Colors.white, fontSize: TanoText.label),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: TanoText.label,
+            ),
             children: <InlineSpan>[
               TextSpan(
                 text: '${widget.findCurrent}',

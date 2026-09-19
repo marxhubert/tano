@@ -50,8 +50,9 @@ int linkCountIn(String text) =>
 /// when [offset] is not on a task checkbox.
 String? toggleTaskItemAt(String text, int offset) {
   if (offset < 0 || offset >= text.length) return null;
-  final int lineStart =
-      offset <= 0 ? 0 : text.lastIndexOf('\n', offset - 1) + 1;
+  final int lineStart = offset <= 0
+      ? 0
+      : text.lastIndexOf('\n', offset - 1) + 1;
   int lineEnd = text.indexOf('\n', offset);
   if (lineEnd < 0) lineEnd = text.length;
   final String line = text.substring(lineStart, lineEnd);
@@ -72,8 +73,9 @@ String? toggleTaskItemAt(String text, int offset) {
   int offset,
 ) {
   if (offset < 0 || offset >= text.length) return null;
-  final int lineStart =
-      offset <= 0 ? 0 : text.lastIndexOf('\n', offset - 1) + 1;
+  final int lineStart = offset <= 0
+      ? 0
+      : text.lastIndexOf('\n', offset - 1) + 1;
   int lineEnd = text.indexOf('\n', offset);
   if (lineEnd < 0) lineEnd = text.length;
   final String line = text.substring(lineStart, lineEnd);
@@ -112,8 +114,7 @@ String? toggleTaskItemAt(String text, int offset) {
     return (text: block, caret: block.length);
   }
   if (!hasFocus || caret < 0 || caret > text.length) {
-    final String newText =
-        text + (text.endsWith('\n') ? '' : '\n') + block;
+    final String newText = text + (text.endsWith('\n') ? '' : '\n') + block;
     return (text: newText, caret: newText.length);
   }
   final String before = text.substring(0, caret);
@@ -139,8 +140,9 @@ String cleanEmptyChecklists(String text) {
         i++;
       }
       final List<String> block = lines.sublist(blockStart, i);
-      final bool allEmpty =
-          block.every((String l) => taskLineBody(l).trim().isEmpty);
+      final bool allEmpty = block.every(
+        (String l) => taskLineBody(l).trim().isEmpty,
+      );
       if (allEmpty) {
         // Remove the whole empty checklist and its optional title heading.
         if (result.isNotEmpty && isHeadingLine(result.last)) {
@@ -202,8 +204,9 @@ class AutoTaskItemFormatter extends TextInputFormatter {
     if (newText[insertAt] != '\n') return newValue;
 
     // The line ending right before the inserted newline must be a task line.
-    final int lineStart =
-        insertAt <= 0 ? 0 : oldText.lastIndexOf('\n', insertAt - 1) + 1;
+    final int lineStart = insertAt <= 0
+        ? 0
+        : oldText.lastIndexOf('\n', insertAt - 1) + 1;
     final String line = oldText.substring(lineStart, insertAt);
     if (!isTaskLine(line)) return newValue;
     if (taskLineBody(line).trim().isEmpty) {
@@ -284,8 +287,12 @@ class LinkTextEditingController extends TextEditingController {
   /// stay in sync with what the user actually sees.
   List<int> searchOccurrences(String query) {
     if (query.isEmpty || text.isEmpty) return const <int>[];
-    final TextSpan span =
-        buildMarkdownTextSpan(text, const TextStyle(), linkColor, activeNoteIds);
+    final TextSpan span = buildMarkdownTextSpan(
+      text,
+      const TextStyle(),
+      linkColor,
+      activeNoteIds,
+    );
     final List<bool> visible = _visibleMask(span, text.length);
     final String lowerText = text.toLowerCase();
     final String lowerQuery = query.toLowerCase();
@@ -309,8 +316,10 @@ class LinkTextEditingController extends TextEditingController {
   static final RegExp _inlineRegExp = RegExp(
     r'\[\[([^:]+):([^\]]+)\]\]|\*\*([^*]+)\*\*|`([^`]+)`',
   );
-  static const TextStyle _hiddenStyle =
-      TextStyle(fontSize: 0, color: Colors.transparent);
+  static const TextStyle _hiddenStyle = TextStyle(
+    fontSize: 0,
+    color: Colors.transparent,
+  );
 
   int get linkCount => linkRegExp.allMatches(text).length;
 
@@ -338,8 +347,11 @@ class LinkTextEditingController extends TextEditingController {
 
     // Only single-character deletions can trigger the atomic link removal.
     if (newText.length == oldText.length - 1) {
-      final int deletedIndex =
-          _deletionIndex(oldText, newText, value.selection.baseOffset);
+      final int deletedIndex = _deletionIndex(
+        oldText,
+        newText,
+        value.selection.baseOffset,
+      );
       if (deletedIndex >= 0) {
         for (final match in linkRegExp.allMatches(oldText)) {
           // Deleting any character inside a link removes the whole link.
@@ -402,14 +414,23 @@ class LinkTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    final TextSpan markdown =
-        buildMarkdownTextSpan(text, style, linkColor, activeNoteIds);
+    final TextSpan markdown = buildMarkdownTextSpan(
+      text,
+      style,
+      linkColor,
+      activeNoteIds,
+    );
     if (searchQuery.trim().isEmpty) {
       return markdown;
     }
     final List<int> occurrences = searchOccurrences(searchQuery);
-    return _applySearchHighlight(markdown, searchQuery, searchCurrentIndex,
-        occurrences, searchBlinkValue);
+    return _applySearchHighlight(
+      markdown,
+      searchQuery,
+      searchCurrentIndex,
+      occurrences,
+      searchBlinkValue,
+    );
   }
 
   /// Renders a light markdown subset (headings, task lists, bullets, bold,
@@ -426,11 +447,18 @@ class LinkTextEditingController extends TextEditingController {
     final List<InlineSpan> children = <InlineSpan>[];
     final List<String> lines = text.split('\n');
     for (int i = 0; i < lines.length; i++) {
-      final bool isChecklistTitle = i + 1 < lines.length &&
+      final bool isChecklistTitle =
+          i + 1 < lines.length &&
           isHeadingLine(lines[i]) &&
           isTaskLine(lines[i + 1]);
       _appendLine(
-          children, lines[i], style, linkColor, activeNoteIds, isChecklistTitle);
+        children,
+        lines[i],
+        style,
+        linkColor,
+        activeNoteIds,
+        isChecklistTitle,
+      );
       if (i < lines.length - 1) {
         children.add(TextSpan(text: '\n', style: style));
       }
@@ -456,8 +484,7 @@ class LinkTextEditingController extends TextEditingController {
     double blinkValue,
   ) {
     if (occurrences.isEmpty) return span;
-    final List<InlineSpan> children =
-        span.children ?? const <InlineSpan>[];
+    final List<InlineSpan> children = span.children ?? const <InlineSpan>[];
     if (children.isEmpty) return span;
     return TextSpan(
       style: span.style,
@@ -602,25 +629,32 @@ class LinkTextEditingController extends TextEditingController {
       final bool checked = task.group(1) == 'x';
       // Left margin so the items sit under the title's body, while the
       // title itself stays flush left.
-      children.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: const SizedBox(width: 16, height: 1),
-      ));
-      children.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Icon(
-          checked ? Symbols.check_box : Symbols.check_box_outline_blank,
-          size: (base.fontSize ?? TanoText.label) * 1.3,
-          color: checked
-              ? linkColor
-              : Colors.grey.withValues(alpha: 0.65),
+      children.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: const SizedBox(width: 16, height: 1),
         ),
-      ));
+      );
+      children.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Icon(
+            checked ? Symbols.check_box : Symbols.check_box_outline_blank,
+            size: (base.fontSize ?? TanoText.label) * 1.3,
+            color: checked ? linkColor : Colors.grey.withValues(alpha: 0.65),
+          ),
+        ),
+      );
       // The 4 remaining marker characters stay hidden (one rendered unit
       // each, so the 1:1 source/rendered character mapping is preserved).
       children.add(TextSpan(text: line.substring(2, 6), style: _hiddenStyle));
       _appendInlineSpans(
-          children, line.substring(6), style, linkColor, activeNoteIds);
+        children,
+        line.substring(6),
+        style,
+        linkColor,
+        activeNoteIds,
+      );
       return;
     }
 
@@ -631,36 +665,47 @@ class LinkTextEditingController extends TextEditingController {
         // Checklist title: a drag handle flush against the left edge; the
         // title is typed right next to it, at the content's font size and
         // only slightly bold.
-        children.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Transform.translate(
-            offset: const Offset(-3, 0),
-            child: Icon(
-              Symbols.drag_indicator,
-              size: (base.fontSize ?? TanoText.label) * 1.2,
-              color: Colors.grey.withValues(alpha: 0.7),
+        children.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Transform.translate(
+              offset: const Offset(-3, 0),
+              child: Icon(
+                Symbols.drag_indicator,
+                size: (base.fontSize ?? TanoText.label) * 1.2,
+                color: Colors.grey.withValues(alpha: 0.7),
+              ),
             ),
           ),
-        ));
-        children.add(TextSpan(
-          text: '${hashes.substring(1)} ',
-          style: _hiddenStyle,
-        ));
-        final TextStyle titleStyle =
-            base.copyWith(fontWeight: FontWeight.w700);
-        _appendInlineSpans(children, heading.group(2)!, titleStyle, linkColor,
-            activeNoteIds);
+        );
+        children.add(
+          TextSpan(text: '${hashes.substring(1)} ', style: _hiddenStyle),
+        );
+        final TextStyle titleStyle = base.copyWith(fontWeight: FontWeight.w700);
+        _appendInlineSpans(
+          children,
+          heading.group(2)!,
+          titleStyle,
+          linkColor,
+          activeNoteIds,
+        );
         return;
       }
       children.add(TextSpan(text: '$hashes ', style: _hiddenStyle));
-      final double scale =
-          hashes.length == 1 ? 1.5 : (hashes.length == 2 ? 1.35 : 1.2);
+      final double scale = hashes.length == 1
+          ? 1.5
+          : (hashes.length == 2 ? 1.35 : 1.2);
       final TextStyle headingStyle = base.copyWith(
         fontSize: (base.fontSize ?? TanoText.label) * scale,
         fontWeight: FontWeight.bold,
       );
-      _appendInlineSpans(children, heading.group(2)!, headingStyle, linkColor,
-          activeNoteIds);
+      _appendInlineSpans(
+        children,
+        heading.group(2)!,
+        headingStyle,
+        linkColor,
+        activeNoteIds,
+      );
       return;
     }
 
@@ -669,7 +714,12 @@ class LinkTextEditingController extends TextEditingController {
       children.add(TextSpan(text: '•', style: base));
       children.add(TextSpan(text: ' ', style: _hiddenStyle));
       _appendInlineSpans(
-          children, bullet.group(1)!, style, linkColor, activeNoteIds);
+        children,
+        bullet.group(1)!,
+        style,
+        linkColor,
+        activeNoteIds,
+      );
       return;
     }
 
@@ -687,27 +737,41 @@ class LinkTextEditingController extends TextEditingController {
     int lastOffset = 0;
     for (final Match match in _inlineRegExp.allMatches(body)) {
       if (match.start > lastOffset) {
-        children.add(TextSpan(
-          text: body.substring(lastOffset, match.start),
-          style: base,
-        ));
+        children.add(
+          TextSpan(text: body.substring(lastOffset, match.start), style: base),
+        );
       }
       final String? linkId = match.group(1);
       final String? linkTitle = match.group(2);
       final String? boldText = match.group(3);
       final String? codeText = match.group(4);
       if (linkId != null && linkTitle != null) {
-        _appendLinkSpan(children, match.group(0)!, linkId, linkTitle, base,
-            linkColor, activeNoteIds);
+        _appendLinkSpan(
+          children,
+          match.group(0)!,
+          linkId,
+          linkTitle,
+          base,
+          linkColor,
+          activeNoteIds,
+        );
       } else if (boldText != null) {
         children.add(TextSpan(text: '**', style: _hiddenStyle));
-        children.add(TextSpan(
-            text: boldText, style: base.copyWith(fontWeight: FontWeight.bold)));
+        children.add(
+          TextSpan(
+            text: boldText,
+            style: base.copyWith(fontWeight: FontWeight.bold),
+          ),
+        );
         children.add(TextSpan(text: '**', style: _hiddenStyle));
       } else if (codeText != null) {
         children.add(TextSpan(text: '`', style: _hiddenStyle));
-        children.add(TextSpan(
-            text: codeText, style: base.copyWith(fontFamily: 'monospace')));
+        children.add(
+          TextSpan(
+            text: codeText,
+            style: base.copyWith(fontFamily: 'monospace'),
+          ),
+        );
         children.add(TextSpan(text: '`', style: _hiddenStyle));
       }
       lastOffset = match.end;
@@ -729,12 +793,13 @@ class LinkTextEditingController extends TextEditingController {
     String title = rawTitle;
     // Truncate title to 30 chars
     if (title.length > 30) {
-      title = '${title.substring(0, 30)}...';
+      title = '${title.substring(0, 27)}...';
     }
 
     final bool isLinkActive = activeNoteIds.contains(id);
-    final Color effectiveColor =
-        isLinkActive ? linkColor : Colors.grey.withValues(alpha: 0.6);
+    final Color effectiveColor = isLinkActive
+        ? linkColor
+        : Colors.grey.withValues(alpha: 0.6);
 
     final TextStyle linkStyle = style.copyWith(
       color: effectiveColor,
@@ -744,37 +809,26 @@ class LinkTextEditingController extends TextEditingController {
       decorationThickness: 0.8,
     );
 
-    // Char 0 ('['): render as icon glyph.
-    children.add(
-      TextSpan(
-        text: String.fromCharCode(Symbols.sticky_note_2.codePoint),
-        style: linkStyle.copyWith(
-          fontFamily: Symbols.sticky_note_2.fontFamily,
-          package: Symbols.sticky_note_2.fontPackage,
-          fontSize: (style.fontSize ?? TanoText.label) * 0.9,
-        ),
-      ),
-    );
-
-    // Chars 1 to start of title: hide.
-    final int titleStartInMatch = fullMatch.indexOf(rawTitle);
+    final linkChildren = <InlineSpan>[];
+    // Hide the source prefix while preserving editing offsets.
+    final int titleStartInMatch = fullMatch.indexOf(':') + 1;
     if (titleStartInMatch > 1) {
-      children.add(
+      linkChildren.add(
         TextSpan(
-          text: fullMatch.substring(1, titleStartInMatch),
+          text: fullMatch.substring(0, titleStartInMatch),
           style: _hiddenStyle,
         ),
       );
     }
 
     // Title chars: show with link style.
-    children.add(TextSpan(text: title, style: linkStyle));
+    linkChildren.add(TextSpan(text: title));
 
     // Truncated remainder of the title: hide.
     final int originalTitleLength = rawTitle.length;
     final int displayedTitleLength = title.length;
     if (originalTitleLength > displayedTitleLength) {
-      children.add(
+      linkChildren.add(
         TextSpan(
           text: rawTitle.substring(displayedTitleLength),
           style: _hiddenStyle,
@@ -783,7 +837,8 @@ class LinkTextEditingController extends TextEditingController {
     }
 
     // Suffix ']]': hide.
-    children.add(TextSpan(text: ']]', style: _hiddenStyle));
+    linkChildren.add(TextSpan(text: ']]', style: _hiddenStyle));
+    children.add(TextSpan(style: linkStyle, children: linkChildren));
   }
 
   /// Returns the ID only if tap is on an active link.
