@@ -71,7 +71,7 @@ class NoteListView extends StatelessWidget {
         onShowUndoSnackBar();
       },
       child: EntityCard(
-        kind: EntityKind.note,
+        kind: note.kind,
         category: note.category,
         title: note.title,
         subtitle: formatNoteDate(note.date),

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:tano/core/models/task.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -31,6 +33,7 @@ class EditNoteViewModel extends ChangeNotifier {
        selectedDate = add
            ? DateTime.now()
            : (DateTime.tryParse(initialNote?.date ?? '') ?? DateTime.now()) {
+    description = initialNote?.description ?? '';
     important = initialNote?.important ?? false;
     category = initialNote?.category ?? Note.defaultCategory;
     isDeleted = initialNote?.isDeleted ?? false;
@@ -47,9 +50,11 @@ class EditNoteViewModel extends ChangeNotifier {
   final NotesRepository repository;
   final bool add;
   final Note? initialNote;
+  bool get isTask => initialNote?.isTask ?? false;
 
   late final String id;
-  late final DateTime selectedDate;
+  late DateTime selectedDate;
+  String description = '';
   late bool important;
   late String category;
   late bool isDeleted;
@@ -143,17 +148,33 @@ class EditNoteViewModel extends ChangeNotifier {
     return (title: computedTitle, content: trimmedContent);
   }
 
+  ({String title, String content}) _normalize({
+    required String title,
+    required String content,
+  }) {
+    if (!isTask) return normalize(title: title, content: content);
+    final normalized = TaskContent.normalize(content);
+    final items = TaskContent.savedItems(normalized);
+    final fallback = items.isEmpty ? description : items.first.text;
+    return (
+      title: normalize(title: title, content: fallback).title,
+      content: normalized,
+    );
+  }
+
   /// Builds the [Note] from the current form values.
   Note buildNote({required String title, required String content}) {
-    final normalized = normalize(title: title, content: content);
+    final normalized = _normalize(title: title, content: content);
 
     return Note(
+      kind: isTask ? EntityKind.task : EntityKind.note,
       id: id,
       date: selectedDate.toString(),
       createdAt: _initialNote.createdAt,
       updatedAt: DateTime.now().toString(),
       title: normalized.title,
       content: normalized.content,
+      description: description.trim(),
       important: important,
       category: category,
       isDeleted: isDeleted,
@@ -171,13 +192,14 @@ class EditNoteViewModel extends ChangeNotifier {
     // edit. This is also what makes an in-place save settle: [_initialNote]
     // then holds the normalized note while the editor still holds the raw
     // text (an untitled note keeps an empty title field after saving).
-    final current = normalize(title: title, content: content);
-    final initial = normalize(
+    final current = _normalize(title: title, content: content);
+    final initial = _normalize(
       title: _initialNote.title,
       content: _initialNote.content,
     );
     return current.title != initial.title ||
         current.content != initial.content ||
+        description.trim() != _initialNote.description.trim() ||
         important != _initialNote.important ||
         category != _initialNote.category ||
         isLocked != _initialNote.isLocked ||
@@ -189,7 +211,10 @@ class EditNoteViewModel extends ChangeNotifier {
   /// Business rule: a note is savable when at least its title or its content is not blank.
   bool isValid({required String title, required String content}) {
     return title.trim().isNotEmpty ||
-        content.trim().isNotEmpty ||
+        (isTask && description.trim().isNotEmpty) ||
+        (isTask
+            ? TaskContent.savedItems(content).isNotEmpty
+            : content.trim().isNotEmpty) ||
         coverImage != null;
   }
 
@@ -212,12 +237,14 @@ class EditNoteViewModel extends ChangeNotifier {
 
   Note _buildInitialNote({required String title, required String content}) {
     return Note(
+      kind: isTask ? EntityKind.task : EntityKind.note,
       id: id,
       date: selectedDate.toString(),
       createdAt: initialNote?.createdAt ?? selectedDate.toString(),
       updatedAt: initialNote?.updatedAt ?? selectedDate.toString(),
       title: title,
       content: content,
+      description: description,
       important: important,
       category: category,
       isDeleted: isDeleted,

@@ -6,12 +6,18 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 
 **TanoNote** is a notes, tasks and projects application built with
-[Flutter](https://flutter.dev) for Android and iOS. Notes and folders work locally without a connection. Tasks, Kanban projects and
-remote collaboration without central content storage are planned; their current
-models are prototypes. Optional crash reports and user-requested store updates
+[Flutter](https://flutter.dev) for Android and iOS. Notes, task lists and folders
+work locally without a connection. Projects and remote collaboration remain future
+work. Optional crash reports and user-requested store updates
 use the network. See the [audit and release blockers](docs/audit-2026-09-18.md).
 
 ## Features
+
+### Task lists
+- Free checklist documents using the same editor and local protections as notes.
+- Active rows above, completed rows below a divider, with a total item count.
+- Mixed note/task cards on Home and in folders, with a distinct Task watermark.
+- See [Task lists](docs/tasks.md) for behavior and validation.
 
 ### Notes
 - Create, edit and delete notes with a title and rich content.

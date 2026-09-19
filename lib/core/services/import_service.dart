@@ -81,7 +81,7 @@ class ImportService {
       if (manifest == null) throw const FormatException('Missing manifest');
       final decoded = jsonDecode(utf8.decode(manifest));
       if (decoded is! Map<String, dynamic> ||
-          decoded['version'] != 1 ||
+          ![1, 2].contains(decoded['version']) ||
           decoded['notes'] is! List) {
         throw const FormatException('Unsupported manifest');
       }

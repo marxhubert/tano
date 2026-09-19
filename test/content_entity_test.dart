@@ -25,14 +25,14 @@ void main() {
         Project(deletedAt: 'date').copyWith(deletedAt: null).deletedAt,
         isNull,
       );
-      expect(Task(projectId: 'p').copyWith(projectId: null).projectId, isNull);
+      expect(Task(folderId: 'f').copyWith(folderId: null).folderId, isNull);
     },
   );
   test('all entity types use the same bookmark and title sorting', () {
     final entries = <ContentEntity>[
       Note(title: 'Zulu'),
       Folder(name: 'Alpha'),
-      Task(title: 'Beta', isImportant: true),
+      Task(title: 'Beta', important: true),
       Project(name: 'Gamma'),
     ];
     expect(

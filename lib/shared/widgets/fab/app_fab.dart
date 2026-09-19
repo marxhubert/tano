@@ -34,6 +34,9 @@ class AppFab extends StatefulWidget {
     this.canLock = true,
     this.canDelete = true,
     this.isEditorMode = false,
+    this.isTaskMode = false,
+    this.onDescriptionSelected,
+    this.onLayoutChanged,
     this.isFolderMode = false,
     this.isTitleEditing = false,
     this.collapsedByDefault = false,
@@ -48,6 +51,7 @@ class AppFab extends StatefulWidget {
     this.focusNode,
     this.onAdd,
     this.onAddFolder,
+    this.onAddTask,
     this.onSearchChanged,
     this.onReset,
     this.onDelete,
@@ -88,6 +92,9 @@ class AppFab extends StatefulWidget {
   /// when nothing is selected.
   final bool canDelete;
   final bool isEditorMode;
+  final bool isTaskMode;
+  final VoidCallback? onDescriptionSelected;
+  final VoidCallback? onLayoutChanged;
 
   /// Folder page: the add menu offers a cover and a new note, the more menu
   /// offers bookmark, edit, lock and delete.
@@ -115,6 +122,7 @@ class AppFab extends StatefulWidget {
 
   /// Home screen: creates a new folder.
   final VoidCallback? onAddFolder;
+  final VoidCallback? onAddTask;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onReset;
   final VoidCallback? onDelete;
@@ -218,6 +226,10 @@ mixin _FabStateMixin on State<AppFab> {
     }
   }
 
+  void _expand() {
+    setState(() => _isManuallyExpanded = true);
+  }
+
   void closeVerticalMenu() {
     if (_verticalMenu != FabVerticalMenu.none) {
       setState(() => _verticalMenu = FabVerticalMenu.none);
@@ -231,7 +243,12 @@ mixin _FabStateMixin on State<AppFab> {
     if (!mounted) return;
     setState(() {
       _availableNotes = notes
-          .where((n) => n.id != widget.currentNoteId && !n.isDeleted)
+          .where(
+            (n) =>
+                n.id != widget.currentNoteId &&
+                !n.isDeleted &&
+                (!widget.isTaskMode || !n.isTask),
+          )
           .toList();
       _notesLoaded = true;
     });
@@ -292,6 +309,8 @@ mixin _FabStateMixin on State<AppFab> {
 
 class AppFabState extends State<AppFab>
     with _FabStateMixin, _FabBarsMixin, _FabMenusMixin {
+  (bool, double, double)? _lastReportedLayout;
+
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -390,9 +409,36 @@ class AppFabState extends State<AppFab>
         ? 48.0
         : btnHeight;
 
+    // Size menus to the viewport above the keyboard, preserving the app bar
+    // and safe areas. Long menus scroll inside this bounded surface.
+    final media = MediaQuery.of(context);
+    final availableMenuHeight = math.max(
+      0.0,
+      screenHeight -
+          media.viewInsets.bottom -
+          media.viewPadding.top -
+          media.viewPadding.bottom -
+          kToolbarHeight -
+          24.0 -
+          barHeight,
+    );
+    verticalMenuHeight = math.min(verticalMenuHeight, availableMenuHeight);
+
     double currentHeight = barHeight;
     if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
+    }
+
+    final layout = (
+      isExpanded,
+      currentHeight,
+      MediaQuery.viewInsetsOf(context).bottom,
+    );
+    if (_lastReportedLayout != layout) {
+      _lastReportedLayout = layout;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onLayoutChanged?.call();
+      });
     }
 
     return TapRegion(
@@ -402,6 +448,7 @@ class AppFabState extends State<AppFab>
       // resting form (circular when the page has a reduce action).
       onTapOutside: (_) => collapse(),
       child: AnimatedContainer(
+        onEnd: widget.onLayoutChanged,
         duration: TanoMotion.base,
         curve: Curves.easeInOut,
         height: currentHeight,

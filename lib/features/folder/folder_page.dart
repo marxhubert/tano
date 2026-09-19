@@ -1,3 +1,4 @@
+import 'package:tano/core/models/task.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:file_picker/file_picker.dart';
@@ -423,6 +424,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
               (note.title.toLowerCase().contains(query) ||
+                  note.description.toLowerCase().contains(query) ||
                   note.content.toLowerCase().contains(query)),
         )
         .toList();
@@ -593,6 +595,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           currentCategory: _folder.category,
           currentFolderId: _folder.id,
           onAddNote: () => _openNote(add: true, note: _newNote()),
+          onAddTask: () => _openNote(
+            add: true,
+            note: Task(folderId: _folder.id, category: _folder.category),
+          ),
           onImageSelected: () {
             _fabKey.currentState?.closeVerticalMenu();
             _selectCover();
@@ -683,7 +689,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
   Widget _card(Note note, {required bool isList}) {
     return EntityCard(
-      kind: EntityKind.note,
+      kind: note.kind,
       category: note.category,
       title: note.title,
       subtitle: formatNoteDate(note.date),

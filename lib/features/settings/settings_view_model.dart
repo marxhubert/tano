@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tano/core/repositories/notes_fixtures.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -82,7 +84,14 @@ class SettingsViewModel extends ChangeNotifier {
   Future<void> performHardReset({
     required bool deleteData,
     required bool deletePrefs,
+  }) => _reset(deleteData: deleteData, deletePrefs: deletePrefs);
+
+  Future<void> _reset({
+    required bool deleteData,
+    required bool deletePrefs,
+    TanoFixtures? fixtures,
   }) async {
+    if (_isResetting) return;
     _isResetting = true;
     notifyListeners();
     final startTime = DateTime.now();
@@ -116,6 +125,18 @@ class SettingsViewModel extends ChangeNotifier {
         ]);
       }
 
+      // Compile out fixture insertion as well as its debug-only caller.
+      if (kDebugMode && fixtures != null) {
+        final repository = getIt<NotesRepository>();
+        final folders = repository as FoldersRepository;
+        for (final folder in fixtures.folders) {
+          await folders.upsertFolder(folder);
+        }
+        for (final note in fixtures.notes) {
+          await repository.upsertNote(note);
+        }
+      }
+
       // Minimum delay for visual feedback
       final elapsed = DateTime.now().difference(startTime);
       const minDuration = Duration(milliseconds: 1200);
@@ -132,8 +153,17 @@ class SettingsViewModel extends ChangeNotifier {
     await performHardReset(deleteData: true, deletePrefs: true);
   }
 
-  /// Wipes the data and the preferences without asking, so a fresh first launch
-  /// can be replayed — the introduction included — while developing.
-  Future<void> developerReset() =>
-      performHardReset(deleteData: true, deletePrefs: true);
+  /// Replaces development data with synthetic notes and folders after the
+  /// reset page confirms the action. Normal reset and startup stay empty.
+  Future<void> developerReset() async {
+    if (!kDebugMode) throw StateError('Developer reset requires a debug build');
+    if (_isResetting) return;
+    if (getIt<NotesRepository>() is! FoldersRepository) {
+      throw StateError('Developer fixtures require folder storage');
+    }
+    final fixtures = buildFixtures(
+      canLock: await getIt<AuthService>().isAvailable(),
+    );
+    await _reset(deleteData: true, deletePrefs: true, fixtures: fixtures);
+  }
 }

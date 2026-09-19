@@ -197,7 +197,7 @@ class _TrashPageState extends State<TrashPage> {
 
   Widget _noteCard(BuildContext context, Note note) {
     return EntityCard(
-      kind: EntityKind.note,
+      kind: note.kind,
       category: note.category,
       title: note.title,
       subtitle: formatNoteDate(note.date),
