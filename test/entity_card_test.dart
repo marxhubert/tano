@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/card_typography.dart';
+import 'package:tano/shared/widgets/theme.dart';
 
 Widget _host(
   Widget card, {
@@ -34,23 +36,40 @@ EntityCard _card({bool locked = false}) {
 }
 
 void main() {
+  test('small metadata retains contrast on every paper tint', () {
+    for (final category in TanoPastels.all) {
+      for (final background in [category.light, category.dark]) {
+        final foreground = Color.alphaBlend(
+          cardMutedColor(getTextColor(background)),
+          background,
+        );
+        final backgroundLuminance = background.computeLuminance();
+        final foregroundLuminance = foreground.computeLuminance();
+        final ratio = foregroundLuminance > backgroundLuminance
+            ? (foregroundLuminance + 0.05) / (backgroundLuminance + 0.05)
+            : (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05);
+        expect(ratio, greaterThanOrEqualTo(4.5), reason: category.name);
+      }
+    }
+  });
+
   test('the three allowed card heights are fixed', () {
-    expect(EntityCardHeight.compact.value, 80.0);
-    expect(EntityCardHeight.normal.value, 92.0);
-    expect(EntityCardHeight.square.value, 128.0);
+    expect(EntityCardHeight.compact.value, 100.0);
+    expect(EntityCardHeight.normal.value, 112.0);
+    expect(EntityCardHeight.square.value, 176.0);
   });
 
   test('the inner radius follows outer minus margin', () {
     expect(EntityCard.contentInset, 6.0);
-    expect(EntityCard.outerRadius, 12.0);
-    expect(EntityCard.innerRadius, 6.0);
+    expect(EntityCard.outerRadius, 8.0);
+    expect(EntityCard.innerRadius, 2.0);
     expect(
       EntityCard.innerRadius,
       EntityCard.outerRadius - EntityCard.contentInset,
     );
   });
 
-  testWidgets('the border is thicker in the dark theme', (tester) async {
+  testWidgets('the paper rule is a fine border in both themes', (tester) async {
     Future<double> borderWidth(Brightness brightness) async {
       await tester.pumpWidget(_host(_card(), brightness: brightness));
       await tester.pumpAndSettle();
@@ -67,7 +86,7 @@ void main() {
       return (decoration.border! as Border).top.width;
     }
 
-    expect(await borderWidth(Brightness.light), 0.5);
+    expect(await borderWidth(Brightness.light), 1.0);
     expect(await borderWidth(Brightness.dark), 1.0);
   });
 
@@ -166,7 +185,9 @@ void main() {
     );
   });
 
-  testWidgets('the card is flat (no shadow) and bordered', (tester) async {
+  testWidgets('the paper card has a subtle shadow and rounded border', (
+    tester,
+  ) async {
     await tester.pumpWidget(_host(_card()));
     await tester.pumpAndSettle();
 
@@ -180,8 +201,9 @@ void main() {
     );
     final BoxDecoration decoration = container.decoration! as BoxDecoration;
 
-    expect(decoration.boxShadow, isNull);
-    expect(decoration.borderRadius, BorderRadius.circular(12.0));
+    expect(decoration.boxShadow, hasLength(1));
+    expect(decoration.boxShadow!.single.spreadRadius, lessThan(0));
+    expect(decoration.borderRadius, BorderRadius.circular(8.0));
 
     // The border is painted above the content, on its own DecoratedBox.
     final bool hasBorder = tester
@@ -202,7 +224,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _host(_card(locked: true), width: 112.67, height: 125.0),
+      _host(_card(locked: true), width: 160.0, height: 176.0),
     );
     await tester.pumpAndSettle();
 

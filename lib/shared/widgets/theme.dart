@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 const Object fabTapGroup = Object();
 
 // --- Identité Visuelle (30%) ---
-const Color tanoTeal = Color(0xFF009688);
-const Color tanoAmber = Color(0xFFFF9800);
-const Color tanoAmberDark = Color(0xFFFFB74D);
+const Color tanoTeal = Color(0xFF0F766E);
+const Color tanoAmber = Color(0xFFB06A0C);
+const Color tanoAmberDark = Color(0xFFDFA14A);
 
 // --- Fonds (60%) ---
-const Color lightBackground = Color(0xFFF8F9FA);
-const Color darkBackground = Color(0xFF121212);
+const Color lightBackground = Color(0xFFF2EBDC);
+const Color darkBackground = Color(0xFF18140E);
 
 // --- Palette des États (Tickets) ---
 /// The app has a single red. `error` carries both meanings: a real error, and a
@@ -36,16 +36,16 @@ class TanoStates {
 
 // --- Palette Pastel (Notes) ---
 class TanoPastels {
-  static const menthe = (light: Color(0xFFE0F2F1), dark: Color(0xFF004D40));
-  static const citron = (light: Color(0xFFFFF9C4), dark: Color(0xFF827717));
-  static const peche = (light: Color(0xFFFFE0B2), dark: Color(0xFFBF360C));
-  static const lavande = (light: Color(0xFFF3E5F5), dark: Color(0xFF4A148C));
-  static const rose = (light: Color(0xFFFFEBEE), dark: Color(0xFF880E4F));
-  static const azur = (light: Color(0xFFE1F5FE), dark: Color(0xFF01579B));
-  static const sable = (light: Color(0xFFF5F5DC), dark: Color(0xFF3E2723));
-  static const sauge = (light: Color(0xFFF1F8E9), dark: Color(0xFF1B5E20));
-  static const bonbon = (light: Color(0xFFFCE4EC), dark: Color(0xFFAD1457));
-  static const nuage = (light: Color(0xFFECEFF1), dark: Color(0xFF263238));
+  static const menthe = (light: Color(0xFFE9F0E4), dark: Color(0xFF202A22));
+  static const citron = (light: Color(0xFFF7EFD2), dark: Color(0xFF302A19));
+  static const peche = (light: Color(0xFFF5E4D4), dark: Color(0xFF32241C));
+  static const lavande = (light: Color(0xFFEEE7F0), dark: Color(0xFF29212E));
+  static const rose = (light: Color(0xFFF5E4DF), dark: Color(0xFF312020));
+  static const azur = (light: Color(0xFFE7ECED), dark: Color(0xFF1F282B));
+  static const sable = (light: Color(0xFFF1E6CF), dark: Color(0xFF2C2518));
+  static const sauge = (light: Color(0xFFE8EBD9), dark: Color(0xFF252A1D));
+  static const bonbon = (light: Color(0xFFF2E1E5), dark: Color(0xFF2E2027));
+  static const nuage = (light: Color(0xFFFFFDF6), dark: Color(0xFF221C14));
 
   static List<({Color light, Color dark, String name})> get all => [
     (light: menthe.light, dark: menthe.dark, name: 'menthe'),
@@ -91,7 +91,7 @@ const double sectionBorderRadius = 24.0;
 const double pillRadius = 55.0;
 
 /// Radius of a settings card.
-const double settingsCardRadius = 18.0;
+const double settingsCardRadius = 8.0;
 
 /// The app's type scale, outside the cards.
 ///
@@ -103,7 +103,7 @@ const double settingsCardRadius = 18.0;
 /// PNGs (`tool/generate_splash_logo.dart`), so they only move together.
 class TanoText {
   /// Page title ("À propos", a folder name…).
-  static const double pageTitle = 24.0;
+  static const double pageTitle = 28.0;
 
   /// Label of an action in an action sheet.
   static const double sheetAction = 20.0;
@@ -115,10 +115,10 @@ class TanoText {
   static const double listTitle = 17.0;
 
   /// Body copy: paragraphs, dialog content.
-  static const double body = 16.0;
+  static const double body = 17.0;
 
   /// Secondary label: tile subtitles, dialog footnotes.
-  static const double label = 14.0;
+  static const double label = 15.0;
 
   /// Smallest text: mentions, counters, and the metadata line of a header.
   static const double tiny = 12.0;
@@ -127,18 +127,11 @@ class TanoText {
   static const double badge = 10.0;
 }
 
-/// Number of columns for the note grids (home and trash).
-///
-/// Keeps three columns on regular phones and drops to two on narrow screens
-/// so cards stay tall enough to render a 3-line title without overflowing.
-int gridCrossAxisCount(BuildContext context) =>
-    MediaQuery.sizeOf(context).width < 320 ? 2 : 3;
-
 /// Helper to get the correct text color based on background luminance.
 Color getTextColor(Color background) {
   return ThemeData.estimateBrightnessForColor(background) == Brightness.light
-      ? Colors.black87
-      : Colors.white;
+      ? const Color(0xFF241F18)
+      : const Color(0xFFEFE4D0);
 }
 
 /// Helper to get a subtle border color based on the background.
@@ -158,19 +151,12 @@ Color getBorderColor(Color background, {bool isDark = false}) {
 
 /// Border colour shared by the cards, the cover rules and the app bar:
 /// light in dark mode, dark in light mode.
-Color cardBorderColor(bool isDark) => isDark
-    ? Colors.white.withValues(alpha: 0.22)
-    : Colors.black.withValues(alpha: 0.16);
+Color cardBorderColor(bool isDark) =>
+    isDark ? const Color(0xFF3A3122) : const Color(0xFFD9CBB0);
 
-/// Helper to get an even more subtle version of the note color for the page background.
-Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) {
-  if (isDark) {
-    // Mix the deep hue with the dark background to dim it further
-    return Color.lerp(noteColor, darkBackground, 0.7)!;
-  }
-  // Mix the pastel hue with white to make it even lighter
-  return Color.lerp(noteColor, Colors.white, 0.7)!;
-}
+/// Every route uses the hero paper; category colors belong to cards only.
+Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) =>
+    isDark ? darkBackground : lightBackground;
 
 /// Dynamic surface color for bars and background.
 Color barColor(BuildContext context) {
@@ -182,22 +168,22 @@ Color barColor(BuildContext context) {
 /// "Paper" background of the note editor.
 Color editorBackground(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF1E1E1E) // Slightly lighter than background for depth
-      : Colors.white;
+      ? const Color(0xFF221C14)
+      : const Color(0xFFFFFDF6);
 }
 
 /// Primary text color.
 Color primaryTextColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
-      ? Colors.grey.shade300
-      : const Color(0xFF212121);
+      ? const Color(0xFFEFE4D0)
+      : const Color(0xFF241F18);
 }
 
 /// Muted text color.
 Color mutedTextColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
-      ? Colors.grey.shade500
-      : Colors.black54;
+      ? const Color(0xFFB1A288)
+      : const Color(0xFF6F6553);
 }
 
 /// Subtle fill for inputs and chips.
@@ -286,4 +272,84 @@ Color themeCategory(
     default:
       return isDark ? TanoPastels.nuage.dark : TanoPastels.nuage.light;
   }
+}
+
+/// Site palette, shared by paper decoration and translucent navigation.
+Color paperRuleColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? const Color(0xFF2B2417)
+    : const Color(0xFFE6DAC2);
+Color paperSecondary(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? const Color(0xFF1F1A12)
+    : const Color(0xFFEAE0CB);
+Color accentColor(BuildContext context) =>
+    Theme.of(context).colorScheme.primary;
+Color amberColor(BuildContext context) =>
+    Theme.of(context).colorScheme.secondary;
+
+ThemeData tanoTheme(Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  final paper = dark ? darkBackground : lightBackground;
+  final card = dark ? const Color(0xFF221C14) : const Color(0xFFFFFDF6);
+  final ink = dark ? const Color(0xFFEFE4D0) : const Color(0xFF241F18);
+  final muted = dark ? const Color(0xFFB1A288) : const Color(0xFF6F6553);
+  final rule = cardBorderColor(dark);
+  final scheme = ColorScheme.fromSeed(
+    seedColor: tanoTeal,
+    brightness: brightness,
+    primary: dark ? const Color(0xFF5CC9BD) : tanoTeal,
+    onPrimary: dark ? const Color(0xFF10241F) : const Color(0xFFFDFAF2),
+    secondary: dark ? tanoAmberDark : tanoAmber,
+    surface: card,
+    onSurface: ink,
+    onSurfaceVariant: muted,
+    outline: rule,
+    outlineVariant: rule,
+  );
+  final base = ThemeData(
+    brightness: brightness,
+    colorScheme: scheme,
+    useMaterial3: true,
+  );
+  return base.copyWith(
+    scaffoldBackgroundColor: paper,
+    canvasColor: paper,
+    textTheme: base.textTheme.apply(bodyColor: ink, displayColor: ink),
+    dividerColor: rule,
+    appBarTheme: AppBarTheme(
+      backgroundColor: paper,
+      foregroundColor: ink,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: rule),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: card,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: rule),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: muted),
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: scheme.primary,
+      selectionColor: scheme.secondary.withValues(alpha: .25),
+      selectionHandleColor: scheme.primary,
+    ),
+  );
 }

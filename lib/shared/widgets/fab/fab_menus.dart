@@ -162,7 +162,7 @@ mixin _FabMenusMixin on _FabStateMixin {
               ? Symbols.history_2
               : Symbols.sort_by_alpha,
           size: 20,
-          color: Colors.white,
+          color: primaryTextColor(context),
         ),
         onPressed: () => setState(() {
           _sortCriteria = _sortCriteria == ListSortCriteria.date
@@ -177,7 +177,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Icon(
           _isAscending ? Symbols.arrow_downward : Symbols.arrow_upward,
           size: 20,
-          color: Colors.white,
+          color: primaryTextColor(context),
         ),
         onPressed: () => setState(() => _isAscending = !_isAscending),
         padding: const EdgeInsets.all(appPaddingTight),
@@ -195,8 +195,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: primaryTextColor(context),
               fontSize: TanoText.listTitle,
             ),
           ),
@@ -244,7 +244,9 @@ mixin _FabMenusMixin on _FabStateMixin {
                                   width: halo,
                                   height: halo,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
+                                    color: primaryTextColor(
+                                      context,
+                                    ).withValues(alpha: 0.18),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -261,7 +263,9 @@ mixin _FabMenusMixin on _FabStateMixin {
                                 foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.white30,
+                                    color: primaryTextColor(
+                                      context,
+                                    ).withValues(alpha: .3),
                                     width: 1.0,
                                   ),
                                 ),
@@ -290,8 +294,10 @@ mixin _FabMenusMixin on _FabStateMixin {
                                             Container(
                                               width: diameter * 0.40,
                                               height: diameter * 0.40,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.white,
+                                              decoration: BoxDecoration(
+                                                color: primaryTextColor(
+                                                  context,
+                                                ),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),

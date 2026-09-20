@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -51,6 +52,7 @@ class PageScaffold extends StatefulWidget {
     required this.slivers,
     this.actions,
     this.isHome = false,
+    this.notebook = false,
     this.freezeBody = false,
     this.alignAppBarTitleLeft = false,
     this.headerMetadata,
@@ -74,6 +76,7 @@ class PageScaffold extends StatefulWidget {
   final List<Widget> slivers;
   final List<Widget>? actions;
   final bool isHome;
+  final bool notebook;
 
   /// When true, the body is laid out against the height it has when no
   /// keyboard is up. The empty screens ask for it: the shrinking body would
@@ -173,66 +176,72 @@ class _PageScaffoldState extends State<PageScaffold> {
     final bool appBarTitleOnLeft =
         showAppBarTitle && widget.alignAppBarTitleLeft;
 
-    return Scaffold(
-      key: widget.scaffoldKey,
-      backgroundColor: scaffoldBgColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: scaffoldBgColor,
-        // When the title slides left (undo/redo/save actions visible), keep a
-        // visible gap between the back button and the title.
-        titleSpacing: widget.isHome
-            ? appPaddingLarge
-            : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
-        elevation: 0.0,
-        shadowColor: showAppBarTitle
-            ? Colors.black.withValues(alpha: 0.05)
-            : Colors.transparent,
-        // Same colour as the cards, with a hairline width.
-        shape: showAppBarTitle
-            ? Border(
-                bottom: BorderSide(color: cardBorderColor(isDark), width: 0.5),
-              )
-            : null,
-        leading: !widget.isHome
-            ? IconButton(
-                icon: Icon(
-                  Symbols.arrow_back_ios,
-                  size: 20.0,
-                  color: textColor,
+    return PaperSurface(
+      notebook: widget.notebook,
+      child: Scaffold(
+        key: widget.scaffoldKey,
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          // When the title slides left (undo/redo/save actions visible), keep a
+          // visible gap between the back button and the title.
+          titleSpacing: widget.isHome
+              ? appPaddingLarge
+              : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+          elevation: 0.0,
+          shadowColor: showAppBarTitle
+              ? Colors.black.withValues(alpha: 0.05)
+              : Colors.transparent,
+          // Same colour as the cards, with a hairline width.
+          shape: showAppBarTitle
+              ? Border(
+                  bottom: BorderSide(
+                    color: cardBorderColor(isDark),
+                    width: 0.5,
+                  ),
+                )
+              : null,
+          leading: !widget.isHome
+              ? IconButton(
+                  icon: Icon(
+                    Symbols.arrow_back_ios,
+                    size: 20.0,
+                    color: textColor,
+                  ),
+                  tooltip: AppText.tr('back'),
+                  onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
+                )
+              : null,
+          title: showAppBarTitle
+              ? (widget.appBarTitleWidget ??
+                    Text(
+                      appBarTitleText,
+                      maxLines: 1,
+                      // Same size as the "Cancel" action.
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: appBarTextSize,
+                        letterSpacing: -0.41,
+                        color: textColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ))
+              : null,
+          centerTitle: !widget.isHome && !appBarTitleOnLeft,
+          actions: widget.actions
+              ?.map(
+                (a) => Padding(
+                  padding: const EdgeInsets.only(right: appPaddingSmall),
+                  child: a,
                 ),
-                tooltip: AppText.tr('back'),
-                onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
               )
-            : null,
-        title: showAppBarTitle
-            ? (widget.appBarTitleWidget ??
-                  Text(
-                    appBarTitleText,
-                    maxLines: 1,
-                    // Same size as the "Cancel" action.
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: appBarTextSize,
-                      letterSpacing: -0.41,
-                      color: textColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ))
-            : null,
-        centerTitle: !widget.isHome && !appBarTitleOnLeft,
-        actions: widget.actions
-            ?.map(
-              (a) => Padding(
-                padding: const EdgeInsets.only(right: appPaddingSmall),
-                child: a,
-              ),
-            )
-            .toList(),
+              .toList(),
+        ),
+        body: _buildBody(textColor, keyboard),
+        floatingActionButton: widget.floatingActionButton,
+        floatingActionButtonLocation: widget.floatingActionButtonLocation,
       ),
-      body: _buildBody(textColor, keyboard),
-      floatingActionButton: widget.floatingActionButton,
-      floatingActionButtonLocation: widget.floatingActionButtonLocation,
     );
   }
 
@@ -300,6 +309,7 @@ class _PageScaffoldState extends State<PageScaffold> {
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: TanoText.pageTitle,
+          fontFamily: 'TanoSerif',
           letterSpacing: -0.41,
           color: textColor,
         ),
@@ -318,6 +328,7 @@ class _PageScaffoldState extends State<PageScaffold> {
       style: TextStyle(
         fontWeight: FontWeight.w600,
         fontSize: TanoText.pageTitle,
+        fontFamily: 'TanoSerif',
         letterSpacing: -0.41,
         color: textColor,
       ),

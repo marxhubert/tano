@@ -1,61 +1,75 @@
 # Design system
 
-`lib/shared/widgets/theme.dart`, `page_header.dart` and card typography are the
-implementation sources. Do not duplicate palettes in screens.
+The reference is the static [site](../site/index.html), audited in
+[Site design audit](site-design-audit.md). The implementation sources are
+`theme.dart`, `paper_surface.dart`, `card_typography.dart` and `entity_layout.dart`.
 
-## Surfaces and identity
+## Paper and ink
 
-Use the 60/30/10 balance: dominant background, teal identity and amber accent.
-Light background #F8F9FA; dark #121212. Editor surfaces use white / #1E1E1E.
-Teal #009688; amber #FF9800 light / #FFB74D dark.
-
-| State | Light | Dark |
+| Role | Light | Dark |
 |---|---|---|
-| Neutral | #90A4AE | #78909C |
-| Action | #009688 | #4DB6AC |
-| Success | #4CAF50 | #81C784 |
-| Warning | #FF9800 | #FFB74D |
-| Error | #E53935 | #E57373 |
-| Purple | #9C27B0 | #BA68C8 |
-| Yellow | #FBC02D | #FDD835 |
-| Reference | #2196F3 | #64B5F6 |
-| Subtle | #B0BEC5 | #90A4AE |
-| Archive | #78909C | #546E7A |
+| Paper | #F2EBDC | #18140E |
+| Secondary paper | #EAE0CB | #1F1A12 |
+| Neutral card | #FFFDF6 | #221C14 |
+| Ink | #241F18 | #EFE4D0 |
+| Muted ink | #6F6553 | #B1A288 |
+| Border | #D9CBB0 | #3A3122 |
+| Ruled line | #E6DAC2 | #2B2417 |
+| Accent | #0F766E | #5CC9BD |
+| Amber | #B06A0C | #DFA14A |
 
-Pastel names below are persisted category identifiers, not documentation language.
+`PaperSurface` paints the hero's horizontal ruling (34 logical pixels, scaled with
+text size) and subtle deterministic grain. It is a decorative, noninteractive,
+separate repaint boundary. All routes use this same background, including folders,
+settings and editors. Editor paper adds a fine notebook margin. Category colors
+only tint cards; category identifiers and stored data are unchanged. Native splash
+backgrounds use the same paper colors.
 
-| Category | Light | Dark |
-|---|---|---|
-| menthe | #E0F2F1 | #004D40 |
-| citron | #FFF9C4 | #827717 |
-| peche | #FFE0B2 | #BF360C |
-| lavande | #F3E5F5 | #4A148C |
-| rose | #FFEBEE | #880E4F |
-| azur | #E1F5FE | #01579B |
-| sable | #F5F5DC | #3E2723 |
-| sauge | #F1F8E9 | #1B5E20 |
-| bonbon | #FCE4EC | #AD1457 |
-| nuage (default) | #ECEFF1 | #263238 |
+The FAB preserves its modes and icons, with paper at 86% opacity and a clipped
+10px backdrop blur. Menu surfaces are slightly stronger for legibility. Text and
+symbols use ink, with themed accent and warning states. Menus remain bounded by
+the available space above the keyboard.
 
-## Layout and type
+## Typography and cards
 
-| Token | Value |
-|---|---|
-| appPaddingLarge / Medium / Small | 18 / 12 / 6 |
-| appBorderRadius | 12 |
-| sectionBorderRadius | 18 |
-| menuMinWidth | 160 |
-| appBarOffset | 56 |
-| sectionTitleSize | 24, w600 |
-| appBarTextSize | 17; title w600, Cancel w400 |
+Noto Serif 2.015 is bundled under SIL OFL 1.1 (see `assets/fonts/README.md`). The
+Flutter alias `TanoSerif` is used for page titles, Note prose and card titles. This
+is a portable equivalent to the site's platform serif stack, not its exact font.
+Task rows, controls and small metadata use the system sans serif. No runtime font
+requests or external assets are needed.
 
-Shared TanoText sizes: pageTitle 24, emptyState 20, wordmark 18, listTitle 17,
-body 16, label 14, tiny 12, badge 10. Card typography has its own compact scale.
-Primary/muted text colors adapt to brightness; colored surfaces use contrast-aware
-text. Card borders use black alpha .16 in light mode, white alpha .22 in dark mode.
-Page cover rules and app-bar borders remain 0.5 in both themes.
+Page titles 28, section titles 26, document filter 22, body 17, labels 15, metadata 12.
+Cards use their own compact scale: title 14, body 12, date/count 10. Small card
+metadata uses shared muted ink with tested contrast across all category surfaces.
 
-Material Symbols sizes: primary FAB 24, app bar 22, back/chevrons 20,
-metadata 12, card markers 11. Bookmark is filled amber `label_important` when active.
-Back uses `arrow_back_ios`. Use adaptive switches/dialogs and shared rounded sections.
-Motion tokens: fast 150 ms, base 250 ms, slow 450 ms. Waiting for I/O is not motion.
+Cards have 8px corners, a 1px warm border and a discreet shadow. Their existing
+watermarks, covers, locked templates and selection affordances stay intact. List
+heights are 100/112px as appropriate, and grow with accessibility text sizing.
+Task covers hide their checklist previews. Grid covers occupy the upper half;
+list covers occupy the left third. Settings cards use the same paper surface and
+fine border. Material Symbols identities and existing navigation are unchanged.
+
+## Responsive layout
+
+Counts follow logical viewport dimensions, including split-screen resizing. A
+shortest side of 600px identifies a tablet window; a width of 1440px takes precedence
+as the large layout.
+
+| Viewport | Grid columns | List columns |
+|---|---:|---:|
+| Phone portrait |2|1|
+| Phone landscape |3|2|
+| Tablet portrait |3|2|
+| Tablet landscape |5|4|
+| Width 1440px or more |5|5|
+
+Both modes share `EntitySliver`. List rows preserve card widths in an incomplete
+last row. Swipe gestures perform no actions; selection and action menus remain
+the way to move, delete and undo. Existing sort, folder/search scope and lock rules
+are preserved.
+
+Motion remains 150/250/450ms. Typography scales with the system and app preference.
+Golden previews cover light/dark Home, Note, Task and menus in addition to card
+states. Structural tests cover the column matrix, long titles and locked content;
+widget tests cover keyboard/find behavior. Real-device keyboard, platform blur,
+performance and native launch validation are still release checks.

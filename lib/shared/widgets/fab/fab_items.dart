@@ -29,10 +29,10 @@ class _SubMenuLayout extends StatelessWidget {
         Container(
           padding: const EdgeInsets.fromLTRB(20.0, 2.0, 10.0, 2.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
+            color: paperSecondary(context),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: primaryTextColor(context).withValues(alpha: 0.1),
                 width: 0.5,
               ),
             ),
@@ -41,14 +41,17 @@ class _SubMenuLayout extends StatelessWidget {
             children: [
               TextButton.icon(
                 onPressed: onBack,
-                icon: const Icon(
+                icon: Icon(
                   Symbols.arrow_back_ios,
                   size: 20,
-                  color: Colors.white,
+                  color: primaryTextColor(context),
                 ),
                 label: Text(
                   title,
-                  style: TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
+                  style: TextStyle(
+                    color: primaryTextColor(context),
+                    fontSize: TanoText.listTitle,
+                  ),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -109,13 +112,14 @@ class _EditorAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The open action keeps a plain white glyph: the darker menu surface
+    // The open action keeps its ink glyph: the secondary paper surface
     // behind it already signals the active state.
-    final Color base = color ?? Colors.white;
+    final Color base = color ?? primaryTextColor(context);
     // When disabled, every action borrows the neutral dimmed colour: a red
-    // "delete" at 35% would be invisible on the teal FAB.
-    final Color iconColor =
-        onTap == null ? Colors.white.withValues(alpha: 0.35) : base;
+    // "delete" at 35% would lose contrast against the paper.
+    final Color iconColor = onTap == null
+        ? primaryTextColor(context).withValues(alpha: 0.35)
+        : base;
     // The bar splits into equal, gapless full-height zones: each action fills
     // its own zone.
     final Widget button = IconButton(
@@ -166,30 +170,24 @@ class _ActiveZonePainter extends CustomPainter {
 
     final Path path = Path()
       ..moveTo(-_spill, 0)
-
       // Top-left: opening outwards.
       ..quadraticBezierTo(0, 0, 0, drop)
       ..lineTo(0, h - radius)
-
       // Bottom-left: rounded corner.
       ..arcToPoint(
         Offset(radius, h),
         radius: Radius.circular(radius),
         clockwise: false,
       )
-
       // Bottom edge.
       ..lineTo(w - radius, h)
-
       // Bottom-right: rounded corner.
       ..arcToPoint(
         Offset(w, h - radius),
         radius: Radius.circular(radius),
         clockwise: false,
       )
-
       ..lineTo(w, drop)
-
       // Top-right: opening outwards.
       ..quadraticBezierTo(w, 0, w + _spill, 0)
       ..close();
@@ -240,11 +238,16 @@ class _VerticalMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color? muted = enabled ? null : Colors.white.withValues(alpha: 0.38);
+    final Color? muted = enabled
+        ? null
+        : primaryTextColor(context).withValues(alpha: 0.38);
     return InkWell(
       onTap: enabled ? onTap : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: appPaddingMedium, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(
+          vertical: appPaddingMedium,
+          horizontal: 4.0,
+        ),
         child: Row(
           crossAxisAlignment: maxLines != null
               ? CrossAxisAlignment.start
@@ -252,7 +255,7 @@ class _VerticalMenuItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: muted ?? iconColor ?? Colors.white,
+              color: muted ?? iconColor ?? primaryTextColor(context),
               size: iconSize,
               fill: fill,
             ),
@@ -261,7 +264,7 @@ class _VerticalMenuItem extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: muted ?? textColor ?? Colors.white,
+                  color: muted ?? textColor ?? primaryTextColor(context),
                   fontSize: fontSize,
                 ),
                 maxLines: maxLines,
@@ -274,4 +277,3 @@ class _VerticalMenuItem extends StatelessWidget {
     );
   }
 }
-

@@ -502,7 +502,7 @@ void main() {
       expect(repository.notes.single.isLocked, isFalse);
     });
 
-    testWidgets('a locked note cannot be swipe-deleted from the home list', (
+    testWidgets('the home list has no swipe actions, including locked notes', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(320, 480);
@@ -513,7 +513,6 @@ void main() {
         _note(isLocked: true),
       ]);
       getIt.registerSingleton<NotesRepository>(repository);
-      bool confirmCalled = false;
 
       final vm = HomeViewModel(
         repository: repository,
@@ -527,11 +526,6 @@ void main() {
                 NoteListView(
                   viewModel: vm,
                   onOpenNote: (Note note) {},
-                  onShowUndoSnackBar: () {},
-                  confirmDelete: () async {
-                    confirmCalled = true;
-                    return true;
-                  },
                 ),
               ],
             ),
@@ -540,11 +534,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
+      expect(find.byType(Dismissible), findsNothing);
+      await tester.drag(find.byType(EntityCard), const Offset(-500, 0));
       await tester.pumpAndSettle();
 
-      expect(find.text('Locked notes cannot be deleted'), findsOneWidget);
-      expect(confirmCalled, isFalse);
+      expect(find.byType(AlertDialog), findsNothing);
       expect(vm.notes, hasLength(1));
     });
 

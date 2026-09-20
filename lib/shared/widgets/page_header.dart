@@ -6,7 +6,7 @@ import 'package:tano/shared/widgets/theme.dart';
 // ---------------------------------------------------------------------------
 
 /// Size of a page / section title.
-const double sectionTitleSize = 24.0;
+const double sectionTitleSize = 26.0;
 
 /// Size of the small metadata printed at the right of a title line.
 const double titleMetadataSize = 12.0;
@@ -15,6 +15,7 @@ const double titleMetadataSize = 12.0;
 TextStyle sectionTitleStyle(BuildContext context, {Color? color}) => TextStyle(
   fontWeight: FontWeight.w600,
   fontSize: sectionTitleSize,
+  fontFamily: 'TanoSerif',
   letterSpacing: -0.41,
   color: color ?? primaryTextColor(context),
 );

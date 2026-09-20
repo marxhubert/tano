@@ -61,9 +61,7 @@ class _EditNoteState extends State<EditNote>
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _titleController = TextEditingController();
   late final LinkTextEditingController _contentController;
-  final _descriptionController = LinkTextEditingController(
-    linkColor: tanoAmber,
-  );
+  final _descriptionController = LinkTextEditingController();
   bool _descriptionWasActive = false;
   final _descriptionFocus = FocusNode();
   bool _showDescription = false;
@@ -217,7 +215,6 @@ class _EditNoteState extends State<EditNote>
 
     _contentController = LinkTextEditingController(
       text: widget.noteAction.note?.content ?? '',
-      linkColor: tanoAmber,
     );
 
     _highlightBlinkController =
@@ -884,6 +881,7 @@ class _EditNoteState extends State<EditNote>
                 _fabKey.currentState?.closeVerticalMenu();
               },
               child: PageScaffold(
+                notebook: true,
                 scaffoldKey: _scaffoldState,
                 // The title and the metadata line share the content's inset, so
                 // the three lines of the editor start on the same axis.
@@ -1104,8 +1102,9 @@ class _EditNoteState extends State<EditNote>
                                 textCapitalization:
                                     TextCapitalization.sentences,
                                 style: const TextStyle(
-                                  fontSize: TanoText.label,
-                                  height: 1.8,
+                                  fontSize: TanoText.body,
+                                  fontFamily: 'TanoSerif',
+                                  height: 2,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: AppText.tr('add_note'),

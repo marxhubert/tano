@@ -157,8 +157,8 @@ void main() {
       final Rect card = tester.getRect(find.byType(EntityCard));
       final Rect meta = tester.getRect(find.byIcon(Symbols.attachment));
 
-      expect(card.bottom - meta.bottom, closeTo(4.0, 1.0));
-      expect(meta.left, closeTo(card.left + 8.0, 2.0));
+      expect(card.bottom - meta.bottom, closeTo(8.0, 1.0));
+      expect(meta.left, closeTo(card.left + 12.0, 2.0));
     });
 
     testWidgets('fills the top half with the cover and stops the title at 2', (
@@ -172,6 +172,28 @@ void main() {
       expect(cover.top, closeTo(card.top, 1.0));
       expect(cover.height, closeTo(card.height / 2, 1.0));
       expect(tester.widget<Text>(find.text('Alpha title')).maxLines, 2);
+    });
+
+    testWidgets('covered cards fit a small two-column phone grid', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          _noteCard(
+            Note(
+              id: 'small',
+              title: 'A long title that should fit without overflowing',
+              content: 'Body',
+              date: '2026-01-01 00:00:00.000',
+              coverImage: 'cover.png',
+              attachments: const <String>['a.txt'],
+            ),
+          ),
+          width: 136.0,
+          height: 151.0,
+        ),
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('lets the title reach three lines without a cover', (
@@ -189,7 +211,7 @@ void main() {
         _host(
           _noteCard(_note(coverImage: 'cover.png'), isList: true),
           width: 300.0,
-          height: 92.0,
+          height: 112.0,
         ),
       );
 
@@ -207,19 +229,35 @@ void main() {
         _host(
           _noteCard(_note(coverImage: 'cover.png'), isList: true),
           width: 300.0,
-          height: 92.0,
+          height: 112.0,
         ),
       );
       expect(tester.widget<Text>(find.text('Alpha title')).maxLines, 1);
 
       await tester.pumpWidget(
-        _host(_noteCard(_note(), isList: true), width: 300.0, height: 92.0),
+        _host(_noteCard(_note(), isList: true), width: 300.0, height: 112.0),
       );
       expect(tester.widget<Text>(find.text('Alpha title')).maxLines, 2);
     });
   });
 
   group('selection overlay', () {
+    testWidgets('selection control does not cover the list date', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          _noteCard(_note(), isList: true, isInSelectionMode: true),
+          width: 340.0,
+          height: 100.0,
+        ),
+      );
+      final Rect date = tester.getRect(find.text(formatNoteDate(_note().date)));
+      final Rect selection = tester.getRect(find.byIcon(Symbols.circle));
+      expect(date.right, lessThanOrEqualTo(selection.left));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('sits in the top-right corner when selected', (tester) async {
       await tester.pumpWidget(
         _host(_noteCard(_note(), isSelected: true, isInSelectionMode: true)),
@@ -244,7 +282,7 @@ void main() {
       final Rect meta = tester.getRect(find.byIcon(Symbols.sticky_note_2));
 
       expect(name.top, lessThan(meta.top));
-      expect(card.bottom - meta.bottom, closeTo(4.0, 1.0));
+      expect(card.bottom - meta.bottom, closeTo(8.0, 1.0));
       // The only folder glyph is the watermark in the corner.
       expect(find.byIcon(Symbols.folder_open), findsOneWidget);
     });
@@ -254,7 +292,7 @@ void main() {
         _host(
           _folderCard(_folder(), noteCount: 3, isList: true),
           width: 300.0,
-          height: 92.0,
+          height: 112.0,
         ),
       );
 

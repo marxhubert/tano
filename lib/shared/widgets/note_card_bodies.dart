@@ -16,13 +16,19 @@ Widget buildNoteGridContent({
   required Set<String> activeNoteIds,
   required bool hasCover,
 }) {
+  final Widget title = Text(
+    note.title,
+    maxLines: hasCover ? 2 : 3,
+    overflow: TextOverflow.ellipsis,
+    style: cardTitleStyle(textColor),
+  );
   return Container(
-    // Grid padding 8; gap under a cover 4; metadata 4 from the bottom.
+    // Keep the title, excerpt and metadata on one paper margin.
     padding: EdgeInsets.fromLTRB(
-      appPaddingTight,
-      hasCover ? 4.0 : appPaddingTight,
-      appPaddingTight,
-      4.0,
+      appPaddingMedium,
+      hasCover ? 8.0 : appPaddingMedium,
+      appPaddingMedium,
+      8.0,
     ),
     child: Column(
       // Metadata always left-aligned, body top-aligned.
@@ -39,12 +45,7 @@ Widget buildNoteGridContent({
                 overflow: TextOverflow.ellipsis,
                 style: cardDateStyle(textColor),
               ),
-              Text(
-                note.title,
-                maxLines: hasCover ? 2 : 3,
-                overflow: TextOverflow.ellipsis,
-                style: cardTitleStyle(textColor),
-              ),
+              if (hasCover) Flexible(child: title) else title,
               if (!hasCover)
                 Expanded(
                   child: _noteExcerpt(
@@ -62,7 +63,7 @@ Widget buildNoteGridContent({
         NoteCounts(
           content: note.content,
           description: note.isTask ? note.description : '',
-          color: textColor.withValues(alpha: 0.6),
+          color: cardMutedColor(textColor),
           attachmentCount: note.attachments.length,
           taskCount: note.isTask
               ? TaskContent.savedItems(note.content).length
@@ -83,12 +84,12 @@ Widget buildNoteListContent({
   required bool hasCover,
 }) {
   return Padding(
-    // List padding 12, but the metadata sits 4 from the bottom.
+    // Match the grid card's horizontal paper margin.
     padding: const EdgeInsets.fromLTRB(
       appPaddingMedium,
       appPaddingMedium,
       appPaddingMedium,
-      4.0,
+      8.0,
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +130,7 @@ Widget buildNoteListContent({
         NoteCounts(
           content: note.content,
           description: note.isTask ? note.description : '',
-          color: textColor.withValues(alpha: 0.6),
+          color: cardMutedColor(textColor),
           attachmentCount: note.attachments.length,
           taskCount: note.isTask
               ? TaskContent.savedItems(note.content).length
@@ -152,18 +153,23 @@ Widget _noteExcerpt({
 }) {
   return LayoutBuilder(
     builder: (BuildContext context, BoxConstraints constraints) {
-      final double lineHeight = cardContentSize * 1.4;
+      final double lineHeight = cardContentSize * cardContentLineHeight;
       final int fit = (constraints.maxHeight / lineHeight).floor();
-      final int maxLines = fit < 1 ? 1 : fit;
+      if (fit < 1) return const SizedBox.shrink();
       return Align(
         alignment: Alignment.topLeft,
         child: RichText(
-          maxLines: maxLines,
+          maxLines: fit,
           overflow: TextOverflow.ellipsis,
           text: LinkTextEditingController.buildMarkdownTextSpan(
             content,
-            cardContentStyle(textColor),
-            tanoAmber,
+            cardContentStyle(
+              textColor,
+              fontFamily: isTask
+                  ? Theme.of(context).textTheme.bodyMedium?.fontFamily
+                  : 'TanoSerif',
+            ),
+            accentColor(context),
             activeNoteIds,
             checklistIndent: isTask ? 0 : 16,
           ),

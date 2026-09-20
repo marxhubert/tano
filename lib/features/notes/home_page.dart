@@ -415,8 +415,6 @@ class HomeState extends State<Home> with RouteAware {
           onOpenNote: (Note note) {
             _openNoteEditor(add: false, note: note);
           },
-          onShowUndoSnackBar: _showUndoSnackBar,
-          confirmDelete: _confirmDelete,
         );
     }
   }
@@ -540,14 +538,6 @@ class HomeState extends State<Home> with RouteAware {
       ),
     );
     await _viewModel.load();
-  }
-
-  Future<bool?> _confirmDelete() {
-    return getConfirmation(
-      context: context,
-      actionTitle: _deleteActionTitle(),
-      action: AppText.tr('delete'),
-    );
   }
 
   List<Widget>? _buildAppBarActions() {

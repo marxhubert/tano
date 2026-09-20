@@ -12,8 +12,13 @@ Widget buildFolderGridContent({
   required bool hasCover,
 }) {
   return Padding(
-    // Grid padding 8, gap under a cover 4, metadata 4 from the bottom.
-    padding: EdgeInsets.fromLTRB(appPaddingTight, hasCover ? 4.0 : appPaddingTight, appPaddingTight, 4.0),
+    // The same paper margins as note and task cards.
+    padding: EdgeInsets.fromLTRB(
+      appPaddingMedium,
+      hasCover ? 8.0 : appPaddingMedium,
+      appPaddingMedium,
+      8.0,
+    ),
     child: SizedBox(
       width: double.infinity,
       child: Column(
@@ -81,7 +86,7 @@ Widget buildFolderMetadata(
   bool isImportant = false,
 }) {
   if (noteCount == 0 && !isImportant) return const SizedBox.shrink();
-  final Color color = textColor.withValues(alpha: 0.6);
+  final Color color = cardMutedColor(textColor);
   return Padding(
     padding: const EdgeInsets.only(top: 2.0),
     child: Row(
@@ -100,10 +105,7 @@ Widget buildFolderMetadata(
         if (noteCount > 0) ...<Widget>[
           Icon(Symbols.sticky_note_2, size: cardMetaIconSize, color: color),
           const SizedBox(width: 1.0),
-          Text(
-            'x$noteCount',
-            style: TextStyle(fontSize: cardMetaSize, color: color),
-          ),
+          Text('x$noteCount', style: cardMetaStyle(color)),
         ],
       ],
     ),

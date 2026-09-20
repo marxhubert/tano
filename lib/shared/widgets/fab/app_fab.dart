@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -19,10 +20,9 @@ enum FabVerticalMenu { none, add, color, more, link, move }
 
 enum ListSortCriteria { date, title }
 
-/// The surface colour of an open FAB menu: the FAB primary darkened, so the
-/// menu and the action cell that opened it can share the exact same tone.
+/// Secondary paper joins the open menu to the action that opened it.
 Color _fabMenuSurface(BuildContext context) =>
-    Color.lerp(Theme.of(context).colorScheme.primary, Colors.black, 0.15)!;
+    paperSecondary(context).withValues(alpha: .94);
 
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
@@ -456,7 +456,12 @@ class AppFabState extends State<AppFab>
         clipBehavior: Clip.antiAlias,
         transform: Matrix4.translationValues(tx, ty, 0.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
+          color: barColor(context).withValues(alpha: .86),
+          border: Border.all(
+            color: cardBorderColor(
+              Theme.of(context).brightness == Brightness.dark,
+            ),
+          ),
           borderRadius: fabRadius,
           boxShadow: const [
             BoxShadow(
@@ -480,113 +485,116 @@ class AppFabState extends State<AppFab>
             width: 1.0,
           ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double expansionProgress = isExpanded || isMenuOpen
-                ? (constraints.maxWidth - btnHeight) /
-                      (targetExpandedWidth - btnHeight)
-                : 0.0;
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double expansionProgress = isExpanded || isMenuOpen
+                  ? (constraints.maxWidth - btnHeight) /
+                        (targetExpandedWidth - btnHeight)
+                  : 0.0;
 
-            final bool showContent =
-                !isExpanded || isMenuOpen || expansionProgress > 0.8;
+              final bool showContent =
+                  !isExpanded || isMenuOpen || expansionProgress > 0.8;
 
-            return Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                // Measurement zone - Unconstrained height to avoid race conditions during animation
-                Offstage(
-                  child: OverflowBox(
-                    // Measure at a fixed open-menu width so the heights stay
-                    // stable no matter the current FAB width (the closed FAB is
-                    // only 64px wide and would otherwise under-measure).
-                    minWidth: 0,
-                    maxWidth: screenWidth - 24.0,
-                    minHeight: 0,
-                    maxHeight: double.infinity,
-                    alignment: Alignment.topCenter,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          key: _colorMenuKey,
-                          child: _buildColorMenu(context),
-                        ),
-                        Container(
-                          key: _addMenuKey,
-                          child: _buildAddMenu(context),
-                        ),
-                        Container(
-                          key: _moreMenuKey,
-                          child: _buildMoreMenu(context),
-                        ),
-                        Container(
-                          key: _linkMenuKey,
-                          child: _buildLinkMenu(context, isMeasurement: true),
-                        ),
-                        Container(
-                          key: _moveMenuKey,
-                          child: _buildMoveMenu(context, isMeasurement: true),
-                        ),
-                      ],
+              return Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  // Measurement zone - Unconstrained height to avoid race conditions during animation
+                  Offstage(
+                    child: OverflowBox(
+                      // Measure at a fixed open-menu width so the heights stay
+                      // stable no matter the current FAB width (the closed FAB is
+                      // only 64px wide and would otherwise under-measure).
+                      minWidth: 0,
+                      maxWidth: screenWidth - 24.0,
+                      minHeight: 0,
+                      maxHeight: double.infinity,
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            key: _colorMenuKey,
+                            child: _buildColorMenu(context),
+                          ),
+                          Container(
+                            key: _addMenuKey,
+                            child: _buildAddMenu(context),
+                          ),
+                          Container(
+                            key: _moreMenuKey,
+                            child: _buildMoreMenu(context),
+                          ),
+                          Container(
+                            key: _linkMenuKey,
+                            child: _buildLinkMenu(context, isMeasurement: true),
+                          ),
+                          Container(
+                            key: _moveMenuKey,
+                            child: _buildMoveMenu(context, isMeasurement: true),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                if (isMenuOpen)
-                  Positioned(
-                    bottom: btnHeight,
-                    left: 0,
-                    right: 0,
-                    top: 0,
+                  if (isMenuOpen)
+                    Positioned(
+                      bottom: btnHeight,
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: AnimatedOpacity(
+                        opacity: showContent ? 1.0 : 0.0,
+                        duration: TanoMotion.fast,
+                        child: _buildVerticalMenuContent(
+                          context,
+                          targetExpandedWidth,
+                          verticalMenuHeight,
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(
+                    height: barHeight,
                     child: AnimatedOpacity(
                       opacity: showContent ? 1.0 : 0.0,
                       duration: TanoMotion.fast,
-                      child: _buildVerticalMenuContent(
-                        context,
-                        targetExpandedWidth,
-                        verticalMenuHeight,
-                      ),
-                    ),
-                  ),
-
-                SizedBox(
-                  height: barHeight,
-                  child: AnimatedOpacity(
-                    opacity: showContent ? 1.0 : 0.0,
-                    duration: TanoMotion.fast,
-                    // Only the icons swap: the FAB box itself does not move.
-                    // The outgoing set zooms out while the incoming zooms in.
-                    child: AnimatedSwitcher(
-                      duration: TanoMotion.base,
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      transitionBuilder:
-                          (Widget child, Animation<double> animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: ScaleTransition(
-                                scale: Tween<double>(
-                                  begin: 0.75,
-                                  end: 1.0,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            );
-                          },
-                      child: KeyedSubtree(
-                        key: ValueKey<bool>(widget.isSelectionMode),
-                        child: _buildMainContent(
-                          context,
-                          isExpanded,
-                          targetExpandedWidth,
+                      // Only the icons swap: the FAB box itself does not move.
+                      // The outgoing set zooms out while the incoming zooms in.
+                      child: AnimatedSwitcher(
+                        duration: TanoMotion.base,
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(
+                                    begin: 0.75,
+                                    end: 1.0,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                        child: KeyedSubtree(
+                          key: ValueKey<bool>(widget.isSelectionMode),
+                          child: _buildMainContent(
+                            context,
+                            isExpanded,
+                            targetExpandedWidth,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid or list of cards, shared by every card screen.
 ///
-/// The grid uses the standard card configuration (three columns, 8px gaps,
-/// 0.9 ratio); the list stacks full-width rows separated by 8px. It is a
-/// sliver, so it belongs in a [CustomScrollView]; callers add whatever
-/// padding they need with a [SliverPadding].
+/// Both layouts adapt to the viewport with [entityColumnCount]. Grid cards
+/// keep their 0.9 aspect ratio; list cards retain their natural row height.
+/// It belongs in a [CustomScrollView]; callers add outer [SliverPadding].
 class EntitySliver<T> extends StatelessWidget {
   const EntitySliver({
     super.key,
@@ -18,25 +18,40 @@ class EntitySliver<T> extends StatelessWidget {
   final List<T> items;
   final bool isList;
 
-  /// Builds the card for one item. It is called for the visible items only.
+  /// Builds the cards in the visible and cached rows, rather than the full list.
   final Widget Function(BuildContext context, T item) cardBuilder;
 
   @override
   Widget build(BuildContext context) {
+    final int columns = entityColumnCount(
+      MediaQuery.sizeOf(context),
+      isList: isList,
+    );
     if (isList) {
       return SliverList.separated(
-        itemCount: items.length,
-        itemBuilder: (BuildContext context, int index) =>
-            cardBuilder(context, items[index]),
+        itemCount: (items.length / columns).ceil(),
+        itemBuilder: (BuildContext context, int row) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (int column = 0; column < columns; column++) ...<Widget>[
+              if (column > 0) const SizedBox(width: appPaddingTight),
+              Expanded(
+                child: row * columns + column < items.length
+                    ? cardBuilder(context, items[row * columns + column])
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ],
+        ),
         separatorBuilder: (BuildContext context, int index) =>
             const SizedBox(height: appPaddingTight),
       );
     }
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: gridCrossAxisCount(context),
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
+        crossAxisCount: columns,
+        crossAxisSpacing: appPaddingTight,
+        mainAxisSpacing: appPaddingTight,
         childAspectRatio: 0.9,
       ),
       itemCount: items.length,

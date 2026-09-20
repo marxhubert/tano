@@ -70,37 +70,8 @@ class Tano extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'TanoNote',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: tanoTeal,
-              primary: tanoTeal,
-              secondary: tanoAmber,
-              surface: lightBackground,
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: lightBackground,
-            canvasColor: lightBackground,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: lightBackground,
-              elevation: 0,
-            ),
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: tanoTeal,
-              brightness: Brightness.dark,
-              primary: tanoTeal,
-              secondary: tanoAmberDark,
-              surface: darkBackground,
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: darkBackground,
-            canvasColor: darkBackground,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: darkBackground,
-              elevation: 0,
-            ),
-          ),
+          theme: tanoTheme(Brightness.light),
+          darkTheme: tanoTheme(Brightness.dark),
           themeMode: themeMode ?? ThemeController.instance.themeMode,
           // The chosen size multiplies the system one instead of replacing it:
           // a user who needs large text keeps their accessibility setting.

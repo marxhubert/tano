@@ -235,11 +235,11 @@ class AutoTaskItemFormatter extends TextInputFormatter {
 class LinkTextEditingController extends TextEditingController {
   LinkTextEditingController({
     super.text,
-    required this.linkColor,
+    this.linkColor,
     Set<String>? activeNoteIds,
   }) : activeNoteIds = activeNoteIds != null ? Set.from(activeNoteIds) : {};
 
-  final Color linkColor;
+  final Color? linkColor;
   Set<String> activeNoteIds;
 
   /// Current "find in note" query; empty means no highlight.
@@ -290,7 +290,7 @@ class LinkTextEditingController extends TextEditingController {
     final TextSpan span = buildMarkdownTextSpan(
       text,
       const TextStyle(),
-      linkColor,
+      linkColor ?? tanoTeal,
       activeNoteIds,
     );
     final List<bool> visible = _visibleMask(span, text.length);
@@ -417,7 +417,7 @@ class LinkTextEditingController extends TextEditingController {
     final TextSpan markdown = buildMarkdownTextSpan(
       text,
       style,
-      linkColor,
+      linkColor ?? accentColor(context),
       activeNoteIds,
     );
     if (searchQuery.trim().isEmpty) {
@@ -644,7 +644,9 @@ class LinkTextEditingController extends TextEditingController {
           child: Icon(
             checked ? Symbols.check_box : Symbols.check_box_outline_blank,
             size: (base.fontSize ?? TanoText.label) * 1.3,
-            color: checked ? linkColor : Colors.grey.withValues(alpha: 0.65),
+            color: checked
+                ? linkColor
+                : (base.color ?? Colors.grey).withValues(alpha: 0.72),
           ),
         ),
       );

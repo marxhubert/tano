@@ -8,8 +8,8 @@ current values; historical mockups do not override tested behavior.
 `PageScaffold` provides scrolling, page/header layout and actions. Back navigation is
 present outside Home. App bars allow at most three actions; Cancel is the text-action
 exception. Hide the theme toggle when editing actions occupy those slots. Titles
-collapse with scrolling and handle long content without overflow. Item pages retain
-their category-colored background. `SectionTitleLine` and `MetadataLine` own header
+collapse with scrolling and handle long content without overflow. All routes share
+the ruled hero paper; category colors tint cards only. `SectionTitleLine` and `MetadataLine` own header
 text and metadata rather than duplicating ad-hoc Rows.
 
 ## FAB
@@ -24,11 +24,10 @@ Menu states and transitions should remain consistent across screens.
 ## Cards
 
 `EntityCard` renders Note, Folder, Task and Project presentations through a shared
-shell and type-specific content. Types belong to the domain (`EntityKind`). Task and
-Project cards are not evidence of persistent task/project workflows.
+shell and type-specific content. Types belong to the domain (`EntityKind`). Task persistence is implemented; Project cards remain presentation previews.
 
-Cards are flat, radius 12, with light-theme dark borders (0.5) and dark-theme light
-borders (1.0). Heights are compact 80, normal 92, square 128. Grid covers occupy the
+Cards use paper surfaces, radius 8, warm 1px borders and a subtle shadow.
+List heights are compact 100 and normal 112, adjusted for text scaling. Grid covers occupy the
 upper half; list covers occupy the left third. Shared markers represent selection,
 bookmark and lock. Pinning was removed; bookmarks sort first. A folder watermark is
 placed bottom-right rather than treated as a separate widget layout.
@@ -42,7 +41,7 @@ leak locked data. Image errors use a neutral placeholder.
 
 `ManageableCover` is shared by folders/editor and uses `CoverImage`. Long press exposes
 remove with confirmation. Covers span full width with shared border rules. Folders
-use height 160 / BoxFit.cover; note editors preserve image ratio with fitWidth and
+use height 160 / BoxFit.cover; Note and Task editors also use height 160 / BoxFit.cover, with
 no light-theme dim. Covers decode in memory, not plaintext cache files.
 
 Settings groups have a title, option rows and footer (up to three lines).

@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/theme.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,8 +14,8 @@ const Key goldenKey = ValueKey<String>('golden');
 /// fallback: without [Roboto] the text is a block, and without the Material
 /// Symbols font every icon is a box.
 ///
-/// Both come from the machine, not the repository: Roboto from the Flutter
-/// cache, Symbols from the package actually resolved by `flutter pub get`.
+/// Serif text uses the app's bundled fonts. Roboto comes from the Flutter
+/// cache and Symbols from the package resolved by `flutter pub get`.
 Future<void> loadGoldenFonts() async {
   Future<void> load(String family, List<String> paths) async {
     final FontLoader loader = FontLoader(family);
@@ -34,6 +35,13 @@ Future<void> loadGoldenFonts() async {
       '${fontsDir}Roboto-Black.ttf',
     ]);
   }
+
+  await load('TanoSerif', <String>[
+    'assets/fonts/NotoSerif-Regular.ttf',
+    'assets/fonts/NotoSerif-Bold.ttf',
+    'assets/fonts/NotoSerif-Italic.ttf',
+    'assets/fonts/NotoSerif-BoldItalic.ttf',
+  ]);
 
   await load(
     'packages/material_symbols_icons/MaterialSymbolsOutlined',
@@ -77,7 +85,7 @@ Future<void> pumpGolden(
   await tester.pumpWidget(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: brightness, useMaterial3: true),
+      theme: tanoTheme(brightness),
       // The card's InkWell needs a Material ancestor; the capture stays tight
       // around the card, so the Scaffold never shows in the image.
       home: Scaffold(

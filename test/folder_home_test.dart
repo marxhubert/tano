@@ -22,6 +22,7 @@ import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -653,11 +654,35 @@ void main() {
       of: find.byType(FolderPage),
       matching: find.byType(Scaffold),
     );
-    final Scaffold before = tester.widget<Scaffold>(folderScaffold);
+    final Finder paper = find.ancestor(
+      of: folderScaffold,
+      matching: find.byType(PaperSurface),
+    );
+    expect(paper, findsOneWidget);
+    final Finder backgroundPaint = find
+        .descendant(of: paper, matching: find.byType(CustomPaint))
+        .first;
+    final CustomPainter before = tester
+        .widget<CustomPaint>(backgroundPaint)
+        .painter!;
+    expect(
+      tester.widget<Scaffold>(folderScaffold).backgroundColor,
+      Colors.transparent,
+    );
+    expect(barColor(tester.element(paper)), lightBackground);
+
     await tester.tap(find.byIcon(Symbols.dark_mode));
     await tester.pumpAndSettle();
-    final Scaffold after = tester.widget<Scaffold>(folderScaffold);
-    expect(after.backgroundColor, isNot(before.backgroundColor));
+
+    final CustomPainter after = tester
+        .widget<CustomPaint>(backgroundPaint)
+        .painter!;
+    expect(
+      tester.widget<Scaffold>(folderScaffold).backgroundColor,
+      Colors.transparent,
+    );
+    expect(barColor(tester.element(paper)), darkBackground);
+    expect(after.shouldRepaint(before), isTrue);
   });
 
   testWidgets('folder metadata line shows the count and the flags', (

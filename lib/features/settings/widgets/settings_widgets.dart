@@ -70,6 +70,7 @@ class SettingsSection extends StatelessWidget {
           color: mutedTextColor(context),
           fontWeight: FontWeight.bold,
           fontSize: TanoText.listTitle,
+          fontFamily: 'TanoSerif',
           letterSpacing: -0.08,
         ),
       ),
@@ -145,12 +146,15 @@ class SettingsCard extends StatelessWidget {
 
     return Card(
       elevation: 0.0,
-      color:
-          color ??
-          (Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.06)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(settingsCardRadius)),
+      color: color ?? editorBackground(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(settingsCardRadius),
+        side: BorderSide(
+          color: cardBorderColor(
+            Theme.of(context).brightness == Brightness.dark,
+          ),
+        ),
+      ),
       child: Column(children: dividedChildren),
     );
   }
@@ -183,17 +187,15 @@ class SettingsTile extends StatelessWidget {
       title: Text(
         title,
         style: TextStyle(
-          color: textColor ?? (selected ? tanoTeal : primaryTextColor(context)),
+          color:
+              textColor ??
+              (selected ? accentColor(context) : primaryTextColor(context)),
           fontWeight:
               fontWeight ?? (selected ? FontWeight.bold : FontWeight.normal),
           fontSize: TanoText.listTitle,
         ),
       ),
-      trailing:
-          trailing ??
-          (selected
-              ? const CheckDisc()
-              : null),
+      trailing: trailing ?? (selected ? const CheckDisc() : null),
       onTap: onTap,
     );
   }
@@ -219,14 +221,17 @@ class SettingsSwitchTile extends StatelessWidget {
       dense: false,
       title: Text(
         title,
-        style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.listTitle),
+        style: TextStyle(
+          color: primaryTextColor(context),
+          fontSize: TanoText.listTitle,
+        ),
       ),
       trailing: Transform.scale(
         scale: 0.8,
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: tanoTeal,
+          activeThumbColor: accentColor(context),
         ),
       ),
     );
