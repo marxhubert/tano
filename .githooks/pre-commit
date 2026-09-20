@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Keep site/config.json in step with pubspec.yaml. The file is git-ignored, so
+# this hook never changes what is being committed.
+if [ -x tool/site_config.sh ]; then
+  tool/site_config.sh >/dev/null 2>&1 || true
+fi

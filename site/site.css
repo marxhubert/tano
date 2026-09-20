@@ -126,6 +126,7 @@ a:hover { text-decoration-thickness: 2px; }
 }
 .brand-mark {
   display: grid; place-items: center; width: 32px; height: 32px;
+  flex: none; /* never squashed into an oval by a narrow flex line */
   background: var(--ink); color: var(--paper); border-radius: 50%;
 }
 /* Same bookmark as the one before "locked": 12 by 16, in the mark's colour. */
@@ -508,9 +509,11 @@ h1 {
 }
 .footer-inner { display: grid; gap: .75rem; justify-items: center; text-align: center; }
 .footer-brand {
-  display: inline-flex; align-items: center; gap: .5rem;
-  font-family: var(--serif); font-size: 1rem; margin: 0;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: .3rem .5rem; font-family: var(--serif); font-size: 1rem; margin: 0;
 }
+/* The mark and the wordmark never split; the tagline may go to its own line. */
+.footer-logo { display: inline-flex; align-items: center; gap: .45rem; }
 .footer-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem 1.1rem; }
 .footer-nav a { font-family: var(--sans); font-size: .84rem; color: var(--muted); text-decoration: none; }
 .footer-nav a:hover { color: var(--accent); }
@@ -552,5 +555,6 @@ html.js [data-reveal].in {
   .sheet-back { display: none; }
   .sheet-front { position: static; transform: rotate(-.6deg); width: 100%; }
   .hero-art { min-height: 0; }
+  .footer-tagline { flex-basis: 100%; }
   .wrap { width: min(1080px, 100% - 1.8rem); }
 }
