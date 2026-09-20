@@ -111,7 +111,11 @@ class AppText {
   /// Every translatable string, by key.
   static const Map<String, String> _en = <String, String>{
     // Home
-    'all_notes': 'My notes',
+    'all_notes': 'All notes',
+    'all_docs': 'All docs',
+    'all_tasks': 'All tasks',
+    'docs': 'docs',
+    'doc': 'doc',
     'my_folders': 'My folders',
     'folder': 'folder',
     'folders': 'folders',
@@ -149,6 +153,9 @@ class AppText {
     'title_here': 'Title here',
     'content_empty': 'Content cannot be empty',
     'no_note_found': 'No item found',
+    'no_docs_found': 'No document found',
+    'no_notes_found': 'No note found',
+    'no_tasks_found': 'No task found',
     'results': '{count} matching results',
     'confirm_question': 'Are you sure you want to continue?',
     'quit': 'Leave',
@@ -202,6 +209,7 @@ class AppText {
     'add_task': 'Add task list',
     'edit_task': 'Edit task list',
     'tasks': 'tasks',
+    'task': 'task',
     'add_task_item': 'Add a task',
     'add_note': 'Add note',
     'find_in_note': 'Find in note',
@@ -365,7 +373,11 @@ class AppText {
 
   static const Map<String, String> _fr = <String, String>{
     // Home
-    'all_notes': 'Mes notes',
+    'all_notes': 'Toutes les notes',
+    'all_docs': 'Tous les docs',
+    'all_tasks': 'Toutes les tâches',
+    'docs': 'docs',
+    'doc': 'doc',
     'my_folders': 'Mes dossiers',
     'folder': 'dossier',
     'folders': 'dossiers',
@@ -403,6 +415,9 @@ class AppText {
     'title_here': 'Le titre ici',
     'content_empty': 'Le contenu ne peut pas être vide',
     'no_note_found': 'Aucun élément trouvé',
+    'no_docs_found': 'Aucun document trouvé',
+    'no_notes_found': 'Aucune note trouvée',
+    'no_tasks_found': 'Aucune tâche trouvée',
     'results': '{count} résultats correspondants',
     'confirm_question': 'Voulez-vous vraiment continuer ?',
     'quit': 'Quitter',
@@ -456,6 +471,7 @@ class AppText {
     'add_task': 'Ajouter une liste de tâches',
     'edit_task': 'Modifier la liste de tâches',
     'tasks': 'tâches',
+    'task': 'tâche',
     'add_task_item': 'Ajouter une tâche',
     'add_note': 'Ajouter une note',
     'find_in_note': 'Rechercher dans la note',
@@ -620,7 +636,11 @@ class AppText {
 
   static const Map<String, String> _mg = <String, String>{
     // Home
-    'all_notes': 'Ireo tanoko',
+    'all_notes': 'Naoty rehetra',
+    'all_docs': 'Rakitra rehetra',
+    'all_tasks': 'Asa rehetra',
+    'docs': 'rakitra',
+    'doc': 'rakitra',
     'my_folders': 'Ireo rakitra',
     'folder': 'rakitra',
     'folders': 'rakitra',
@@ -658,6 +678,9 @@ class AppText {
     'title_here': 'Lohateny eto',
     'content_empty': 'Tsy mahazo miala maina ny votoatiny',
     'no_note_found': 'Tsy nisy zavatra hita',
+    'no_docs_found': 'Tsy misy rakitra hita',
+    'no_notes_found': 'Tsy misy naoty hita',
+    'no_tasks_found': 'Tsy misy asa hita',
     'results': 'Valiny {count} hita',
     'confirm_question': 'Tena te hanohy ve ianao?',
     'quit': 'Hiala',
@@ -712,6 +735,7 @@ class AppText {
     'add_task': 'Hanampy lisitry ny asa',
     'edit_task': 'Hanova lisitry ny asa',
     'tasks': 'asa',
+    'task': 'asa',
     'add_task_item': 'Hanampy asa',
     'add_note': 'Hanampy naoty',
     'find_in_note': 'Hikaroka ao anaty naoty',

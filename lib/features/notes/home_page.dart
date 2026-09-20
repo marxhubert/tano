@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -369,6 +370,16 @@ class HomeState extends State<Home> with RouteAware {
           ),
         );
       }
+      if (_viewModel.isFilterHidingAll) {
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: emptyState(
+            context,
+            _viewModel.documentFilter.emptyLabel,
+            image: EmptyArt.notFound,
+          ),
+        );
+      }
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
@@ -379,6 +390,16 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Widget _notesSliver(List<Note> notes, String viewLayout) {
+    if (notes.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: emptyState(
+          context,
+          _viewModel.documentFilter.emptyLabel,
+          image: EmptyArt.notFound,
+        ),
+      );
+    }
     switch (viewLayout) {
       case 'gridlist':
         return NoteGridView(
@@ -474,25 +495,29 @@ class HomeState extends State<Home> with RouteAware {
         else
           FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
         const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
-        if (notes.isNotEmpty) ...<Widget>[
-          _notesSectionHeader(),
-          _notesSliver(notes, viewLayout),
-        ],
+        ...<Widget>[_notesSectionHeader(), _notesSliver(notes, viewLayout)],
       ],
     );
   }
 
   /// "My notes" group header: same style as the page title, with the note
   /// count on the same line.
+  Widget _documentFilterButtons() => DocumentFilterButtons(
+    value: _viewModel.documentFilter,
+    onChanged: _viewModel.setDocumentFilter,
+  );
+
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
       child: Padding(
+        // Matches the page header: the metadata line sits the same distance
+        // above its content, above and below.
         padding: const EdgeInsets.only(bottom: appPaddingTight),
-        // The content sits in a 12px sliver padding: adding 6 lines the notes
-        // title up with the page title (18px).
         child: SectionTitleLine(
-          title: AppText.tr('all_notes'),
-          metadata: _notesMetadata,
+          titleWidget: _documentFilterButtons(),
+          metadata: _viewModel.isInSelectionMode
+              ? _notesMetadata
+              : _viewModel.documentFilter.countLabel(_viewModel.notesCount),
           padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
         ),
       ),
@@ -690,13 +715,25 @@ class HomeState extends State<Home> with RouteAware {
           title: _showSearchHistory
               ? AppText.tr('search_history')
               : AppText.tr(_viewModel.pageTitleKey),
+          titleWidget:
+              !_showSearchHistory &&
+                  !_viewModel.hasFolders &&
+                  !_viewModel.hasSearchQuery
+              ? _documentFilterButtons()
+              : null,
           isHome: true,
           freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerMetadata: _showSearchHistory ? null : _pageMetadata,
+          headerMetadata: _showSearchHistory
+              ? null
+              : (!_viewModel.hasFolders && !_viewModel.isInSelectionMode
+                    ? _viewModel.documentFilter.countLabel(
+                        _viewModel.notesCount,
+                      )
+                    : _pageMetadata),
           headerMetadataWidget: _showSearchHistory
               ? _clearHistoryButton()
               : null,

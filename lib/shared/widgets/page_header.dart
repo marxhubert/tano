@@ -9,22 +9,22 @@ import 'package:tano/shared/widgets/theme.dart';
 const double sectionTitleSize = 24.0;
 
 /// Size of the small metadata printed at the right of a title line.
-const double titleMetadataSize = 13.0;
+const double titleMetadataSize = 12.0;
 
 /// The big title style (page title, group header).
 TextStyle sectionTitleStyle(BuildContext context, {Color? color}) => TextStyle(
-      fontWeight: FontWeight.w600,
-      fontSize: sectionTitleSize,
-      letterSpacing: -0.41,
-      color: color ?? primaryTextColor(context),
-    );
+  fontWeight: FontWeight.w600,
+  fontSize: sectionTitleSize,
+  letterSpacing: -0.41,
+  color: color ?? primaryTextColor(context),
+);
 
 /// Muted style shared by every title-line metadata (counts, selection).
 TextStyle titleMetadataStyle(BuildContext context) => TextStyle(
-      color: mutedTextColor(context),
-      fontWeight: FontWeight.w400,
-      fontSize: titleMetadataSize,
-    );
+  color: mutedTextColor(context),
+  fontWeight: FontWeight.w400,
+  fontSize: titleMetadataSize,
+);
 
 /// One title line: the title on the left and a small metadata on the right,
 /// both baseline-aligned. Being the only title-line brick, every screen drives
@@ -38,6 +38,7 @@ class SectionTitleLine extends StatelessWidget {
     this.metadataWidget,
     this.padding = EdgeInsets.zero,
     this.titleStyle,
+    this.crossAxisAlignment = CrossAxisAlignment.baseline,
   });
 
   /// Plain title text, used when [titleWidget] is null.
@@ -54,6 +55,7 @@ class SectionTitleLine extends StatelessWidget {
 
   final EdgeInsetsGeometry padding;
   final TextStyle? titleStyle;
+  final CrossAxisAlignment crossAxisAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,7 @@ class SectionTitleLine extends StatelessWidget {
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           return Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
+            crossAxisAlignment: crossAxisAlignment,
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               Expanded(
@@ -112,10 +114,8 @@ class SectionTitleLine extends StatelessWidget {
 const double metadataIconSize = 12.0;
 
 /// Muted style shared by every metadata-line value (date, counts, ...).
-TextStyle metadataLineStyle(BuildContext context) => TextStyle(
-      color: mutedTextColor(context),
-      fontSize: TanoText.tiny,
-    );
+TextStyle metadataLineStyle(BuildContext context) =>
+    TextStyle(color: mutedTextColor(context), fontSize: TanoText.tiny);
 
 /// A bare glyph of the metadata line (lock, bookmark, ...).
 Widget metadataGlyph(
@@ -138,17 +138,17 @@ Widget metadataItem(
   Color? iconColor,
   double? fill,
 }) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(
-          icon,
-          size: metadataIconSize,
-          color: iconColor ?? mutedTextColor(context),
-          fill: fill,
-        ),
-        Text(label, style: metadataLineStyle(context)),
-      ],
-    );
+  mainAxisSize: MainAxisSize.min,
+  children: <Widget>[
+    Icon(
+      icon,
+      size: metadataIconSize,
+      color: iconColor ?? mutedTextColor(context),
+      fill: fill,
+    ),
+    Text(label, style: metadataLineStyle(context)),
+  ],
+);
 
 /// The line under a page title: a leading widget (date, count, ...) on the left
 /// and small entries (flags, counters) on the right. One brick for the folder
