@@ -25,10 +25,20 @@ settings and editors. Editor paper adds a fine notebook margin. Category colors
 only tint cards; category identifiers and stored data are unchanged. Native splash
 backgrounds use the same paper colors.
 
-The FAB preserves its modes and icons, with paper at 86% opacity and a clipped
-10px backdrop blur. Menu surfaces are slightly stronger for legibility. Text and
-symbols use ink, with themed accent and warning states. Menus remain bounded by
-the available space above the keyboard.
+The FAB uses the site's primary `.btn` treatment, shared by “Read the
+documentation” and “Repository”: opaque accent fill, on-accent text and icons,
+fully rounded resting/extended forms (with the original menu corner treatment),
+and a 1px border mixing 78% accent with 22% black in sRGB. A 1px
+white highlight at 25% opacity runs inside the top edge; the outer black shadow
+uses 90% opacity, a 10px vertical offset, 18px blur and -14px spread. This replaces
+the earlier translucent paper and backdrop blur. Light mode uses #0F766E with
+#FDFAF2 content; dark mode uses #5CC9BD with #10241F content. Flutter and browser
+rasterization can differ despite these shared source values.
+
+FAB modes, icons, menu layout and focus behavior stay unchanged. Pointer hover
+uses the site's 160ms ease, a 1px lift and 105% brightness. Action states,
+search fields and menu text must remain legible on their actual backgrounds.
+Menus remain bounded by the available space above the keyboard.
 
 ## Typography and cards
 
@@ -71,5 +81,5 @@ are preserved.
 Motion remains 150/250/450ms. Typography scales with the system and app preference.
 Golden previews cover light/dark Home, Note, Task and menus in addition to card
 states. Structural tests cover the column matrix, long titles and locked content;
-widget tests cover keyboard/find behavior. Real-device keyboard, platform blur,
+widget tests cover keyboard/find behavior. Real-device keyboard, shadow rendering,
 performance and native launch validation are still release checks.

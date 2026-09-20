@@ -75,7 +75,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         return _VerticalMenuItem(
           icon: Symbols.sticky_note_2,
           iconSize: 20.0,
-          fontSize: TanoText.listTitle,
+          fontSize: _fabLabelSize,
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
@@ -120,7 +120,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.home,
           iconSize: 20.0,
-          fontSize: TanoText.listTitle,
+          fontSize: _fabLabelSize,
           maxLines: 2,
           label: AppText.tr('no_folder'),
           onTap: () {
@@ -132,7 +132,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           _VerticalMenuItem(
             icon: Symbols.folder,
             iconSize: 20.0,
-            fontSize: TanoText.listTitle,
+            fontSize: _fabLabelSize,
             maxLines: 2,
             label: folder.name,
             onTap: () {
@@ -162,7 +162,7 @@ mixin _FabMenusMixin on _FabStateMixin {
               ? Symbols.history_2
               : Symbols.sort_by_alpha,
           size: 20,
-          color: primaryTextColor(context),
+          color: _fabForeground(context),
         ),
         onPressed: () => setState(() {
           _sortCriteria = _sortCriteria == ListSortCriteria.date
@@ -177,7 +177,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Icon(
           _isAscending ? Symbols.arrow_downward : Symbols.arrow_upward,
           size: 20,
-          color: primaryTextColor(context),
+          color: _fabForeground(context),
         ),
         onPressed: () => setState(() => _isAscending = !_isAscending),
         padding: const EdgeInsets.all(appPaddingTight),
@@ -196,8 +196,8 @@ mixin _FabMenusMixin on _FabStateMixin {
           Text(
             AppText.tr('menu_theme'),
             style: TextStyle(
-              color: primaryTextColor(context),
-              fontSize: TanoText.listTitle,
+              color: _fabForeground(context),
+              fontSize: _fabLabelSize,
             ),
           ),
           const SizedBox(height: 16),
@@ -244,7 +244,7 @@ mixin _FabMenusMixin on _FabStateMixin {
                                   width: halo,
                                   height: halo,
                                   decoration: BoxDecoration(
-                                    color: primaryTextColor(
+                                    color: _fabForeground(
                                       context,
                                     ).withValues(alpha: 0.18),
                                     shape: BoxShape.circle,
@@ -263,7 +263,7 @@ mixin _FabMenusMixin on _FabStateMixin {
                                 foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: primaryTextColor(
+                                    color: _fabForeground(
                                       context,
                                     ).withValues(alpha: .3),
                                     width: 1.0,
@@ -295,16 +295,14 @@ mixin _FabMenusMixin on _FabStateMixin {
                                               width: diameter * 0.40,
                                               height: diameter * 0.40,
                                               decoration: BoxDecoration(
-                                                color: primaryTextColor(
-                                                  context,
-                                                ),
+                                                color: _fabForeground(context),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
                                             // Full amber disc...
                                             Icon(
                                               Symbols.check_circle,
-                                              color: tanoAmber,
+                                              color: _fabImportant(context),
                                               fill: 1.0,
                                               size: diameter * 0.53,
                                             ),
@@ -406,7 +404,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           icon: Symbols.label_important,
           fill: widget.isImportant ? 1.0 : 0.0,
           label: AppText.tr('important'),
-          iconColor: widget.isImportant ? tanoAmber : null,
+          iconColor: widget.isImportant ? _fabImportant(context) : null,
           onTap: widget.onImportantSelected,
         ),
         _VerticalMenuItem(
@@ -425,8 +423,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.delete,
           label: capitalizedDelete,
-          iconColor: TanoStates.error.dark,
-          textColor: TanoStates.error.dark,
+          iconColor: _fabDestructive(context),
+          textColor: _fabDestructive(context),
           onTap: widget.onDeleteSelected,
         ),
       ]);
@@ -437,7 +435,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.label_important,
         fill: widget.isImportant ? 1.0 : 0.0,
         label: AppText.tr('important'),
-        iconColor: widget.isImportant ? tanoAmber : null,
+        iconColor: widget.isImportant ? _fabImportant(context) : null,
         onTap: widget.onImportantSelected,
       ),
       _VerticalMenuItem(
@@ -463,8 +461,8 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.delete,
         label: capitalizedDelete,
-        iconColor: TanoStates.error.dark,
-        textColor: TanoStates.error.dark,
+        iconColor: _fabDestructive(context),
+        textColor: _fabDestructive(context),
         onTap: widget.onDeleteSelected,
       ),
     ]);

@@ -53,13 +53,15 @@ they are not a reason to give app screens different full-page backgrounds.
 | --- | --- | --- |
 | `.hero` | Repeating gradient: transparent through 33px, line from 33 to 34px; vertical offset 22px | Shared non-interactive ruled-paper painter |
 | `body` | 160px SVG noise tile; fractal noise frequency 0.9, two octaves, SVG rectangle opacity 0.42 | Subtle local grain; no network-loaded decoration |
-| `.masthead` | Paper at 86% opacity, backdrop blur 10px | Clip the FAB to its shape before blurring; keep content opaque |
+| `.masthead` | Paper at 86% opacity, backdrop blur 10px | Website navigation reference; superseded for the FAB by the primary-button treatment below |
 | `.sheet` | Radius 6px, 1px rule border, padding 1.25rem by 1.4rem | Notebook editor surface with restrained corners |
 | `.sheet` shadow | `0 1px 0 rgba(0,0,0,.05)`, `0 26px 44px -28px rgba(38,26,6,.75)` | Soft warm depth, adapted to smaller native surfaces |
 | `.card` | Radius 8px, 1px rule border, padding 1.5rem | Shared card shell; retain existing content and watermark |
 | `.card` shadow | `0 1px 0 rgba(0,0,0,.04)`, `0 18px 32px -26px rgba(38,26,6,.7)` | Low elevation instead of heavy Material shadows |
 | `.card::before` | 3px teal strip at 85% opacity, inset 1.4rem | Category/accent detail, without obscuring existing state indicators |
-| `.btn` | Radius 10px, thin darkened-accent border | Compact controls using the same warm palette |
+| `.btn` | Opaque accent fill, on-accent content, radius 10px, 1px border mixing 78% accent with 22% black in sRGB | FAB colors and effects in both themes; retain its original fully rounded resting/extended shape and menu corners |
+| `.btn` shadow | `0 1px 0 rgba(255,255,255,.25) inset`, `0 10px 18px -14px rgba(0,0,0,.9)` | Fine inner top highlight and compact outer shadow, replacing the earlier blurred paper FAB |
+| `.btn:hover` | Translate upward 1px, brightness 1.05, 160ms ease | Pointer-hover reference; keyboard focus and native touch feedback remain necessary |
 | `.icon` | 42px surface, radius 11px; accent fill 13%, border 22% | Surface styling only; keep existing symbol identities |
 
 The SVG noise opacity is not a direct recommendation for a Flutter overlay alpha:
@@ -149,8 +151,10 @@ transparency or actual glyph rendering:
 | On-accent / accent | 5.25:1 | 8.15:1 |
 
 Light amber is unsuitable as the default small-text color at normal contrast
-targets; keep it for icons or use a darker variant for small text. Translucent FAB
-content must be checked over images and colored cards, not only plain paper.
+targets; keep it for icons or use a darker variant for small text. The opaque FAB
+requires on-accent content rather than ordinary ink; menu surfaces, warning states,
+disabled icons and search text must be checked against their actual backgrounds.
+Matching CSS values does not establish pixel-identical browser/native rendering.
 Notebook rules should stay behind text and controls, without intercepting taps.
 Text scale, long translations, landscape and keyboard insets remain layout inputs.
 

@@ -29,10 +29,10 @@ class _SubMenuLayout extends StatelessWidget {
         Container(
           padding: const EdgeInsets.fromLTRB(20.0, 2.0, 10.0, 2.0),
           decoration: BoxDecoration(
-            color: paperSecondary(context),
+            color: _fabMenuSurface(context),
             border: Border(
               bottom: BorderSide(
-                color: primaryTextColor(context).withValues(alpha: 0.1),
+                color: _fabForeground(context).withValues(alpha: 0.1),
                 width: 0.5,
               ),
             ),
@@ -44,13 +44,14 @@ class _SubMenuLayout extends StatelessWidget {
                 icon: Icon(
                   Symbols.arrow_back_ios,
                   size: 20,
-                  color: primaryTextColor(context),
+                  color: _fabForeground(context),
                 ),
                 label: Text(
                   title,
                   style: TextStyle(
-                    color: primaryTextColor(context),
-                    fontSize: TanoText.listTitle,
+                    color: _fabForeground(context),
+                    fontSize: _fabLabelSize,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: TextButton.styleFrom(
@@ -112,13 +113,13 @@ class _EditorAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The open action keeps its ink glyph: the secondary paper surface
+    // The open action keeps its on-accent glyph: the highlighted active surface
     // behind it already signals the active state.
-    final Color base = color ?? primaryTextColor(context);
+    final Color base = color ?? _fabForeground(context);
     // When disabled, every action borrows the neutral dimmed colour: a red
-    // "delete" at 35% would lose contrast against the paper.
+    // "delete" at 35% would lose contrast against the primary button surface.
     final Color iconColor = onTap == null
-        ? primaryTextColor(context).withValues(alpha: 0.35)
+        ? _fabForeground(context).withValues(alpha: 0.35)
         : base;
     // The bar splits into equal, gapless full-height zones: each action fills
     // its own zone.
@@ -137,7 +138,7 @@ class _EditorAction extends StatelessWidget {
     // The open action's zone flows into the menu through concave fillets at the
     // top, then tapers inwards towards a rounded bottom.
     return CustomPaint(
-      painter: _ActiveZonePainter(color: _fabMenuSurface(context)),
+      painter: _ActiveZonePainter(color: _fabActiveSurface(context)),
       child: button,
     );
   }
@@ -214,7 +215,7 @@ class _VerticalMenuItem extends StatelessWidget {
     this.iconColor,
     this.textColor,
     this.iconSize = 20.0,
-    this.fontSize = 17.0,
+    this.fontSize = _fabLabelSize,
     this.maxLines,
     this.fill,
     this.enabled = true,
@@ -240,7 +241,7 @@ class _VerticalMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color? muted = enabled
         ? null
-        : primaryTextColor(context).withValues(alpha: 0.38);
+        : _fabForeground(context).withValues(alpha: 0.38);
     return InkWell(
       onTap: enabled ? onTap : null,
       child: Padding(
@@ -255,7 +256,7 @@ class _VerticalMenuItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: muted ?? iconColor ?? primaryTextColor(context),
+              color: muted ?? iconColor ?? _fabForeground(context),
               size: iconSize,
               fill: fill,
             ),
@@ -264,8 +265,9 @@ class _VerticalMenuItem extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: muted ?? textColor ?? primaryTextColor(context),
+                  color: muted ?? textColor ?? _fabForeground(context),
                   fontSize: fontSize,
+                  fontWeight: FontWeight.w600,
                 ),
                 maxLines: maxLines,
                 overflow: maxLines != null ? TextOverflow.ellipsis : null,

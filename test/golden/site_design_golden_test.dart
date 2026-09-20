@@ -55,51 +55,57 @@ void main() {
   setUpAll(loadGoldenFonts);
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {
     testWidgets('paper app ${mode.name}', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      PackageInfo.setMockInitialValues(
-        appName: 'TanoNote',
-        packageName: 'test.tano',
-        version: '1.0',
-        buildNumber: '1',
-        buildSignature: '',
-      );
-      await getIt.reset();
-      getIt.registerSingleton<NotesRepository>(_PreviewRepository());
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      await tester.pumpWidget(
-        RepaintBoundary(
-          key: goldenKey,
-          child: Tano(themeMode: mode),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await expectLater(
-        find.byKey(goldenKey),
-        matchesGoldenFile('goldens/paper_home_${mode.name}.png'),
-      );
-      await tester.tap(find.text('A quiet morning'));
-      await tester.pumpAndSettle();
-      await expectLater(
-        find.byKey(goldenKey),
-        matchesGoldenFile('goldens/paper_note_${mode.name}.png'),
-      );
-      await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('This week'));
-      await tester.pumpAndSettle();
-      await expectLater(
-        find.byKey(goldenKey),
-        matchesGoldenFile('goldens/paper_task_${mode.name}.png'),
-      );
-      await tester.tap(find.byIcon(Symbols.add_circle));
-      await tester.pumpAndSettle();
-      await expectLater(
-        find.byKey(goldenKey),
-        matchesGoldenFile('goldens/paper_menu_${mode.name}.png'),
-      );
-      expect(tester.takeException(), isNull);
+      final previousShadows = debugDisableShadows;
+      debugDisableShadows = false;
+      try {
+        SharedPreferences.setMockInitialValues({});
+        PackageInfo.setMockInitialValues(
+          appName: 'TanoNote',
+          packageName: 'test.tano',
+          version: '1.0',
+          buildNumber: '1',
+          buildSignature: '',
+        );
+        await getIt.reset();
+        getIt.registerSingleton<NotesRepository>(_PreviewRepository());
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: goldenKey,
+            child: Tano(themeMode: mode),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await expectLater(
+          find.byKey(goldenKey),
+          matchesGoldenFile('goldens/paper_home_${mode.name}.png'),
+        );
+        await tester.tap(find.text('A quiet morning'));
+        await tester.pumpAndSettle();
+        await expectLater(
+          find.byKey(goldenKey),
+          matchesGoldenFile('goldens/paper_note_${mode.name}.png'),
+        );
+        await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('This week'));
+        await tester.pumpAndSettle();
+        await expectLater(
+          find.byKey(goldenKey),
+          matchesGoldenFile('goldens/paper_task_${mode.name}.png'),
+        );
+        await tester.tap(find.byIcon(Symbols.add_circle));
+        await tester.pumpAndSettle();
+        await expectLater(
+          find.byKey(goldenKey),
+          matchesGoldenFile('goldens/paper_menu_${mode.name}.png'),
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        debugDisableShadows = previousShadows;
+      }
     });
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -20,9 +19,22 @@ enum FabVerticalMenu { none, add, color, more, link, move }
 
 enum ListSortCriteria { date, title }
 
-/// Secondary paper joins the open menu to the action that opened it.
+// Primary button tokens from site/site.css (.btn). Shared across every FAB mode.
+const double _fabLabelSize = 14.72;
+Color _fabForeground(BuildContext context) =>
+    Theme.of(context).colorScheme.onPrimary;
 Color _fabMenuSurface(BuildContext context) =>
-    paperSecondary(context).withValues(alpha: .94);
+    Theme.of(context).colorScheme.primary;
+Color _fabActiveSurface(BuildContext context) =>
+    Color.lerp(_fabMenuSurface(context), _fabForeground(context), .12)!;
+Color _fabImportant(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? const Color(0xFF603600)
+    : const Color(0xFFFFE0B2);
+Color _fabDestructive(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? const Color(0xFF8C1D18)
+    : const Color(0xFFFFDAD6);
 
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
@@ -310,23 +322,25 @@ mixin _FabStateMixin on State<AppFab> {
 class AppFabState extends State<AppFab>
     with _FabStateMixin, _FabBarsMixin, _FabMenusMixin {
   (bool, double, double)? _lastReportedLayout;
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
     const double btnHeight = 64.0;
-    const double borderRadiusValue = 55.0;
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
     final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
 
-    final BorderRadius fabRadius = isMenuOpen
-        ? BorderRadius.vertical(
-            top: const Radius.circular(24.0),
-            bottom: Radius.circular(borderRadiusValue),
+    final fabRadius = isMenuOpen
+        ? const BorderRadius.vertical(
+            top: Radius.circular(24),
+            bottom: Radius.circular(55),
           )
-        : BorderRadius.circular(borderRadiusValue);
+        : BorderRadius.circular(55);
+    final buttonColor = Theme.of(context).colorScheme.primary;
+    final buttonBorder = Color.lerp(buttonColor, Colors.black, .22)!;
 
     if (isKeyboardClosed != _wasKeyboardClosed) {
       _isManuallyExpanded = null;
@@ -441,162 +455,253 @@ class AppFabState extends State<AppFab>
       });
     }
 
-    return TapRegion(
-      // The theme toggle shares this group, so tapping it keeps the menu open.
-      groupId: fabTapGroup,
-      // Tapping anywhere else closes the menu, then folds the FAB back to its
-      // resting form (circular when the page has a reduce action).
-      onTapOutside: (_) => collapse(),
-      child: AnimatedContainer(
-        onEnd: widget.onLayoutChanged,
-        duration: TanoMotion.base,
-        curve: Curves.easeInOut,
-        height: currentHeight,
-        width: currentWidth,
-        clipBehavior: Clip.antiAlias,
-        transform: Matrix4.translationValues(tx, ty, 0.0),
-        decoration: BoxDecoration(
-          color: barColor(context).withValues(alpha: .86),
-          border: Border.all(
-            color: cardBorderColor(
-              Theme.of(context).brightness == Brightness.dark,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: _hoverEffect(
+        TapRegion(
+          // The theme toggle shares this group, so tapping it keeps the menu open.
+          groupId: fabTapGroup,
+          // Tapping anywhere else closes the menu, then folds the FAB back to its
+          // resting form (circular when the page has a reduce action).
+          onTapOutside: (_) => collapse(),
+          child: AnimatedContainer(
+            onEnd: widget.onLayoutChanged,
+            duration: TanoMotion.base,
+            curve: Curves.easeInOut,
+            height: currentHeight,
+            width: currentWidth,
+            clipBehavior: Clip.antiAlias,
+            transform: Matrix4.translationValues(tx, ty, 0.0),
+            decoration: BoxDecoration(
+              color: buttonColor,
+              border: Border.all(color: buttonBorder),
+              borderRadius: fabRadius,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, .9),
+                  offset: Offset(0, 10),
+                  blurRadius: 18,
+                  spreadRadius: -14,
+                ),
+              ],
             ),
-          ),
-          borderRadius: fabRadius,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        // The rule has to sit above the menu surface: painted underneath it, it
-        // only kept its straight runs and vanished on the rounded corners, which
-        // left the top of the FAB looking chopped. Same reason as the colour
-        // couplets in fab_menus.dart.
-        foregroundDecoration: BoxDecoration(
-          borderRadius: fabRadius,
-          // Light rule in dark, dark rule in light; width 1.0 in both themes.
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withValues(alpha: 0.22)
-                : Colors.black.withValues(alpha: 0.08),
-            width: 1.0,
-          ),
-        ),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final double expansionProgress = isExpanded || isMenuOpen
-                  ? (constraints.maxWidth - btnHeight) /
-                        (targetExpandedWidth - btnHeight)
-                  : 0.0;
+            foregroundDecoration: _PrimaryButtonEdge(buttonBorder, fabRadius),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double expansionProgress = isExpanded || isMenuOpen
+                    ? (constraints.maxWidth - btnHeight) /
+                          (targetExpandedWidth - btnHeight)
+                    : 0.0;
 
-              final bool showContent =
-                  !isExpanded || isMenuOpen || expansionProgress > 0.8;
+                final bool showContent =
+                    !isExpanded || isMenuOpen || expansionProgress > 0.8;
 
-              return Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  // Measurement zone - Unconstrained height to avoid race conditions during animation
-                  Offstage(
-                    child: OverflowBox(
-                      // Measure at a fixed open-menu width so the heights stay
-                      // stable no matter the current FAB width (the closed FAB is
-                      // only 64px wide and would otherwise under-measure).
-                      minWidth: 0,
-                      maxWidth: screenWidth - 24.0,
-                      minHeight: 0,
-                      maxHeight: double.infinity,
-                      alignment: Alignment.topCenter,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            key: _colorMenuKey,
-                            child: _buildColorMenu(context),
-                          ),
-                          Container(
-                            key: _addMenuKey,
-                            child: _buildAddMenu(context),
-                          ),
-                          Container(
-                            key: _moreMenuKey,
-                            child: _buildMoreMenu(context),
-                          ),
-                          Container(
-                            key: _linkMenuKey,
-                            child: _buildLinkMenu(context, isMeasurement: true),
-                          ),
-                          Container(
-                            key: _moveMenuKey,
-                            child: _buildMoveMenu(context, isMeasurement: true),
-                          ),
-                        ],
+                return Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    // Measurement zone - Unconstrained height to avoid race conditions during animation
+                    Offstage(
+                      child: OverflowBox(
+                        // Measure at a fixed open-menu width so the heights stay
+                        // stable no matter the current FAB width (the closed FAB is
+                        // only 64px wide and would otherwise under-measure).
+                        minWidth: 0,
+                        maxWidth: screenWidth - 24.0,
+                        minHeight: 0,
+                        maxHeight: double.infinity,
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              key: _colorMenuKey,
+                              child: _buildColorMenu(context),
+                            ),
+                            Container(
+                              key: _addMenuKey,
+                              child: _buildAddMenu(context),
+                            ),
+                            Container(
+                              key: _moreMenuKey,
+                              child: _buildMoreMenu(context),
+                            ),
+                            Container(
+                              key: _linkMenuKey,
+                              child: _buildLinkMenu(
+                                context,
+                                isMeasurement: true,
+                              ),
+                            ),
+                            Container(
+                              key: _moveMenuKey,
+                              child: _buildMoveMenu(
+                                context,
+                                isMeasurement: true,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  if (isMenuOpen)
-                    Positioned(
-                      bottom: btnHeight,
-                      left: 0,
-                      right: 0,
-                      top: 0,
+                    if (isMenuOpen)
+                      Positioned(
+                        bottom: btnHeight,
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: AnimatedOpacity(
+                          opacity: showContent ? 1.0 : 0.0,
+                          duration: TanoMotion.fast,
+                          child: _buildVerticalMenuContent(
+                            context,
+                            targetExpandedWidth,
+                            verticalMenuHeight,
+                          ),
+                        ),
+                      ),
+
+                    SizedBox(
+                      height: barHeight,
                       child: AnimatedOpacity(
                         opacity: showContent ? 1.0 : 0.0,
                         duration: TanoMotion.fast,
-                        child: _buildVerticalMenuContent(
-                          context,
-                          targetExpandedWidth,
-                          verticalMenuHeight,
-                        ),
-                      ),
-                    ),
-
-                  SizedBox(
-                    height: barHeight,
-                    child: AnimatedOpacity(
-                      opacity: showContent ? 1.0 : 0.0,
-                      duration: TanoMotion.fast,
-                      // Only the icons swap: the FAB box itself does not move.
-                      // The outgoing set zooms out while the incoming zooms in.
-                      child: AnimatedSwitcher(
-                        duration: TanoMotion.base,
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        transitionBuilder:
-                            (Widget child, Animation<double> animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(
-                                    begin: 0.75,
-                                    end: 1.0,
-                                  ).animate(animation),
-                                  child: child,
-                                ),
-                              );
-                            },
-                        child: KeyedSubtree(
-                          key: ValueKey<bool>(widget.isSelectionMode),
-                          child: _buildMainContent(
-                            context,
-                            isExpanded,
-                            targetExpandedWidth,
+                        // Only the icons swap: the FAB box itself does not move.
+                        // The outgoing set zooms out while the incoming zooms in.
+                        child: AnimatedSwitcher(
+                          duration: TanoMotion.base,
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(
+                                      begin: 0.75,
+                                      end: 1.0,
+                                    ).animate(animation),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                          child: KeyedSubtree(
+                            key: ValueKey<bool>(widget.isSelectionMode),
+                            child: _buildMainContent(
+                              context,
+                              isExpanded,
+                              targetExpandedWidth,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _hoverEffect(Widget child) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(end: _hovered ? 1 : 0),
+    duration: const Duration(milliseconds: 160),
+    curve: Curves.ease,
+    child: child,
+    builder: (context, hover, child) {
+      final brightness = 1 + .05 * hover;
+      return Transform.translate(
+        offset: Offset(0, -hover),
+        child: ColorFiltered(
+          colorFilter: ColorFilter.matrix([
+            brightness,
+            0,
+            0,
+            0,
+            0,
+            0,
+            brightness,
+            0,
+            0,
+            0,
+            0,
+            0,
+            brightness,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+          ]),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// The site's 1px inset white highlight, painted above menu backgrounds, then
+/// its opaque 1px border. The offset path reproduces CSS inset 0 1px 0.
+class _PrimaryButtonEdge extends Decoration {
+  const _PrimaryButtonEdge(this.border, this.radius);
+  final Color border;
+  final BorderRadius radius;
+  @override
+  Decoration? lerpFrom(Decoration? a, double t) => a is _PrimaryButtonEdge
+      ? _PrimaryButtonEdge(
+          Color.lerp(a.border, border, t)!,
+          BorderRadius.lerp(a.radius, radius, t)!,
+        )
+      : super.lerpFrom(a, t);
+  @override
+  Decoration? lerpTo(Decoration? b, double t) => b is _PrimaryButtonEdge
+      ? _PrimaryButtonEdge(
+          Color.lerp(border, b.border, t)!,
+          BorderRadius.lerp(radius, b.radius, t)!,
+        )
+      : super.lerpTo(b, t);
+  @override
+  bool operator ==(Object other) =>
+      other is _PrimaryButtonEdge &&
+      other.border == border &&
+      other.radius == radius;
+  @override
+  int get hashCode => Object.hash(border, radius);
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _PrimaryButtonEdgePainter(border, radius);
+}
+
+class _PrimaryButtonEdgePainter extends BoxPainter {
+  _PrimaryButtonEdgePainter(this.border, this.radius);
+  final Color border;
+  final BorderRadius radius;
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final rect = offset & configuration.size!;
+    final outer = radius.toRRect(rect).scaleRadii();
+    final inside = outer.deflate(1);
+    final highlight = Path.combine(
+      PathOperation.difference,
+      Path()..addRRect(inside),
+      Path()..addRRect(inside.shift(const Offset(0, 1))),
+    );
+    canvas.drawPath(
+      highlight,
+      Paint()..color = const Color.fromRGBO(255, 255, 255, .25),
+    );
+    canvas.drawRRect(
+      outer.deflate(.5),
+      Paint()
+        ..color = border
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
     );
   }
 }

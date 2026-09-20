@@ -7,7 +7,6 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/shared/widgets/theme.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
 class _InMemoryNotesRepository implements NotesRepository {
@@ -390,7 +389,7 @@ void main() {
     expect(find.byIcon(Symbols.file_present), findsNWidgets(2));
   });
 
-  testWidgets('the add action keeps the paper ink inside the link sub-menu',
+  testWidgets('the add action keeps the primary button foreground inside the link sub-menu',
       (tester) async {
     getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
       Note(
@@ -416,12 +415,12 @@ void main() {
 
     Icon addIcon() => tester.widget<Icon>(find.byIcon(Symbols.add_circle));
 
-    // Opening the add menu keeps the glyph in the paper ink color.
+    // Opening the add menu keeps the glyph in the primary button foreground.
     await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
     expect(
       addIcon().color,
-      primaryTextColor(tester.element(find.byIcon(Symbols.add_circle))),
+      Theme.of(tester.element(find.byIcon(Symbols.add_circle))).colorScheme.onPrimary,
     );
 
     // Its link option opens a nested menu without changing that color.
@@ -430,7 +429,7 @@ void main() {
     expect(find.text('Other'), findsOneWidget);
     expect(
       addIcon().color,
-      primaryTextColor(tester.element(find.byIcon(Symbols.add_circle))),
+      Theme.of(tester.element(find.byIcon(Symbols.add_circle))).colorScheme.onPrimary,
     );
   });
 }
