@@ -115,6 +115,21 @@ host rasterises text) and a debug build of both targets — Android on Ubuntu, i
 on macOS without a signing profile — on every push to `master` and on every pull
 request.
 
+## Site
+
+The landing page lives under `site/` and is published by
+`.github/workflows/pages.yml`. Preview it locally:
+
+```bash
+make hooks     # once per clone: keep site/config.json in step with pubspec.yaml
+make preview   # serves http://127.0.0.1:8777/
+```
+
+The page keeps its own values (author, contact, links, store URLs) in
+`site/config.json`, which git ignores; `site/config.json.dist` is the committed
+template. The version always comes from `pubspec.yaml`, through
+`tool/site_config.sh`, so a release bump is enough.
+
 ## Technologies
 
 | Dependency | Role |

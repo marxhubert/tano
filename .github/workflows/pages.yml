@@ -46,6 +46,9 @@ jobs:
           else
             cp site/config.json.dist site/config.json
           fi
+          # Writes the pubspec.yaml version into the config. The same script
+          # runs before a local preview, so both paths agree.
+          bash tool/site_config.sh
 
       - name: Set up Pages
         uses: actions/configure-pages@v6
