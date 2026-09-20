@@ -16,8 +16,8 @@ anonymity, no network connections or security certification.
 
 ## Public policy
 
-`site/privacy/index.html` and `fr.html` are standalone pages with no external scripts
-or analytics. Intended URL: https://marxhubert.github.io/tano/privacy/ . Verify it
+`site/privacy/index.html` is a standalone English page sharing the site's own
+`site.css`/`site.js` (no third party, no analytics). Intended URL: https://marxhubert.github.io/tano/privacy/ . Verify it
 before submission. GitHub Pages must use the workflow publishing `site/`, not the
 repository root. `docs/` is still public in git even when not deployed to Pages.
 

@@ -64,6 +64,11 @@ sentry.properties
 # this repository is public. identity.json.dist is the template that is.
 identity.json
 
+# The site's own values (author, links, store URLs). Never commit the filled
+# file: it is injected at deploy time from the SITE_CONFIG_JSON secret.
+# site/config.json.dist is the template that is committed.
+site/config.json
+
 # Xcode keeps a second copy of the SwiftPM lockfile inside the project's own
 # workspace. The reference one lives in Runner.xcworkspace and is committed.
 /ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/

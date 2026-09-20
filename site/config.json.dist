@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "author": "Your name",
+  "contactEmail": "you@example.com",
+  "repoUrl": "https://github.com/your-account/tano",
+  "docsUrl": "https://github.com/your-account/tano/tree/develop/docs",
+  "licenseUrl": "https://github.com/your-account/tano/blob/master/LICENSE",
+  "appStoreUrl": "https://apps.apple.com/app/id0000000000",
+  "playStoreUrl": "https://play.google.com/store/apps/details?id=com.your.package",
+  "sponsorUrl": "https://github.com/sponsors/your-account",
+  "coffeeUrl": "https://www.buymeacoffee.com/your-account",
+  "paypalUrl": "https://paypal.me/your-account"
+}

@@ -5,71 +5,91 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy policy — TanoNote</title>
 <meta name="description" content="What TanoNote stores on your device, what leaves it, and what never does.">
-<link rel="alternate" hreflang="fr" href="fr.html">
-<style>
-:root {
-  color-scheme: light dark;
-  --bg: #eceff1;
-  --fg: #16191b;
-  --muted: #5b666c;
-  --accent: #009688;
-  --card: #ffffff;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #263238; --fg: #eceff1; --muted: #9fb0b8; --card: #2f3d44; }
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  padding: 32px 20px 64px;
-  background: var(--bg);
-  color: var(--fg);
-  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-main { max-width: 40rem; margin: 0 auto; }
-h1 { font-size: 1.7rem; letter-spacing: -0.02em; margin: 0 0 4px; }
-h2 { font-size: 1.05rem; margin: 32px 0 6px; }
-p { margin: 0 0 12px; }
-.lead { font-size: 1.05rem; }
-.updated, .lang { color: var(--muted); font-size: 0.85rem; }
-.lang { text-align: right; margin: 0 0 24px; }
-a { color: var(--accent); }
-strong { font-weight: 600; }
-</style>
+<meta name="theme-color" content="#f2ebdc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18140e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23241f18'/%3E%3Cpath d='M11 8h10v16l-5-4-5 4z' fill='%23f2ebdc'/%3E%3C/svg%3E">
+<script>
+  // Apply a remembered theme before the first paint, so a choice never flashes.
+  (function () {
+    try {
+      var saved = localStorage.getItem("tano-theme");
+      if (saved === "dark" || saved === "light") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
+    } catch (error) { /* private mode: keep the system preference */ }
+  })();
+</script>
+<link rel="stylesheet" href="../site.css">
 </head>
-<body>
-<main>
-<p class="lang"><a href="../">← TanoNote</a> · <a href="fr.html">Français</a></p>
-<h1>Privacy policy</h1>
-<p class="lead">TanoNote keeps everything you write on your device. There is no account, no cloud of ours, and nothing to sign up for.</p>
-<p class="updated">Last updated: September 2026</p>
+<body data-root="..">
+<a class="skip" href="#main">Skip to content</a>
 
-<h2>Who we are</h2>
-<p>TanoNote is published by Marx Hubert. For any question about this policy, write to <a href="mailto:marxhubert@icloud.com">marxhubert@icloud.com</a>.</p>
+<header class="masthead" id="top">
+  <div class="wrap masthead-inner">
+    <a class="brand" href="../" aria-label="TanoNote, back to the home page">
+      <span class="brand-mark" aria-hidden="true"><span class="bookmark"></span></span>
+      <span class="brand-word">Tano<em>Note</em></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../">Home</a>
+      <a href="../#security">Security</a>
+      <a href="../#support">Support</a>
+    </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between the light and dark theme" title="Switch theme">
+      <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <a class="btn btn-small" data-cfg-href="repoUrl" href="https://github.com/marxhubert/tano" rel="noopener">Repository</a>
+  </div>
+</header>
 
-<h2>Everything is stored on your device</h2>
-<p>Your notes, folders, attachments and preferences live in the private storage of the app, on your phone. We hold no copy, and we have no way to read them.</p>
+<main id="main" class="wrap prose">
+  <p class="eyebrow">Legal</p>
+  <h1>Privacy policy</h1>
+  <p class="lead">TanoNote keeps everything you write on your device. There is no account, no cloud of ours, and nothing to sign up for.</p>
+  <p class="updated">Last updated: September <span data-year>2026</span></p>
 
-<h2>Encryption at rest</h2>
-<p>The database and the attachments are encrypted on the device. The key is kept in the secure storage of the system — Keychain on iOS, Keystore on Android — and it never leaves it.</p>
+  <h2>Who we are</h2>
+  <p>TanoNote is published by <span data-cfg="author"></span>. For any question about this policy, write to <a data-cfg-mailto="contactEmail" href="#"><span data-cfg="contactEmail"></span></a>.</p>
 
-<h2>Crash reports (optional, off by default)</h2>
-<p>Off by default. With “Allow bug reports” enabled, configured builds send filtered exception types, stack symbols, app version, device model, OS version and configured device region (not precise location) to Sentry (Functional Software, Inc.). Note content, free-form error messages and persistent user identifiers are excluded. Network services necessarily receive your IP address; its retention must be restricted by the service configuration. Withdrawing consent stops new captures; already queued or transmitted reports may remain.</p>
+  <h2>Everything is stored on your device</h2>
+  <p>Your notes, projects, attachments and preferences live in the private storage of the app, on your phone. We hold no copy, and we have no way to read them.</p>
 
-<h2>Update check</h2>
-<p>When you request an update check from About, the app contacts the App Store or Google Play. No note content is sent. The store processes the network metadata of this request.</p>
+  <h2>Encryption at rest</h2>
+  <p>The database and the attachments are encrypted on the device. The key is kept in the secure storage of the system — Keychain on iOS, Keystore on Android — and it never leaves it.</p>
 
-<h2>No tracking, no advertising</h2>
-<p>TanoNote contains no usage analytics, no advertising and no third-party tracker, and never sells or shares your data. There is no advertising identifier, and the app never asks to track you across other apps. Outside the two cases above, it works entirely offline.</p>
+  <h2>Crash reports (optional, off by default)</h2>
+  <p>Off by default. With “Allow bug reports” enabled, configured builds send filtered exception types, stack symbols, app version, device model, OS version and configured device region (not precise location) to Sentry (Functional Software, Inc.). Note content, free-form error messages and persistent user identifiers are excluded. Network services necessarily receive your IP address; its retention must be restricted by the service configuration. Withdrawing consent stops new captures; already queued or transmitted reports may remain.</p>
 
-<h2>What the app never asks for</h2>
-<p>No access to your photo library, your camera, your contacts, your location, your microphone or your files beyond the one you pick yourself. The only thing it asks the system for is your own authentication — Face ID, Touch ID or your passcode — when you unlock a locked note, and it is the system that checks it, never us. On Android the app declares a single network permission, used for nothing but the crash reports and the update check.</p>
+  <h2>Update check</h2>
+  <p>When you request an update check from About, the app contacts the App Store or Google Play. No note content is sent. The store processes the network metadata of this request.</p>
 
-<h2>Deleting your data</h2>
-<p>Settings can delete local app data. This does not erase exported files, copies held by other applications or diagnostics already sent. Known pre-release plaintext backups are discarded when local storage opens.</p>
+  <h2>No tracking, no advertising</h2>
+  <p>TanoNote contains no usage analytics, no advertising and no third-party tracker, and never sells or shares your data. There is no advertising identifier, and the app never asks to track you across other apps. Outside the two cases above, it works entirely offline.</p>
 
-<h2>Changes</h2>
-<p>If this policy changes, the new version is published on this page and its date updated. The same text lives inside the app, under About → Privacy policy.</p>
+  <h2>What the app never asks for</h2>
+  <p>No access to your photo library, your camera, your contacts, your location, your microphone or your files beyond the one you pick yourself. The only thing it asks the system for is your own authentication — Face ID, Touch ID or your passcode — when you unlock a locked note, and it is the system that checks it, never us. On Android the app declares a single network permission, used for nothing but the crash reports and the update check.</p>
+
+  <h2>Deleting your data</h2>
+  <p>Settings can delete local app data. This does not erase exported files, copies held by other applications or diagnostics already sent. Known pre-release plaintext backups are discarded when local storage opens.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version is published on this page and its date updated. The same text lives inside the app, under About → Privacy policy.</p>
 </main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <p class="footer-brand"><span class="brand-mark" aria-hidden="true"><span class="bookmark"></span></span> <span class="footer-wordmark"><strong>Tano</strong>Note — notes, tasks and projects, kept locally.</span></p>
+    <nav class="footer-nav" aria-label="Footer">
+      <a data-cfg-href="repoUrl" href="https://github.com/marxhubert/tano" rel="noopener">GitHub</a>
+      <a href="../#support">Support</a>
+      <a href="./">Privacy</a>
+      <a data-cfg-href="licenseUrl" href="https://github.com/marxhubert/tano/blob/master/LICENSE" rel="noopener">Apache-2.0</a>
+    </nav>
+    <p class="footer-fine">© <span data-year>2026</span> <span data-cfg="author"></span> · v<span data-cfg="version">1.0</span> · no cookies, no analytics on this page either.</p>
+  </div>
+</footer>
+
+<script src="../site.js" defer></script>
 </body>
 </html>

@@ -486,6 +486,20 @@ h1 {
 .store-text small { font-family: var(--sans); font-size: .58rem; letter-spacing: .04em; opacity: .78; }
 .store-text strong { font-family: var(--sans); font-size: .92rem; font-weight: 600; }
 
+/* ---------- Long-form page (privacy) ---------- */
+
+.prose { max-width: 44rem; padding: clamp(2.5rem, 6vw, 4rem) 0 clamp(3rem, 7vw, 5rem); }
+.prose h1 { font-size: clamp(2rem, 4.5vw, 2.7rem); letter-spacing: -.02em; margin: .3rem 0 .7rem; }
+.prose .lead { font-size: 1.12em; color: var(--ink-soft); margin-bottom: .8rem; }
+.prose .updated {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .06em;
+  color: var(--muted); margin: 0 0 2.2rem;
+}
+.prose h2 { font-size: 1.22rem; margin: 2.2rem 0 .6rem; }
+.prose p { margin: 0 0 1rem; color: var(--ink-soft); }
+.prose a { color: var(--accent); }
+.prose strong { color: var(--ink); }
+
 /* ---------- Footer ---------- */
 
 .footer {

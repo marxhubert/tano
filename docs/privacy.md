@@ -11,7 +11,7 @@ IP-based country detection. Receiving a network request exposes an IP to its end
 non-retention requires service configuration and cannot be guaranteed by Dart code.
 
 The policy is displayed through `PrivacyPage` / `l10n.dart` and published under
-`site/privacy/` in English/French. App and public policy must match each release.
+`site/privacy/` in English only. App and public policy must match each release.
 Store declarations must reflect the actual binary, SDK behavior and configured
 services, not an old checklist. Review the iOS privacy manifest with native payloads.
 

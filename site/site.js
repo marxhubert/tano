@@ -1,6 +1,6 @@
 /* TanoNote landing page — a few honest enhancements, no tracking.
-   The page works with this file absent: content is visible by default and the
-   theme follows the system until the visitor chooses otherwise. */
+  The page works with this file absent: content is visible by default and the
+  theme follows the system until the visitor chooses otherwise. */
 
 (function () {
   "use strict";
@@ -39,6 +39,52 @@
         /* private mode: the choice simply will not be remembered */
       }
     });
+  }
+
+  /* ---------- The site's own values ---------- */
+
+  // Everything personal (author, links, stores) comes from site/config.json,
+  // written at deploy time; the markup carries safe fallbacks, so a missing
+  // file simply leaves them in place.
+  var configRoot = document.body.getAttribute("data-root") || ".";
+
+  function hydrate(config) {
+    var texts = document.querySelectorAll("[data-cfg]");
+    for (var t = 0; t < texts.length; t++) {
+      var key = texts[t].getAttribute("data-cfg");
+      if (config[key] != null) {
+        texts[t].textContent = config[key];
+      }
+    }
+    var links = document.querySelectorAll("[data-cfg-href]");
+    for (var l = 0; l < links.length; l++) {
+      var hrefKey = links[l].getAttribute("data-cfg-href");
+      if (config[hrefKey]) {
+        links[l].setAttribute("href", config[hrefKey]);
+      }
+    }
+    var mails = document.querySelectorAll("[data-cfg-mailto]");
+    for (var m = 0; m < mails.length; m++) {
+      var mailKey = mails[m].getAttribute("data-cfg-mailto");
+      if (config[mailKey]) {
+        mails[m].setAttribute("href", "mailto:" + config[mailKey]);
+      }
+    }
+  }
+
+  if (window.fetch) {
+    fetch(configRoot + "/config.json", { cache: "no-store" })
+      .then(function (response) {
+        return response.ok ? response.json() : null;
+      })
+      .then(function (config) {
+        if (config) {
+          hydrate(config);
+        }
+      })
+      .catch(function () {
+        /* offline or opened from the file system: keep the fallbacks */
+      });
   }
 
   /* ---------- The year in the footer ---------- */
