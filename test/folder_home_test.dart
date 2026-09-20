@@ -56,6 +56,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       notes[i] = note;
     }
   }
+
   @override
   Future<void> trashNote(String id) async {
     trashed.add(id);
@@ -64,6 +65,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       notes[i] = notes[i].copyWith(isDeleted: true, deletedAt: 'now');
     }
   }
+
   @override
   Future<void> restoreNote(String id) async {}
   @override
@@ -84,6 +86,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       folders[i] = folder;
     }
   }
+
   @override
   Future<void> trashFolder(String id) async {
     final int i = folders.indexWhere((Folder f) => f.id == id);
@@ -91,6 +94,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       folders[i] = folders[i].copyWith(isDeleted: true, deletedAt: 'now');
     }
   }
+
   @override
   Future<List<Folder>> loadTrashFolders() async =>
       folders.where((Folder f) => f.isDeleted).toList();
@@ -101,6 +105,7 @@ class _Repo implements NotesRepository, FoldersRepository {
       folders[i] = folders[i].copyWith(isDeleted: false);
     }
   }
+
   @override
   Future<void> deleteAllFolders() async {}
 
@@ -109,6 +114,7 @@ class _Repo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
+
   @override
   Future<String> nextFolderName() async => 'Folder 1';
 }
@@ -131,21 +137,68 @@ class _FakeAuth extends AuthService {
 }
 
 Finder _noteCards() => find.byWidgetPredicate(
-      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
-    );
+  (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+);
 
 Finder _folderCards() => find.byWidgetPredicate(
-      (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
-    );
+  (Widget w) => w is EntityCard && w.kind == EntityKind.folder,
+);
 
 /// An icon inside the FAB only: card selection markers share `check_circle`
 /// and `circle` with the FAB's select-all / select-none actions.
-Finder _fabIcon(IconData icon) => find.descendant(
-      of: find.byType(AppFab),
-      matching: find.byIcon(icon),
-    );
+Finder _fabIcon(IconData icon) =>
+    find.descendant(of: find.byType(AppFab), matching: find.byIcon(icon));
 
 void main() {
+  testWidgets('document filters work on Home and inside a folder', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: [
+          Note(id: 'n', title: 'Home note', content: 'Text'),
+          Note(
+            id: 't',
+            kind: EntityKind.task,
+            title: 'Home task',
+            content: '- [ ] Task',
+          ),
+          Note(id: 'fn', folderId: 'f', title: 'Folder note', content: 'Text'),
+          Note(
+            id: 'ft',
+            kind: EntityKind.task,
+            folderId: 'f',
+            title: 'Folder task',
+            content: '- [ ] Task',
+          ),
+        ],
+        folders: [Folder(id: 'f', name: 'Folder')],
+      ),
+    );
+    await tester.pumpWidget(const Tano());
+    await tester.pumpAndSettle();
+    for (var page = 0; page < 2; page++) {
+      final prefix = page == 0 ? 'Home' : 'Folder';
+      expect(find.text('2 docs'), findsOneWidget);
+      await tester.tap(find.byTooltip('All tasks'));
+      await tester.pumpAndSettle();
+      expect(find.text('$prefix task'), findsOneWidget);
+      expect(find.text('$prefix note'), findsNothing);
+      expect(find.text('1 task'), findsOneWidget);
+      await tester.tap(find.byTooltip('All notes'));
+      await tester.pumpAndSettle();
+      expect(find.text('$prefix note'), findsOneWidget);
+      expect(find.text('$prefix task'), findsNothing);
+      await tester.tap(find.byTooltip('All docs'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 docs'), findsOneWidget);
+      if (page == 0) {
+        await tester.tap(_folderCards());
+        await tester.pumpAndSettle();
+      }
+    }
+  });
+
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await LocaleController.instance.init();
@@ -171,7 +224,12 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Free note', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Free note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
           Note(
             id: 'n2',
             title: 'Filed note',
@@ -276,7 +334,12 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Free note', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Free note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[],
       ),
@@ -286,13 +349,11 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.text('My notes'), findsWidgets);
+    expect(find.text('All docs'), findsWidgets);
     expect(_folderCards(), findsNothing);
   });
 
-  testWidgets('opening a folder shows its note count', (
-    tester,
-  ) async {
+  testWidgets('opening a folder shows its note count', (tester) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
@@ -325,7 +386,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('2 notes'), findsOneWidget);
+    expect(find.text('2 docs'), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -480,43 +541,50 @@ void main() {
     expect(find.byIcon(Symbols.build_circle), findsOneWidget);
   });
 
-  testWidgets('opening a note keeps the home FAB extended until the page changes',
-      (tester) async {
-    getIt.registerSingleton<NotesRepository>(
-      _Repo(
-        notes: <Note>[
-          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
-        ],
-        folders: <Folder>[],
-      ),
-    );
+  testWidgets(
+    'opening a note keeps the home FAB extended until the page changes',
+    (tester) async {
+      getIt.registerSingleton<NotesRepository>(
+        _Repo(
+          notes: <Note>[
+            Note(
+              id: 'n1',
+              title: 'Alpha',
+              content: 'x',
+              date: '2026-01-01 00:00:00.000',
+            ),
+          ],
+          folders: <Folder>[],
+        ),
+      );
 
-    await tester.pumpWidget(const Tano());
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const Tano());
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
 
-    // Open the home FAB.
-    await tester.tap(find.byIcon(Symbols.add_2));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+      // Open the home FAB.
+      await tester.tap(find.byIcon(Symbols.add_2));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
 
-    // Tapping a card navigates: the FAB must not fold back to "+" on the way.
-    await tester.tap(find.text('Alpha'));
-    await tester.pump(const Duration(milliseconds: 100));
+      // Tapping a card navigates: the FAB must not fold back to "+" on the way.
+      await tester.tap(find.text('Alpha'));
+      await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
-    expect(find.byIcon(Symbols.add_2), findsNothing);
+      expect(find.byIcon(Symbols.create_new_folder), findsOneWidget);
+      expect(find.byIcon(Symbols.add_2), findsNothing);
 
-    // Finish the push and let the deferred fold run (Home is covered).
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
-    await tester.pumpAndSettle();
+      // Finish the push and let the deferred fold run (Home is covered).
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+      await tester.pumpAndSettle();
 
-    // Back on Home, the FAB is already reduced.
-    expect(find.byIcon(Symbols.add_2), findsOneWidget);
-    expect(find.byIcon(Symbols.create_new_folder), findsNothing);
-  });
+      // Back on Home, the FAB is already reduced.
+      expect(find.byIcon(Symbols.add_2), findsOneWidget);
+      expect(find.byIcon(Symbols.create_new_folder), findsNothing);
+    },
+  );
 
   testWidgets('returning from the editor folds the folder FAB back', (
     tester,
@@ -626,28 +694,19 @@ void main() {
 
     final Finder page = find.byType(FolderPage);
     // The metadata line exists because the folder has flags.
-    expect(
-      find.byKey(const ValueKey<String>('folder_metadata')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('1 note')),
+      find.descendant(of: page, matching: find.text('1 doc')),
       findsOneWidget,
     );
     expect(
-      find.descendant(
-        of: page,
-        matching: find.byIcon(Symbols.label_important),
-      ),
+      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
       findsOneWidget,
     );
     // The bookmark is the filled amber variant, at the shared metadata size.
     final Icon bookmark = tester.widget<Icon>(
-      find.descendant(
-        of: page,
-        matching: find.byIcon(Symbols.label_important),
-      ),
+      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
     );
     expect(bookmark.fill, 1.0);
     expect(bookmark.color, tanoAmber);
@@ -688,7 +747,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('1 note'), findsOneWidget);
+    expect(find.text('1 doc'), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -909,10 +968,7 @@ void main() {
       find.descendant(of: page, matching: find.text('Perso')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const ValueKey<String>('folder_metadata')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
 
     final Finder searchField = find.descendant(
       of: find.byType(AppFab),
@@ -926,15 +982,10 @@ void main() {
       find.descendant(of: page, matching: find.text('Results')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const ValueKey<String>('folder_metadata')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
   });
 
-  testWidgets('folder card shows the [icon]xN count', (
-    tester,
-  ) async {
+  testWidgets('folder card shows the [icon]xN count', (tester) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
@@ -954,11 +1005,7 @@ void main() {
           ),
         ],
         folders: <Folder>[
-          Folder(
-            id: 'f1',
-            name: 'Perso',
-            date: '2026-01-01 00:00:00.000',
-          ),
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
         ],
       ),
     );
@@ -970,13 +1017,13 @@ void main() {
     final Finder card = _folderCards();
     // [icon]xN note count.
     expect(
-      find.descendant(
-        of: card,
-        matching: find.byIcon(Symbols.sticky_note_2),
-      ),
+      find.descendant(of: card, matching: find.byIcon(Symbols.sticky_note_2)),
       findsOneWidget,
     );
-    expect(find.descendant(of: card, matching: find.text('x2')), findsOneWidget);
+    expect(
+      find.descendant(of: card, matching: find.text('x2')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('selection overlay sits at the top right of the card', (
@@ -985,7 +1032,12 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Free',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1008,10 +1060,7 @@ void main() {
     expect(tester.widget<Align>(align.first).alignment, Alignment.topRight);
     // Selected folder shows the same white disc as a selected note.
     expect(
-      find.descendant(
-        of: _folderCards(),
-        matching: find.byType(CircleAvatar),
-      ),
+      find.descendant(of: _folderCards(), matching: find.byType(CircleAvatar)),
       findsOneWidget,
     );
   });
@@ -1029,9 +1078,7 @@ void main() {
             folderId: 'f1',
           ),
         ],
-        folders: <Folder>[
-          Folder(id: 'f1', name: 'Perso', date: date),
-        ],
+        folders: <Folder>[Folder(id: 'f1', name: 'Perso', date: date)],
       ),
     );
 
@@ -1140,9 +1187,25 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
-          Note(id: 'n2', title: 'Free2', content: 'x', date: '2026-01-01 00:00:00.000'),
-          Note(id: 'n3', title: 'Filed', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+          Note(
+            id: 'n1',
+            title: 'Free',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Free2',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n3',
+            title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1167,10 +1230,12 @@ void main() {
 
     // The move action is disabled when a folder is part of the selection.
     final IconButton moveButton = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Symbols.drive_file_move),
-        matching: find.byType(IconButton),
-      ).first,
+      find
+          .ancestor(
+            of: find.byIcon(Symbols.drive_file_move),
+            matching: find.byType(IconButton),
+          )
+          .first,
     );
     expect(moveButton.onPressed, isNull);
 
@@ -1186,13 +1251,24 @@ void main() {
     expect(move, lessThan(delete));
   });
 
-  testWidgets('move and delete are disabled when nothing is selected',
-      (tester) async {
+  testWidgets('move and delete are disabled when nothing is selected', (
+    tester,
+  ) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Free', content: 'x', date: '2026-01-01 00:00:00.000'),
-          Note(id: 'n2', title: 'Free2', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Free',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Free2',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[],
       ),
@@ -1206,13 +1282,10 @@ void main() {
     await tester.pumpAndSettle();
 
     IconButton actionButton(IconData icon) => tester.widget<IconButton>(
-          find
-              .ancestor(
-                of: find.byIcon(icon),
-                matching: find.byType(IconButton),
-              )
-              .first,
-        );
+      find
+          .ancestor(of: find.byIcon(icon), matching: find.byType(IconButton))
+          .first,
+    );
 
     // One note selected: both actions are available.
     expect(actionButton(Symbols.drive_file_move).onPressed, isNotNull);
@@ -1282,6 +1355,8 @@ void main() {
 
     // A locked note is still selectable (the locked placeholder sits on top
     // of the card content, so the title appears twice).
+    await tester.ensureVisible(_noteCards());
+    await tester.pumpAndSettle();
     await tester.longPress(_noteCards());
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
@@ -1300,7 +1375,12 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[],
       ),
@@ -1327,7 +1407,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
-    expect(find.text('My notes'), findsWidgets);
+    expect(find.text('All docs'), findsWidgets);
     expect(find.text('Results'), findsNothing);
   });
 
@@ -1345,8 +1425,21 @@ void main() {
               date: '2026-01-01 00:00:00.000',
               folderId: 'f1',
             ),
-          Note(id: 'o1', title: 'Other', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
-          Note(id: 'l1', title: 'Match locked', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1', isLocked: true),
+          Note(
+            id: 'o1',
+            title: 'Other',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'l1',
+            title: 'Match locked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            isLocked: true,
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1447,7 +1540,13 @@ void main() {
   ) async {
     final _Repo repo = _Repo(
       notes: <Note>[
-        Note(id: 'n1', title: 'A', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+        Note(
+          id: 'n1',
+          title: 'A',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+          folderId: 'f1',
+        ),
       ],
       folders: <Folder>[
         Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1480,7 +1579,12 @@ void main() {
   testWidgets('the editor moves the note to a folder', (tester) async {
     final _Repo repo = _Repo(
       notes: <Note>[
-        Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+        Note(
+          id: 'n1',
+          title: 'Alpha',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
       ],
       folders: <Folder>[
         Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1512,7 +1616,12 @@ void main() {
     try {
       final _Repo repo = _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Alpha', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n1',
+            title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1533,10 +1642,7 @@ void main() {
       // No iOS action sheet: the folder list lives in the FAB sub-menu.
       expect(find.byType(CupertinoActionSheet), findsNothing);
       expect(
-        find.descendant(
-          of: find.byType(AppFab),
-          matching: find.text('Perso'),
-        ),
+        find.descendant(of: find.byType(AppFab), matching: find.text('Perso')),
         findsOneWidget,
       );
       expect(find.text('Home'), findsOneWidget);
@@ -1550,7 +1656,13 @@ void main() {
   ) async {
     final _Repo repo = _Repo(
       notes: <Note>[
-        Note(id: 'n1', title: 'A', content: 'x', date: '2026-01-01 00:00:00.000', folderId: 'f1'),
+        Note(
+          id: 'n1',
+          title: 'A',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+          folderId: 'f1',
+        ),
       ],
       folders: <Folder>[
         Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1583,12 +1695,36 @@ void main() {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: <Note>[
-          Note(id: 'n1', title: 'Covered', content: 'x', date: '2026-01-01 00:00:00.000', coverImage: 'cover.jpg'),
-          Note(id: 'n2', title: 'Locked cover', content: 'x', date: '2026-01-01 00:00:00.000', coverImage: 'cover.jpg', isLocked: true),
+          Note(
+            id: 'n1',
+            title: 'Covered',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            coverImage: 'cover.jpg',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Locked cover',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            coverImage: 'cover.jpg',
+            isLocked: true,
+          ),
         ],
         folders: <Folder>[
-          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000', coverImage: 'folder.jpg'),
-          Folder(id: 'f2', name: 'Locked', date: '2026-01-01 00:00:00.000', coverImage: 'folder.jpg', isLocked: true),
+          Folder(
+            id: 'f1',
+            name: 'Perso',
+            date: '2026-01-01 00:00:00.000',
+            coverImage: 'folder.jpg',
+          ),
+          Folder(
+            id: 'f2',
+            name: 'Locked',
+            date: '2026-01-01 00:00:00.000',
+            coverImage: 'folder.jpg',
+            isLocked: true,
+          ),
         ],
       ),
     );
@@ -1601,7 +1737,9 @@ void main() {
     expect(find.byType(CoverImage), findsNWidgets(2));
   });
 
-  testWidgets('scrolling home shows the TanoNote app bar title', (tester) async {
+  testWidgets('scrolling home shows the TanoNote app bar title', (
+    tester,
+  ) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(
         notes: List<Note>.generate(

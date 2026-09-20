@@ -87,3 +87,12 @@ Refinement tests also cover inline link insertion in task rows and descriptions,
 the description length limit, and centering with a simulated keyboard: expanded
 FAB, add menu, new empty row with collapsed FAB, and find-result navigation.
 Folder regressions include descriptions in folder-scoped search.
+
+## Document filters
+
+Home and folders offer All docs, All notes and All tasks. Only the active filter
+is displayed as text; the others are icon buttons. Counts reflect visible
+documents. Changing filters clears selection, and Select all respects the active
+filter. Folder flags appear beside the title; its document filter sits below the
+cover when present. Task cards count links in both description and checklist,
+align checkboxes with the title, and hide the checklist when a cover is present.

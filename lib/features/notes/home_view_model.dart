@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -52,6 +53,13 @@ class HomeViewModel extends ChangeNotifier {
   /// are then simply empty.
   final FoldersRepository? _foldersRepository;
 
+  DocumentFilter documentFilter = DocumentFilter.all;
+  void setDocumentFilter(DocumentFilter filter) {
+    documentFilter = filter;
+    _selection.exit();
+    notifyListeners();
+  }
+
   List<Note> _allNotes;
   List<Folder> _folders;
   List<Note>? _searchResults;
@@ -75,6 +83,15 @@ class HomeViewModel extends ChangeNotifier {
 
   bool get hasFolders => folders.isNotEmpty;
   int get notesCount => _visibleNotes().length;
+
+  /// True when the active filter hides a source that is not empty: the list
+  /// then names what it looked for, rather than reading as blank.
+  bool get isFilterHidingAll {
+    final List<Note> source = hasSearchQuery
+        ? (_searchResults ?? <Note>[])
+        : _unfiledNotes();
+    return source.isNotEmpty && _visibleNotes().isEmpty;
+  }
   int get foldersCount => folders.length;
 
   /// Total selectable items on the home page: unfiled notes plus folders
@@ -445,7 +462,7 @@ class HomeViewModel extends ChangeNotifier {
     final List<Note> source = hasSearchQuery
         ? (_searchResults ?? <Note>[])
         : _unfiledNotes();
-    return List<Note>.of(source);
+    return source.where(documentFilter.matches).toList();
   }
 
   List<Note> _unfiledNotes() =>

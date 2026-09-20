@@ -27,7 +27,8 @@ class FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
-    double offset = scaffoldGeometry.contentBottom -
+    double offset =
+        scaffoldGeometry.contentBottom -
         scaffoldGeometry.floatingActionButtonSize.height -
         paddingY;
     if (scaffoldGeometry.snackBarSize.height > 0.0) {
@@ -54,6 +55,7 @@ class PageScaffold extends StatefulWidget {
     this.alignAppBarTitleLeft = false,
     this.headerMetadata,
     this.headerMetadataWidget,
+    this.headerCrossAxisAlignment = CrossAxisAlignment.baseline,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.scaffoldKey,
@@ -84,11 +86,13 @@ class PageScaffold extends StatefulWidget {
   /// slides to the left, right after the back button, instead of staying
   /// centered. Used by the editor while the undo/redo/save actions appear.
   final bool alignAppBarTitleLeft;
+
   /// Small metadata printed at the right of the body title line.
   final String? headerMetadata;
 
   /// Tappable metadata for the same slot, when a plain string will not do.
   final Widget? headerMetadataWidget;
+  final CrossAxisAlignment headerCrossAxisAlignment;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final GlobalKey<ScaffoldState>? scaffoldKey;
@@ -112,6 +116,11 @@ class PageScaffold extends StatefulWidget {
 
 class _PageScaffoldState extends State<PageScaffold> {
   final ScrollController _scrollController = ScrollController();
+
+  // The body is reparented when [PageScaffold.freezeBody] toggles (the empty
+  // screens wrap it to hold the illustration's place). Keeping one key makes
+  // that a move, not a rebuild, so a cover does not reload on every rebuild.
+  final GlobalKey _bodyKey = GlobalKey();
   bool _showAppBarTitle = false;
 
   @override
@@ -155,8 +164,8 @@ class _PageScaffoldState extends State<PageScaffold> {
 
     final String appBarTitleText =
         (widget.titleController?.text ?? '').isNotEmpty
-            ? widget.titleController!.text
-            : widget.title;
+        ? widget.titleController!.text
+        : widget.title;
     // The app bar title appears only once the user scrolls down. When the
     // note is also being edited (undo/redo/save actions visible) the title
     // slides to the left instead of staying centered.
@@ -198,26 +207,27 @@ class _PageScaffoldState extends State<PageScaffold> {
             : null,
         title: showAppBarTitle
             ? (widget.appBarTitleWidget ??
-                Text(
-                  appBarTitleText,
-                  maxLines: 1,
-                  // Same size as the "Cancel" action.
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: appBarTextSize,
-                    letterSpacing: -0.41,
-                    color: textColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                )
-              )
+                  Text(
+                    appBarTitleText,
+                    maxLines: 1,
+                    // Same size as the "Cancel" action.
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: appBarTextSize,
+                      letterSpacing: -0.41,
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ))
             : null,
         centerTitle: !widget.isHome && !appBarTitleOnLeft,
         actions: widget.actions
-            ?.map((a) => Padding(
-                  padding: const EdgeInsets.only(right: appPaddingSmall),
-                  child: a,
-                ))
+            ?.map(
+              (a) => Padding(
+                padding: const EdgeInsets.only(right: appPaddingSmall),
+                child: a,
+              ),
+            )
             .toList(),
       ),
       body: _buildBody(textColor, keyboard),
@@ -234,11 +244,13 @@ class _PageScaffoldState extends State<PageScaffold> {
   /// by the shrinking body.
   Widget _buildBody(Color textColor, double keyboard) {
     final Widget scrollView = CustomScrollView(
+      key: _bodyKey,
       controller: _scrollController,
       slivers: <Widget>[
         // Big title in the body.
         SliverToBoxAdapter(
           child: SectionTitleLine(
+            crossAxisAlignment: widget.headerCrossAxisAlignment,
             titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
             metadata: widget.headerMetadata,
             metadataWidget: widget.headerMetadataWidget,
