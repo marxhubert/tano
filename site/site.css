@@ -345,10 +345,15 @@ h1 {
 .vault-list strong { color: var(--vault-fg); }
 
 .seal {
-  position: relative; width: clamp(220px, 25vw, 290px); aspect-ratio: 1;
+  position: relative;
+  /* A real square, sized on both axes, rather than aspect-ratio: iOS Safari
+     mislays a grid whose height comes from aspect-ratio, and the content then
+     drifts to the bottom of the circle. Flex centring is the safe part. */
+  width: clamp(224px, 25vw, 290px);
+  height: clamp(224px, 25vw, 290px);
   margin-inline: auto; border: 1px solid var(--vault-rule); border-radius: 50%;
-  display: grid; place-items: center; align-content: center;
-  text-align: center; padding: 2.2rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem;
 }
 .seal::after {
   content: ""; position: absolute; inset: 11px;
