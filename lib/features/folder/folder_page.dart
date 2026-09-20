@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
@@ -51,6 +52,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  DocumentFilter _documentFilter = DocumentFilter.all;
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _titleFocusNode = FocusNode();
 
@@ -416,10 +418,11 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   /// note never shows up in the search results.
   List<Note> get _visibleNotes {
     final String query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return _notes;
+    if (query.isEmpty) return _notes.where(_documentFilter.matches).toList();
     return _notes
         .where(
           (Note note) =>
+              _documentFilter.matches(note) &&
               NoteAccessPolicy([
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
@@ -461,46 +464,23 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       });
     }
     if (_resultsVisible) return _noteCountLabel(_visibleNotes.length);
-    // With a flag line below, the count only lives there.
-    if (_hasFolderFlags) return null;
-    return _noteCountLabel(_notes.length);
+    return null;
   }
 
-  /// Whether the folder has any flag worth a dedicated metadata line.
-  bool get _hasFolderFlags => _folder.isLocked || _folder.important;
-
-  /// Metadata line, mirroring a note's: the note count on the left and the
-  /// folder flags (lock, bookmark) on the right, only when they are set.
-  Widget _buildMetadata(BuildContext context) {
-    return SliverPadding(
-      key: const ValueKey<String>('folder_metadata'),
-      // Same horizontal padding as the page title, so the note count lines up
-      // with it.
-      padding: const EdgeInsets.symmetric(horizontal: appPaddingLarge),
-      sliver: SliverToBoxAdapter(
-        child: Padding(
-          // Tight gap below, towards the cover image.
-          padding: const EdgeInsets.only(top: appPaddingMedium, bottom: 6.0),
-          child: MetadataLine(
-            leading: Text(
-              _noteCountLabel(_notes.length),
-              style: metadataLineStyle(context),
-            ),
-            trailing: <Widget>[
-              if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
-              if (_folder.important)
-                metadataGlyph(
-                  context,
-                  Symbols.label_important,
-                  color: tanoAmber,
-                  fill: 1.0,
-                ),
-            ],
-          ),
+  Widget _folderFlags(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
+      if (_folder.isLocked && _folder.important) const SizedBox(width: 8),
+      if (_folder.important)
+        metadataGlyph(
+          context,
+          Symbols.label_important,
+          color: tanoAmber,
+          fill: 1,
         ),
-      ),
-    );
-  }
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -523,7 +503,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         backgroundColor: immersiveBg,
         // The folder name is always the page title, even in selection mode.
         title: _resultsVisible ? AppText.tr('search_results') : _folder.name,
-        headerMetadata: _headerMetadata,
+
+        headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
         // Nothing but the illustration: it must hold its place.
         freezeBody: !_loading && _visibleNotes.isEmpty,
         titleWidget: _isEditingTitle
@@ -631,8 +612,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           ),
         ),
         slivers: <Widget>[
-          if (!_loading && _hasFolderFlags && !_resultsVisible)
-            _buildMetadata(context),
           if (_folder.coverImage != null && !_resultsVisible)
             SliverToBoxAdapter(
               child: ManageableCover(
@@ -646,6 +625,24 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                 onRemove: () async {
                   await _save(_folder.withoutCover());
                 },
+              ),
+            ),
+          if (!_loading)
+            SliverToBoxAdapter(
+              child: SectionTitleLine(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: appPaddingLarge,
+                ),
+                titleWidget: DocumentFilterButtons(
+                  value: _documentFilter,
+                  onChanged: (filter) => setState(() {
+                    _selection.exit();
+                    _documentFilter = filter;
+                  }),
+                ),
+                metadata: _selection.isActive
+                    ? _headerMetadata
+                    : _documentFilter.countLabel(_visibleNotes.length),
               ),
             ),
           if (_loading)
@@ -663,14 +660,21 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _buildNotes() {
     final List<Note> notes = _visibleNotes;
     if (notes.isEmpty) {
+      // A filter with nothing to show says what it looked for; a folder that
+      // simply holds nothing keeps its own words.
+      final bool filterHidesAll = _notes.isNotEmpty && !_isSearchMode;
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(
           context,
           _isSearchMode
               ? AppText.tr('no_note_found')
-              : AppText.tr('folder_empty'),
-          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
+              : (filterHidesAll
+                    ? _documentFilter.emptyLabel
+                    : AppText.tr('folder_empty')),
+          image: _isSearchMode
+              ? EmptyArt.search
+              : (filterHidesAll ? EmptyArt.notFound : EmptyArt.folder),
         ),
       );
     }

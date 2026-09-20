@@ -15,6 +15,8 @@ class EmptyArt {
   static const String folder = 'assets/icons/Ghozi_Muhtarom/empty-folder.png';
   static const String bin = 'assets/icons/Ghozi_Muhtarom/recycle-bin.png';
   static const String search = 'assets/icons/Ghozi_Muhtarom/empty.png';
+  static const String notFound =
+      'assets/icons/Ghozi_Muhtarom/404-error.png';
 
   // The three introduction screens, in the order they are shown.
   static const String addToBox = 'assets/icons/Ghozi_Muhtarom/add-to-box.png';
@@ -55,7 +57,7 @@ Widget emptyState(BuildContext context, String message, {String? image}) {
                 ),
               ),
             ),
-            const SizedBox(height: appPaddingMedium),
+            const SizedBox(height: appPaddingSmall),
           ],
           Text(
             message,
