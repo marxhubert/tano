@@ -33,3 +33,8 @@ abstract class NotesRepository {
   /// Deletes all notes from storage.
   Future<void> deleteAllNotes();
 }
+
+/// Optional capability for an all-or-nothing transfer, including ID conflicts.
+abstract interface class AtomicNoteImporter {
+  Future<void> insertImportedNotes(List<Note> notes);
+}

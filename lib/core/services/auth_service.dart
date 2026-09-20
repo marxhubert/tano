@@ -41,7 +41,7 @@ class AuthService {
         localizedReason: reason ?? AppText.tr('auth_reason'),
         // Accept the device PIN / passcode / pattern, not only biometrics.
         biometricOnly: false,
-        persistAcrossBackgrounding: true,
+        persistAcrossBackgrounding: false,
       );
     } on LocalAuthException catch (error) {
       // Covers rejection, cancelation and lockout.

@@ -29,7 +29,7 @@ class NoteGridView extends StatelessWidget {
   Widget _card(Note note) {
     final bool isSelected = viewModel.selected.contains(note.id);
     return EntityCard(
-      kind: EntityKind.note,
+      kind: note.kind,
       category: note.category,
       title: note.title,
       subtitle: formatNoteDate(note.date),

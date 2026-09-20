@@ -31,8 +31,12 @@ class AppFab extends StatefulWidget {
     this.isSearchMode = false,
     this.isSelectionMode = false,
     this.canMove = true,
+    this.canLock = true,
     this.canDelete = true,
     this.isEditorMode = false,
+    this.isTaskMode = false,
+    this.onDescriptionSelected,
+    this.onLayoutChanged,
     this.isFolderMode = false,
     this.isTitleEditing = false,
     this.collapsedByDefault = false,
@@ -47,6 +51,7 @@ class AppFab extends StatefulWidget {
     this.focusNode,
     this.onAdd,
     this.onAddFolder,
+    this.onAddTask,
     this.onSearchChanged,
     this.onReset,
     this.onDelete,
@@ -81,11 +86,15 @@ class AppFab extends StatefulWidget {
   /// Selection mode: whether the "move" action is available. It is refused as
   /// soon as a folder is part of the selection.
   final bool canMove;
+  final bool canLock;
 
   /// Selection mode: whether the "delete" action is available. It is refused
   /// when nothing is selected.
   final bool canDelete;
   final bool isEditorMode;
+  final bool isTaskMode;
+  final VoidCallback? onDescriptionSelected;
+  final VoidCallback? onLayoutChanged;
 
   /// Folder page: the add menu offers a cover and a new note, the more menu
   /// offers bookmark, edit, lock and delete.
@@ -113,6 +122,7 @@ class AppFab extends StatefulWidget {
 
   /// Home screen: creates a new folder.
   final VoidCallback? onAddFolder;
+  final VoidCallback? onAddTask;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onReset;
   final VoidCallback? onDelete;
@@ -133,6 +143,7 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onFindPrev;
   final VoidCallback? onFindNext;
   final VoidCallback? onFindReset;
+
   /// The folder excluded from the move targets (the note's or the folder
   /// page's own folder). Null on home.
   final String? currentFolderId;
@@ -215,6 +226,10 @@ mixin _FabStateMixin on State<AppFab> {
     }
   }
 
+  void _expand() {
+    setState(() => _isManuallyExpanded = true);
+  }
+
   void closeVerticalMenu() {
     if (_verticalMenu != FabVerticalMenu.none) {
       setState(() => _verticalMenu = FabVerticalMenu.none);
@@ -228,7 +243,12 @@ mixin _FabStateMixin on State<AppFab> {
     if (!mounted) return;
     setState(() {
       _availableNotes = notes
-          .where((n) => n.id != widget.currentNoteId && !n.isDeleted)
+          .where(
+            (n) =>
+                n.id != widget.currentNoteId &&
+                !n.isDeleted &&
+                (!widget.isTaskMode || !n.isTask),
+          )
           .toList();
       _notesLoaded = true;
     });
@@ -289,6 +309,8 @@ mixin _FabStateMixin on State<AppFab> {
 
 class AppFabState extends State<AppFab>
     with _FabStateMixin, _FabBarsMixin, _FabMenusMixin {
+  (bool, double, double)? _lastReportedLayout;
+
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -317,7 +339,8 @@ class AppFabState extends State<AppFab>
     if (!isBarMode) {
       // Home and editor/folder share the circular <-> extended model.
       if (widget.isEditorMode) {
-        isExpanded = _isManuallyExpanded ??
+        isExpanded =
+            _isManuallyExpanded ??
             (isKeyboardClosed && !widget.collapsedByDefault);
       } else {
         // Home: the "+" is the rest form; it expands on tap.
@@ -386,9 +409,36 @@ class AppFabState extends State<AppFab>
         ? 48.0
         : btnHeight;
 
+    // Size menus to the viewport above the keyboard, preserving the app bar
+    // and safe areas. Long menus scroll inside this bounded surface.
+    final media = MediaQuery.of(context);
+    final availableMenuHeight = math.max(
+      0.0,
+      screenHeight -
+          media.viewInsets.bottom -
+          media.viewPadding.top -
+          media.viewPadding.bottom -
+          kToolbarHeight -
+          24.0 -
+          barHeight,
+    );
+    verticalMenuHeight = math.min(verticalMenuHeight, availableMenuHeight);
+
     double currentHeight = barHeight;
     if (isMenuOpen) {
       currentHeight += verticalMenuHeight;
+    }
+
+    final layout = (
+      isExpanded,
+      currentHeight,
+      MediaQuery.viewInsetsOf(context).bottom,
+    );
+    if (_lastReportedLayout != layout) {
+      _lastReportedLayout = layout;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onLayoutChanged?.call();
+      });
     }
 
     return TapRegion(
@@ -398,145 +448,146 @@ class AppFabState extends State<AppFab>
       // resting form (circular when the page has a reduce action).
       onTapOutside: (_) => collapse(),
       child: AnimatedContainer(
-      duration: TanoMotion.base,
-      curve: Curves.easeInOut,
-      height: currentHeight,
-      width: currentWidth,
-      clipBehavior: Clip.antiAlias,
-      transform: Matrix4.translationValues(tx, ty, 0.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: fabRadius,
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      // The rule has to sit above the menu surface: painted underneath it, it
-      // only kept its straight runs and vanished on the rounded corners, which
-      // left the top of the FAB looking chopped. Same reason as the colour
-      // couplets in fab_menus.dart.
-      foregroundDecoration: BoxDecoration(
-        borderRadius: fabRadius,
-        // Light rule in dark, dark rule in light; width 1.0 in both themes.
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.22)
-              : Colors.black.withValues(alpha: 0.08),
-          width: 1.0,
+        onEnd: widget.onLayoutChanged,
+        duration: TanoMotion.base,
+        curve: Curves.easeInOut,
+        height: currentHeight,
+        width: currentWidth,
+        clipBehavior: Clip.antiAlias,
+        transform: Matrix4.translationValues(tx, ty, 0.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: fabRadius,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double expansionProgress = isExpanded || isMenuOpen
-              ? (constraints.maxWidth - btnHeight) /
-                    (targetExpandedWidth - btnHeight)
-              : 0.0;
+        // The rule has to sit above the menu surface: painted underneath it, it
+        // only kept its straight runs and vanished on the rounded corners, which
+        // left the top of the FAB looking chopped. Same reason as the colour
+        // couplets in fab_menus.dart.
+        foregroundDecoration: BoxDecoration(
+          borderRadius: fabRadius,
+          // Light rule in dark, dark rule in light; width 1.0 in both themes.
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withValues(alpha: 0.22)
+                : Colors.black.withValues(alpha: 0.08),
+            width: 1.0,
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final double expansionProgress = isExpanded || isMenuOpen
+                ? (constraints.maxWidth - btnHeight) /
+                      (targetExpandedWidth - btnHeight)
+                : 0.0;
 
-          final bool showContent =
-              !isExpanded || isMenuOpen || expansionProgress > 0.8;
+            final bool showContent =
+                !isExpanded || isMenuOpen || expansionProgress > 0.8;
 
-          return Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              // Measurement zone - Unconstrained height to avoid race conditions during animation
-              Offstage(
-                child: OverflowBox(
-                  // Measure at a fixed open-menu width so the heights stay
-                  // stable no matter the current FAB width (the closed FAB is
-                  // only 64px wide and would otherwise under-measure).
-                  minWidth: 0,
-                  maxWidth: screenWidth - 24.0,
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        key: _colorMenuKey,
-                        child: _buildColorMenu(context),
-                      ),
-                      Container(
-                        key: _addMenuKey,
-                        child: _buildAddMenu(context),
-                      ),
-                      Container(
-                        key: _moreMenuKey,
-                        child: _buildMoreMenu(context),
-                      ),
-                      Container(
-                        key: _linkMenuKey,
-                        child: _buildLinkMenu(context, isMeasurement: true),
-                      ),
-                      Container(
-                        key: _moveMenuKey,
-                        child: _buildMoveMenu(context, isMeasurement: true),
-                      ),
-                    ],
+            return Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                // Measurement zone - Unconstrained height to avoid race conditions during animation
+                Offstage(
+                  child: OverflowBox(
+                    // Measure at a fixed open-menu width so the heights stay
+                    // stable no matter the current FAB width (the closed FAB is
+                    // only 64px wide and would otherwise under-measure).
+                    minWidth: 0,
+                    maxWidth: screenWidth - 24.0,
+                    minHeight: 0,
+                    maxHeight: double.infinity,
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          key: _colorMenuKey,
+                          child: _buildColorMenu(context),
+                        ),
+                        Container(
+                          key: _addMenuKey,
+                          child: _buildAddMenu(context),
+                        ),
+                        Container(
+                          key: _moreMenuKey,
+                          child: _buildMoreMenu(context),
+                        ),
+                        Container(
+                          key: _linkMenuKey,
+                          child: _buildLinkMenu(context, isMeasurement: true),
+                        ),
+                        Container(
+                          key: _moveMenuKey,
+                          child: _buildMoveMenu(context, isMeasurement: true),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              if (isMenuOpen)
-                Positioned(
-                  bottom: btnHeight,
-                  left: 0,
-                  right: 0,
-                  top: 0,
+                if (isMenuOpen)
+                  Positioned(
+                    bottom: btnHeight,
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: AnimatedOpacity(
+                      opacity: showContent ? 1.0 : 0.0,
+                      duration: TanoMotion.fast,
+                      child: _buildVerticalMenuContent(
+                        context,
+                        targetExpandedWidth,
+                        verticalMenuHeight,
+                      ),
+                    ),
+                  ),
+
+                SizedBox(
+                  height: barHeight,
                   child: AnimatedOpacity(
                     opacity: showContent ? 1.0 : 0.0,
                     duration: TanoMotion.fast,
-                    child: _buildVerticalMenuContent(
-                      context,
-                      targetExpandedWidth,
-                      verticalMenuHeight,
-                    ),
-                  ),
-                ),
-
-              SizedBox(
-                height: barHeight,
-                child: AnimatedOpacity(
-                  opacity: showContent ? 1.0 : 0.0,
-                  duration: TanoMotion.fast,
-                  // Only the icons swap: the FAB box itself does not move.
-                  // The outgoing set zooms out while the incoming zooms in.
-                  child: AnimatedSwitcher(
-                    duration: TanoMotion.base,
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder:
-                        (Widget child, Animation<double> animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: ScaleTransition(
-                              scale: Tween<double>(
-                                begin: 0.75,
-                                end: 1.0,
-                              ).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
-                    child: KeyedSubtree(
-                      key: ValueKey<bool>(widget.isSelectionMode),
-                      child: _buildMainContent(
-                        context,
-                        isExpanded,
-                        targetExpandedWidth,
+                    // Only the icons swap: the FAB box itself does not move.
+                    // The outgoing set zooms out while the incoming zooms in.
+                    child: AnimatedSwitcher(
+                      duration: TanoMotion.base,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(
+                                  begin: 0.75,
+                                  end: 1.0,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                      child: KeyedSubtree(
+                        key: ValueKey<bool>(widget.isSelectionMode),
+                        child: _buildMainContent(
+                          context,
+                          isExpanded,
+                          targetExpandedWidth,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

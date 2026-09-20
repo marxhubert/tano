@@ -6,11 +6,18 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 
 **TanoNote** is a notes, tasks and projects application built with
-[Flutter](https://flutter.dev) for Android and iOS. It is fast, lightweight and
-**100 % offline**: everything stays on your device, and the local database is
-encrypted at rest.
+[Flutter](https://flutter.dev) for Android and iOS. Notes, task lists and folders
+work locally without a connection. Projects and remote collaboration remain future
+work. Optional crash reports and user-requested store updates
+use the network. See the [audit and release blockers](docs/audit-2026-09-18.md).
 
 ## Features
+
+### Task lists
+- Free checklist documents using the same editor and local protections as notes.
+- Active rows above, completed rows below a divider, with a total item count.
+- Mixed note/task cards on Home and in folders, with a distinct Task watermark.
+- See [Task lists](docs/tasks.md) for behavior and validation.
 
 ### Notes
 - Create, edit and delete notes with a title and rich content.
@@ -20,9 +27,9 @@ encrypted at rest.
 - Attachments (images, PDF, documents), opened with the system viewer.
 
 ### Organisation
-- Folders with their own colour theme, cover, pin, bookmark and lock.
-- Pin and bookmark notes and folders.
-- Search across notes and folders; locked notes never appear in the results.
+- Folders with their own colour theme, cover, bookmark and lock.
+- Bookmark notes and folders.
+- Search notes; notes locked directly or through their folder are excluded.
 - Multi-selection of notes and folders: move, delete with confirmation. The home
   list also offers an undo after a swipe-to-delete.
 - Sorting (date, title, favourites, colour theme) and grid or list layouts.
@@ -70,13 +77,14 @@ flutter build ipa
 ```
 
 The full recipe — keystore, archive, tag, release — lives in
-[docs/livraison.md](docs/livraison.md).
+[docs/release.md](docs/release.md).
 
 ### Identity
 
-The repository carries no personal information: the author's name, the contact
-address and the support links are read from the build, and a build that passes
-none shows no author and offers no support page. `identity.json.dist` is the
+The in-app author, contact address and support links are read from build settings.
+The repository still contains public author attribution, privacy-policy contact
+details and the application bundle identifier. Configure your own signing team
+locally for iOS; no team is selected in the shared project. `identity.json.dist` is the
 template — copy it, fill it in, and point the tool at it. The filled file is
 ignored by git, the template is not.
 
@@ -121,7 +129,7 @@ request.
 | `shared_preferences` | User preferences |
 | `get_it` | Dependency injection |
 | `uuid` | Identifiers |
-| `package_info_plus` / `device_info_plus` | Version and device information |
+| `package_info_plus` | Version and device information |
 | `material_symbols_icons` | Icon set |
 | `url_launcher` | External links |
 
@@ -150,13 +158,17 @@ lib/
 
 `docs/` holds the reference (architecture, security, components, privacy) and the
 steering documents: [roadmap](docs/roadmap.md), [backlog](docs/backlog.md),
-[store listings](docs/store-listing.md) and [release](docs/livraison.md). The
-polish audit that closed this cycle is in [peaufinage](docs/peaufinage.md).
+[store listings](docs/store-listing.md) and [release](docs/release.md). See the [current audit](docs/audit-2026-09-18.md) and
+[remote collaboration design](docs/collaboration.md).
 
 ## Contributing
 
+Feature work targets `develop`. Promote releases to `master` through a pull request
+with successful CI and an independent approval. Premium is planned for projects,
+sharing and collaboration; billing is not enabled yet.
+
 Contributions are welcome. Open an *issue* to report a bug or suggest a feature,
-or submit a *pull request* against `master`. Please run `flutter analyze` and
+or submit a *pull request* against `develop`. Please run `flutter analyze` and
 `flutter test` before opening a pull request.
 
 ## License

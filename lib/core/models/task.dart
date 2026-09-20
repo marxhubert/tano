@@ -1,117 +1,64 @@
-/// A task: a checkable item, filed in a note or a project.
-///
-/// First shape only. The checklist storage, the sync and the board columns
-/// come later; this class exists so a card can tell a task from a note.
-class Task {
+import 'package:tano/core/models/content_entity.dart';
+import 'package:tano/core/models/note.dart';
+
+/// A checklist document. It uses the same lifecycle and metadata as a note.
+class Task extends Note {
   Task({
-    this.id = '',
-    this.title = '',
-    this.isDone = false,
-    this.date = '',
-    String? createdAt,
-    String? updatedAt,
-    this.category = 'nuage',
-    this.isImportant = false,
-    this.isLocked = false,
-    this.isDeleted = false,
-    this.deletedAt,
-    this.coverImage,
-    this.noteId,
-    this.projectId,
-  })  : createdAt = createdAt ?? date,
-        updatedAt = updatedAt ?? date;
+    super.id,
+    super.title,
+    super.content,
+    super.description,
+    super.date,
+    super.createdAt,
+    super.updatedAt,
+    super.important,
+    super.category,
+    super.isDeleted,
+    super.isLocked,
+    super.deletedAt,
+    super.attachments,
+    super.coverImage,
+    super.folderId,
+  }) : super(kind: EntityKind.task);
+}
 
-  final String id;
-  final String title;
-  final bool isDone;
-  final String date;
+/// One row of a task document. Blank rows are editor drafts, not saved items.
+class TaskItem {
+  const TaskItem(this.text, {this.done = false});
+  final String text;
+  final bool done;
 
-  /// When the task was created. Older data has no such column, so it falls
-  /// back to [date].
-  final String createdAt;
+  String get markdown => '- [${done ? 'x' : ' '}] $text';
+}
 
-  /// When the task was last modified. Older data has no such column, so it
-  /// falls back to [date].
-  final String updatedAt;
+/// The checklist uses the existing note markup, so links and exports share the
+/// same representation. Completion sections are a view, not separator data.
+class TaskContent {
+  static final _marker = RegExp(r'^- \[([ xX])\](?: |$)');
 
-  final String category;
-  final bool isImportant;
-  final bool isLocked;
-  final bool isDeleted;
-  final String? deletedAt;
-  final String? coverImage;
-
-  /// Note this task is attached to, when it lives inside one.
-  final String? noteId;
-
-  /// Project this task belongs to, when it lives on a board.
-  final String? projectId;
-
-  factory Task.fromJson(Map<String, dynamic> json) => Task(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        isDone: json['isDone'] == 1,
-        date: json['date'] as String? ?? '',
-        createdAt: json['createdAt'] as String?,
-        updatedAt: json['updatedAt'] as String?,
-        category: json['category'] as String? ?? 'nuage',
-        isImportant: json['isImportant'] == 1,
-        isLocked: json['isLocked'] == 1,
-        isDeleted: json['isDeleted'] == 1,
-        deletedAt: json['deletedAt'] as String?,
-        coverImage: json['coverImage'] as String?,
-        noteId: json['noteId'] as String?,
-        projectId: json['projectId'] as String?,
+  static List<TaskItem> parse(String content) {
+    if (content.isEmpty) return [];
+    return content.split('\n').map((line) {
+      final match = _marker.firstMatch(line);
+      return TaskItem(
+        match == null ? line : line.substring(match.end),
+        done: match != null && match.group(1)!.toLowerCase() == 'x',
       );
+    }).toList();
+  }
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'title': title,
-        'isDone': isDone ? 1 : 0,
-        'date': date,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-        'category': category,
-        'isImportant': isImportant ? 1 : 0,
-        'isLocked': isLocked ? 1 : 0,
-        'isDeleted': isDeleted ? 1 : 0,
-        'deletedAt': deletedAt,
-        'coverImage': coverImage,
-        'noteId': noteId,
-        'projectId': projectId,
-      };
+  static List<TaskItem> savedItems(String content) =>
+      parse(content).where((item) => item.text.trim().isNotEmpty).toList();
 
-  Task copyWith({
-    String? id,
-    String? title,
-    bool? isDone,
-    String? date,
-    String? createdAt,
-    String? updatedAt,
-    String? category,
-    bool? isImportant,
-    bool? isLocked,
-    bool? isDeleted,
-    String? deletedAt,
-    String? coverImage,
-    String? noteId,
-    String? projectId,
-  }) {
-    return Task(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      isDone: isDone ?? this.isDone,
-      date: date ?? this.date,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      category: category ?? this.category,
-      isImportant: isImportant ?? this.isImportant,
-      isLocked: isLocked ?? this.isLocked,
-      isDeleted: isDeleted ?? this.isDeleted,
-      deletedAt: deletedAt ?? this.deletedAt,
-      coverImage: coverImage ?? this.coverImage,
-      noteId: noteId ?? this.noteId,
-      projectId: projectId ?? this.projectId,
-    );
+  static String normalize(String content) => savedItems(content)
+      .map((item) => TaskItem(item.text.trim(), done: item.done).markdown)
+      .join('\n');
+
+  static String preview(String content) {
+    final items = savedItems(content);
+    return [
+      ...items.where((item) => !item.done),
+      ...items.where((item) => item.done),
+    ].map((item) => item.markdown).join('\n');
   }
 }

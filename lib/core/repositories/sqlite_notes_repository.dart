@@ -1,17 +1,22 @@
+import 'dart:convert';
+import 'package:tano/core/services/attachment_maintenance.dart';
 import 'dart:io';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:tano/shared/config/app_log.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
 /// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
-class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
+class SQLiteNotesRepository
+    implements
+        NotesRepository,
+        FoldersRepository,
+        AtomicNoteImporter,
+        AttachmentReferenceSource {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
     String? databasePath,
@@ -31,7 +36,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   /// directory is used.
   final String? _databasePath;
 
-  /// Location of the legacy JSON file migrated on first launch.
+  /// Location of disposable pre-release JSON files to clean up.
   final Future<Directory> Function() _documentsDirectory;
 
   /// Provides the SQLCipher passphrase. When null (tests), the database is
@@ -39,14 +44,15 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   final Future<String?> Function()? _passwordProvider;
 
   Database? _db;
+  Future<Database>? _opening;
 
   Future<Database> get _database async {
     if (_db != null) return _db!;
-    _db = await _initDb();
+    _db = await (_opening ??= _initDb().whenComplete(() => _opening = null));
     return _db!;
   }
 
-  static const int _schemaVersion = 7;
+  static const int _schemaVersion = 9;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -62,12 +68,22 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
         join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
     final String? password = await _passwordProvider?.call();
 
-    // A database created before encryption must be carried over before the
-    // encrypted one takes its place.
-    final List<Map<String, Object?>>? legacyRows = await _extractPlaintextRows(
-      path,
-      password,
-    );
+    // Pre-release data is disposable. Never recover plaintext test databases.
+    final directory = await _documentsDirectory();
+    for (final obsolete in [
+      '$path.plain.bak',
+      join(directory.path, 'local_persistence.json'),
+      join(directory.path, 'local_persistence.json.bak'),
+    ]) {
+      final file = File(obsolete);
+      if (await file.exists()) await file.delete();
+    }
+    final file = File(path);
+    if (password != null &&
+        await file.exists() &&
+        await _isPlaintextSqlite(file)) {
+      await _databaseFactory.deleteDatabase(path);
+    }
 
     final Database db = await _databaseFactory.openDatabase(
       path,
@@ -79,52 +95,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
       ),
     );
 
-    if (legacyRows != null && legacyRows.isNotEmpty) {
-      final Batch batch = db.batch();
-      for (final Map<String, Object?> row in legacyRows) {
-        batch.insert(
-          'notes',
-          row,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-      await batch.commit(noResult: true);
-    }
     return db;
-  }
-
-  /// Reads the rows of a legacy unencrypted database, then renames it so the
-  /// encrypted database can take its place. The old file is kept, never
-  /// deleted.
-  Future<List<Map<String, Object?>>?> _extractPlaintextRows(
-    String path,
-    String? password,
-  ) async {
-    if (password == null) return null;
-    final File file = File(path);
-    if (!file.existsSync()) return null;
-    if (!await _isPlaintextSqlite(file)) return null;
-
-    final Database legacy = await _databaseFactory.openDatabase(
-      path,
-      options: OpenDatabaseOptions(
-        version: _schemaVersion,
-        onCreate: _createSchema,
-        onUpgrade: _upgradeSchema,
-      ),
-    );
-    // `query` returns read-only rows; copy them so the dropped `isPinned`
-    // column (removed with the pin feature) can be stripped before the rows
-    // are copied into the new schema.
-    final List<Map<String, Object?>> rows = (await legacy.query(
-      'notes',
-    )).map((Map<String, Object?> row) => Map<String, Object?>.of(row)).toList();
-    for (final Map<String, Object?> row in rows) {
-      row.remove('isPinned');
-    }
-    await legacy.close();
-    await file.rename('$path.plain.bak');
-    return rows;
   }
 
   Future<bool> _isPlaintextSqlite(File file) async {
@@ -145,8 +116,10 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     await db.execute('''
       CREATE TABLE notes (
         id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'task')),
         title TEXT,
         content TEXT,
+        description TEXT NOT NULL DEFAULT '',
         date TEXT,
         important INTEGER,
         category TEXT,
@@ -182,6 +155,22 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     int oldVersion,
     int newVersion,
   ) async {
+    if (oldVersion < 9) {
+      await _addColumnIfMissing(
+        db,
+        'notes',
+        'description',
+        "TEXT NOT NULL DEFAULT ''",
+      );
+    }
+    if (oldVersion < 8) {
+      await _addColumnIfMissing(
+        db,
+        'notes',
+        'kind',
+        "TEXT NOT NULL DEFAULT 'note'",
+      );
+    }
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0',
@@ -265,6 +254,35 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
+  Future<Set<String>> referencedAttachments() async {
+    final db = await _database;
+    return db.transaction((txn) async {
+      final names = <String>{};
+      // No trash filter: deleted notes/folders remain restorable.
+      for (final row in await txn.query(
+        'notes',
+        columns: ['attachments', 'coverImage'],
+      )) {
+        final raw = row['attachments'];
+        if (raw != null) {
+          final decoded = jsonDecode(raw as String);
+          if (decoded is! List || decoded.any((name) => name is! String)) {
+            throw const FormatException('Invalid attachment references');
+          }
+          names.addAll(decoded.cast<String>());
+        }
+        final cover = row['coverImage'];
+        if (cover != null) names.add(cover as String);
+      }
+      for (final row in await txn.query('folders', columns: ['coverImage'])) {
+        final cover = row['coverImage'];
+        if (cover != null) names.add(cover as String);
+      }
+      return names;
+    });
+  }
+
+  @override
   Future<List<Folder>> loadFolders() async {
     final db = await _database;
     final List<Map<String, dynamic>> results = await db.query(
@@ -316,7 +334,11 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final db = await _database;
     await db.update(
       'folders',
-      <String, Object?>{'isDeleted': 0, 'deletedAt': null},
+      <String, Object?>{
+        'isDeleted': 0,
+        'deletedAt': null,
+        'updatedAt': DateTime.now().toString(),
+      },
       where: 'id = ?',
       whereArgs: <Object?>[id],
     );
@@ -326,8 +348,14 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   Future<void> deleteFolderPermanently(String id) async {
     final db = await _database;
     // The folder goes with its notes: they are only reachable through it.
-    await db.delete('notes', where: 'folderId = ?', whereArgs: <Object?>[id]);
-    await db.delete('folders', where: 'id = ?', whereArgs: <Object?>[id]);
+    await db.transaction((txn) async {
+      await txn.delete(
+        'notes',
+        where: 'folderId = ?',
+        whereArgs: <Object?>[id],
+      );
+      await txn.delete('folders', where: 'id = ?', whereArgs: <Object?>[id]);
+    });
   }
 
   @override
@@ -345,13 +373,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
-
-    // A fresh install starts empty. The only thing that can fill an empty
-    // database on its own is the one-off import of the legacy JSON file.
-    final List<Map<String, dynamic>> existing = await db.query('notes');
-    if (existing.isEmpty) {
-      await _handleMigration(db);
-    }
 
     final List<Map<String, dynamic>> active = await db.query(
       'notes',
@@ -381,11 +402,29 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   }
 
   @override
+  Future<void> insertImportedNotes(List<Note> notes) async {
+    final db = await _database;
+    await db.transaction((txn) async {
+      for (final note in notes) {
+        await txn.insert(
+          'notes',
+          note.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
+    });
+  }
+
+  @override
   Future<void> trashNote(String id) async {
     final db = await _database;
     await db.update(
       'notes',
-      {'isDeleted': 1, 'deletedAt': DateTime.now().toString()},
+      {
+        'isDeleted': 1,
+        'deletedAt': DateTime.now().toString(),
+        'updatedAt': DateTime.now().toString(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -396,7 +435,11 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final db = await _database;
     await db.update(
       'notes',
-      {'isDeleted': 0, 'deletedAt': null},
+      {
+        'isDeleted': 0,
+        'deletedAt': null,
+        'updatedAt': DateTime.now().toString(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -404,7 +447,7 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
 
   @override
   Future<void> toggleLock(String id, {String? password}) async {
-    // Basic toggle for now. Password logic will be added in Phase 3.
+    // Authentication belongs to the application boundary, using the OS credential.
     final db = await _database;
     final List<Map<String, dynamic>> result = await db.query(
       'notes',
@@ -439,8 +482,8 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
     final List<Map<String, dynamic>> results = await db.query(
       'notes',
       where:
-          "(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
-      whereArgs: ['%$escaped%', '%$escaped%'],
+          "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
+      whereArgs: ['%$escaped%', '%$escaped%', '%$escaped%'],
     );
     return results.map((json) => Note.fromJson(json)).toList();
   }
@@ -455,37 +498,6 @@ class SQLiteNotesRepository implements NotesRepository, FoldersRepository {
   Future<void> deleteAllFolders() async {
     final db = await _database;
     await db.delete('folders');
-  }
-
-  /// Migrates data from the old JSON file if it exists.
-  Future<List<Note>> _handleMigration(Database db) async {
-    try {
-      final Directory directory = await _documentsDirectory();
-      final File legacyFile = File('${directory.path}/local_persistence.json');
-
-      if (legacyFile.existsSync()) {
-        appLog('SQLite: Migrating from legacy JSON file...');
-        final String contents = await legacyFile.readAsString();
-        final List<Note> legacyNotes = decodeNotes(contents);
-
-        if (legacyNotes.isNotEmpty) {
-          await db.transaction((txn) async {
-            for (final note in legacyNotes) {
-              await txn.insert('notes', note.toJson());
-            }
-          });
-          // Rename or delete to avoid re-migration
-          await legacyFile.rename('${legacyFile.path}.bak');
-          appLog('SQLite: Migration successful.');
-          return legacyNotes;
-        }
-      }
-    } catch (e) {
-      appLog('SQLite: Migration error: $e');
-    }
-
-    // Nothing to migrate: a fresh install simply starts empty.
-    return <Note>[];
   }
 }
 

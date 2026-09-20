@@ -1,3 +1,4 @@
+import 'package:tano/core/models/task.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -67,8 +68,9 @@ class HomeState extends State<Home> with RouteAware {
       repository: repository,
       // The SQLite repository also knows about folders; the in-memory test
       // doubles only implement notes, in which case folders stay empty.
-      foldersRepository:
-          repository is FoldersRepository ? repository as FoldersRepository : null,
+      foldersRepository: repository is FoldersRepository
+          ? repository as FoldersRepository
+          : null,
       initialNotes: widget.initialNotes,
     );
     _wasInSelectionMode = _viewModel.isInSelectionMode;
@@ -165,10 +167,7 @@ class HomeState extends State<Home> with RouteAware {
     await prefs.setString('viewLayout', viewLayout);
   }
 
-  Future<void> _openNoteEditor({
-    required bool add,
-    required Note note,
-  }) async {
+  Future<void> _openNoteEditor({required bool add, required Note note}) async {
     // Opening a note leaves the search: coming back shows the whole list.
     if (_isSearchMode) _exitSearchMode();
     bool authenticated = false;
@@ -245,27 +244,26 @@ class HomeState extends State<Home> with RouteAware {
 
   /// Metadata of the page title line: the folder group when folders exist,
   /// the notes group otherwise (both groups never share one counter).
-  String get _pageMetadata =>
-      _viewModel.hasFolders
-          ? _groupMetadata(
-              count: _viewModel.selectedFoldersCount,
-              total: _viewModel.foldersCount,
-              noun: 'folder',
-              single: 'single_folder_selected',
-              many: 'folders_selected',
-              all: 'all_folders_selected',
-            )
-          : _notesMetadata;
+  String get _pageMetadata => _viewModel.hasFolders
+      ? _groupMetadata(
+          count: _viewModel.selectedFoldersCount,
+          total: _viewModel.foldersCount,
+          noun: 'folder',
+          single: 'single_folder_selected',
+          many: 'folders_selected',
+          all: 'all_folders_selected',
+        )
+      : _notesMetadata;
 
   /// Metadata of the notes group header.
   String get _notesMetadata => _groupMetadata(
-        count: _viewModel.selectedNotesCount,
-        total: _viewModel.notesCount,
-        noun: 'note',
-        single: 'single_note_selected',
-        many: 'notes_selected',
-        all: 'all_notes_selected',
-      );
+    count: _viewModel.selectedNotesCount,
+    total: _viewModel.notesCount,
+    noun: 'note',
+    single: 'single_note_selected',
+    many: 'notes_selected',
+    all: 'all_notes_selected',
+  );
 
   /// One group's metadata: its own selection wording while selecting, its
   /// plain count otherwise.
@@ -373,11 +371,7 @@ class HomeState extends State<Home> with RouteAware {
       }
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: emptyState(
-            context,
-            AppText.tr('no_data'),
-            image: EmptyArt.box,
-          ),
+        child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
       );
     }
 
@@ -551,7 +545,8 @@ class HomeState extends State<Home> with RouteAware {
 
   Widget _buildAdaptiveMenu() {
     final ThemeData theme = Theme.of(context);
-    if (theme.platform == TargetPlatform.iOS || theme.platform == TargetPlatform.macOS) {
+    if (theme.platform == TargetPlatform.iOS ||
+        theme.platform == TargetPlatform.macOS) {
       return IconButton(
         icon: const Icon(Symbols.more_vert, weight: 900.0),
         tooltip: AppText.tr('more'),
@@ -611,7 +606,9 @@ class HomeState extends State<Home> with RouteAware {
               style: TextStyle(
                 color: tanoTeal,
                 fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'list' ? FontWeight.bold : FontWeight.normal,
+                fontWeight: _viewModel.viewLayout == 'list'
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ),
@@ -625,7 +622,9 @@ class HomeState extends State<Home> with RouteAware {
               style: TextStyle(
                 color: tanoTeal,
                 fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'gridlist' ? FontWeight.bold : FontWeight.normal,
+                fontWeight: _viewModel.viewLayout == 'gridlist'
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ),
@@ -636,7 +635,10 @@ class HomeState extends State<Home> with RouteAware {
             },
             child: Text(
               AppText.tr('settings'),
-              style: const TextStyle(color: tanoTeal, fontSize: TanoText.sheetAction),
+              style: const TextStyle(
+                color: tanoTeal,
+                fontSize: TanoText.sheetAction,
+              ),
             ),
           ),
         ],
@@ -647,7 +649,10 @@ class HomeState extends State<Home> with RouteAware {
           },
           child: Text(
             AppText.tr('cancel'),
-            style: TextStyle(color: primaryTextColor(context), fontSize: TanoText.sheetAction),
+            style: TextStyle(
+              color: primaryTextColor(context),
+              fontSize: TanoText.sheetAction,
+            ),
           ),
         ),
       ),
@@ -707,8 +712,8 @@ class HomeState extends State<Home> with RouteAware {
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
             // Moving needs a selection and never applies to a folder.
-            canMove: _viewModel.hasSelection &&
-                !_viewModel.hasFolderInSelection,
+            canMove:
+                _viewModel.hasSelection && !_viewModel.hasFolderInSelection,
             // Deleting needs a selection too.
             canDelete: _viewModel.hasSelection,
             controller: _searchController,
@@ -717,6 +722,7 @@ class HomeState extends State<Home> with RouteAware {
               _openNoteEditor(add: true, note: Note());
             },
             onAddFolder: _addFolder,
+            onAddTask: () => _openNoteEditor(add: true, note: Task()),
             onSearchChanged: (String value) {
               _viewModel.setSearchQuery(value);
             },

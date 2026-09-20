@@ -18,8 +18,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 
 Finder _noteCards() => find.byWidgetPredicate(
-      (Widget w) => w is EntityCard && w.kind == EntityKind.note,
-    );
+  (Widget w) => w is EntityCard && w.kind == EntityKind.note,
+);
 
 /// Fakes the system credential prompt: no platform channel in tests.
 class _FakeAuthService extends AuthService {
@@ -83,7 +83,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     }
   }
 
-
   @override
   Future<void> toggleLock(String id, {String? password}) async {
     final index = notes.indexWhere((n) => n.id == id);
@@ -100,10 +99,12 @@ class _InMemoryNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> searchNotes(String query) async {
     return notes
-        .where((n) =>
-            !n.isDeleted &&
-            (n.title.toLowerCase().contains(query.toLowerCase()) ||
-                n.content.toLowerCase().contains(query.toLowerCase())))
+        .where(
+          (n) =>
+              !n.isDeleted &&
+              (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                  n.content.toLowerCase().contains(query.toLowerCase())),
+        )
         .toList();
   }
 
@@ -111,7 +112,6 @@ class _InMemoryNotesRepository implements NotesRepository {
   Future<void> deleteAllNotes() async {
     notes.clear();
   }
-
 }
 
 Note _note({
@@ -215,7 +215,9 @@ void main() {
     test('unlocking a locked note requires authentication', () async {
       final fake = _FakeAuthService();
       _registerAuth(fake);
-      final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
+      final repository = _InMemoryNotesRepository(<Note>[
+        _note(isLocked: true),
+      ]);
       final vm = _viewModelFor(repository);
 
       expect(vm.isLocked, isTrue);
@@ -227,7 +229,9 @@ void main() {
     test('a cancelled authentication keeps the note locked', () async {
       final fake = _FakeAuthService(authorized: false);
       _registerAuth(fake);
-      final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
+      final repository = _InMemoryNotesRepository(<Note>[
+        _note(isLocked: true),
+      ]);
       final vm = _viewModelFor(repository);
 
       expect(await vm.toggleLock(), LockToggleResult.cancelled);
@@ -235,14 +239,17 @@ void main() {
       expect(fake.authenticateCalls, 1);
     });
 
-    test('locking is refused when the device has no system credential', () async {
-      _registerAuth(_FakeAuthService(available: false));
-      final repository = _InMemoryNotesRepository(<Note>[_note()]);
-      final vm = _viewModelFor(repository);
+    test(
+      'locking is refused when the device has no system credential',
+      () async {
+        _registerAuth(_FakeAuthService(available: false));
+        final repository = _InMemoryNotesRepository(<Note>[_note()]);
+        final vm = _viewModelFor(repository);
 
-      expect(await vm.toggleLock(), LockToggleResult.unavailable);
-      expect(vm.isLocked, isFalse);
-    });
+        expect(await vm.toggleLock(), LockToggleResult.unavailable);
+        expect(vm.isLocked, isFalse);
+      },
+    );
 
     test('a lock change marks the editor dirty', () async {
       _registerAuth(_FakeAuthService());
@@ -268,7 +275,9 @@ void main() {
 
     test('unlocking then auto-saving persists the unlocked state', () async {
       _registerAuth(_FakeAuthService());
-      final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
+      final repository = _InMemoryNotesRepository(<Note>[
+        _note(isLocked: true),
+      ]);
       final vm = _viewModelFor(repository);
 
       expect(await vm.toggleLock(), LockToggleResult.unlocked);
@@ -364,10 +373,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.descendant(
-          of: _noteCards(),
-          matching: find.byIcon(Symbols.lock),
-        ),
+        find.descendant(of: _noteCards(), matching: find.byIcon(Symbols.lock)),
         findsOneWidget,
       );
     });
@@ -382,10 +388,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.descendant(
-          of: _noteCards(),
-          matching: find.byIcon(Symbols.lock),
-        ),
+        find.descendant(of: _noteCards(), matching: find.byIcon(Symbols.lock)),
         findsNothing,
       );
     });
@@ -439,35 +442,36 @@ void main() {
       );
     });
 
-    testWidgets('the metadata has no lock and a single separator when unlocked', (
-      tester,
-    ) async {
-      getIt.registerSingleton<NotesRepository>(
-        _InMemoryNotesRepository(<Note>[_note()]),
-      );
+    testWidgets(
+      'the metadata has no lock and a single separator when unlocked',
+      (tester) async {
+        getIt.registerSingleton<NotesRepository>(
+          _InMemoryNotesRepository(<Note>[_note()]),
+        );
 
-      await tester.pumpWidget(const Tano());
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(const Tano());
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Hello'));
-      await tester.pumpAndSettle();
-      expect(find.byType(EditNote), findsOneWidget);
+        await tester.tap(find.text('Hello'));
+        await tester.pumpAndSettle();
+        expect(find.byType(EditNote), findsOneWidget);
 
-      expect(
-        find.descendant(
-          of: find.byType(EditNote),
-          matching: find.byIcon(Symbols.lock),
-        ),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: find.byType(EditNote), matching: find.text('|')),
-        findsOneWidget,
-      );
-    });
+        expect(
+          find.descendant(
+            of: find.byType(EditNote),
+            matching: find.byIcon(Symbols.lock),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: find.byType(EditNote), matching: find.text('|')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('locking is refused when the device has no screen lock', (
+    testWidgets('locking is disabled when the device has no screen lock', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(320, 480);
@@ -493,14 +497,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 250));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Cannot lock this note'), findsOneWidget);
-      expect(
-        find.text(
-          'Set up a screen lock (passcode or biometrics) to lock notes',
-        ),
-        findsOneWidget,
-      );
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.widget<AppFab>(find.byType(AppFab)).canLock, isFalse);
       expect(repository.notes.single.isLocked, isFalse);
     });
 
@@ -511,7 +509,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
+      final repository = _InMemoryNotesRepository(<Note>[
+        _note(isLocked: true),
+      ]);
       getIt.registerSingleton<NotesRepository>(repository);
       bool confirmCalled = false;
 
@@ -555,7 +555,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final repository = _InMemoryNotesRepository(<Note>[_note(isLocked: true)]);
+      final repository = _InMemoryNotesRepository(<Note>[
+        _note(isLocked: true),
+      ]);
       getIt.registerSingleton<NotesRepository>(repository);
 
       await tester.pumpWidget(const Tano());
@@ -611,8 +613,8 @@ void main() {
               title: 'A very long title that needs several lines to display',
               subtitle: '12/08/2026',
               isLocked: true,
-              builder:
-                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
+              builder: (context, textColor, hasCover) =>
+                  const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -640,8 +642,8 @@ void main() {
               subtitle: '12/08/2026',
               isLocked: true,
               isListLayout: true,
-              builder:
-                  (context, textColor, hasCover) => const SizedBox(height: 80.0),
+              builder: (context, textColor, hasCover) =>
+                  const SizedBox(height: 80.0),
             ),
           ),
         ),
@@ -656,9 +658,7 @@ void main() {
       expect(title.overflow, TextOverflow.ellipsis);
 
       // Lock on the left, title then date stacked to its right.
-      final Offset iconCenter = tester.getCenter(
-        find.byIcon(Symbols.lock),
-      );
+      final Offset iconCenter = tester.getCenter(find.byIcon(Symbols.lock));
       final Offset titleCenter = tester.getCenter(
         find.textContaining('A very long title'),
       );
@@ -667,38 +667,44 @@ void main() {
       expect(dateCenter.dy, greaterThan(titleCenter.dy));
     });
 
-    testWidgets('a link between two locked notes does not prompt again', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+    testWidgets(
+      'a link outside an authenticated folder checks the destination lock',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
 
-      final fake = _FakeAuthService();
-      _registerAuth(fake);
-      getIt.registerSingleton<NotesRepository>(
-        _InMemoryNotesRepository(<Note>[
-          _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
-          _note(id: 'b', title: 'Note B', content: '[[a:Note A]]', isLocked: true),
-        ]),
-      );
+        final fake = _FakeAuthService();
+        _registerAuth(fake);
+        getIt.registerSingleton<NotesRepository>(
+          _InMemoryNotesRepository(<Note>[
+            _note(id: 'a', title: 'Note A', content: 'A body', isLocked: true),
+            _note(
+              id: 'b',
+              title: 'Note B',
+              content: '[[a:Note A]]',
+              isLocked: true,
+            ),
+          ]),
+        );
 
-      await tester.pumpWidget(const Tano());
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(const Tano());
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle();
 
-      // Opening the locked note B authenticates once.
-      await tester.tap(find.text('Note B').last);
-      await tester.pumpAndSettle();
-      expect(fake.authenticateCalls, 1);
-      expect(_editorTitleExists(tester, 'Note B'), isTrue);
+        // Opening the locked note B authenticates once.
+        await tester.tap(find.text('Note B').last);
+        await tester.pumpAndSettle();
+        expect(fake.authenticateCalls, 1);
+        expect(_editorTitleExists(tester, 'Note B'), isTrue);
 
-      // Following the link to the other locked note must not prompt again.
-      await _tapContentLink(tester);
+        // The source note does not grant access to another protected note.
+        await _tapContentLink(tester);
 
-      expect(fake.authenticateCalls, 1);
-      expect(_editorTitleExists(tester, 'Note A'), isTrue);
-    });
+        expect(fake.authenticateCalls, 2);
+        expect(_editorTitleExists(tester, 'Note A'), isTrue);
+      },
+    );
 
     testWidgets('a link from an unlocked note still asks for the code', (
       tester,

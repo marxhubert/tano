@@ -39,8 +39,8 @@ class ExportService {
   ExportService({
     AttachmentsStore? attachments,
     Argon2Params argon2 = const Argon2Params(),
-  })  : _attachments = attachments ?? AttachmentsStore(),
-        _argon2 = argon2;
+  }) : _attachments = attachments ?? AttachmentsStore(),
+       _argon2 = argon2;
 
   final AttachmentsStore _attachments;
   final Argon2Params _argon2;
@@ -60,19 +60,20 @@ class ExportService {
     String? password,
     bool unlockLockedNotes = false,
   }) async {
-    final List<Map<String, dynamic>> encoded = notes
-        .map((Note note) {
-          final Map<String, dynamic> json = note.toJson();
-          if (unlockLockedNotes) json['isLocked'] = 0;
-          return json;
-        })
-        .toList();
+    final List<Map<String, dynamic>> encoded = notes.map((Note note) {
+      final Map<String, dynamic> json = note.toJson();
+      if (unlockLockedNotes) json['isLocked'] = 0;
+      return json;
+    }).toList();
 
     final Archive archive = Archive();
     archive.addFile(
       ArchiveFile.string(
         manifestName,
-        jsonEncode(<String, dynamic>{'version': version, 'notes': encoded}),
+        jsonEncode(<String, dynamic>{
+          'version': notes.any((note) => note.isTask) ? 2 : version,
+          'notes': encoded,
+        }),
       ),
     );
 

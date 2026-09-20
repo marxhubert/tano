@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/repositories/sqlite_notes_repository.dart';
 
 void main() {
@@ -30,6 +29,26 @@ void main() {
   });
 
   group('SQLiteNotesRepository', () {
+    test('an import collision rolls back the complete batch', () async {
+      final existing = Note(
+        id: 'existing',
+        title: 'Keep',
+        content: '',
+        date: '2026-01-01',
+      );
+      await repository.upsertNote(existing);
+      await expectLater(
+        repository.insertImportedNotes([
+          existing.copyWith(id: 'new', title: 'New'),
+          existing.copyWith(title: 'Overwrite'),
+        ]),
+        throwsA(isA<DatabaseException>()),
+      );
+      final notes = await repository.loadNotes();
+      expect(notes, hasLength(1));
+      expect(notes.single.title, 'Keep');
+    });
+
     test('a fresh install starts empty', () async {
       final notes = await repository.loadNotes();
 
@@ -54,53 +73,42 @@ void main() {
       expect(await repository.loadTrashFolders(), isEmpty);
     });
 
-    test('migrates notes from the legacy JSON file', () async {
-      final legacyNotes = <Note>[
-        Note(
-          id: 'legacy-1',
-          title: 'Legacy one',
-          content: 'x',
-          date: '2026-01-01 00:00:00.000',
-          important: true,
-          category: 'menthe',
-        ),
-        Note(
-          id: 'legacy-2',
-          title: 'Legacy two',
-          content: 'y',
-          date: '2026-01-02 00:00:00.000',
-          important: false,
-          category: 'rose',
-        ),
-      ];
-      final legacyFile = File('${tempDir.path}/local_persistence.json');
-      await legacyFile.writeAsString(encodeNotes(legacyNotes));
-
-      final notes = await repository.loadNotes();
-
-      expect(notes, hasLength(2));
-      expect(
-        notes.map((n) => n.title),
-        containsAll(<String>['Legacy one', 'Legacy two']),
-      );
-      expect(notes.firstWhere((n) => n.id == 'legacy-1').important, isTrue);
-
-      // The legacy file is renamed to .bak, never deleted.
-      expect(File('${tempDir.path}/local_persistence.json').existsSync(), isFalse);
-      expect(
-        File('${tempDir.path}/local_persistence.json.bak').existsSync(),
-        isTrue,
-      );
+    test('discards pre-release JSON and backup test data', () async {
+      for (final name in [
+        'local_persistence.json',
+        'local_persistence.json.bak',
+        'tano_notes.db.plain.bak',
+      ]) {
+        await File(
+          '${tempDir.path}/$name',
+        ).writeAsString('obsolete private test data');
+      }
+      expect(await repository.loadNotes(), isEmpty);
+      for (final name in [
+        'local_persistence.json',
+        'local_persistence.json.bak',
+        'tano_notes.db.plain.bak',
+      ]) {
+        expect(await File('${tempDir.path}/$name').exists(), isFalse);
+      }
     });
 
     test('trash, restore and permanent delete round-trip', () async {
       await repository.upsertNote(
-        Note(id: '1', title: 'Keep me', content: 'x', date: '2026-01-01 00:00:00.000'),
+        Note(
+          id: '1',
+          title: 'Keep me',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
       );
 
       await repository.trashNote('1');
       expect(await repository.loadNotes(), isEmpty);
-      expect((await repository.loadTrashNotes()).map((n) => n.id), contains('1'));
+      expect(
+        (await repository.loadTrashNotes()).map((n) => n.id),
+        contains('1'),
+      );
 
       await repository.restoreNote('1');
       expect((await repository.loadNotes()).map((n) => n.id), contains('1'));
@@ -111,12 +119,14 @@ void main() {
       expect(await repository.loadTrashNotes(), isEmpty);
     });
 
-    test('converts a legacy plaintext database to the encrypted one', () async {
-      final String path = '${tempDir.path}/tano_notes.db';
+    test(
+      'discards the pre-release plaintext database without retaining a backup',
+      () async {
+        final String path = '${tempDir.path}/tano_notes.db';
 
-      // A database produced by a version before encryption: plain SQLite.
-      final Database legacy = await databaseFactoryFfi.openDatabase(path);
-      await legacy.execute('''
+        // A database produced by a version before encryption: plain SQLite.
+        final Database legacy = await databaseFactoryFfi.openDatabase(path);
+        await legacy.execute('''
         CREATE TABLE notes (
           id TEXT PRIMARY KEY,
           title TEXT,
@@ -132,36 +142,32 @@ void main() {
           coverImage TEXT
         )
       ''');
-      await legacy.execute('PRAGMA user_version = 5');
-      await legacy.insert('notes', <String, Object?>{
-        'id': 'legacy-enc',
-        'title': 'Before encryption',
-        'content': 'secret content',
-        'date': '2026-01-01 00:00:00.000',
-        'important': 0,
-        'category': 'note',
-        'isDeleted': 0,
-        'isPinned': 0,
-        'isLocked': 0,
-      });
-      await legacy.close();
+        await legacy.execute('PRAGMA user_version = 5');
+        await legacy.insert('notes', <String, Object?>{
+          'id': 'legacy-enc',
+          'title': 'Before encryption',
+          'content': 'secret content',
+          'date': '2026-01-01 00:00:00.000',
+          'important': 0,
+          'category': 'note',
+          'isDeleted': 0,
+          'isPinned': 0,
+          'isLocked': 0,
+        });
+        await legacy.close();
 
-      final SQLiteNotesRepository encrypted = SQLiteNotesRepository(
-        databaseFactoryOverride: databaseFactoryFfi,
-        databasePath: path,
-        documentsDirectory: () async => tempDir,
-        passwordProvider: () async => 'test-passphrase',
-      );
-      final notes = await encrypted.loadNotes();
+        final SQLiteNotesRepository encrypted = SQLiteNotesRepository(
+          databaseFactoryOverride: databaseFactoryFfi,
+          databasePath: path,
+          documentsDirectory: () async => tempDir,
+          passwordProvider: () async => 'test-passphrase',
+        );
+        final notes = await encrypted.loadNotes();
 
-      expect(notes.map((n) => n.id), contains('legacy-enc'));
-      expect(
-        notes.firstWhere((n) => n.id == 'legacy-enc').content,
-        'secret content',
-      );
-      // The legacy file is kept aside, never deleted.
-      expect(File('$path.plain.bak').existsSync(), isTrue);
-    });
+        expect(notes, isEmpty);
+        expect(File('$path.plain.bak').existsSync(), isFalse);
+      },
+    );
 
     test('stores and reloads createdAt and updatedAt', () async {
       await repository.upsertNote(
@@ -248,15 +254,18 @@ void main() {
 
       // The cover column, missed by the v6 upgrade, is restored.
       await repository.upsertFolder(folder.copyWith(coverImage: 'cover.png'));
-      final reloaded =
-          (await repository.loadFolders()).firstWhere((f) => f.id == 'f1');
+      final reloaded = (await repository.loadFolders()).firstWhere(
+        (f) => f.id == 'f1',
+      );
       expect(reloaded.coverImage, 'cover.png');
     });
 
-    test('migrates a v6 database that already has folders.coverImage', () async {
-      final String path = '${tempDir.path}/tano_notes.db';
-      final Database legacy = await databaseFactoryFfi.openDatabase(path);
-      await legacy.execute('''
+    test(
+      'migrates a v6 database that already has folders.coverImage',
+      () async {
+        final String path = '${tempDir.path}/tano_notes.db';
+        final Database legacy = await databaseFactoryFfi.openDatabase(path);
+        await legacy.execute('''
         CREATE TABLE notes (
           id TEXT PRIMARY KEY,
           title TEXT,
@@ -273,7 +282,7 @@ void main() {
           folderId TEXT
         )
       ''');
-      await legacy.execute('''
+        await legacy.execute('''
         CREATE TABLE folders (
           id TEXT PRIMARY KEY,
           name TEXT,
@@ -286,45 +295,61 @@ void main() {
           coverImage TEXT
         )
       ''');
-      await legacy.execute('PRAGMA user_version = 6');
-      await legacy.insert('notes', <String, Object?>{
-        'id': 'n1',
-        'title': 'Kept',
-        'date': '2026-01-01 00:00:00.000',
-        'important': 0,
-        'category': 'note',
-        'isDeleted': 0,
-        'isPinned': 0,
-        'isLocked': 0,
-      });
-      await legacy.insert('folders', <String, Object?>{
-        'id': 'f1',
-        'name': 'Studies',
-        'date': '2026-01-02 00:00:00.000',
-        'important': 0,
-        'category': 'nuage',
-        'isPinned': 0,
-        'isDeleted': 0,
-        'coverImage': 'kept.png',
-      });
-      await legacy.close();
+        await legacy.execute('PRAGMA user_version = 6');
+        await legacy.insert('notes', <String, Object?>{
+          'id': 'n1',
+          'title': 'Kept',
+          'date': '2026-01-01 00:00:00.000',
+          'important': 0,
+          'category': 'note',
+          'isDeleted': 0,
+          'isPinned': 0,
+          'isLocked': 0,
+        });
+        await legacy.insert('folders', <String, Object?>{
+          'id': 'f1',
+          'name': 'Studies',
+          'date': '2026-01-02 00:00:00.000',
+          'important': 0,
+          'category': 'nuage',
+          'isPinned': 0,
+          'isDeleted': 0,
+          'coverImage': 'kept.png',
+        });
+        await legacy.close();
 
-      final folders = await repository.loadFolders();
-      final folder = folders.firstWhere((f) => f.id == 'f1');
+        final folders = await repository.loadFolders();
+        final folder = folders.firstWhere((f) => f.id == 'f1');
 
-      expect(folder.coverImage, 'kept.png');
-      expect(folder.createdAt, '2026-01-02 00:00:00.000');
-    });
+        expect(folder.coverImage, 'kept.png');
+        expect(folder.createdAt, '2026-01-02 00:00:00.000');
+      },
+    );
 
     test('searchNotes escapes LIKE wildcards literally', () async {
       await repository.upsertNote(
-        Note(id: 'pct', title: '100% done', content: 'x', date: '2026-01-01 00:00:00.000'),
+        Note(
+          id: 'pct',
+          title: '100% done',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
       );
       await repository.upsertNote(
-        Note(id: 'under', title: 'a_b', content: 'x', date: '2026-01-01 00:00:00.000'),
+        Note(
+          id: 'under',
+          title: 'a_b',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
       );
       await repository.upsertNote(
-        Note(id: 'plain', title: 'plain', content: 'x', date: '2026-01-01 00:00:00.000'),
+        Note(
+          id: 'plain',
+          title: 'plain',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
       );
 
       final percent = await repository.searchNotes('%');

@@ -9,22 +9,13 @@ mixin _FabMenusMixin on _FabStateMixin {
     Widget content;
     switch (_verticalMenu) {
       case FabVerticalMenu.color:
-        content = SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: _buildColorMenu(context),
-        );
+        content = SingleChildScrollView(child: _buildColorMenu(context));
         break;
       case FabVerticalMenu.add:
-        content = SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: _buildAddMenu(context),
-        );
+        content = SingleChildScrollView(child: _buildAddMenu(context));
         break;
       case FabVerticalMenu.more:
-        content = SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: _buildMoreMenu(context),
-        );
+        content = SingleChildScrollView(child: _buildMoreMenu(context));
         break;
       case FabVerticalMenu.link:
         content = _buildLinkMenu(context);
@@ -204,7 +195,10 @@ mixin _FabMenusMixin on _FabStateMixin {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(color: Colors.white, fontSize: TanoText.listTitle),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: TanoText.listTitle,
+            ),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -346,6 +340,14 @@ mixin _FabMenusMixin on _FabStateMixin {
             widget.onAddNote?.call();
           },
         ),
+        _VerticalMenuItem(
+          icon: Symbols.format_list_bulleted_add,
+          label: AppText.tr('add_task'),
+          onTap: () {
+            _toggleVerticalMenu(FabVerticalMenu.add);
+            widget.onAddTask?.call();
+          },
+        ),
       ]);
     }
     return _buildVerticalList([
@@ -354,11 +356,12 @@ mixin _FabMenusMixin on _FabStateMixin {
         label: AppText.tr('option_image'),
         onTap: widget.onImageSelected,
       ),
-      _VerticalMenuItem(
-        icon: Symbols.checklist,
-        label: AppText.tr('option_checklist'),
-        onTap: widget.onChecklistSelected,
-      ),
+      if (!widget.isTaskMode)
+        _VerticalMenuItem(
+          icon: Symbols.checklist,
+          label: AppText.tr('option_checklist'),
+          onTap: widget.onChecklistSelected,
+        ),
       _VerticalMenuItem(
         icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
@@ -369,11 +372,18 @@ mixin _FabMenusMixin on _FabStateMixin {
           widget.onLinkSelected?.call();
         },
       ),
-      _VerticalMenuItem(
-        icon: Symbols.attachment,
-        label: AppText.tr('option_attachment'),
-        onTap: widget.onAttachmentSelected,
-      ),
+      if (widget.isTaskMode)
+        _VerticalMenuItem(
+          icon: Symbols.notes,
+          label: AppText.tr('add_description'),
+          onTap: widget.onDescriptionSelected,
+        ),
+      if (!widget.isTaskMode)
+        _VerticalMenuItem(
+          icon: Symbols.attachment,
+          label: AppText.tr('option_attachment'),
+          onTap: widget.onAttachmentSelected,
+        ),
     ]);
   }
 
@@ -403,6 +413,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           label: widget.isLocked
               ? AppText.tr('option_unlock')
               : AppText.tr('option_lock'),
+          enabled: widget.canLock,
           onTap: widget.onLockSelected,
         ),
         _VerticalMenuItem(
@@ -425,7 +436,7 @@ mixin _FabMenusMixin on _FabStateMixin {
       ),
       _VerticalMenuItem(
         icon: Symbols.search,
-        label: AppText.tr('option_find'),
+        label: AppText.tr(widget.isTaskMode ? 'find_in_tasks' : 'option_find'),
         onTap: widget.onFindSelected,
       ),
       _VerticalMenuItem(
@@ -440,6 +451,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         label: widget.isLocked
             ? AppText.tr('option_unlock')
             : AppText.tr('option_lock'),
+        enabled: widget.canLock,
         onTap: widget.onLockSelected,
       ),
       _VerticalMenuItem(

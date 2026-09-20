@@ -1,3 +1,4 @@
+import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/shared/config/date_format.dart';
@@ -8,16 +9,16 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 
-/// A sandbox for the card designs, ahead of the task and project entities.
+/// A sandbox for note, task and future project card designs.
 ///
-/// Tasks and projects do not exist yet, so they are simulated with notes: the
+/// Task samples use the checklist document; project samples use notes: the
 /// same [EntityCard] and the same note bodies, only the titles (and the counts
 /// in the content) differ. The two layouts are shown one after the other so a
 /// single screen compares them.
 class LabPage extends StatelessWidget {
   const LabPage({super.key});
 
-  /// Two of each future kind, so grid and list can be compared.
+  /// Two of each kind, so grid and list can be compared.
   static final List<Note> _samples = <Note>[
     Note(
       id: 'note-1',
@@ -33,14 +34,14 @@ class LabPage extends StatelessWidget {
       date: '2026-02-02 14:30:00.000',
       category: 'citron',
     ),
-    Note(
+    Task(
       id: 'task-1',
       title: 'Task 1',
       content: '- [ ] Maquette\n- [x] Spécifications',
       date: '2026-02-03 08:00:00.000',
       category: 'azur',
     ),
-    Note(
+    Task(
       id: 'task-2',
       title: 'Task 2',
       content: '- [x] Tests\n- [ ] Mise en production',
@@ -50,7 +51,7 @@ class LabPage extends StatelessWidget {
     Note(
       id: 'project-1',
       title: 'Project 1',
-      content: 'Kanban en préparation.',
+      content: 'Project overview.',
       date: '2026-02-05 08:00:00.000',
       category: 'peche',
       attachments: <String>['brief.pdf'],

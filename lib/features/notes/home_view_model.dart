@@ -1,3 +1,4 @@
+import 'package:tano/core/models/note_access_policy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
@@ -19,10 +20,13 @@ class HomeViewModel extends ChangeNotifier {
     FoldersRepository? foldersRepository,
     List<Note>? initialNotes,
     List<Folder>? initialFolders,
-  })  : _foldersRepository = foldersRepository,
-        _allNotes = initialNotes != null ? List<Note>.of(initialNotes) : <Note>[],
-        _folders =
-            initialFolders != null ? List<Folder>.of(initialFolders) : <Folder>[] {
+  }) : _foldersRepository = foldersRepository,
+       _allNotes = initialNotes != null
+           ? List<Note>.of(initialNotes)
+           : <Note>[],
+       _folders = initialFolders != null
+           ? List<Folder>.of(initialFolders)
+           : <Folder>[] {
     _selection = SelectionController(
       isSelectable: (String id) => !_isLockedFolder(id),
     )..addListener(_onSelectionChanged);
@@ -58,6 +62,7 @@ class HomeViewModel extends ChangeNotifier {
   String _viewLayout = 'gridlist';
   late final SelectionController _selection;
   String _actionButtons = 'add';
+
   /// Notes and folders removed by the last delete, so undo can restore both.
   DeletedBatch? _lastDeleted;
 
@@ -162,9 +167,12 @@ class HomeViewModel extends ChangeNotifier {
   /// Runs the repository search, then drops the locked notes: locked notes are
   /// only searchable from within, with "find in note".
   Future<void> _refreshSearch() async {
-    final List<Note> results = await repository.searchNotes(_searchQuery);
-    _searchResults =
-        results.where((Note n) => !n.isLocked).toList(growable: true);
+    final query = _searchQuery;
+    final List<Note> results = await repository.searchNotes(query);
+    if (query != _searchQuery) return;
+    _searchResults = results
+        .where(NoteAccessPolicy(_folders).isSearchable)
+        .toList();
   }
 
   void setViewLayout(String viewLayout) {
@@ -258,8 +266,7 @@ class HomeViewModel extends ChangeNotifier {
   bool get hasNoteInSelection => selectedNotesCount > 0;
 
   /// True when the selection mixes notes and folders.
-  bool get hasMixedSelection =>
-      hasNoteInSelection && hasFolderInSelection;
+  bool get hasMixedSelection => hasNoteInSelection && hasFolderInSelection;
 
   /// Total number of notes held by the selected folders, for the delete
   /// confirmation.
@@ -306,10 +313,11 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> moveSelectedTo(String? folderId) async {
     for (int i = 0; i < _allNotes.length; i++) {
       if (!_selection.contains(_allNotes[i].id)) continue;
-      final Note moved = (folderId == null
-              ? _allNotes[i].withoutFolder()
-              : _allNotes[i].copyWith(folderId: folderId))
-          .copyWith(updatedAt: DateTime.now().toString());
+      final Note moved =
+          (folderId == null
+                  ? _allNotes[i].withoutFolder()
+                  : _allNotes[i].copyWith(folderId: folderId))
+              .copyWith(updatedAt: DateTime.now().toString());
       _allNotes[i] = moved;
       await repository.upsertNote(moved);
     }
@@ -372,8 +380,9 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Persists a folder change (name, theme, cover, lock…).
   Future<void> saveFolder(Folder folder) async {
-    final Folder updated =
-        folder.copyWith(updatedAt: DateTime.now().toString());
+    final Folder updated = folder.copyWith(
+      updatedAt: DateTime.now().toString(),
+    );
     final int index = _folders.indexWhere((Folder f) => f.id == updated.id);
     if (index != -1) {
       _folders[index] = updated;
@@ -433,8 +442,9 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   List<Note> _visibleNotes() {
-    final List<Note> source =
-        hasSearchQuery ? (_searchResults ?? <Note>[]) : _unfiledNotes();
+    final List<Note> source = hasSearchQuery
+        ? (_searchResults ?? <Note>[])
+        : _unfiledNotes();
     return List<Note>.of(source);
   }
 
@@ -452,37 +462,9 @@ class HomeViewModel extends ChangeNotifier {
     _folders.sort(_compareFolders);
   }
 
-  int _compareFolders(Folder folder1, Folder folder2) {
-    return compareCards(
-      important1: folder1.important,
-      important2: folder2.important,
-      by: _sortBy,
-      secondaryBy: _secondarySortBy,
-      ascending: _sortAscending,
-      compare: () => _compareFolder(folder1, folder2, _sortBy),
-      fallback: () => _compareFolder(folder1, folder2, _secondarySortBy),
-      dateCompare: () => _compareFolder(folder1, folder2, 'date'),
-    );
-  }
-
-  int _compareFolder(Folder folder1, Folder folder2, String criteria) {
-    switch (criteria) {
-      case 'alpha':
-        return folder1.name.toLowerCase().compareTo(folder2.name.toLowerCase());
-      case 'date':
-        return folder2.date.compareTo(folder1.date);
-      case 'updated':
-        return folder2.updatedAt.compareTo(folder1.updatedAt);
-      case 'important':
-        final int a = folder1.important ? 1 : 0;
-        final int b = folder2.important ? 1 : 0;
-        return b.compareTo(a);
-      case 'theme':
-      case 'category':
-        return cardThemeWeight(folder1.category)
-            .compareTo(cardThemeWeight(folder2.category));
-      default:
-        return 0;
-    }
-  }
+  int _compareFolders(Folder a, Folder b) => EntitySorting<Folder>(
+    by: _sortBy,
+    secondaryBy: _secondarySortBy,
+    ascending: _sortAscending,
+  ).compare(a, b);
 }

@@ -1,69 +1,60 @@
-# Tests & qualité
+# Tests and quality
 
-Comment les tests sont organisés, comment on les lance, et ce qu'ils ne couvrent
-pas. Ce document décrit l'état **réel** ; les décisions de fond vivent dans la
-[feuille de route](./roadmap.md).
+## Test layers
 
-## Les familles de tests
-
-| Famille | Où | Ce qu'elle vérifie |
-|---|---|---|
-| Unitaires et ViewModels | `test/*_test.dart` | Tri, sélection, édition, recherche, formats de date |
-| Dépôts | `test/sqlite_notes_repository_test.dart` | La vraie base chiffrée, sur un fichier temporaire |
-| Export / import | `test/export_import_test.dart` | L'aller-retour `.tano`, en clair et chiffré |
-| Widgets | `test/*_test.dart` | Les écrans réels, avec des faux en mémoire |
-| Goldens | `test/golden/` | Les cartes, vingt images, jamais en CI |
-| Intégration | `integration_test/` | Sur un appareil : dossiers, verrou, export/import |
-
-**300 tests** dans `flutter test` (goldens compris), plus les trois fichiers
-d'intégration, qui demandent un appareil ou un simulateur.
-
-## Les lancer
-
-    flutter analyze                      # doit rester à 0
-    flutter test                         # tout, goldens compris
-    flutter test --exclude-tags golden   # ce que fait la CI
-    flutter test integration_test        # sur un appareil
-
-## Les goldens
-
-Ils comparent des pixels, donc ils dépendent de la machine : ils sont générés et
-relus **en local**, et la CI les exclut (`dart_test.yaml` déclare le tag).
-
-    flutter test --update-goldens test/golden/
-
-puis **regarder les PNG**. Le diff git dit combien d'octets ont bougé ; l'image
-dit quoi. Les vraies polices sont chargées par `test/golden/golden_setup.dart` —
-Roboto depuis le cache de Flutter, Material Symbols depuis le paquet résolu. Sans
-elles, tout serait des rectangles.
-
-## Les conventions des tests de widgets
-
-- Un faux dépôt en mémoire plutôt que la base, branché par
-  `getIt.registerSingleton`.
-- `SharedPreferences.setMockInitialValues` et `PackageInfo.setMockInitialValues`
-  avant de pomper l'app.
-- `LocaleController.instance.init()` et `ThemeController.instance.init()` en
-  tête, comme le fait `main`.
-- `AuthService` remplacé dans `getIt` : le prompt biométrique ne se pilote pas.
-
-## Ce que les tests ne couvrent pas
-
-- **Le sélecteur de fichiers** de l'export : c'est un dialogue système. C'est la
-  limite du test d'export — tout ce qui est en dessous (l'archive, le
-  chiffrement, la fusion, les pièces jointes) est couvert au niveau des services,
-  dans `test/export_import_test.dart`.
-- **Le vrai prompt biométrique** : remplacé par un faux qui répond, pour vérifier
-  ce que l'app fait de la réponse.
-- **Le trousseau du système** : `flutter_secure_storage` n'existe pas sous
-  `flutter test`, donc les tests exercent son chemin de repli. C'est visible dans
-  la sortie (« secure storage unavailable ») et c'est attendu.
-
-## Ce qui est exigé
-
-| Règle | Comment |
+| Layer | Coverage |
 |---|---|
-| `flutter analyze` à 0 | La CI, à chaque PR |
-| Tests verts | La CI, avant tout merge |
-| Goldens relus à l'œil | En local, après tout changement voulu |
-| Les deux cibles compilent | La CI : `build apk` sur Ubuntu, `build ios --no-codesign` sur macOS |
+| Unit/ViewModel | Sorting, nullable fields, selection, editing, policy and feature access |
+| SQLite FFI | Persistence, schema upgrades, disposable legacy cleanup, transactions |
+| Archive/import/export | Plain/encrypted round trips, lock handling, collisions, paths, CRC and expansion limits |
+| Widgets | Screens, locks, search scope, layout and navigation with fake repositories |
+| Goldens | 20 local card comparisons; excluded from CI due to host font rasterization |
+| Integration | Device-only folders, locking and transfer scenarios under integration_test |
+
+FFI uses ordinary SQLite, not proof of SQLCipher encryption. `flutter_test_config.dart`
+provides mock secure storage for tests; production never falls back to a public key.
+
+```sh
+flutter analyze
+flutter test
+flutter test --exclude-tags golden
+flutter test integration_test
+```
+
+Only run device integration with an explicitly selected/authorized device. Do not
+regenerate goldens to hide regressions. If an intended visual change needs new
+references, generate and inspect PNGs before accepting them.
+
+Initial 18 September consolidation: 316 passing tests including 20 goldens. Follow-up on 19 September: **320 tests pass**, including 20 goldens,
+with clean static analysis. The command output is the source of truth for counts. Native builds, SQLCipher/backup verification and captured
+Sentry envelopes are separate checks, not implied by Dart test success.
+
+## Step 2 validation
+
+333 tests pass, including 20 unchanged goldens. Static analysis is clean.
+Debug Android and unsigned debug iOS builds succeed. New scenarios cover lifecycle
+privacy, protected drafts/system Back, OS credential return, startup retries and
+partial initialization, unreadable preferences, save failure/retry, and orphan
+collection with shared/trash/corrupt references. See [step 2](consolidation-step-2.md).
+These builds do not replace real-device security checks.
+
+## Developer fixtures
+
+In a debug build, open Settings > Reset data > Developer reset and confirm.
+This replaces all notes, folders, attachments and preferences with synthetic
+fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
+populated folder, with long text, bookmarks, themes, note links and checklists.
+Locked fixtures are enabled only when the device has a system credential.
+The button is hidden and the operation rejected in profile/release builds.
+Normal reset and first launch keep an empty database. Fixtures cover notes, folders and four task lists (mixed, completed and locked).
+
+Run `flutter test test/developer_reset_test.dart` to check replacement,
+repeatability, reference integrity and both device-lock capability states.
+
+Release exclusion check: `flutter build apk --release --target-platform
+android-arm64 --analyze-size` was verified locally. The AOT size report excludes
+`notes_fixtures.dart`, `buildFixtures`, `TanoFixtures` and `developerReset`;
+the APK contains no fixture assets or developer-reset labels. Fixture insertion
+and localized developer-reset strings also use compile-time `kDebugMode` guards.
+
+Task-list behavior and focused tests: [Task lists](tasks.md).

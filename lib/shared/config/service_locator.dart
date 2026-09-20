@@ -8,14 +8,24 @@ import 'package:tano/core/services/installation_key.dart';
 final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
-  getIt.registerLazySingleton<NotesRepository>(
-    () => SQLiteNotesRepository(
-      // The database is encrypted with a key that lives in the OS secure
-      // storage and never leaves the device.
-      passwordProvider: InstallationKey.instance.databasePassphrase,
-    ),
-  );
+  if (!getIt.isRegistered<NotesRepository>()) {
+    getIt.registerLazySingleton<NotesRepository>(
+      () => SQLiteNotesRepository(
+        // The database is encrypted with a key that lives in the OS secure
+        // storage and never leaves the device.
+        passwordProvider: InstallationKey.instance.databasePassphrase,
+      ),
+    );
+  }
   // Shared stores and services: a single instance for the whole app.
-  getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
-  getIt.registerLazySingleton<AuthService>(() => AuthService());
+  final attachments = getIt.isRegistered<AttachmentsStore>()
+      ? getIt<AttachmentsStore>()
+      : AttachmentsStore();
+  await attachments.clearMaterialized();
+  if (!getIt.isRegistered<AttachmentsStore>()) {
+    getIt.registerSingleton<AttachmentsStore>(attachments);
+  }
+  if (!getIt.isRegistered<AuthService>()) {
+    getIt.registerLazySingleton<AuthService>(() => AuthService());
+  }
 }

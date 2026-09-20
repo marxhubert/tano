@@ -5,12 +5,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 
-/// The privacy policy, kept inside the app because there is no website.
-///
-/// It states the product promises: nothing leaves the device, the local data
-/// is encrypted at rest, and the optional crash reports are anonymous and can
-/// be switched off at any time. The same text feeds the store listings — see
-/// `docs/confidentialite.md`.
+/// In-app privacy policy; kept in sync with site/privacy and docs/privacy.md.
 class PrivacyPage extends StatelessWidget {
   const PrivacyPage({super.key});
 

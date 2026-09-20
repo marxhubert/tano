@@ -1,9 +1,10 @@
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/note.dart';
 
 /// Sorts notes the way every screen shows them: **bookmarked first**, then the
 /// chosen criterion, with the same fallbacks as the home screen.
-class NoteSorting {
-  const NoteSorting({
+class EntitySorting<T extends ContentEntity> {
+  const EntitySorting({
     this.by = 'date',
     this.secondaryBy = 'date',
     this.ascending = true,
@@ -14,12 +15,12 @@ class NoteSorting {
   final bool ascending;
 
   /// Returns a sorted copy of [notes].
-  List<Note> sort(List<Note> notes) => List<Note>.of(notes)..sort(compare);
+  List<T> sort(List<T> notes) => List<T>.of(notes)..sort(compare);
 
-  int compare(Note note1, Note note2) {
+  int compare(T note1, T note2) {
     return compareCards(
-      important1: note1.important,
-      important2: note2.important,
+      important1: note1.isImportant,
+      important2: note2.isImportant,
       by: by,
       secondaryBy: secondaryBy,
       ascending: ascending,
@@ -29,26 +30,32 @@ class NoteSorting {
     );
   }
 
-  int _criterion(Note note1, Note note2, String criteria) {
+  int _criterion(T note1, T note2, String criteria) {
     switch (criteria) {
       case 'alpha':
-        return note1.title.toLowerCase().compareTo(note2.title.toLowerCase());
+        return note1.label.toLowerCase().compareTo(note2.label.toLowerCase());
       case 'date':
         return note2.date.compareTo(note1.date);
       case 'updated':
         return note2.updatedAt.compareTo(note1.updatedAt);
       case 'important':
-        final int a = note1.important ? 1 : 0;
-        final int b = note2.important ? 1 : 0;
+        final int a = note1.isImportant ? 1 : 0;
+        final int b = note2.isImportant ? 1 : 0;
         return b.compareTo(a);
       case 'theme':
       case 'category':
-        return cardThemeWeight(note1.category)
-            .compareTo(cardThemeWeight(note2.category));
+        return cardThemeWeight(
+          note1.category,
+        ).compareTo(cardThemeWeight(note2.category));
       default:
         return 0;
     }
   }
+}
+
+/// Compatibility name for existing note screens.
+class NoteSorting extends EntitySorting<Note> {
+  const NoteSorting({super.by, super.secondaryBy, super.ascending});
 }
 
 /// The card ordering rule, in **one** place: bookmarked cards first, then the
@@ -82,16 +89,26 @@ int compareCards({
 /// Sort weight of a card theme, shared by notes and folders.
 int cardThemeWeight(String theme) {
   switch (theme) {
-    case 'menthe': return 0;
-    case 'citron': return 1;
-    case 'peche': return 2;
-    case 'lavande': return 3;
-    case 'rose': return 4;
-    case 'azur': return 5;
-    case 'sable': return 6;
-    case 'sauge': return 7;
-    case 'bonbon': return 8;
+    case 'menthe':
+      return 0;
+    case 'citron':
+      return 1;
+    case 'peche':
+      return 2;
+    case 'lavande':
+      return 3;
+    case 'rose':
+      return 4;
+    case 'azur':
+      return 5;
+    case 'sable':
+      return 6;
+    case 'sauge':
+      return 7;
+    case 'bonbon':
+      return 8;
     case 'nuage':
-    default: return 9;
+    default:
+      return 9;
   }
 }

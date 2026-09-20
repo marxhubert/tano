@@ -107,17 +107,6 @@ class SplashScreenState extends State<SplashScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13.0, color: muted),
           ),
-          const SizedBox(height: 12.0),
-          Text(
-            '$error',
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11.0,
-              color: muted.withValues(alpha: 0.7),
-            ),
-          ),
           const SizedBox(height: sectionGap),
           SizedBox(
             width: double.infinity,
@@ -130,10 +119,7 @@ class SplashScreenState extends State<SplashScreen> {
           const SizedBox(height: 4.0),
           TextButton(
             onPressed: _quit,
-            child: Text(
-              AppText.tr('quit_app'),
-              style: TextStyle(color: muted),
-            ),
+            child: Text(AppText.tr('quit_app'), style: TextStyle(color: muted)),
           ),
         ],
       ),

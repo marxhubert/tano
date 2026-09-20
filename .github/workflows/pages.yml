@@ -33,6 +33,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The filled site/config.json is git-ignored, so the pages job writes it
+      # from the SITE_CONFIG_JSON secret (Settings > Secrets and variables >
+      # Actions) before packaging. Without the secret, the template is used and
+      # the deployed site shows the placeholders until it is set.
+      - name: Write the site configuration
+        env:
+          SITE_CONFIG_JSON: ${{ secrets.SITE_CONFIG_JSON }}
+        run: |
+          if [ -n "$SITE_CONFIG_JSON" ]; then
+            printf '%s' "$SITE_CONFIG_JSON" > site/config.json
+          else
+            cp site/config.json.dist site/config.json
+          fi
+
       - name: Set up Pages
         uses: actions/configure-pages@v6
 

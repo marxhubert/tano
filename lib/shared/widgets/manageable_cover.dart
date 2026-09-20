@@ -28,7 +28,7 @@ class ManageableCover extends StatefulWidget {
   final Future<void> Function() onRemove;
 
   /// Fixed height of the cover, cropped by [fit]. When null the image keeps
-  /// its own aspect ratio at full width (the note editor) instead of being
+  /// its own aspect ratio at full width instead of being
   /// cropped.
   final double? height;
 
@@ -107,8 +107,10 @@ class _ManageableCoverState extends State<ManageableCover> {
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(color: borderColor, width: borderWidth),
-                        bottom:
-                            BorderSide(color: borderColor, width: borderWidth),
+                        bottom: BorderSide(
+                          color: borderColor,
+                          width: borderWidth,
+                        ),
                       ),
                     ),
                   ),

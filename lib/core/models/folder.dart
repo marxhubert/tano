@@ -1,8 +1,17 @@
+import 'package:tano/core/models/content_entity.dart';
+
 /// A folder grouping notes.
 ///
 /// It carries the same organisational attributes as a note (favourite, theme,
 /// lock, trash) but no content of its own.
-class Folder {
+class Folder implements ContentEntity {
+  @override
+  EntityKind get kind => EntityKind.folder;
+  @override
+  String get label => name;
+  @override
+  bool get isImportant => important;
+
   Folder({
     this.id = '',
     this.name = '',
@@ -15,66 +24,68 @@ class Folder {
     this.isDeleted = false,
     this.deletedAt,
     this.coverImage,
-  })  : createdAt = createdAt ?? date,
-        updatedAt = updatedAt ?? date;
+  }) : createdAt = createdAt ?? date,
+       updatedAt = updatedAt ?? date;
 
+  @override
   final String id;
   final String name;
+  @override
   final String date;
 
   /// When the folder was created. Older data has no such column, so it falls
   /// back to [date].
+  @override
   final String createdAt;
 
   /// When the folder was last modified. Older data has no such column, so it
   /// falls back to [date].
+  @override
   final String updatedAt;
 
   final bool important;
+  @override
   final String category;
+  @override
   final bool isLocked;
+  @override
   final bool isDeleted;
+  @override
   final String? deletedAt;
 
   /// Optional cover image file name, displayed on the folder card.
+  @override
   final String? coverImage;
 
   factory Folder.fromJson(Map<String, dynamic> json) => Folder(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        date: json['date'] as String? ?? '',
-        createdAt: json['createdAt'] as String?,
-        updatedAt: json['updatedAt'] as String?,
-        important: json['important'] == 1,
-        category: _normalizeCategory(json['category'] as String?),
-        isLocked: json['isLocked'] == 1,
-        isDeleted: json['isDeleted'] == 1,
-        deletedAt: json['deletedAt'] as String?,
-        coverImage: json['coverImage'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    date: json['date'] as String? ?? '',
+    createdAt: json['createdAt'] as String?,
+    updatedAt: json['updatedAt'] as String?,
+    important: json['important'] == 1,
+    category: normalizeCategory(json['category'] as String?),
+    isLocked: json['isLocked'] == 1,
+    isDeleted: json['isDeleted'] == 1,
+    deletedAt: json['deletedAt'] as String?,
+    coverImage: json['coverImage'] as String?,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'name': name,
-        'date': date,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-        'important': important ? 1 : 0,
-        'category': category,
-        'isLocked': isLocked ? 1 : 0,
-        'isDeleted': isDeleted ? 1 : 0,
-        'deletedAt': deletedAt,
-        'coverImage': coverImage,
-      };
+    'id': id,
+    'name': name,
+    'date': date,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'important': important ? 1 : 0,
+    'category': category,
+    'isLocked': isLocked ? 1 : 0,
+    'isDeleted': isDeleted ? 1 : 0,
+    'deletedAt': deletedAt,
+    'coverImage': coverImage,
+  };
 
   static const String defaultCategory = 'nuage';
-
-  static String _normalizeCategory(String? value) {
-    if (value == null || value.isEmpty || value == 'none' || value == 'neutral') {
-      return defaultCategory;
-    }
-    return value;
-  }
 
   Folder copyWith({
     String? id,
@@ -86,8 +97,8 @@ class Folder {
     String? category,
     bool? isLocked,
     bool? isDeleted,
-    String? deletedAt,
-    String? coverImage,
+    Object? deletedAt = unchangedField,
+    Object? coverImage = unchangedField,
   }) {
     return Folder(
       id: id ?? this.id,
@@ -99,27 +110,10 @@ class Folder {
       category: category ?? this.category,
       isLocked: isLocked ?? this.isLocked,
       isDeleted: isDeleted ?? this.isDeleted,
-      deletedAt: deletedAt ?? this.deletedAt,
-      coverImage: coverImage ?? this.coverImage,
+      deletedAt: copiedNullable<String>(deletedAt, this.deletedAt),
+      coverImage: copiedNullable<String>(coverImage, this.coverImage),
     );
   }
 
-  /// Returns a copy of this folder without its cover image.
-  ///
-  /// [copyWith] cannot clear the nullable [coverImage] field, so removing the
-  /// cover goes through this explicit copy.
-  Folder withoutCover() {
-    return Folder(
-      id: id,
-      name: name,
-      date: date,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      important: important,
-      category: category,
-      isLocked: isLocked,
-      isDeleted: isDeleted,
-      deletedAt: deletedAt,
-    );
-  }
+  Folder withoutCover() => copyWith(coverImage: null);
 }
