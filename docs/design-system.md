@@ -25,15 +25,14 @@ settings and editors. Editor paper adds a fine notebook margin. Category colors
 only tint cards; category identifiers and stored data are unchanged. Native splash
 backgrounds use the same paper colors.
 
-The FAB uses the site's primary `.btn` treatment, shared by “Read the
-documentation” and “Repository”: opaque accent fill, on-accent text and icons,
-fully rounded resting/extended forms (with the original menu corner treatment),
-and a 1px border mixing 78% accent with 22% black in sRGB. A 1px
-white highlight at 25% opacity runs inside the top edge; the outer black shadow
-uses 90% opacity, a 10px vertical offset, 18px blur and -14px spread. This replaces
-the earlier translucent paper and backdrop blur. Light mode uses #0F766E with
-#FDFAF2 content; dark mode uses #5CC9BD with #10241F content. Flutter and browser
-rasterization can differ despite these shared source values.
+The FAB keeps the site's primary `.btn` treatment, shared by “Read the
+documentation” and “Repository”: accent fill, on-accent text and icons, fully
+rounded resting/extended forms with the original menu corners, a 1px border mixing
+78% accent with 22% black in sRGB, a 1px white highlight inside the top edge and
+the compact black shadow. The fill is drawn at **86% over a 10px backdrop blur**,
+so the page shows through the way it does behind the site's masthead, while the
+content stays on-accent. Modes, icons and focus behavior are unchanged. Flutter
+and browser rasterization can differ despite these shared source values.
 
 FAB modes, icons, menu layout and focus behavior stay unchanged. Pointer hover
 uses the site's 160ms ease, a 1px lift and 105% brightness. Action states,
@@ -77,6 +76,11 @@ Both modes share `EntitySliver`. List rows preserve card widths in an incomplete
 last row. Swipe gestures perform no actions; selection and action menus remain
 the way to move, delete and undo. Existing sort, folder/search scope and lock rules
 are preserved.
+
+Every route keeps one centred content column of `appContentMaxWidth` (1080), like
+the site's wrap, and the FAB follows its right edge rather than the window's. Grid
+cards keep a fixed height that scales with the text size, so a tablet widens them
+instead of stretching them into mostly empty paper.
 
 Motion remains 150/250/450ms. Typography scales with the system and app preference.
 Golden previews cover light/dark Home, Note, Task and menus in addition to card

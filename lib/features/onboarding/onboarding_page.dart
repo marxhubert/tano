@@ -205,15 +205,15 @@ class _PrimaryButton extends StatelessWidget {
         width: double.infinity,
         height: 50.0,
         child: CupertinoButton.filled(
-          color: tanoTeal,
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(pillRadius),
           onPressed: onPressed,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: TanoText.listTitle,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ),
@@ -225,8 +225,8 @@ class _PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: tanoTeal,
-          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(pillRadius),
           ),

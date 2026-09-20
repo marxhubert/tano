@@ -351,11 +351,11 @@ class _TrashAction extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(appPaddingSmall),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
+          color: barColor(context),
           shape: BoxShape.circle,
-          // A hairline keeps the white dots readable on pale cards.
+          // A hairline keeps the dots readable on pale cards.
           border: Border.all(
-            color: Colors.black.withValues(alpha: 0.18),
+            color: primaryTextColor(context).withValues(alpha: 0.18),
             width: 0.5,
           ),
         ),

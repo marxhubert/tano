@@ -98,9 +98,7 @@ class _ThemePreview extends StatelessWidget {
               color: screenBg,
               borderRadius: BorderRadius.circular(isSelected ? 13.0 : 12.0),
               border: Border.all(
-                color: isSelected
-                    ? tanoAmber
-                    : Colors.grey.withValues(alpha: 0.3),
+                color: isSelected ? tanoAmber : paperRuleColor(context),
                 width: isSelected ? 2.0 : 1.0,
               ),
             ),

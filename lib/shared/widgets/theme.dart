@@ -13,6 +13,10 @@ const Color tanoAmberDark = Color(0xFFDFA14A);
 const Color lightBackground = Color(0xFFF2EBDC);
 const Color darkBackground = Color(0xFF18140E);
 
+/// The content column, as on the site: whatever the window, the page keeps the
+/// same readable width and the rest stays paper.
+const double appContentMaxWidth = 1080.0;
+
 // --- Palette des États (Tickets) ---
 /// The app has a single red. `error` carries both meanings: a real error, and a
 /// destructive action ("delete", "empty the bin", "delete the selection"). The

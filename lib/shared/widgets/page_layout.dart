@@ -18,7 +18,13 @@ class FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
-    return scaffoldGeometry.scaffoldSize.width -
+    // On a wide window the page is centred in [appContentMaxWidth], so the FAB
+    // hugs the content's right edge rather than the screen's.
+    final double screen = scaffoldGeometry.scaffoldSize.width;
+    final double content = screen < appContentMaxWidth
+        ? screen
+        : appContentMaxWidth;
+    return (screen + content) / 2 -
         scaffoldGeometry.floatingActionButtonSize.width -
         paddingX;
   }
@@ -276,12 +282,22 @@ class _PageScaffoldState extends State<PageScaffold> {
       ],
     );
 
-    if (!widget.freezeBody) return scrollView;
+    // One content column, centred: on a tablet the page reads like the site
+    // instead of stretching edge to edge.
+    final Widget body = Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: appContentMaxWidth),
+        child: scrollView,
+      ),
+    );
+
+    if (!widget.freezeBody) return body;
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         if (keyboard == 0.0 || !constraints.hasBoundedHeight) {
-          return scrollView;
+          return body;
         }
         // Laid out against the full height, the body no longer knows the
         // keyboard is there: the content stays where it rests.
@@ -289,7 +305,7 @@ class _PageScaffoldState extends State<PageScaffold> {
           alignment: Alignment.topCenter,
           minHeight: constraints.maxHeight + keyboard,
           maxHeight: constraints.maxHeight + keyboard,
-          child: scrollView,
+          child: body,
         );
       },
     );

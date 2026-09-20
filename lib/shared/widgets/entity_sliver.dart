@@ -47,12 +47,15 @@ class EntitySliver<T> extends StatelessWidget {
             const SizedBox(height: appPaddingTight),
       );
     }
+    // Cards keep the site's height whatever the window: on a tablet they get
+    // wider, not taller, so the paper does not read as mostly empty.
+    final double cardHeight = 196.0 * MediaQuery.textScalerOf(context).scale(1);
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
         crossAxisSpacing: appPaddingTight,
         mainAxisSpacing: appPaddingTight,
-        childAspectRatio: 0.9,
+        mainAxisExtent: cardHeight,
       ),
       itemCount: items.length,
       itemBuilder: (BuildContext context, int index) =>

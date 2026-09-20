@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,14 +20,20 @@ enum FabVerticalMenu { none, add, color, more, link, move }
 
 enum ListSortCriteria { date, title }
 
-// Primary button tokens from site/site.css (.btn). Shared across every FAB mode.
+// Primary button tokens from site/site.css (.btn), drawn a touch translucent
+// over a blur so the page shows through, like the site bar. Shared across every
+// FAB mode.
 const double _fabLabelSize = 14.72;
+const double _fabSurfaceAlpha = .86;
 Color _fabForeground(BuildContext context) =>
     Theme.of(context).colorScheme.onPrimary;
 Color _fabMenuSurface(BuildContext context) =>
-    Theme.of(context).colorScheme.primary;
-Color _fabActiveSurface(BuildContext context) =>
-    Color.lerp(_fabMenuSurface(context), _fabForeground(context), .12)!;
+    Theme.of(context).colorScheme.primary.withValues(alpha: _fabSurfaceAlpha);
+
+/// The open action's zone paints the menu's own surface, so the zone and the
+/// panel read as one piece of teal: the shape marks the active action, not a
+/// tint. A lighter tint here is what left the two teals in the first place.
+Color _fabActiveSurface(BuildContext context) => _fabMenuSurface(context);
 Color _fabImportant(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
     ? const Color(0xFF603600)
@@ -328,6 +335,11 @@ class AppFabState extends State<AppFab>
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
+    // The FAB follows the content column, not the raw window: on a tablet it
+    // keeps the width of the centred page.
+    final double contentWidth = screenWidth < appContentMaxWidth
+        ? screenWidth
+        : appContentMaxWidth;
     const double btnHeight = 64.0;
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
@@ -339,8 +351,12 @@ class AppFabState extends State<AppFab>
             bottom: Radius.circular(55),
           )
         : BorderRadius.circular(55);
-    final buttonColor = Theme.of(context).colorScheme.primary;
-    final buttonBorder = Color.lerp(buttonColor, Colors.black, .22)!;
+    final buttonColor = _fabMenuSurface(context);
+    final buttonBorder = Color.lerp(
+      Theme.of(context).colorScheme.primary,
+      Colors.black,
+      .22,
+    )!;
 
     if (isKeyboardClosed != _wasKeyboardClosed) {
       _isManuallyExpanded = null;
@@ -373,8 +389,8 @@ class AppFabState extends State<AppFab>
 
     // Target width based on state
     final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
-        ? screenWidth - 24.0
-        : screenWidth - 48.0;
+        ? contentWidth - 24.0
+        : contentWidth - 48.0;
 
     double currentWidth = btnHeight;
     if (isExpanded || isMenuOpen) {
@@ -500,6 +516,14 @@ class AppFabState extends State<AppFab>
                 return Stack(
                   alignment: Alignment.bottomCenter,
                   children: [
+                    // The masthead blur: whatever shows through the paper is
+                    // softened, exactly like the site bar.
+                    Positioned.fill(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
                     // Measurement zone - Unconstrained height to avoid race conditions during animation
                     Offstage(
                       child: OverflowBox(
@@ -507,7 +531,7 @@ class AppFabState extends State<AppFab>
                         // stable no matter the current FAB width (the closed FAB is
                         // only 64px wide and would otherwise under-measure).
                         minWidth: 0,
-                        maxWidth: screenWidth - 24.0,
+                        maxWidth: contentWidth - 24.0,
                         minHeight: 0,
                         maxHeight: double.infinity,
                         alignment: Alignment.topCenter,
