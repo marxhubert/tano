@@ -33,6 +33,7 @@
     toggle.addEventListener("click", function () {
       var next = currentTheme() === "dark" ? "light" : "dark";
       root.setAttribute("data-theme", next);
+      applyScreens();
       try {
         localStorage.setItem(STORAGE_KEY, next);
       } catch (error) {
@@ -41,12 +42,33 @@
     });
   }
 
+  // Until the visitor chooses, the shots follow the system preference too.
+  if (media && media.addEventListener) {
+    media.addEventListener("change", applyScreens);
+  }
+
   /* ---------- The site's own values ---------- */
 
   // Everything personal (author, links, stores) comes from site/config.json,
   // written at deploy time; the markup carries safe fallbacks, so a missing
   // file simply leaves them in place.
   var configRoot = document.body.getAttribute("data-root") || ".";
+
+  // Each phone names its screenshots by convention, <name>-light.jpg and
+  // <name>-dark.jpg under assets/screens; the one matching the theme is shown.
+  function applyScreens() {
+    var shots = document.querySelectorAll("[data-screen]");
+    if (!shots.length) {
+      return;
+    }
+    var suffix = currentTheme() === "dark" ? "-dark.jpg" : "-light.jpg";
+    for (var i = 0; i < shots.length; i++) {
+      var name = shots[i].getAttribute("data-screen");
+      shots[i].setAttribute("src", configRoot + "/assets/screens/" + name + suffix);
+    }
+  }
+
+  applyScreens();
 
   function hydrate(config) {
     var texts = document.querySelectorAll("[data-cfg]");

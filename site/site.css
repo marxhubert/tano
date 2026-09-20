@@ -347,7 +347,8 @@ h1 {
 .seal {
   position: relative; width: clamp(220px, 25vw, 290px); aspect-ratio: 1;
   margin-inline: auto; border: 1px solid var(--vault-rule); border-radius: 50%;
-  display: grid; place-items: center; text-align: center; padding: 2.2rem;
+  display: grid; place-items: center; align-content: center;
+  text-align: center; padding: 2.2rem;
 }
 .seal::after {
   content: ""; position: absolute; inset: 11px;
@@ -375,38 +376,38 @@ h1 {
 }
 .project-points strong { color: var(--ink); }
 
-.board {
-  display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr));
-  gap: .85rem; padding: 1rem;
-  background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 24px 40px -30px rgba(38, 26, 6, .8);
+/* The app on real phones: the bezel PNG is the frame, the screenshot sits
+  under it, cropped to the screen area measured on that frame. The two
+  frames lie on a diagonal, the Pro in front, the Pro Max behind. */
+.phones {
+  position: relative; width: 100%; max-width: 460px;
+  /* Flush with the wrap's right edge, minus the bezel's own transparent pad. */
+  margin: 0 -0.6% 0 auto;
+  aspect-ratio: 1 / 1.5;
 }
-.column {
-  display: grid; align-content: start; gap: .55rem; padding: .75rem;
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  border: 1px solid var(--rule); border-radius: 8px;
+.phone { position: absolute; margin: 0; }
+.phone-pro-max {
+  top: 7%; left: 0; width: 55.8%; z-index: 1;
+  --screen-left: 5.256%; --screen-top: 2.261%;
+  --screen-width: 89.487%; --screen-height: 95.477%;
 }
-.column-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: 0 0 .15rem; font-family: var(--mono); font-size: .62rem;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+.phone-pro {
+  right: 0; bottom: 0; width: 54%; z-index: 2;
+  --screen-left: 5.417%; --screen-top: 2.582%;
+  --screen-width: 89.167%; --screen-height: 94.837%;
 }
-.column-head span {
-  padding: .02rem .42rem; border: 1px solid var(--rule);
-  border-radius: 999px; background: var(--paper-2);
+.phone-frame {
+  position: relative; z-index: 1; display: block; width: 100%; height: auto;
+  filter: drop-shadow(0 22px 32px rgba(38, 26, 6, .34));
 }
-.kanban-card {
-  position: relative; overflow: hidden; padding: .68rem .75rem .68rem .95rem;
-  background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
-  font-family: var(--sans); font-size: .82rem; line-height: 1.4; color: var(--ink-soft);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 8px 14px -12px rgba(38, 26, 6, .85);
+.phone-pro .phone-frame { filter: drop-shadow(0 32px 46px rgba(38, 26, 6, .42)); }
+.phone-screen {
+  position: absolute; z-index: 0; display: block;
+  left: var(--screen-left); top: var(--screen-top);
+  width: var(--screen-width); height: var(--screen-height);
+  object-fit: cover; object-position: top center;
+  border-radius: 8% / 4%;
 }
-.kanban-card.done { color: var(--muted); text-decoration: line-through; }
-.card-tag {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--accent);
-}
-.card-tag.amber { background: var(--amber); }
 
 /* ---------- Epigraph + tiers ---------- */
 
@@ -540,7 +541,7 @@ html.js [data-reveal].in {
   .hero-art { order: -1; min-height: 300px; max-width: 520px; margin-inline: auto; width: 100%; }
   .pillars, .grid { grid-template-columns: repeat(2, 1fr); }
   .support-grid { grid-template-columns: 1fr; }
-  .board { max-width: 560px; margin-inline: auto; width: 100%; }
+  .phones { max-width: 420px; margin-inline: auto; }
 }
 @media (max-width: 760px) {
   .download-band { grid-template-columns: 1fr; }
@@ -551,7 +552,6 @@ html.js [data-reveal].in {
   .theme-toggle { margin-left: auto; }
   .pillars, .grid { grid-template-columns: 1fr; }
   .support-card .btn { align-self: stretch; }
-  .board { grid-template-columns: repeat(3, 150px); overflow-x: auto; }
   .sheet-back { display: none; }
   .sheet-front { position: static; transform: rotate(-.6deg); width: 100%; }
   .hero-art { min-height: 0; }
