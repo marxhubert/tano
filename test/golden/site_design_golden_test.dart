@@ -88,7 +88,7 @@ void main() {
           find.byKey(goldenKey),
           matchesGoldenFile('goldens/paper_note_${mode.name}.png'),
         );
-        await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+        await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
         await tester.pumpAndSettle();
         await tester.tap(find.text('This week'));
         await tester.pumpAndSettle();

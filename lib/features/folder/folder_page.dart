@@ -533,7 +533,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         // A landscape phone moves the folder title, flags included, to the app
         // bar and drops the body's title line. Home keeps its own.
         condenseHeader: true,
-        fabOnLeft: _fabOnLeft,
 
         headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
         // Nothing but the illustration: it must hold its place.

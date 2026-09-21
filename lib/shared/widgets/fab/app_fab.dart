@@ -128,7 +128,8 @@ class AppFab extends StatefulWidget {
   final bool collapsedByDefault;
 
   /// When true the FAB sits on the left: an expanded bar grows rightwards and
-  /// its reduce chevron moves to the head.
+  /// its reduce chevron moves to the head. Landscape only — portrait keeps the
+  /// chrome it always had (see [AppFabState.effectiveOnLeft]).
   final bool onLeft;
 
   /// Folder page: creates a note inside the folder.
@@ -186,6 +187,13 @@ class AppFab extends StatefulWidget {
 }
 
 mixin _FabStateMixin on State<AppFab> {
+  /// The left-side option is a landscape feature: portrait always reads the FAB
+  /// the way it did before the option existed.
+  bool get effectiveOnLeft {
+    final Size size = MediaQuery.sizeOf(context);
+    return widget.onLeft && size.width > size.height;
+  }
+
   bool? _isManuallyExpanded;
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
@@ -340,10 +348,18 @@ class AppFabState extends State<AppFab>
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final MediaQueryData media = MediaQuery.of(context);
-    // The expanded bar is as wide as it is in portrait, whatever the window:
-    // the shortest side *is* that width, so rotating only moves the FAB.
-    final double contentWidth = media.size.shortestSide < appContentMaxWidth
+    final bool landscape = media.size.width > media.size.height;
+    // Portrait keeps the width it always had: the safe width of the window. In
+    // landscape the expanded bar takes the shortest side, which *is* that
+    // portrait width, so rotating then only moves the FAB.
+    final double safeSide = media.padding.left > media.padding.right
+        ? media.padding.left
+        : media.padding.right;
+    final double rawWidth = landscape
         ? media.size.shortestSide
+        : media.size.width - safeSide * 2;
+    final double contentWidth = rawWidth < appContentMaxWidth
+        ? rawWidth
         : appContentMaxWidth;
     const double btnHeight = 64.0;
 
@@ -352,7 +368,6 @@ class AppFabState extends State<AppFab>
 
     // An open menu in landscape is a plain 24-radius panel; portrait keeps its
     // original tab shape, and the resting form its rounded bottom.
-    final bool landscape = media.size.width > media.size.height;
     final fabRadius = isMenuOpen
         ? (landscape
               ? BorderRadius.circular(24.0)
@@ -410,16 +425,22 @@ class AppFabState extends State<AppFab>
       currentWidth = targetExpandedWidth;
     }
 
-    // Translation calculation.
-    // Opening the menu must not shift the FAB: it stays exactly where it rests.
+    // In landscape the FAB is anchored: it rests, extends and opens its menus
+    // from the same point. Portrait keeps the nudge it always had.
     double tx = 0.0;
-    if (!isMenuOpen && (isExpanded || !isKeyboardClosed)) {
+    if (!landscape &&
+        (isExpanded || isMenuOpen) &&
+        (isMenuOpen || !isKeyboardClosed)) {
       tx = 12.0;
     }
 
     double ty = 0.0;
-    if (!isMenuOpen && !isKeyboardClosed) {
-      ty = 12.0;
+    if (!landscape) {
+      if (isMenuOpen) {
+        ty = 8.0;
+      } else if (!isKeyboardClosed) {
+        ty = 12.0;
+      }
     }
 
     // Dynamic Vertical Menu Heights
@@ -499,7 +520,11 @@ class AppFabState extends State<AppFab>
             height: currentHeight,
             width: currentWidth,
             clipBehavior: Clip.antiAlias,
-            transform: Matrix4.translationValues(tx, ty, 0.0),
+            // Null while resting: a fresh identity Matrix4 each build made the
+            // implicit animation interpolate for nothing.
+            transform: (tx == 0.0 && ty == 0.0)
+                ? null
+                : Matrix4.translationValues(tx, ty, 0.0),
             decoration: BoxDecoration(
               color: buttonColor,
               border: Border.all(color: buttonBorder),

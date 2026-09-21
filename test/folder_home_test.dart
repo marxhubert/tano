@@ -578,7 +578,7 @@ void main() {
       // Finish the push and let the deferred fold run (Home is covered).
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+      await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
       await tester.pumpAndSettle();
 
       // Back on Home, the FAB is already reduced.
@@ -625,7 +625,7 @@ void main() {
     await tester.tap(find.text('A'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // Back on the folder, the FAB is reduced again and its menu is closed.
@@ -1428,7 +1428,7 @@ void main() {
     // Open the note from the results, then come back.
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
@@ -1842,7 +1842,7 @@ void main() {
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
     expectLabelled();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // Folder app bar.

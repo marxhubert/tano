@@ -234,7 +234,7 @@ void main() {
 
     // Leaving cleans the empty checklist first, so the note is not dirty
     // anymore and no confirmation dialog appears.
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);

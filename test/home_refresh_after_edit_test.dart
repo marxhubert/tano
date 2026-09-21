@@ -515,7 +515,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Back -> "Save before leaving" dialog -> Save.
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     await tester.tap(find.text('SAVE').last);
@@ -558,7 +558,7 @@ void main() {
     expect(repository.notes.single.title, 'Fresh note');
 
     // Going back then reveals the note on home without any extra prompt.
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.byType(Home), findsOneWidget);
@@ -599,7 +599,7 @@ void main() {
     expect(saveButton.onPressed, isNull);
 
     // Leaving must not prompt, and home must show the saved note.
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.byType(Home), findsOneWidget);

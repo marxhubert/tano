@@ -169,7 +169,7 @@ void main() {
       // The sorting items have no icon: only the icon of the Display group
       // (view_list/view_stream/view_module) is present.
       expect(find.byIcon(Symbols.date_range), findsNothing);
-      expect(find.byIcon(Symbols.arrow_back_ios), findsNothing);
+      expect(find.byIcon(Symbols.arrow_back_ios_new), findsNothing);
     },
   );
 }

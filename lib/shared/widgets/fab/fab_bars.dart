@@ -51,7 +51,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: widget.onLeft
+        icon: effectiveOnLeft
             ? Symbols.arrow_back_ios
             : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
@@ -114,7 +114,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: widget.onLeft
+        icon: effectiveOnLeft
             ? Symbols.arrow_back_ios
             : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
@@ -403,7 +403,7 @@ mixin _FabBarsMixin on _FabStateMixin {
   Widget _buildHorizontalBar(double width, List<Widget> children) {
     // Anchored on the left, the bar grows rightwards: the reduce chevron moves
     // to its head, next to the FAB's origin, keeping its right-pointing glyph.
-    final List<Widget> ordered = widget.onLeft && children.length > 1
+    final List<Widget> ordered = effectiveOnLeft && children.length > 1
         ? <Widget>[children.last, ...children.take(children.length - 1)]
         : children;
     return SingleChildScrollView(

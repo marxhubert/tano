@@ -16,6 +16,16 @@ class FlushFabLocation extends StandardFabLocation {
   /// rightwards instead of leftwards.
   final bool onLeft;
 
+  // The pages build this location on every build. Without equality the Scaffold
+  // sees a new location each time and replays its move animation — which scales
+  // the FAB — so the FAB blinked on every tap.
+  @override
+  bool operator ==(Object other) =>
+      other is FlushFabLocation && other.onLeft == onLeft;
+
+  @override
+  int get hashCode => onLeft.hashCode;
+
   static const paddingX = 24.0;
   static const paddingY = 20.0;
 
@@ -25,26 +35,22 @@ class FlushFabLocation extends StandardFabLocation {
     double adjustment,
   ) {
     final double screen = scaffoldGeometry.scaffoldSize.width;
-    // A landscape phone has no side padding, so the column is the whole screen;
-    // any other window clears the island and the rounded corners.
+    final double fabWidth = scaffoldGeometry.floatingActionButtonSize.width;
     final EdgeInsets safe = scaffoldGeometry.minInsets;
     final double sideInset = safe.left > safe.right ? safe.left : safe.right;
-    // On a wide window the page is centred in [appContentMaxWidth], so the FAB
-    // hugs the content's right edge rather than the screen's.
+    // A landscape phone anchors the FAB at 12 from the edge of the *content
+    // space*, safe insets excluded. Any other window hugs the centred column.
+    if (screen > scaffoldGeometry.scaffoldSize.height) {
+      return onLeft ? sideInset + 12.0 : screen - sideInset - fabWidth - 12.0;
+    }
     final double available = screen - sideInset * 2;
     final double content = available < appContentMaxWidth
         ? available
         : appContentMaxWidth;
     final double columnLeft = (screen - content) / 2;
-    if (onLeft) {
-      // The left edge is the anchor: an expanded bar grows rightwards from it.
-      return columnLeft + paddingX;
-    }
+    // Portrait keeps the FAB on the right, exactly as it always was.
     // The right edge never moves: an expanded bar grows leftwards from it.
-    return columnLeft +
-        content -
-        scaffoldGeometry.floatingActionButtonSize.width -
-        paddingX;
+    return columnLeft + content - fabWidth - paddingX;
   }
 
   @override
@@ -60,7 +66,7 @@ class FlushFabLocation extends StandardFabLocation {
     final bool landscape = screen.width > screen.height;
     double offset =
         (landscape
-            ? screen.height - appPaddingMedium
+            ? screen.height - scaffoldGeometry.minInsets.bottom - 12.0
             : scaffoldGeometry.contentBottom - paddingY) -
         scaffoldGeometry.floatingActionButtonSize.height;
     if (scaffoldGeometry.snackBarSize.height > 0.0) {
@@ -102,7 +108,6 @@ class PageScaffold extends StatefulWidget {
     this.titleWidget,
     this.appBarTitleWidget,
     this.condenseHeader = false,
-    this.fabOnLeft = false,
   });
 
   final String title;
@@ -127,10 +132,6 @@ class PageScaffold extends StatefulWidget {
   /// title, with its metadata in front of it, to the app bar. Home keeps its
   /// title line; only a folder asks for this.
   final bool condenseHeader;
-
-  /// When the FAB sits on the left, the back chevron mirrors to point right,
-  /// since the whole chrome now reads from that side.
-  final bool fabOnLeft;
 
   /// Small metadata printed at the right of the body title line.
   final String? headerMetadata;

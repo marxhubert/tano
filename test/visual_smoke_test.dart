@@ -216,7 +216,7 @@ void main() {
           'Freshly typed content',
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+        await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
         await tester.pumpAndSettle();
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(tester.takeException(), isNull);
