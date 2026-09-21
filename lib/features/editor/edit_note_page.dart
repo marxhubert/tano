@@ -1172,7 +1172,7 @@ class _EditNoteState extends State<EditNote>
                       ),
                     ),
                 ],
-                floatingActionButtonLocation: const FlushEndFabLocation(),
+                floatingActionButtonLocation: const FlushFabLocation(),
                 floatingActionButton: AppFab(
                   key: _fabKey,
                   isEditorMode: true,

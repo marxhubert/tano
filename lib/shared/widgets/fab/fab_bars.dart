@@ -51,7 +51,9 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: Symbols.arrow_forward_ios,
+        icon: widget.onLeft
+            ? Symbols.arrow_back_ios
+            : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 22.0,
@@ -112,7 +114,9 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: Symbols.arrow_forward_ios,
+        icon: widget.onLeft
+            ? Symbols.arrow_back_ios
+            : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 20.0,
@@ -397,6 +401,11 @@ mixin _FabBarsMixin on _FabStateMixin {
   }
 
   Widget _buildHorizontalBar(double width, List<Widget> children) {
+    // Anchored on the left, the bar grows rightwards: the reduce chevron moves
+    // to its head, next to the FAB's origin, keeping its right-pointing glyph.
+    final List<Widget> ordered = widget.onLeft && children.length > 1
+        ? <Widget>[children.last, ...children.take(children.length - 1)]
+        : children;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
@@ -407,7 +416,7 @@ mixin _FabBarsMixin on _FabStateMixin {
           // action: no spacing, padding or margin between them.
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            for (final Widget child in children) Expanded(child: child),
+            for (final Widget child in ordered) Expanded(child: child),
           ],
         ),
       ),

@@ -7,12 +7,17 @@ import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
-/// Places the floating action button flush against the bottom-right corner
-/// of the screen (no margin).
-class FlushEndFabLocation extends StandardFabLocation {
+/// Places the floating action button flush against the bottom-right corner of
+/// the content column — or the bottom-left one when [onLeft] is set.
+class FlushFabLocation extends StandardFabLocation {
+  const FlushFabLocation({this.onLeft = false});
+
+  /// When true the FAB hugs the column's left edge and an expanded bar grows
+  /// rightwards instead of leftwards.
+  final bool onLeft;
+
   static const paddingX = 24.0;
   static const paddingY = 20.0;
-  const FlushEndFabLocation();
 
   @override
   double getOffsetX(
@@ -29,8 +34,14 @@ class FlushEndFabLocation extends StandardFabLocation {
     final double content = available < appContentMaxWidth
         ? available
         : appContentMaxWidth;
+    final double columnLeft = (screen - content) / 2;
+    if (onLeft) {
+      // The left edge is the anchor: an expanded bar grows rightwards from it.
+      return columnLeft + paddingX;
+    }
     // The right edge never moves: an expanded bar grows leftwards from it.
-    return (screen + content) / 2 -
+    return columnLeft +
+        content -
         scaffoldGeometry.floatingActionButtonSize.width -
         paddingX;
   }
@@ -90,6 +101,7 @@ class PageScaffold extends StatefulWidget {
     this.titleWidget,
     this.appBarTitleWidget,
     this.condenseHeader = false,
+    this.fabOnLeft = false,
   });
 
   final String title;
@@ -114,6 +126,10 @@ class PageScaffold extends StatefulWidget {
   /// title, with its metadata in front of it, to the app bar. Home keeps its
   /// title line; only a folder asks for this.
   final bool condenseHeader;
+
+  /// When the FAB sits on the left, the back chevron mirrors to point right,
+  /// since the whole chrome now reads from that side.
+  final bool fabOnLeft;
 
   /// Small metadata printed at the right of the body title line.
   final String? headerMetadata;
@@ -285,14 +301,7 @@ class _PageScaffoldState extends State<PageScaffold> {
           padding: EdgeInsets.symmetric(horizontal: sideInset),
           child: _buildBody(textColor, keyboard),
         ),
-        // The Scaffold strips the side padding from its FAB slot; hand the real
-        // one back so the FAB can size itself inside the safe area.
-        floatingActionButton: widget.floatingActionButton == null
-            ? null
-            : MediaQuery(
-                data: MediaQuery.of(context),
-                child: widget.floatingActionButton!,
-              ),
+        floatingActionButton: widget.floatingActionButton,
         floatingActionButtonLocation: widget.floatingActionButtonLocation,
       ),
     );

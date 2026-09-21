@@ -59,6 +59,7 @@ class AppFab extends StatefulWidget {
     this.isFolderMode = false,
     this.isTitleEditing = false,
     this.collapsedByDefault = false,
+    this.onLeft = false,
     this.onAddNote,
     this.isFindMode = false,
     this.findCurrent = 0,
@@ -125,6 +126,10 @@ class AppFab extends StatefulWidget {
   /// When true, the FAB rests in its reduced (circular) form, unless the user
   /// explicitly expands it. Used when the folder list can scroll.
   final bool collapsedByDefault;
+
+  /// When true the FAB sits on the left: an expanded bar grows rightwards and
+  /// its reduce chevron moves to the head.
+  final bool onLeft;
 
   /// Folder page: creates a note inside the folder.
   final VoidCallback? onAddNote;
@@ -335,27 +340,26 @@ class AppFabState extends State<AppFab>
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final MediaQueryData media = MediaQuery.of(context);
-    // The FAB slot loses the side padding; subtract it so the expanded bar stops
-    // at the safe area and only grows leftwards.
-    final double safeSide = media.padding.left > media.padding.right
-        ? media.padding.left
-        : media.padding.right;
-    final double screenWidth = media.size.width - safeSide * 2;
-    // The FAB follows the content column, not the raw window: on a tablet it
-    // keeps the width of the centred page.
-    final double contentWidth = screenWidth < appContentMaxWidth
-        ? screenWidth
+    // The expanded bar is as wide as it is in portrait, whatever the window:
+    // the shortest side *is* that width, so rotating only moves the FAB.
+    final double contentWidth = media.size.shortestSide < appContentMaxWidth
+        ? media.size.shortestSide
         : appContentMaxWidth;
     const double btnHeight = 64.0;
 
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
     final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
 
+    // An open menu in landscape is a plain 24-radius panel; portrait keeps its
+    // original tab shape, and the resting form its rounded bottom.
+    final bool landscape = media.size.width > media.size.height;
     final fabRadius = isMenuOpen
-        ? const BorderRadius.vertical(
-            top: Radius.circular(24),
-            bottom: Radius.circular(55),
-          )
+        ? (landscape
+              ? BorderRadius.circular(24.0)
+              : const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                  bottom: Radius.circular(55),
+                ))
         : BorderRadius.circular(55);
     final buttonColor = _fabMenuSurface(context);
     final buttonBorder = Color.lerp(
@@ -407,15 +411,14 @@ class AppFabState extends State<AppFab>
     }
 
     // Translation calculation.
+    // Opening the menu must not shift the FAB: it stays exactly where it rests.
     double tx = 0.0;
-    if ((isExpanded || isMenuOpen) && (isMenuOpen || !isKeyboardClosed)) {
+    if (!isMenuOpen && (isExpanded || !isKeyboardClosed)) {
       tx = 12.0;
     }
 
     double ty = 0.0;
-    if (isMenuOpen) {
-      ty = 8.0;
-    } else if (!isKeyboardClosed) {
+    if (!isMenuOpen && !isKeyboardClosed) {
       ty = 12.0;
     }
 

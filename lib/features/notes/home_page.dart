@@ -1,6 +1,5 @@
 import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
@@ -138,6 +137,9 @@ class HomeState extends State<Home> with RouteAware {
     _wasInSelectionMode = _viewModel.isInSelectionMode;
   }
 
+  /// Whether the FAB sits on the left instead of the right.
+  bool _fabOnLeft = false;
+
   Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
 
   Future<void> _loadPreferences() async {
@@ -168,6 +170,21 @@ class HomeState extends State<Home> with RouteAware {
       documentFilterFromName(prefs.getString('documentFilter')) ??
           DocumentFilter.all,
     );
+
+    if (!prefs.containsKey('fabOnLeft')) {
+      await prefs.setBool('fabOnLeft', false);
+    }
+    final bool fabOnLeft = prefs.getBool('fabOnLeft') ?? false;
+    if (fabOnLeft != _fabOnLeft && mounted) {
+      setState(() => _fabOnLeft = fabOnLeft);
+    }
+  }
+
+  Future<void> _setFabOnLeft(bool value) async {
+    if (value == _fabOnLeft) return;
+    setState(() => _fabOnLeft = value);
+    final SecurePreferences prefs = await _getPrefs();
+    await prefs.setBool('fabOnLeft', value);
   }
 
   Future<void> _saveViewLayoutPref(String viewLayout) async {
@@ -573,137 +590,17 @@ class HomeState extends State<Home> with RouteAware {
     ];
   }
 
-  Widget _buildAdaptiveMenu() {
-    final ThemeData theme = Theme.of(context);
-    if (theme.platform == TargetPlatform.iOS ||
-        theme.platform == TargetPlatform.macOS) {
-      return IconButton(
-        icon: const Icon(Symbols.more_vert, weight: 900.0),
-        tooltip: AppText.tr('more'),
-        onPressed: () => _showCupertinoActionSheet(),
-      );
-    }
-
-    return PopupMenuButton<PopupItem>(
-      icon: const Icon(Symbols.more_vert, weight: 900.0),
-      offset: const Offset(0, 56),
-      elevation: 4.0,
-      constraints: const BoxConstraints(minWidth: 160.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(appBorderRadius),
-      ),
-      onSelected: ((valueSelected) async {
-        _handleMenuAction(valueSelected.value.toLowerCase());
-      }),
-      itemBuilder: (BuildContext context) {
-        final List<PopupItem> popupItems = [];
-        menuItems.forEach((String key, PopupItem popupItem) {
-          popupItems.add(popupItem);
-        });
-        return popupItems.map<PopupMenuEntry<PopupItem>>((PopupItem popupItem) {
-          if (popupItem.value == 'separator') {
-            return const PopupMenuDivider(height: 1.0);
-          }
-          return PopupMenuItem<PopupItem>(
-            value: popupItem,
-            height: popupItem.value == 'header' ? 40.0 : 48.0,
-            enabled: popupItem.value != 'header',
-            padding: EdgeInsets.zero,
-            child: popupButton(
-              context: context,
-              popupItem: popupItem,
-              layout: _viewModel.viewLayout,
-              lang: LocaleController.instance.language,
-            ),
-          );
-        }).toList();
-      },
-    );
-  }
-
-  void _showCupertinoActionSheet() {
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('list');
-            },
-            child: Text(
-              AppText.tr('menu_list'),
-              style: TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'list'
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('gridlist');
-            },
-            child: Text(
-              AppText.tr('menu_grid'),
-              style: TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'gridlist'
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('settings');
-            },
-            child: Text(
-              AppText.tr('settings'),
-              style: const TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-              ),
-            ),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            AppText.tr('cancel'),
-            style: TextStyle(
-              color: primaryTextColor(context),
-              fontSize: TanoText.sheetAction,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleMenuAction(String action) async {
-    switch (action) {
-      case "list":
-        _changeLayout('list');
-        break;
-      case "gridlist":
-        _changeLayout('gridlist');
-        break;
-      case "settings":
-        await Navigator.of(context).pushNamed('/settings');
-        _loadPreferences();
-        await _viewModel.load();
-        break;
-    }
-  }
+  Widget _buildAdaptiveMenu() => AppBarMenuButton(
+    layout: _viewModel.viewLayout,
+    onLayout: _changeLayout,
+    onLeft: _fabOnLeft,
+    onLeftChanged: _setFabOnLeft,
+    onSettings: () async {
+      await Navigator.of(context).pushNamed('/settings');
+      _loadPreferences();
+      await _viewModel.load();
+    },
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -747,9 +644,10 @@ class HomeState extends State<Home> with RouteAware {
               sliver: _buildHomeContent(),
             ),
           ],
-          floatingActionButtonLocation: const FlushEndFabLocation(),
+          floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
           floatingActionButton: AppFab(
             key: _fabKey,
+            onLeft: _fabOnLeft,
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
             // Moving needs a selection and never applies to a folder.

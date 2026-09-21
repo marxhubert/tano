@@ -72,6 +72,21 @@ the accent fill with on-accent content, and the filter is remembered under the
 `documentFilter` preference. The control scopes the document list only: folders are
 structure, not documents, and the search scope and selection rules are unchanged.
 
+## Menus
+
+One app-bar menu everywhere: the Material popup with **Grid / List / Settings**.
+Home and a folder both carry it, and the iOS Cupertino action sheet is gone — there
+is a single menu style, on every platform. A folder no longer shows an "add note"
+action in its app bar: documents are added from its FAB. The active item takes the
+accent (light and dark) with its glyph filled, and the divider under it is drawn in
+the same accent. Rows are 40 tall inside a 4px vertical menu padding. A **Left
+side** switch (off by default, remembered under `fabOnLeft`) matches the settings
+switches — a 0.8-scaled adaptive switch in the accent, right-anchored — and never
+makes its label read as active. It moves the FAB to the column's bottom-left, where
+an expanded bar grows rightwards: its reduce chevron moves to the bar's head and
+points back to the left. An open FAB menu in landscape is a plain 24-radius panel,
+and it never shifts the FAB.
+
 ## Responsive layout
 
 Counts follow logical viewport dimensions, including split-screen resizing. A
@@ -102,7 +117,9 @@ staying inside the safe area. The FAB's right edge stops 24 short of the column
 while the cards stop 12 short, so the *visible* gap is 12; on a landscape phone
 the bottom edge gets that same 12. An expanded bar keeps that right edge and grows
 leftwards only, stopping 12 from the cards on that side too: the two gaps stay
-symmetric. Grid
+symmetric. Whatever the window, the bar keeps the width it has in portrait — the
+shortest side is that width — so rotating only moves it. The settings screen holds
+the device in portrait while it is on screen. Grid
 cards keep an almost square ratio (0.9) — a folder tile is a perfect square — so
 they follow their width in every column count.
 

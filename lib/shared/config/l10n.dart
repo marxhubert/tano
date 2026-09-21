@@ -286,6 +286,7 @@ class AppText {
         'This will reset all your settings (theme, language, sorting) to their default values.',
     // Menu
     'menu_list': 'List',
+    'menu_left_side': 'Left side',
     'menu_grid': 'Grid',
     'menu_sorting': 'Sorting',
     'menu_theme': 'Appearance',
@@ -552,6 +553,7 @@ class AppText {
         'Ceci réinitialisera tous vos réglages (thème, langue, tri) à leurs valeurs par défaut.',
     // Menu
     'menu_list': 'Liste',
+    'menu_left_side': 'À gauche',
     'menu_grid': 'Grille',
     'menu_sorting': 'Triage',
     'menu_theme': 'Apparence',
@@ -818,6 +820,7 @@ class AppText {
         'Hamerina ny fikirana rehetra (loko, fiteny, filaminana) amin\'ny teo aloha izany.',
     // Menu
     'menu_list': 'Lisitra',
+    'menu_left_side': 'Ankavia',
     'menu_grid': 'Efajoro',
     'menu_sorting': 'Filaminana',
     'menu_theme': 'Endrika',

@@ -25,6 +25,7 @@ import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
@@ -61,6 +62,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   bool _isEditingTitle = false;
   String _searchQuery = '';
   String _viewLayout = 'gridlist';
+
+  /// Whether the FAB sits on the left instead of the right.
+  bool _fabOnLeft = false;
   String _sortBy = 'date';
   String _secondarySortBy = 'date';
   bool _sortAscending = true;
@@ -123,6 +127,26 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     super.dispose();
   }
 
+  /// The layout is the same preference Home uses, so switching it here shows
+  /// there too.
+  Future<void> _changeViewLayout(String viewLayout) async {
+    setState(() => _viewLayout = viewLayout);
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    await prefs.setString('viewLayout', viewLayout);
+  }
+
+  Future<void> _setFabOnLeft(bool value) async {
+    if (value == _fabOnLeft) return;
+    setState(() => _fabOnLeft = value);
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    await prefs.setBool('fabOnLeft', value);
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).pushNamed('/settings');
+    if (mounted) await _loadPreferences();
+  }
+
   Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setString('documentFilter', filter.name);
@@ -133,6 +157,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (!mounted) return;
     setState(() {
       _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+      _fabOnLeft = prefs.getBool('fabOnLeft') ?? false;
       _documentFilter =
           documentFilterFromName(prefs.getString('documentFilter')) ??
           DocumentFilter.all;
@@ -508,6 +533,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         // A landscape phone moves the folder title, flags included, to the app
         // bar and drops the body's title line. Home keeps its own.
         condenseHeader: true,
+        fabOnLeft: _fabOnLeft,
 
         headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
         // Nothing but the illustration: it must hold its place.
@@ -546,24 +572,28 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             : _isSearchMode
             ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
             : <Widget>[
-                // Add first, as requested on the folder page.
-                IconButton(
-                  icon: const Icon(Symbols.add_notes),
-                  tooltip: AppText.tr('add_note'),
-                  onPressed: () => _openNote(add: true, note: _newNote()),
-                ),
                 IconButton(
                   icon: const Icon(Symbols.search),
                   tooltip: AppText.tr('search'),
                   onPressed: _enterSearchMode,
                 ),
                 const ThemeToggleButton(),
+                // The same menu as Home: a folder adds a note from its FAB, so
+                // the app bar no longer carries an "add note" action.
+                AppBarMenuButton(
+                  layout: _viewLayout,
+                  onLayout: _changeViewLayout,
+                  onLeft: _fabOnLeft,
+                  onLeftChanged: _setFabOnLeft,
+                  onSettings: _openSettings,
+                ),
               ],
-        floatingActionButtonLocation: const FlushEndFabLocation(),
+        floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
         // A single, stable FAB for both modes: only the icons animate when the
         // selection mode toggles, the FAB box itself does not move.
         floatingActionButton: AppFab(
           key: _fabKey,
+          onLeft: _fabOnLeft,
           isEditorMode: true,
           isFolderMode: true,
           isSelectionMode: _selection.isActive,
