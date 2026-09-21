@@ -10,7 +10,6 @@ import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
-import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
@@ -161,6 +160,14 @@ class HomeState extends State<Home> with RouteAware {
       await prefs.setBool('sortAscending', true);
     }
     _viewModel.setSortAscending(prefs.getBool('sortAscending') ?? true);
+
+    if (!prefs.containsKey('documentFilter')) {
+      await prefs.setString('documentFilter', DocumentFilter.all.name);
+    }
+    _viewModel.setDocumentFilter(
+      documentFilterFromName(prefs.getString('documentFilter')) ??
+          DocumentFilter.all,
+    );
   }
 
   Future<void> _saveViewLayoutPref(String viewLayout) async {
@@ -488,22 +495,29 @@ class HomeState extends State<Home> with RouteAware {
       slivers: <Widget>[
         // The folder group has no header of its own: the page title is its
         // title. Only the notes group gets one, styled like the page title.
-        if (viewLayout == 'list')
-          FolderListView(viewModel: _viewModel, onOpenFolder: _openFolder)
-        else
-          FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
+        // Folders stay a grid whatever layout the documents use.
+        FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
         const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
         ...<Widget>[_notesSectionHeader(), _notesSliver(notes, viewLayout)],
       ],
     );
   }
 
-  /// "My notes" group header: same style as the page title, with the note
-  /// count on the same line.
-  Widget _documentFilterButtons() => DocumentFilterButtons(
+  /// The kind control, shared by the page header and the notes group header.
+  /// It prints every count, so no separate counter is needed.
+  Widget _documentFilterControl() => DocumentFilterControl(
     value: _viewModel.documentFilter,
-    onChanged: _viewModel.setDocumentFilter,
+    countOf: _viewModel.countFor,
+    onChanged: (DocumentFilter filter) {
+      _viewModel.setDocumentFilter(filter);
+      _saveDocumentFilterPref(filter);
+    },
   );
+
+  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
+    final SecurePreferences prefs = await _getPrefs();
+    await prefs.setString('documentFilter', filter.name);
+  }
 
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
@@ -512,10 +526,11 @@ class HomeState extends State<Home> with RouteAware {
         // above its content, above and below.
         padding: const EdgeInsets.only(bottom: appPaddingTight),
         child: SectionTitleLine(
-          titleWidget: _documentFilterButtons(),
-          metadata: _viewModel.isInSelectionMode
-              ? _notesMetadata
-              : _viewModel.documentFilter.countLabel(_viewModel.notesCount),
+          titleWidget: _documentFilterControl(),
+          crossAxisAlignment: CrossAxisAlignment.center,
+          // The counts live in the segments; only a selection still needs a
+          // sentence of its own here.
+          metadata: _viewModel.isInSelectionMode ? _notesMetadata : null,
           padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
         ),
       ),
@@ -709,21 +724,20 @@ class HomeState extends State<Home> with RouteAware {
               !_showSearchHistory &&
                   !_viewModel.hasFolders &&
                   !_viewModel.hasSearchQuery
-              ? _documentFilterButtons()
+              ? _documentFilterControl()
               : null,
+          headerCrossAxisAlignment: CrossAxisAlignment.center,
           isHome: true,
           freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerMetadata: _showSearchHistory
+          // The document counts live in the segmented control; this line keeps
+          // the folder count, and the selection wording.
+          headerMetadata: _showSearchHistory || !_viewModel.hasFolders
               ? null
-              : (!_viewModel.hasFolders && !_viewModel.isInSelectionMode
-                    ? _viewModel.documentFilter.countLabel(
-                        _viewModel.notesCount,
-                      )
-                    : _pageMetadata),
+              : _pageMetadata,
           headerMetadataWidget: _showSearchHistory
               ? _clearHistoryButton()
               : null,

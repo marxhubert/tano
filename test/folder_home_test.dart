@@ -180,19 +180,19 @@ void main() {
     await tester.pumpAndSettle();
     for (var page = 0; page < 2; page++) {
       final prefix = page == 0 ? 'Home' : 'Folder';
-      expect(find.text('2 docs'), findsOneWidget);
-      await tester.tap(find.byTooltip('All tasks'));
+      expect(find.text('All (2)', findRichText: true), findsOneWidget);
+      await tester.tap(find.text('1 Task', findRichText: true));
       await tester.pumpAndSettle();
       expect(find.text('$prefix task'), findsOneWidget);
       expect(find.text('$prefix note'), findsNothing);
-      expect(find.text('1 task'), findsOneWidget);
-      await tester.tap(find.byTooltip('All notes'));
+      expect(find.text('1 Task', findRichText: true), findsOneWidget);
+      await tester.tap(find.text('1 Note', findRichText: true));
       await tester.pumpAndSettle();
       expect(find.text('$prefix note'), findsOneWidget);
       expect(find.text('$prefix task'), findsNothing);
-      await tester.tap(find.byTooltip('All docs'));
+      await tester.tap(find.text('All (2)', findRichText: true));
       await tester.pumpAndSettle();
-      expect(find.text('2 docs'), findsOneWidget);
+      expect(find.text('All (2)', findRichText: true), findsOneWidget);
       if (page == 0) {
         await tester.tap(_folderCards());
         await tester.pumpAndSettle();
@@ -350,7 +350,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.text('All docs'), findsWidgets);
+    expect(find.textContaining('All (', findRichText: true), findsWidgets);
     expect(_folderCards(), findsNothing);
   });
 
@@ -387,7 +387,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('2 docs'), findsOneWidget);
+    expect(find.text('All (2)', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -722,7 +722,7 @@ void main() {
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('1 doc')),
+      find.descendant(of: page, matching: find.text('All (1)', findRichText: true)),
       findsOneWidget,
     );
     expect(
@@ -772,7 +772,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('1 doc'), findsOneWidget);
+    expect(find.text('All (1)', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -1432,7 +1432,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
-    expect(find.text('All docs'), findsWidgets);
+    expect(find.textContaining('All (', findRichText: true), findsWidgets);
     expect(find.text('Results'), findsNothing);
   });
 
@@ -1758,8 +1758,9 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Only the unlocked note and folder render a cover.
-    expect(find.byType(CoverImage), findsNWidgets(2));
+    // A folder never renders a cover any more, and a locked note hides its
+    // own: only the unlocked note shows one.
+    expect(find.byType(CoverImage), findsOneWidget);
   });
 
   testWidgets('scrolling home shows the TanoNote app bar title', (

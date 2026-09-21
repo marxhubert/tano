@@ -2,7 +2,6 @@ import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
@@ -10,7 +9,6 @@ import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
@@ -28,7 +26,6 @@ import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
-import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -49,7 +46,6 @@ class FolderPage extends StatefulWidget {
 
 class _FolderPageState extends State<FolderPage> with RouteAware {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  final AttachmentsStore _attachmentsStore = AttachmentsStore();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   DocumentFilter _documentFilter = DocumentFilter.all;
@@ -127,11 +123,19 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     super.dispose();
   }
 
+  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    await prefs.setString('documentFilter', filter.name);
+  }
+
   Future<void> _loadPreferences() async {
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
     setState(() {
       _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+      _documentFilter =
+          documentFilterFromName(prefs.getString('documentFilter')) ??
+          DocumentFilter.all;
       _sortBy = prefs.getString('sortBy') ?? 'date';
       _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
       _sortAscending = prefs.getBool('sortAscending') ?? true;
@@ -259,16 +263,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Note _newNote() => Note(folderId: _folder.id, category: _folder.category);
-
-  Future<void> _selectCover() async {
-    final PlatformFile? result = await FilePicker.pickFile(
-      type: FileType.image,
-    );
-    final String? path = result?.path;
-    if (path == null) return;
-    final String name = await _attachmentsStore.import(path, result!.name);
-    await _save(_folder.copyWith(coverImage: name));
-  }
 
   Future<void> _toggleLock() async {
     if (!_folder.isLocked) {
@@ -414,15 +408,15 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     await showMovedToast(context, count: count, folderId: folderId);
   }
 
-  /// Notes shown: the folder content, filtered by the local search. A locked
-  /// note never shows up in the search results.
-  List<Note> get _visibleNotes {
+  /// The folder content narrowed by the local search, before the kind filter:
+  /// the segmented control counts every kind from here. A locked note never
+  /// shows up in the search results.
+  List<Note> _filterSource() {
     final String query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return _notes.where(_documentFilter.matches).toList();
+    if (query.isEmpty) return _notes;
     return _notes
         .where(
           (Note note) =>
-              _documentFilter.matches(note) &&
               NoteAccessPolicy([
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
@@ -432,6 +426,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         )
         .toList();
   }
+
+  /// How many notes the given view would show right now.
+  int _countFor(DocumentFilter filter) =>
+      _filterSource().where(filter.matches).length;
+
+  /// Notes shown: the folder content, filtered by the search and the kind.
+  List<Note> get _visibleNotes =>
+      _filterSource().where(_documentFilter.matches).toList();
 
   /// True once the user has actually typed in the search field: only then
   /// does the page switch to the results presentation.
@@ -503,6 +505,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         backgroundColor: immersiveBg,
         // The folder name is always the page title, even in selection mode.
         title: _resultsVisible ? AppText.tr('search_results') : _folder.name,
+        // A landscape phone moves the folder title, flags included, to the app
+        // bar and drops the body's title line. Home keeps its own.
+        condenseHeader: true,
 
         headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
         // Nothing but the illustration: it must hold its place.
@@ -580,10 +585,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             add: true,
             note: Task(folderId: _folder.id, category: _folder.category),
           ),
-          onImageSelected: () {
-            _fabKey.currentState?.closeVerticalMenu();
-            _selectCover();
-          },
           onColorSelected: (String name) =>
               _save(_folder.copyWith(category: name)),
           onImportantSelected: () =>
@@ -612,37 +613,25 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           ),
         ),
         slivers: <Widget>[
-          if (_folder.coverImage != null && !_resultsVisible)
-            SliverToBoxAdapter(
-              child: ManageableCover(
-                name: _folder.coverImage!,
-                height: 160.0,
-                // Tighter gap below, towards the notes grid / list.
-                padding: const EdgeInsets.only(
-                  top: appPaddingMedium,
-                  bottom: appPaddingSmall,
-                ),
-                onRemove: () async {
-                  await _save(_folder.withoutCover());
-                },
-              ),
-            ),
           if (!_loading)
             SliverToBoxAdapter(
               child: SectionTitleLine(
                 padding: const EdgeInsets.symmetric(
                   horizontal: appPaddingLarge,
                 ),
-                titleWidget: DocumentFilterButtons(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                titleWidget: DocumentFilterControl(
                   value: _documentFilter,
-                  onChanged: (filter) => setState(() {
+                  countOf: _countFor,
+                  onChanged: (DocumentFilter filter) => setState(() {
                     _selection.exit();
                     _documentFilter = filter;
+                    _saveDocumentFilterPref(filter);
                   }),
                 ),
-                metadata: _selection.isActive
-                    ? _headerMetadata
-                    : _documentFilter.countLabel(_visibleNotes.length),
+                // The counts live in the segments; only a selection still needs
+                // a sentence of its own here.
+                metadata: _selection.isActive ? _headerMetadata : null,
               ),
             ),
           if (_loading)

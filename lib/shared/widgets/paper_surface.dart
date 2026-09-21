@@ -11,28 +11,35 @@ class PaperSurface extends StatelessWidget {
   final bool notebook;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    fit: StackFit.passthrough,
-    children: [
-      Positioned.fill(
-        child: IgnorePointer(
-          child: RepaintBoundary(
-            child: CustomPaint(
-              painter: _PaperPainter(
-                paper: barColor(context),
-                rule: paperRuleColor(context),
-                grain: primaryTextColor(context).withValues(alpha: .025),
-                margin: amberColor(context).withValues(alpha: .22),
-                notebook: notebook,
-                spacing: 34 * MediaQuery.textScalerOf(context).scale(1),
+  Widget build(BuildContext context) {
+    // The notebook margin follows the content: on a landscape phone the island
+    // pushes the writing in, and the margin line has to move with it.
+    final EdgeInsets safe = MediaQuery.paddingOf(context);
+    final double sideInset = safe.left > safe.right ? safe.left : safe.right;
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _PaperPainter(
+                  paper: barColor(context),
+                  rule: paperRuleColor(context),
+                  grain: primaryTextColor(context).withValues(alpha: .025),
+                  margin: amberColor(context).withValues(alpha: .22),
+                  notebook: notebook,
+                  spacing: 34 * MediaQuery.textScalerOf(context).scale(1),
+                  marginX: 7.0 + sideInset,
+                ),
               ),
             ),
           ),
         ),
-      ),
-      child,
-    ],
-  );
+        child,
+      ],
+    );
+  }
 }
 
 class _PaperPainter extends CustomPainter {
@@ -43,10 +50,12 @@ class _PaperPainter extends CustomPainter {
     required this.margin,
     required this.notebook,
     required this.spacing,
+    required this.marginX,
   });
   final Color paper, rule, grain, margin;
   final bool notebook;
   final double spacing;
+  final double marginX;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -75,8 +84,8 @@ class _PaperPainter extends CustomPainter {
     );
     if (notebook) {
       canvas.drawLine(
-        const Offset(7, 0),
-        Offset(7, size.height),
+        Offset(marginX, 0),
+        Offset(marginX, size.height),
         Paint()
           ..color = margin
           ..strokeWidth = 1,
@@ -91,5 +100,6 @@ class _PaperPainter extends CustomPainter {
       grain != old.grain ||
       margin != old.margin ||
       notebook != old.notebook ||
-      spacing != old.spacing;
+      spacing != old.spacing ||
+      marginX != old.marginX;
 }

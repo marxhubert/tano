@@ -6,7 +6,7 @@ import 'package:tano/shared/widgets/entity_sliver.dart';
 void main() {
   const layouts = <({String name, Size size, int grid, int list})>[
     (name: 'phone portrait', size: Size(390, 844), grid: 2, list: 1),
-    (name: 'phone landscape', size: Size(844, 390), grid: 3, list: 2),
+    (name: 'phone landscape', size: Size(844, 390), grid: 4, list: 2),
     (name: 'tablet portrait', size: Size(768, 1024), grid: 3, list: 2),
     (name: 'tablet landscape', size: Size(1024, 768), grid: 5, list: 4),
     (name: 'large window', size: Size(1440, 900), grid: 5, list: 5),
@@ -71,4 +71,12 @@ void main() {
       expect(entityColumnCount(const Size(1440, 900), isList: true), 5);
     },
   );
+
+  test('folder grid keeps its own, denser density', () {
+    expect(folderColumnCount(const Size(390, 844)), 3);
+    expect(folderColumnCount(const Size(844, 390)), 5);
+    expect(folderColumnCount(const Size(768, 1024)), 5);
+    expect(folderColumnCount(const Size(1024, 768)), 7);
+    expect(folderColumnCount(const Size(1440, 900)), 7);
+  });
 }

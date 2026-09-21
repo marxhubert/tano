@@ -283,7 +283,7 @@ void main() {
 
       expect(name.top, lessThan(meta.top));
       expect(card.bottom - meta.bottom, closeTo(8.0, 1.0));
-      // The only folder glyph is the watermark in the corner.
+      // The folder keeps the corner watermark; the other kinds dropped theirs.
       expect(find.byIcon(Symbols.folder_open), findsOneWidget);
     });
 

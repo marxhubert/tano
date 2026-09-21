@@ -51,12 +51,26 @@ Page titles 28, section titles 26, document filter 22, body 17, labels 15, metad
 Cards use their own compact scale: title 14, body 12, date/count 10. Small card
 metadata uses shared muted ink with tested contrast across all category surfaces.
 
-Cards have 8px corners, a 1px warm border and a discreet shadow. Their existing
-watermarks, covers, locked templates and selection affordances stay intact. List
+Cards have 8px corners, a 1px warm border and a discreet shadow. Document covers,
+locked templates and selection affordances stay intact. A folder has no cover any
+more, its tile is a perfect square, and it keeps the only remaining corner
+watermark. List
 heights are 100/112px as appropriate, and grow with accessibility text sizing.
 Task covers hide their checklist previews. Grid covers occupy the upper half;
 list covers occupy the left third. Settings cards use the same paper surface and
 fine border. Material Symbols identities and existing navigation are unchanged.
+
+## Document filters
+
+Home and a folder share one control: a segmented button reading **All (30) ·
+23 Notes · 7 Tasks**. Every choice keeps its label and its own count — `All (n)`
+for the whole list, `n Note` or `n Task` for one kind, singular for zero and one —
+so the title line carries no separate counter; only a selection still needs a
+sentence there. The number and its parentheses print light, so the word stays the
+label. The selected segment takes
+the accent fill with on-accent content, and the filter is remembered under the
+`documentFilter` preference. The control scopes the document list only: folders are
+structure, not documents, and the search scope and selection rules are unchanged.
 
 ## Responsive layout
 
@@ -67,10 +81,15 @@ as the large layout.
 | Viewport | Grid columns | List columns |
 |---|---:|---:|
 | Phone portrait |2|1|
-| Phone landscape |3|2|
+| Phone landscape |4|2|
 | Tablet portrait |3|2|
 | Tablet landscape |5|4|
 | Width 1440px or more |5|5|
+
+The folder group ignores that list/grid choice and stays a grid, on its own denser
+scale: 3 columns on a phone portrait, 5 once the window is landscape or a tablet,
+and 7 on a tablet held landscape and above. It is the same `EntitySliver` with an
+overridden count.
 
 Both modes share `EntitySliver`. List rows preserve card widths in an incomplete
 last row. Swipe gestures perform no actions; selection and action menus remain
@@ -79,8 +98,21 @@ are preserved.
 
 Every route keeps one centred content column of `appContentMaxWidth` (1080), like
 the site's wrap, and the FAB follows its right edge rather than the window's. Grid
-cards keep a fixed height that scales with the text size, so a tablet widens them
-instead of stretching them into mostly empty paper.
+cards keep an almost square ratio (0.9) — a folder tile is a perfect square — so
+they follow their width in every column count.
+
+A **folder** on a landscape phone is too short for the big title line: it drops it
+and the app bar carries the name from the first frame, centred while it fits and
+left-aligned once it is too long, with the flags in front of it. Only the filter
+control (or a rename field) stays above the list; Home keeps its own title line.
+The document grid fits four tiles on a landscape phone, on Home and in a folder
+alike; the folder cards keep their own denser scale.
+
+On a landscape phone the page body is inset on both sides by the larger of the
+two safe-area insets, so the writing clears the island, the punch-hole and the
+rounded corners whichever side they sit on. The notebook margin line moves with
+the content. The app bar keeps its own margins — the island sits at mid-height,
+well below it — so no space is wasted around the back button and the actions.
 
 Motion remains 150/250/450ms. Typography scales with the system and app preference.
 Golden previews cover light/dark Home, Note, Task and menus in addition to card

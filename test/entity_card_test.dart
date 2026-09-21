@@ -135,55 +135,6 @@ void main() {
     expect(find.text('x3'), findsOneWidget);
   });
 
-  testWidgets('every kind shows its watermark, even locked', (tester) async {
-    Future<void> pump(EntityKind kind, {bool locked = false}) async {
-      await tester.pumpWidget(
-        _host(
-          EntityCard(
-            kind: kind,
-            category: 'azur',
-            title: 'Titre',
-            isLocked: locked,
-            builder: (BuildContext context, Color textColor, bool hasCover) =>
-                const SizedBox.expand(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    await pump(EntityKind.folder);
-    expect(
-      find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsOneWidget,
-    );
-
-    // Every kind draws a watermark: the glyph is the only difference.
-    await pump(EntityKind.note);
-    expect(
-      find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsOneWidget,
-    );
-
-    await pump(EntityKind.task);
-    expect(
-      find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsOneWidget,
-    );
-
-    await pump(EntityKind.project);
-    expect(
-      find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsOneWidget,
-    );
-
-    // A locked folder keeps its watermark, visible through the lock overlay.
-    await pump(EntityKind.folder, locked: true);
-    expect(
-      find.byKey(const ValueKey<String>('entity-card-watermark')),
-      findsOneWidget,
-    );
-  });
 
   testWidgets('the paper card has a subtle shadow and rounded border', (
     tester,

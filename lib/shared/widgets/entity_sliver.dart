@@ -4,29 +4,38 @@ import 'package:tano/shared/widgets/theme.dart';
 
 /// Grid or list of cards, shared by every card screen.
 ///
-/// Both layouts adapt to the viewport with [entityColumnCount]. Grid cards
-/// keep their 0.9 aspect ratio; list cards retain their natural row height.
-/// It belongs in a [CustomScrollView]; callers add outer [SliverPadding].
+/// Both layouts adapt to the viewport with [entityColumnCount]. Grid cards keep
+/// an almost square ratio; list cards retain their natural row height. It belongs
+/// in a [CustomScrollView]; callers add outer [SliverPadding].
 class EntitySliver<T> extends StatelessWidget {
   const EntitySliver({
     super.key,
     required this.items,
     required this.isList,
     required this.cardBuilder,
+    this.columnCount,
+    this.aspectRatio = 0.9,
   });
 
   final List<T> items;
   final bool isList;
+
+  /// Overrides the shared density; the folder grid passes [folderColumnCount].
+  final int Function(Size viewport)? columnCount;
+
+  /// The grid tile ratio. Documents keep the almost square 0.9; a folder card
+  /// is a perfect square.
+  final double aspectRatio;
 
   /// Builds the cards in the visible and cached rows, rather than the full list.
   final Widget Function(BuildContext context, T item) cardBuilder;
 
   @override
   Widget build(BuildContext context) {
-    final int columns = entityColumnCount(
-      MediaQuery.sizeOf(context),
-      isList: isList,
-    );
+    final Size viewport = MediaQuery.sizeOf(context);
+    final int columns =
+        columnCount?.call(viewport) ??
+        entityColumnCount(viewport, isList: isList);
     if (isList) {
       return SliverList.separated(
         itemCount: (items.length / columns).ceil(),
@@ -47,15 +56,14 @@ class EntitySliver<T> extends StatelessWidget {
             const SizedBox(height: appPaddingTight),
       );
     }
-    // Cards keep the site's height whatever the window: on a tablet they get
-    // wider, not taller, so the paper does not read as mostly empty.
-    final double cardHeight = 196.0 * MediaQuery.textScalerOf(context).scale(1);
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
         crossAxisSpacing: appPaddingTight,
         mainAxisSpacing: appPaddingTight,
-        mainAxisExtent: cardHeight,
+        // The card follows its width, so it stays square whatever the column
+        // count is.
+        childAspectRatio: aspectRatio,
       ),
       itemCount: items.length,
       itemBuilder: (BuildContext context, int index) =>

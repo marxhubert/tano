@@ -458,12 +458,17 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Note> _visibleNotes() {
-    final List<Note> source = hasSearchQuery
-        ? (_searchResults ?? <Note>[])
-        : _unfiledNotes();
-    return source.where(documentFilter.matches).toList();
-  }
+  /// The documents the current screen would show for [filter], without
+  /// changing the active one: the segmented control prints every count.
+  int countFor(DocumentFilter filter) =>
+      _sourceNotes().where(filter.matches).length;
+
+  List<Note> _sourceNotes() => hasSearchQuery
+      ? (_searchResults ?? <Note>[])
+      : _unfiledNotes();
+
+  List<Note> _visibleNotes() =>
+      _sourceNotes().where(documentFilter.matches).toList();
 
   List<Note> _unfiledNotes() =>
       _allNotes.where((Note note) => note.folderId == null).toList();

@@ -45,7 +45,6 @@ class EntityCard extends StatelessWidget {
     this.title = '',
     this.subtitle,
     this.subtitleIcon,
-    this.watermarkIcon,
     this.coverImage,
     this.isImportant = false,
     this.isLocked = false,
@@ -68,9 +67,10 @@ class EntityCard extends StatelessWidget {
   /// Radius of anything inset by [contentInset]: outer - margin.
   static const double innerRadius = outerRadius - contentInset;
 
-  /// Watermark glyph size (folders and notes): 24 (its native size) x 3. It is
-  /// pushed past the bottom-right edges, so most of the glyph stays inside.
+  /// The folder card keeps a watermark; the other kinds dropped theirs. The
+  /// glyph is 24 (its native size) x 3 and bleeds past the right edge.
   static const double watermarkSize = 72.0;
+  static const double _folderWatermarkRight = -16.0;
 
   final EntityKind kind;
   final String category;
@@ -82,26 +82,6 @@ class EntityCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? subtitleIcon;
-
-  /// Overrides the watermark glyph (a folder keeps its drawn path).
-  final IconData? watermarkIcon;
-
-  /// Watermark glyph of a kind.
-  static IconData _watermarkGlyph(EntityKind kind) => switch (kind) {
-    EntityKind.note => Symbols.sticky_note_2,
-    EntityKind.task => Symbols.list_alt,
-    EntityKind.project => Symbols.business_center,
-    EntityKind.folder => Symbols.folder_open,
-  };
-
-  /// Horizontal bleed of the watermark, tuned per glyph so each one sits the
-  /// same distance from the right edge.
-  static double _watermarkRight(EntityKind kind) => switch (kind) {
-    EntityKind.note => -6.0,
-    EntityKind.task => -6.0,
-    EntityKind.project => -4.0,
-    EntityKind.folder => -2.0,
-  };
 
   final String? coverImage;
   final bool isImportant;
@@ -193,24 +173,24 @@ class EntityCard extends StatelessWidget {
                     child: CoverImage(name: coverImage!),
                   ),
                 ),
-              // Watermark: the glyph bleeds off the bottom-right corner, pushed
-              // past both edges. The kind picks the glyph, and the marker in
-              // the metadata carries the "important" state.
-              Positioned(
-                right: _watermarkRight(kind),
-                bottom: -20.0,
-                width: watermarkSize,
-                height: watermarkSize,
-                child: IgnorePointer(
-                  child: Icon(
-                    watermarkIcon ?? _watermarkGlyph(kind),
-                    key: const ValueKey<String>('entity-card-watermark'),
-                    size: watermarkSize,
-                    weight: 100.0,
-                    color: textColor.withValues(alpha: 0.10),
+              // Folder watermark: the glyph bleeds off the bottom-right corner,
+              // pushed past both edges. The other kinds no longer carry one.
+              if (kind == EntityKind.folder)
+                Positioned(
+                  right: _folderWatermarkRight,
+                  bottom: -8.0,
+                  width: watermarkSize,
+                  height: watermarkSize,
+                  child: IgnorePointer(
+                    child: Icon(
+                      Symbols.folder_open,
+                      key: const ValueKey<String>('entity-card-watermark'),
+                      size: watermarkSize,
+                      weight: 100.0,
+                      color: textColor.withValues(alpha: 0.10),
+                    ),
                   ),
                 ),
-              ),
               if (isLocked)
                 ..._lockedOverlay(textColor)
               else if (isListLayout)
@@ -303,8 +283,8 @@ class EntityCard extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           child: Container(
-            // Transparent, so the watermark stays visible through the lock
-            // overlay: the card itself already paints [bgColor].
+            // Transparent, so the lock overlay sits on the card's own colour:
+            // the card itself already paints [bgColor].
             color: Colors.transparent,
             // Grid keeps contentInset x2 on every side; the locked list gets
             // wider left/right gutters.

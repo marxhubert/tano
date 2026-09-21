@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -76,6 +77,7 @@ class PageScaffold extends StatefulWidget {
     this.titlePaddingLeft,
     this.titleWidget,
     this.appBarTitleWidget,
+    this.condenseHeader = false,
   });
 
   final String title;
@@ -95,6 +97,11 @@ class PageScaffold extends StatefulWidget {
   /// slides to the left, right after the back button, instead of staying
   /// centered. Used by the editor while the undo/redo/save actions appear.
   final bool alignAppBarTitleLeft;
+
+  /// When true, a landscape phone drops the body's title line and moves the
+  /// title, with its metadata in front of it, to the app bar. Home keeps its
+  /// title line; only a folder asks for this.
+  final bool condenseHeader;
 
   /// Small metadata printed at the right of the body title line.
   final String? headerMetadata;
@@ -178,9 +185,22 @@ class _PageScaffoldState extends State<PageScaffold> {
     // The app bar title appears only once the user scrolls down. When the
     // note is also being edited (undo/redo/save actions visible) the title
     // slides to the left instead of staying centered.
-    final bool showAppBarTitle = _showAppBarTitle;
+    // A landscape phone has no room for the big title line: the app bar shows
+    // the title and its metadata from the first frame. Only the pages that ask
+    // for it — a folder, not Home.
+    final bool condensed =
+        widget.condenseHeader && condensedHeader(MediaQuery.sizeOf(context));
+    final bool showAppBarTitle = _showAppBarTitle || condensed;
     final bool appBarTitleOnLeft =
         showAppBarTitle && widget.alignAppBarTitleLeft;
+
+    // A landscape phone hides the island, the punch-hole and the rounded
+    // corners on one side. One symmetric inset clears whichever side they are
+    // on, so the writing never runs under them; the app bar keeps its own
+    // margins, because the island sits at mid-height, out of its way. Portrait
+    // and tablets report zero.
+    final EdgeInsets safe = MediaQuery.paddingOf(context);
+    final double sideInset = safe.left > safe.right ? safe.left : safe.right;
 
     return PaperSurface(
       notebook: widget.notebook,
@@ -220,21 +240,25 @@ class _PageScaffoldState extends State<PageScaffold> {
                 )
               : null,
           title: showAppBarTitle
-              ? (widget.appBarTitleWidget ??
-                    Text(
-                      appBarTitleText,
-                      maxLines: 1,
-                      // Same size as the "Cancel" action.
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: appBarTextSize,
-                        letterSpacing: -0.41,
-                        color: textColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ))
+              ? (condensed
+                    ? _condensedTitle(textColor, appBarTitleText)
+                    : (widget.appBarTitleWidget ??
+                          Text(
+                            appBarTitleText,
+                            maxLines: 1,
+                            // Same size as the "Cancel" action.
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: appBarTextSize,
+                              letterSpacing: -0.41,
+                              color: textColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          )))
               : null,
-          centerTitle: !widget.isHome && !appBarTitleOnLeft,
+          // The condensed title leads with its metadata, so it reads from the
+          // left rather than from the middle.
+          centerTitle: !condensed && !widget.isHome && !appBarTitleOnLeft,
           actions: widget.actions
               ?.map(
                 (a) => Padding(
@@ -244,11 +268,78 @@ class _PageScaffoldState extends State<PageScaffold> {
               )
               .toList(),
         ),
-        body: _buildBody(textColor, keyboard),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: sideInset),
+          child: _buildBody(textColor, keyboard),
+        ),
         floatingActionButton: widget.floatingActionButton,
         floatingActionButtonLocation: widget.floatingActionButtonLocation,
       ),
     );
+  }
+
+  /// The app bar title of a condensed folder: the flags, then the name, on one
+  /// line. It is centred while the whole group fits; a longer name keeps the
+  /// left edge so it is not cut on both sides.
+  Widget _condensedTitle(Color textColor, String title) {
+    final TextStyle titleStyle = TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: appBarTextSize,
+      letterSpacing: -0.41,
+      color: textColor,
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final Widget row = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (widget.headerMetadataWidget != null) ...<Widget>[
+              widget.headerMetadataWidget!,
+              const SizedBox(width: appPaddingSmall),
+            ],
+            if (widget.headerMetadata != null) ...<Widget>[
+              Text(widget.headerMetadata!, style: titleMetadataStyle(context)),
+              const SizedBox(width: appPaddingTight),
+            ],
+            Flexible(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              ),
+            ),
+          ],
+        );
+        return constraints.maxWidth >= _condensedTitleWidth(title, titleStyle)
+            ? Center(child: row)
+            : row;
+      },
+    );
+  }
+
+  /// The width the untouched title needs, metadata included, so the decision to
+  /// centre does not depend on the layout having happened yet.
+  double _condensedTitleWidth(String title, TextStyle style) {
+    final TextPainter painter = TextPainter(
+      text: TextSpan(
+        text: title,
+        style: style,
+        children: widget.headerMetadata == null
+            ? null
+            : <InlineSpan>[
+                TextSpan(
+                  text: '  ${widget.headerMetadata}',
+                  style: titleMetadataStyle(context),
+                ),
+              ],
+      ),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    // The flags widget cannot be measured before layout; a short allowance keeps
+    // the decision honest.
+    return painter.width + (widget.headerMetadataWidget != null ? 56.0 : 0.0);
   }
 
   /// The body scroll view.
@@ -258,25 +349,30 @@ class _PageScaffoldState extends State<PageScaffold> {
   /// their illustration stay exactly where it is rather than being dragged up
   /// by the shrinking body.
   Widget _buildBody(Color textColor, double keyboard) {
+    // A landscape phone drops the big title line: the app bar carries the title
+    // and its metadata, and only the filter control (or the rename field) stays
+    // above the list.
+    final bool condensed =
+        widget.condenseHeader && condensedHeader(MediaQuery.sizeOf(context));
     final Widget scrollView = CustomScrollView(
       key: _bodyKey,
       controller: _scrollController,
       slivers: <Widget>[
-        // Big title in the body.
-        SliverToBoxAdapter(
-          child: SectionTitleLine(
-            crossAxisAlignment: widget.headerCrossAxisAlignment,
-            titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
-            metadata: widget.headerMetadata,
-            metadataWidget: widget.headerMetadataWidget,
-            padding: EdgeInsets.fromLTRB(
-              widget.titlePaddingLeft ?? appPaddingLarge,
-              appPaddingMedium,
-              appPaddingLarge,
-              0.0,
+        if (!condensed || widget.titleWidget != null)
+          SliverToBoxAdapter(
+            child: SectionTitleLine(
+              crossAxisAlignment: widget.headerCrossAxisAlignment,
+              titleWidget: widget.titleWidget ?? _buildTitleField(textColor),
+              metadata: condensed ? null : widget.headerMetadata,
+              metadataWidget: condensed ? null : widget.headerMetadataWidget,
+              padding: EdgeInsets.fromLTRB(
+                widget.titlePaddingLeft ?? appPaddingLarge,
+                appPaddingMedium,
+                appPaddingLarge,
+                0.0,
+              ),
             ),
           ),
-        ),
         // Content slivers
         ...widget.slivers,
       ],

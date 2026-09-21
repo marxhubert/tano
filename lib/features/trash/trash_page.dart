@@ -129,6 +129,8 @@ class _TrashPageState extends State<TrashPage> {
                   sliver: EntitySliver<Folder>(
                     items: _viewModel.deletedFolders,
                     isList: _isListLayout,
+                    // A folder tile is a perfect square, like on Home.
+                    aspectRatio: 1.0,
                     cardBuilder: _folderCard,
                   ),
                 ),
@@ -242,7 +244,6 @@ class _TrashPageState extends State<TrashPage> {
       title: folder.name,
       subtitle: 'x$noteCount',
       subtitleIcon: Symbols.sticky_note_2,
-      coverImage: folder.coverImage,
       isImportant: folder.important,
       isLocked: folder.isLocked,
       isListLayout: _isListLayout,
