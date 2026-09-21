@@ -334,7 +334,13 @@ class AppFabState extends State<AppFab>
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final MediaQueryData media = MediaQuery.of(context);
+    // The FAB slot loses the side padding; subtract it so the expanded bar stops
+    // at the safe area and only grows leftwards.
+    final double safeSide = media.padding.left > media.padding.right
+        ? media.padding.left
+        : media.padding.right;
+    final double screenWidth = media.size.width - safeSide * 2;
     // The FAB follows the content column, not the raw window: on a tablet it
     // keeps the width of the centred page.
     final double contentWidth = screenWidth < appContentMaxWidth
@@ -387,7 +393,10 @@ class AppFabState extends State<AppFab>
       _verticalMenu = FabVerticalMenu.none;
     }
 
-    // Target width based on state
+    // Target width based on state. The right edge is the anchor; the resting bar
+    // keeps the same 24 from the column on its left too, so both gaps to the
+    // cards read the same (12 each). An open menu or a keyboard takes the wider
+    // form.
     final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
         ? contentWidth - 24.0
         : contentWidth - 48.0;
@@ -441,7 +450,6 @@ class AppFabState extends State<AppFab>
 
     // Size menus to the viewport above the keyboard, preserving the app bar
     // and safe areas. Long menus scroll inside this bounded surface.
-    final media = MediaQuery.of(context);
     final availableMenuHeight = math.max(
       0.0,
       screenHeight -

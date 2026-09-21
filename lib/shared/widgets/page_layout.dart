@@ -19,12 +19,17 @@ class FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
+    final double screen = scaffoldGeometry.scaffoldSize.width;
+    // Keep the FAB clear of a landscape phone's island and rounded corners.
+    final EdgeInsets safe = scaffoldGeometry.minInsets;
+    final double sideInset = safe.left > safe.right ? safe.left : safe.right;
     // On a wide window the page is centred in [appContentMaxWidth], so the FAB
     // hugs the content's right edge rather than the screen's.
-    final double screen = scaffoldGeometry.scaffoldSize.width;
-    final double content = screen < appContentMaxWidth
-        ? screen
+    final double available = screen - sideInset * 2;
+    final double content = available < appContentMaxWidth
+        ? available
         : appContentMaxWidth;
+    // The right edge never moves: an expanded bar grows leftwards from it.
     return (screen + content) / 2 -
         scaffoldGeometry.floatingActionButtonSize.width -
         paddingX;
@@ -35,10 +40,17 @@ class FlushEndFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
+    final Size screen = scaffoldGeometry.scaffoldSize;
+    // The FAB's right edge stops [paddingX] (24) short of the content column,
+    // while the cards stop [appPaddingMedium] (12) short: the *visible* gap is
+    // 12. A landscape phone leaves that same 12 at the bottom, measured from the
+    // physical edge, so the two gaps finally read the same.
+    final bool landscape = screen.width > screen.height;
     double offset =
-        scaffoldGeometry.contentBottom -
-        scaffoldGeometry.floatingActionButtonSize.height -
-        paddingY;
+        (landscape
+            ? screen.height - appPaddingMedium
+            : scaffoldGeometry.contentBottom - paddingY) -
+        scaffoldGeometry.floatingActionButtonSize.height;
     if (scaffoldGeometry.snackBarSize.height > 0.0) {
       // Push the FAB up so it stays above the SnackBar.
       offset -= (scaffoldGeometry.snackBarSize.height - 12.0);
@@ -169,7 +181,6 @@ class _PageScaffoldState extends State<PageScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scaffoldBgColor =
         widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = getTextColor(scaffoldBgColor);
@@ -220,11 +231,13 @@ class _PageScaffoldState extends State<PageScaffold> {
               ? Colors.black.withValues(alpha: 0.05)
               : Colors.transparent,
           // Same colour as the cards, with a hairline width.
+          // The paper rules share the warm rule colour, so the scrolled bar
+          // takes the accent: it reads as a bar, not as one more rule.
           shape: showAppBarTitle
               ? Border(
                   bottom: BorderSide(
-                    color: cardBorderColor(isDark),
-                    width: 0.5,
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.0,
                   ),
                 )
               : null,
@@ -272,7 +285,14 @@ class _PageScaffoldState extends State<PageScaffold> {
           padding: EdgeInsets.symmetric(horizontal: sideInset),
           child: _buildBody(textColor, keyboard),
         ),
-        floatingActionButton: widget.floatingActionButton,
+        // The Scaffold strips the side padding from its FAB slot; hand the real
+        // one back so the FAB can size itself inside the safe area.
+        floatingActionButton: widget.floatingActionButton == null
+            ? null
+            : MediaQuery(
+                data: MediaQuery.of(context),
+                child: widget.floatingActionButton!,
+              ),
         floatingActionButtonLocation: widget.floatingActionButtonLocation,
       ),
     );
@@ -373,6 +393,10 @@ class _PageScaffoldState extends State<PageScaffold> {
               ),
             ),
           ),
+        // The condensed page has no title line above the list: keep the filter
+        // control from touching the app bar.
+        if (condensed && widget.titleWidget == null)
+          const SliverToBoxAdapter(child: SizedBox(height: appPaddingMedium)),
         // Content slivers
         ...widget.slivers,
       ],

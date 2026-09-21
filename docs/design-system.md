@@ -97,7 +97,12 @@ the way to move, delete and undo. Existing sort, folder/search scope and lock ru
 are preserved.
 
 Every route keeps one centred content column of `appContentMaxWidth` (1080), like
-the site's wrap, and the FAB follows its right edge rather than the window's. Grid
+the site's wrap, and the FAB follows its right edge rather than the window's,
+staying inside the safe area. The FAB's right edge stops 24 short of the column
+while the cards stop 12 short, so the *visible* gap is 12; on a landscape phone
+the bottom edge gets that same 12. An expanded bar keeps that right edge and grows
+leftwards only, stopping 12 from the cards on that side too: the two gaps stay
+symmetric. Grid
 cards keep an almost square ratio (0.9) — a folder tile is a perfect square — so
 they follow their width in every column count.
 
@@ -112,7 +117,9 @@ On a landscape phone the page body is inset on both sides by the larger of the
 two safe-area insets, so the writing clears the island, the punch-hole and the
 rounded corners whichever side they sit on. The notebook margin line moves with
 the content. The app bar keeps its own margins — the island sits at mid-height,
-well below it — so no space is wasted around the back button and the actions.
+well below it — so no space is wasted around the back button and the actions. The
+scrolled app bar draws its bottom hairline in the accent, since the warm rule
+colour would read as one more paper rule.
 
 Motion remains 150/250/450ms. Typography scales with the system and app preference.
 Golden previews cover light/dark Home, Note, Task and menus in addition to card
