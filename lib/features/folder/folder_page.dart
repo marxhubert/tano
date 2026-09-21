@@ -573,7 +573,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
             ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
             : <Widget>[
                 IconButton(
-                  icon: const Icon(Symbols.search),
+                  icon: const Icon(Symbols.document_search),
                   tooltip: AppText.tr('search'),
                   onPressed: _enterSearchMode,
                 ),
@@ -646,8 +646,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           if (!_loading)
             SliverToBoxAdapter(
               child: SectionTitleLine(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: appPaddingLarge,
+                padding: EdgeInsets.symmetric(
+                  horizontal: appSidePad(context, appPaddingLarge),
                 ),
                 crossAxisAlignment: CrossAxisAlignment.center,
                 titleWidget: DocumentFilterControl(
@@ -700,7 +700,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
     final bool isList = _viewLayout == 'list';
     return SliverPadding(
-      padding: const EdgeInsets.all(appPaddingMedium),
+      padding: appContentPadding(context),
       sliver: EntitySliver<Note>(
         items: notes,
         isList: isList,

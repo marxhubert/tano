@@ -889,7 +889,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
 
     // The FAB became the search input.
@@ -984,7 +984,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -1415,7 +1415,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1479,7 +1479,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1506,7 +1506,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Results'), findsNothing);
     // Back to the normal folder view: the search action is available again.
-    expect(find.byIcon(Symbols.search), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
     expect(find.text('Perso'), findsWidgets);
   });
 

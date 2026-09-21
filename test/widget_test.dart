@@ -151,7 +151,7 @@ void main() {
       
       // Opens the main menu (⋮): it must not crash even if the
       // sorting/language/about items have no icon.
-      await tester.tap(find.byIcon(Symbols.more_vert));
+      await tester.tap(find.byIcon(Symbols.pending));
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);

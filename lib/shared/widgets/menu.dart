@@ -160,7 +160,7 @@ class AppBarMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<PopupItem>(
-      icon: const Icon(Symbols.more_vert, weight: 900.0),
+      icon: const Icon(Symbols.pending),
       tooltip: AppText.tr('more'),
       offset: const Offset(0, 56),
       elevation: 4.0,

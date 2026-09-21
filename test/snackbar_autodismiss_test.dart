@@ -132,7 +132,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The list keeps deletion available through the selection action bar.
-    await tester.tap(find.byIcon(Symbols.more_vert).first);
+    await tester.tap(find.byIcon(Symbols.pending).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();
@@ -177,7 +177,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The list keeps deletion available through the selection action bar.
-    await tester.tap(find.byIcon(Symbols.more_vert).first);
+    await tester.tap(find.byIcon(Symbols.pending).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();

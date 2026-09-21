@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 
 /// Tap group shared by the FAB and the theme toggle, so tapping the toggle does
 /// not dismiss an open FAB menu.
@@ -83,6 +84,18 @@ const double appPaddingSmall = 6.0;
 /// a tight one between two lines or around an icon, a wide one as the inner
 /// margin of a card or a list.
 const double appPaddingTight = 8.0;
+
+/// The padding around a page's content slivers. A landscape phone drops the side
+/// part: the grid then reaches the safe-area edges, and where the safe area is
+/// zero the content touches the screen.
+/// A side padding that vanishes on a landscape phone.
+double appSidePad(BuildContext context, double value) =>
+    condensedHeader(MediaQuery.sizeOf(context)) ? 0.0 : value;
+
+EdgeInsets appContentPadding(BuildContext context) =>
+    condensedHeader(MediaQuery.sizeOf(context))
+    ? const EdgeInsets.symmetric(vertical: appPaddingMedium)
+    : const EdgeInsets.all(appPaddingMedium);
 const double appPaddingWide = 16.0;
 
 /// The rhythm between two blocks of a screen. The About footer, for instance,

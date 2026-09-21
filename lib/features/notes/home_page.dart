@@ -548,7 +548,9 @@ class HomeState extends State<Home> with RouteAware {
           // The counts live in the segments; only a selection still needs a
           // sentence of its own here.
           metadata: _viewModel.isInSelectionMode ? _notesMetadata : null,
-          padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
+          padding: EdgeInsets.symmetric(
+            horizontal: appSidePad(context, appPaddingSmall),
+          ),
         ),
       ),
     );
@@ -581,7 +583,7 @@ class HomeState extends State<Home> with RouteAware {
     }
     return <Widget>[
       IconButton(
-        icon: const Icon(Symbols.search),
+        icon: const Icon(Symbols.document_search),
         tooltip: AppText.tr('search'),
         onPressed: _enterSearchMode,
       ),
@@ -640,7 +642,7 @@ class HomeState extends State<Home> with RouteAware {
               : null,
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(appPaddingMedium),
+              padding: appContentPadding(context),
               sliver: _buildHomeContent(),
             ),
           ],

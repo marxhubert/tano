@@ -25,7 +25,8 @@ class FlushFabLocation extends StandardFabLocation {
     double adjustment,
   ) {
     final double screen = scaffoldGeometry.scaffoldSize.width;
-    // Keep the FAB clear of a landscape phone's island and rounded corners.
+    // A landscape phone has no side padding, so the column is the whole screen;
+    // any other window clears the island and the rounded corners.
     final EdgeInsets safe = scaffoldGeometry.minInsets;
     final double sideInset = safe.left > safe.right ? safe.left : safe.right;
     // On a wide window the page is centred in [appContentMaxWidth], so the FAB
@@ -221,11 +222,10 @@ class _PageScaffoldState extends State<PageScaffold> {
     final bool appBarTitleOnLeft =
         showAppBarTitle && widget.alignAppBarTitleLeft;
 
-    // A landscape phone hides the island, the punch-hole and the rounded
-    // corners on one side. One symmetric inset clears whichever side they are
-    // on, so the writing never runs under them; the app bar keeps its own
-    // margins, because the island sits at mid-height, out of its way. Portrait
-    // and tablets report zero.
+    // A landscape phone reaches both edges: no left/right padding at all. Any
+    // other window clears the island and the rounded corners with one symmetric
+    // inset, and the app bar keeps its own margins (the island sits at
+    // mid-height, out of its way). Portrait and tablets report zero.
     final EdgeInsets safe = MediaQuery.paddingOf(context);
     final double sideInset = safe.left > safe.right ? safe.left : safe.right;
 
@@ -239,9 +239,12 @@ class _PageScaffoldState extends State<PageScaffold> {
           backgroundColor: Colors.transparent,
           // When the title slides left (undo/redo/save actions visible), keep a
           // visible gap between the back button and the title.
-          titleSpacing: widget.isHome
-              ? appPaddingLarge
-              : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+          titleSpacing: appSidePad(
+            context,
+            widget.isHome
+                ? appPaddingLarge
+                : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+          ),
           elevation: 0.0,
           shadowColor: showAppBarTitle
               ? Colors.black.withValues(alpha: 0.05)
@@ -260,8 +263,8 @@ class _PageScaffoldState extends State<PageScaffold> {
           leading: !widget.isHome
               ? IconButton(
                   icon: Icon(
-                    Symbols.arrow_back_ios,
-                    size: 20.0,
+                    Symbols.arrow_back_ios_new,
+                    size: 24.0,
                     color: textColor,
                   ),
                   tooltip: AppText.tr('back'),
@@ -291,7 +294,9 @@ class _PageScaffoldState extends State<PageScaffold> {
           actions: widget.actions
               ?.map(
                 (a) => Padding(
-                  padding: const EdgeInsets.only(right: appPaddingSmall),
+                  padding: EdgeInsets.only(
+                    right: appSidePad(context, appPaddingSmall),
+                  ),
                   child: a,
                 ),
               )
@@ -395,9 +400,9 @@ class _PageScaffoldState extends State<PageScaffold> {
               metadata: condensed ? null : widget.headerMetadata,
               metadataWidget: condensed ? null : widget.headerMetadataWidget,
               padding: EdgeInsets.fromLTRB(
-                widget.titlePaddingLeft ?? appPaddingLarge,
+                appSidePad(context, widget.titlePaddingLeft ?? appPaddingLarge),
                 appPaddingMedium,
-                appPaddingLarge,
+                appSidePad(context, appPaddingLarge),
                 0.0,
               ),
             ),
