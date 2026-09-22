@@ -32,6 +32,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
@@ -465,62 +466,23 @@ class HomeState extends State<Home> with RouteAware {
     }
   }
 
-  /// The recent searches, shown while the field is empty: the shortcut a
-  /// search screen is expected to offer.
-  Widget _searchHistorySliver(List<String> entries) {
-    return SliverList(
-      delegate: SliverChildListDelegate(<Widget>[
-        for (final String query in entries)
-          InkWell(
-            borderRadius: BorderRadius.circular(appBorderRadius),
-            onTap: () {
-              _searchController.text = query;
-              _viewModel.setSearchQuery(query);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: appPaddingSmall,
-                vertical: appPaddingMedium,
-              ),
-              child: Text(
-                query,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: TanoText.body,
-                  color: primaryTextColor(context),
-                ),
-              ),
-            ),
-          ),
-      ]),
-    );
-  }
-
   /// True while the field is open on an empty query with something to offer.
-  bool get _showSearchHistory =>
-      _isSearchMode &&
-      !_viewModel.hasSearchQuery &&
-      SearchHistoryController.instance.entries.isNotEmpty;
-
-  /// The "Clear" action, in the metadata slot of the title line.
-  Widget _clearHistoryButton() {
-    return TextButton(
-      onPressed: () => SearchHistoryController.instance.clear(),
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.zero,
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(AppText.tr('clear'), style: titleMetadataStyle(context)),
-    );
-  }
+  bool get _showSearchHistory => showSearchHistory(
+    isSearchMode: _isSearchMode,
+    hasQuery: _viewModel.hasSearchQuery,
+  );
 
   /// Home content: the folder group on top, then the unfiled notes.
   Widget _buildHomeContent() {
     // While the field is empty, the recent searches stand in for the list.
     if (_showSearchHistory) {
-      return _searchHistorySliver(SearchHistoryController.instance.entries);
+      return searchHistorySliver(
+        context,
+        onSelected: (String query) {
+          _searchController.text = query;
+          _viewModel.setSearchQuery(query);
+        },
+      );
     }
     final List<Folder> folders = _viewModel.folders;
     final List<Note> notes = _viewModel.notes;
@@ -659,7 +621,7 @@ class HomeState extends State<Home> with RouteAware {
               ? null
               : _pageMetadata,
           headerMetadataWidget: _showSearchHistory
-              ? _clearHistoryButton()
+              ? clearSearchHistoryButton(context)
               : null,
           slivers: [
             SliverPadding(

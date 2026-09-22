@@ -3,6 +3,12 @@ part of 'app_fab.dart';
 /// Adapts page inputs and asynchronous data to the synchronous presentation.
 /// All mutations happen in lifecycle methods or explicit actions, never build.
 mixin _FabStateMixin on State<AppFab> {
+  /// The search and find fields keep one identity across every rebuild. Without
+  /// it, a rebuild that changes the surrounding tree — the keyboard's insets,
+  /// for one — replaced the field's element, which dropped the platform
+  /// connection: the keyboard flashed open and shut.
+  final GlobalKey fieldKey = GlobalKey();
+
   late final FabPresentation _presentation;
   FabVerticalMenu get _verticalMenu => _presentation.menu;
   FabMode get _mode {

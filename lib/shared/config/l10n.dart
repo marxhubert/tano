@@ -378,7 +378,7 @@ class AppText {
     'folder_locked': 'Folder locked',
     'folder_unlocked': 'Folder unlocked',
     // Search
-    'search_history': 'Recent searches',
+    'search_history': 'Recent',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -651,7 +651,7 @@ class AppText {
     'folder_locked': 'Dossier verrouillé',
     'folder_unlocked': 'Dossier déverrouillé',
     // Recherche
-    'search_history': 'Recherches récentes',
+    'search_history': 'Récentes',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -924,7 +924,7 @@ class AppText {
     'folder_locked': 'Voahidy ny rakitra',
     'folder_unlocked': 'Novahana ny rakitra',
     // Fikarohana
-    'search_history': 'Fikarohana vao haingana',
+    'search_history': 'Teo aloha',
   };
 
   /// Returns the string associated with [key] in the current language,

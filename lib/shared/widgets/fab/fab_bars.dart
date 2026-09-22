@@ -169,6 +169,7 @@ mixin _FabBarsMixin on _FabStateMixin {
             Icon(Symbols.search, color: _fabForeground(context), size: 24.0),
             Expanded(
               child: TextField(
+                key: fieldKey,
                 controller: widget.controller,
                 focusNode: widget.focusNode,
                 cursorColor: _fabForeground(context),
@@ -256,6 +257,7 @@ mixin _FabBarsMixin on _FabStateMixin {
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             alignment: Alignment.center,
             child: TextField(
+              key: fieldKey,
               controller: widget.controller,
               focusNode: widget.focusNode,
               cursorColor: _fabForeground(context),

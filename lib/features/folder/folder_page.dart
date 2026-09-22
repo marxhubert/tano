@@ -20,7 +20,9 @@ import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
+import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
@@ -498,6 +500,19 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   /// does the page switch to the results presentation.
   bool get _resultsVisible => _isSearchMode && _searchStarted;
 
+  /// The recent searches stand in for the results while the field is empty —
+  /// the same screen Home offers.
+  bool get _showSearchHistory => showSearchHistory(
+    isSearchMode: _isSearchMode,
+    hasQuery: _searchQuery.trim().isNotEmpty,
+  );
+
+  /// The kind tags step aside while a search is on screen, exactly as they do
+  /// on Home. A selection keeps them: its sentence is printed there.
+  bool get _showFilterTags =>
+      _selection.isActive ||
+      (!_showSearchHistory && _searchQuery.trim().isEmpty);
+
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
 
@@ -566,152 +581,180 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     // The folder's FAB always rests in its reduced form; tapping it expands
     // the action bar. This keeps it from hiding the notes or the cover.
-    return ProtectedContent(
-      protected: _folder.isLocked,
-      child: PageScaffold(
-        backgroundColor: immersiveBg,
-        // The folder name is always the page title, even in selection mode.
-        title: _resultsVisible ? AppText.tr('search_results') : _folder.name,
-        // A landscape phone moves the folder title, flags included, to the app
-        // bar and drops the body's title line. Home keeps its own.
-        condenseHeader: true,
+    // The recent searches live in a shared controller: the page rebuilds when
+    // they change, exactly as Home does.
+    return ListenableBuilder(
+      listenable: SearchHistoryController.instance,
+      builder: (BuildContext context, Widget? child) => ProtectedContent(
+        protected: _folder.isLocked,
+        child: PageScaffold(
+          backgroundColor: immersiveBg,
+          // The folder name is always the page title, even in selection mode.
+          title: _showSearchHistory
+              ? AppText.tr('search_history')
+              : (_resultsVisible ? AppText.tr('search_results') : _folder.name),
+          // A landscape phone moves the folder title, flags included, to the app
+          // bar and drops the body's title line. Home keeps its own.
+          condenseHeader: true,
 
-        headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
-        // Nothing but the illustration: it must hold its place.
-        freezeBody: !_loading && _visibleNotes.isEmpty,
-        titleWidget: _isEditingTitle
-            ? TapRegion(
-                onTapOutside: (_) => _exitTitleEdit(),
-                child: TextField(
-                  controller: _titleController,
-                  focusNode: _titleFocusNode,
-                  autofocus: true,
-                  maxLines: 3,
-                  minLines: 1,
-                  maxLength: 54,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _exitTitleEdit(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: TanoText.pageTitle,
-                    letterSpacing: -0.41,
-                    color: getTextColor(
-                      Theme.of(context).scaffoldBackgroundColor,
+          headerMetadataWidget: _showSearchHistory
+              ? clearSearchHistoryButton(context)
+              : (!_resultsVisible ? _folderFlags(context) : null),
+          // Nothing but the illustration: it must hold its place.
+          freezeBody: !_loading && _visibleNotes.isEmpty,
+          titleWidget: _isEditingTitle
+              ? TapRegion(
+                  onTapOutside: (_) => _exitTitleEdit(),
+                  child: TextField(
+                    controller: _titleController,
+                    focusNode: _titleFocusNode,
+                    autofocus: true,
+                    maxLines: 3,
+                    minLines: 1,
+                    maxLength: 54,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _exitTitleEdit(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: TanoText.pageTitle,
+                      letterSpacing: -0.41,
+                      color: getTextColor(
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ),
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                      counter: Offstage(),
                     ),
                   ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                    counter: Offstage(),
+                )
+              : null,
+          actions: _selection.isActive
+              ? <Widget>[CancelButton(onPressed: _exitSelection)]
+              : _isSearchMode
+              ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
+              : <Widget>[
+                  IconButton(
+                    icon: const Icon(Symbols.document_search),
+                    tooltip: AppText.tr('search'),
+                    onPressed: _enterSearchMode,
                   ),
-                ),
-              )
-            : null,
-        actions: _selection.isActive
-            ? <Widget>[CancelButton(onPressed: _exitSelection)]
-            : _isSearchMode
-            ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
-            : <Widget>[
-                IconButton(
-                  icon: const Icon(Symbols.document_search),
-                  tooltip: AppText.tr('search'),
-                  onPressed: _enterSearchMode,
-                ),
-                const ThemeToggleButton(),
-                // The same menu as Home: a folder adds a note from its FAB, so
-                // the app bar no longer carries an "add note" action.
-                AppBarMenuButton(
-                  layout: _viewLayout,
-                  onLayout: _changeViewLayout,
-                  onLeft: _fabOnLeft,
-                  onLeftChanged: _setFabOnLeft,
-                  onSettings: _openSettings,
-                ),
-              ],
-        floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
-        // A single, stable FAB for both modes: only the icons animate when the
-        // selection mode toggles, the FAB box itself does not move.
-        floatingActionButton: AppFab(
-          key: _fabKey,
-          onLeft: _fabOnLeft,
-          isEditorMode: true,
-          isFolderMode: true,
-          isSelectionMode: _selection.isActive,
-          // Moving needs at least one selected note.
-          canMove: _selection.isNotEmpty,
-          canDelete: _selection.isNotEmpty,
-          isSearchMode: _isSearchMode,
-          collapsedByDefault: true,
-          controller: _searchController,
-          focusNode: _searchFocusNode,
-          isImportant: _folder.important,
-          isLocked: _folder.isLocked,
-          canLock: _canLock,
-          isTitleEditing: _isEditingTitle,
-          currentCategory: _folder.category,
-          currentFolderId: _folder.id,
-          onAddNote: () => _openNote(add: true, note: _newNote()),
-          onAddTask: () => _openNote(
-            add: true,
-            note: Task(folderId: _folder.id, category: _folder.category),
-          ),
-          onColorSelected: (String name) =>
-              _save(_folder.copyWith(category: name)),
-          onImportantSelected: () =>
-              _save(_folder.copyWith(important: !_folder.important)),
-          onLockSelected: _toggleLock,
-          onDeleteSelected: _delete,
-          onEditTitle: _startTitleEdit,
-          onSearchChanged: (String value) {
-            setState(() {
-              _searchQuery = value;
-              // Only from the first typed letter does the page switch to the
-              // results presentation.
-              if (value.trim().isNotEmpty) {
-                _searchStarted = true;
-              }
-            });
-          },
-          onReset: _clearSearch,
-          onDelete: _deleteSelected,
-          onMoveTo: _moveTo,
-          onClearSelection: () => setState(_selection.clear),
-          onSelectAll: () => setState(
-            // Only the notes currently shown (search results included).
-            () =>
-                _selection.selectAll(_visibleNotes.map((Note note) => note.id)),
-          ),
-        ),
-        slivers: <Widget>[
-          if (!_loading)
-            SliverToBoxAdapter(
-              child: SectionTitleLine(
-                padding: EdgeInsets.symmetric(
-                  horizontal: appSidePad(context, appPaddingLarge),
-                ),
-                crossAxisAlignment: CrossAxisAlignment.center,
-                titleWidget: DocumentFilterControl(
-                  value: _documentFilter,
-                  countOf: _countFor,
-                  // Selecting something replaces the tags with the sentence.
-                  selectionLabel: _selection.isActive ? _headerMetadata : null,
-                  onChanged: (DocumentFilter filter) => setState(() {
-                    _selection.exit();
-                    _documentFilter = filter;
-                    _saveDocumentFilterPref(filter);
-                  }),
-                ),
+                  const ThemeToggleButton(),
+                  // The same menu as Home: a folder adds a note from its FAB, so
+                  // the app bar no longer carries an "add note" action.
+                  AppBarMenuButton(
+                    layout: _viewLayout,
+                    onLayout: _changeViewLayout,
+                    onLeft: _fabOnLeft,
+                    onLeftChanged: _setFabOnLeft,
+                    onSettings: _openSettings,
+                  ),
+                ],
+          floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
+          // A single, stable FAB for both modes: only the icons animate when the
+          // selection mode toggles, the FAB box itself does not move.
+          floatingActionButton: AppFab(
+            key: _fabKey,
+            onLeft: _fabOnLeft,
+            isEditorMode: true,
+            isFolderMode: true,
+            isSelectionMode: _selection.isActive,
+            // Moving needs at least one selected note.
+            canMove: _selection.isNotEmpty,
+            canDelete: _selection.isNotEmpty,
+            isSearchMode: _isSearchMode,
+            collapsedByDefault: true,
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            isImportant: _folder.important,
+            isLocked: _folder.isLocked,
+            canLock: _canLock,
+            isTitleEditing: _isEditingTitle,
+            currentCategory: _folder.category,
+            currentFolderId: _folder.id,
+            onAddNote: () => _openNote(add: true, note: _newNote()),
+            onAddTask: () => _openNote(
+              add: true,
+              note: Task(folderId: _folder.id, category: _folder.category),
+            ),
+            onColorSelected: (String name) =>
+                _save(_folder.copyWith(category: name)),
+            onImportantSelected: () =>
+                _save(_folder.copyWith(important: !_folder.important)),
+            onLockSelected: _toggleLock,
+            onDeleteSelected: _delete,
+            onEditTitle: _startTitleEdit,
+            onSearchChanged: (String value) {
+              setState(() {
+                _searchQuery = value;
+                // Only from the first typed letter does the page switch to the
+                // results presentation.
+                if (value.trim().isNotEmpty) {
+                  _searchStarted = true;
+                }
+              });
+            },
+            onReset: _clearSearch,
+            onDelete: _deleteSelected,
+            onMoveTo: _moveTo,
+            onClearSelection: () => setState(_selection.clear),
+            onSelectAll: () => setState(
+              // Only the notes currently shown (search results included).
+              () => _selection.selectAll(
+                _visibleNotes.map((Note note) => note.id),
               ),
             ),
-          if (_loading)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: CircularProgressIndicator.adaptive()),
-            )
-          else
-            _buildNotes(),
-        ],
+          ),
+          slivers: <Widget>[
+            if (!_loading && _showFilterTags)
+              SliverToBoxAdapter(
+                child: SectionTitleLine(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: appSidePad(context, appPaddingLarge),
+                  ),
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  titleWidget: DocumentFilterControl(
+                    value: _documentFilter,
+                    countOf: _countFor,
+                    // Selecting something replaces the tags with the sentence.
+                    selectionLabel: _selection.isActive
+                        ? _headerMetadata
+                        : null,
+                    onChanged: (DocumentFilter filter) => setState(() {
+                      _selection.exit();
+                      _documentFilter = filter;
+                      _saveDocumentFilterPref(filter);
+                    }),
+                  ),
+                ),
+              ),
+            if (_loading)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator.adaptive()),
+              )
+            else if (_showSearchHistory)
+              SliverPadding(
+                // The same frame as the notes above it, so the ruled rows line
+                // up with the cards.
+                padding: appContentPadding(context),
+                sliver: searchHistorySliver(
+                  context,
+                  onSelected: (String query) {
+                    setState(() {
+                      _searchController.text = query;
+                      _searchQuery = query;
+                      _searchStarted = true;
+                    });
+                  },
+                ),
+              )
+            else
+              _buildNotes(),
+          ],
+        ),
       ),
     );
   }
