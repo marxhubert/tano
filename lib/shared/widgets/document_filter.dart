@@ -52,6 +52,22 @@ enum DocumentFilter {
   });
 }
 
+/// The noun a selection sentence uses. One kind keeps its own name; a selection
+/// that mixes kinds is called "docs", the word the "All" segment already uses
+/// for every document.
+String selectionNounKey({
+  required int notes,
+  required int tasks,
+  required int folders,
+}) {
+  final int kinds =
+      (notes > 0 ? 1 : 0) + (tasks > 0 ? 1 : 0) + (folders > 0 ? 1 : 0);
+  if (kinds > 1) return 'doc';
+  if (tasks > 0) return 'task';
+  if (folders > 0) return 'folder';
+  return 'note';
+}
+
 /// The stored filter name, or null for anything unknown.
 DocumentFilter? documentFilterFromName(String? name) {
   for (final DocumentFilter filter in DocumentFilter.values) {
@@ -72,6 +88,7 @@ class DocumentFilterControl extends StatelessWidget {
     required this.value,
     required this.onChanged,
     required this.countOf,
+    this.selectionLabel,
   });
 
   final DocumentFilter value;
@@ -80,20 +97,32 @@ class DocumentFilterControl extends StatelessWidget {
   /// How many documents the given view would show right now.
   final int Function(DocumentFilter) countOf;
 
+  /// While something is selected the tags step aside: the control keeps its
+  /// container, prints this sentence instead, and wears the active segment's
+  /// fill — exactly as if that one tag were chosen.
+  final String? selectionLabel;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final String? sentence = selectionLabel;
     return SegmentedButton<DocumentFilter>(
       segments: <ButtonSegment<DocumentFilter>>[
-        for (final DocumentFilter filter in DocumentFilter.values)
-          ButtonSegment<DocumentFilter>(
-            value: filter,
-            label: _label(context, filter, countOf(filter)),
-          ),
+        if (sentence != null)
+          ButtonSegment<DocumentFilter>(value: value, label: Text(sentence))
+        else
+          for (final DocumentFilter filter in DocumentFilter.values)
+            ButtonSegment<DocumentFilter>(
+              value: filter,
+              label: _label(context, filter, countOf(filter)),
+            ),
       ],
       selected: <DocumentFilter>{value},
-      onSelectionChanged: (Set<DocumentFilter> selection) =>
-          onChanged(selection.first),
+      // The sentence's own segment stays enabled — it wears the active fill —
+      // but there is nothing left to choose while selecting.
+      onSelectionChanged: sentence != null
+          ? (Set<DocumentFilter> _) {}
+          : (Set<DocumentFilter> selection) => onChanged(selection.first),
       showSelectedIcon: false,
       style: SegmentedButton.styleFrom(
         backgroundColor: paperSecondary(context),

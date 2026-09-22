@@ -509,18 +509,26 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       final int count = _selection.count;
       final int total = _visibleNotes.length;
       if (count == 0) return AppText.tr('no_note_selected');
+      final List<Note> selected = _visibleNotes
+          .where((Note note) => _selection.contains(note.id))
+          .toList();
+      final String noun = selectionNounKey(
+        notes: selected.where((Note note) => !note.isTask).length,
+        tasks: selected.where((Note note) => note.isTask).length,
+        folders: 0,
+      );
       if (count > 1 && count == total) {
-        return AppText.tr('all_notes_selected', <String, String>{
+        return AppText.tr('all_${noun}s_selected', <String, String>{
           'count': '$count',
         });
       }
       if (count > 1) {
-        return AppText.tr('notes_selected', <String, String>{
+        return AppText.tr('${noun}s_selected', <String, String>{
           'count': '$count',
           'total': '$total',
         });
       }
-      return AppText.tr('single_note_selected', <String, String>{
+      return AppText.tr('single_${noun}_selected', <String, String>{
         'count': '$count',
       });
     }
@@ -686,15 +694,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                 titleWidget: DocumentFilterControl(
                   value: _documentFilter,
                   countOf: _countFor,
+                  // Selecting something replaces the tags with the sentence.
+                  selectionLabel: _selection.isActive ? _headerMetadata : null,
                   onChanged: (DocumentFilter filter) => setState(() {
                     _selection.exit();
                     _documentFilter = filter;
                     _saveDocumentFilterPref(filter);
                   }),
                 ),
-                // The counts live in the segments; only a selection still needs
-                // a sentence of its own here.
-                metadata: _selection.isActive ? _headerMetadata : null,
               ),
             ),
           if (_loading)

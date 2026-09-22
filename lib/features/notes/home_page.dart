@@ -299,9 +299,6 @@ class HomeState extends State<Home> with RouteAware {
           count: _viewModel.selectedFoldersCount,
           total: _viewModel.foldersCount,
           noun: 'folder',
-          single: 'single_folder_selected',
-          many: 'folders_selected',
-          all: 'all_folders_selected',
         )
       : _notesMetadata;
 
@@ -309,10 +306,9 @@ class HomeState extends State<Home> with RouteAware {
   String get _notesMetadata => _groupMetadata(
     count: _viewModel.selectedNotesCount,
     total: _viewModel.notesCount,
-    noun: 'note',
-    single: 'single_note_selected',
-    many: 'notes_selected',
-    all: 'all_notes_selected',
+    // "notes", "tasks", or "docs" once the kinds are mixed — a folder in the
+    // selection counts as another kind.
+    noun: _viewModel.selectionNoun,
   );
 
   /// One group's metadata: its own selection wording while selecting, its
@@ -321,23 +317,24 @@ class HomeState extends State<Home> with RouteAware {
     required int count,
     required int total,
     required String noun,
-    required String single,
-    required String many,
-    required String all,
   }) {
     if (!_viewModel.isInSelectionMode || count == 0) {
       return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
     }
     if (count > 1) {
       if (count == total) {
-        return AppText.tr(all, <String, String>{'count': '$count'});
+        return AppText.tr('all_${noun}s_selected', <String, String>{
+          'count': '$count',
+        });
       }
-      return AppText.tr(many, <String, String>{
+      return AppText.tr('${noun}s_selected', <String, String>{
         'count': '$count',
         'total': '$total',
       });
     }
-    return AppText.tr(single, <String, String>{'count': '$count'});
+    return AppText.tr('single_${noun}_selected', <String, String>{
+      'count': '$count',
+    });
   }
 
   String _deleteActionTitle() {
@@ -550,6 +547,8 @@ class HomeState extends State<Home> with RouteAware {
   Widget _documentFilterControl() => DocumentFilterControl(
     value: _viewModel.documentFilter,
     countOf: _viewModel.countFor,
+    // Selecting something replaces the tags with the selection sentence.
+    selectionLabel: _viewModel.isInSelectionMode ? _notesMetadata : null,
     onChanged: (DocumentFilter filter) {
       _viewModel.setDocumentFilter(filter);
       _saveDocumentFilterPref(filter);
@@ -570,9 +569,6 @@ class HomeState extends State<Home> with RouteAware {
         child: SectionTitleLine(
           titleWidget: _documentFilterControl(),
           crossAxisAlignment: CrossAxisAlignment.center,
-          // The counts live in the segments; only a selection still needs a
-          // sentence of its own here.
-          metadata: _viewModel.isInSelectionMode ? _notesMetadata : null,
           padding: EdgeInsets.symmetric(
             horizontal: appSidePad(context, appPaddingSmall),
           ),

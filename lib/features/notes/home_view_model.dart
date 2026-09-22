@@ -92,6 +92,7 @@ class HomeViewModel extends ChangeNotifier {
         : _unfiledNotes();
     return source.isNotEmpty && _visibleNotes().isEmpty;
   }
+
   int get foldersCount => folders.length;
 
   /// Total selectable items on the home page: unfiled notes plus folders
@@ -280,6 +281,24 @@ class HomeViewModel extends ChangeNotifier {
   int get selectedFoldersCount =>
       folders.where((Folder f) => _selection.contains(f.id)).length;
 
+  /// The selected documents, split by kind: the selection sentence names what
+  /// is actually selected.
+  int get selectedPlainNotesCount => _visibleNotes()
+      .where((Note n) => !n.isTask && _selection.contains(n.id))
+      .length;
+
+  int get selectedTaskCount => _visibleNotes()
+      .where((Note n) => n.isTask && _selection.contains(n.id))
+      .length;
+
+  /// The noun the selection sentence uses: the kind selected keeps its name, a
+  /// mix of kinds — a folder counted in — falls back to "docs".
+  String get selectionNoun => selectionNounKey(
+    notes: selectedPlainNotesCount,
+    tasks: selectedTaskCount,
+    folders: selectedFoldersCount,
+  );
+
   bool get hasNoteInSelection => selectedNotesCount > 0;
 
   /// True when the selection mixes notes and folders.
@@ -463,9 +482,8 @@ class HomeViewModel extends ChangeNotifier {
   int countFor(DocumentFilter filter) =>
       _sourceNotes().where(filter.matches).length;
 
-  List<Note> _sourceNotes() => hasSearchQuery
-      ? (_searchResults ?? <Note>[])
-      : _unfiledNotes();
+  List<Note> _sourceNotes() =>
+      hasSearchQuery ? (_searchResults ?? <Note>[]) : _unfiledNotes();
 
   List<Note> _visibleNotes() =>
       _sourceNotes().where(documentFilter.matches).toList();

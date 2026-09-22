@@ -1247,11 +1247,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    // Adding the folder: each group speaks about its own type.
+    // Adding the folder: the folder group speaks about folders, and the notes
+    // group stops calling a mixed selection "notes" — it is one doc plus one
+    // folder, so it says "doc".
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
     expect(find.text('1 single folder selected'), findsOneWidget);
-    expect(find.text('1 single note selected'), findsOneWidget);
+    expect(find.text('1 single doc selected'), findsOneWidget);
 
     // The move action is disabled when a folder is part of the selection.
     final IconButton moveButton = tester.widget<IconButton>(
