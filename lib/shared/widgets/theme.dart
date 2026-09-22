@@ -88,12 +88,25 @@ const double appPaddingTight = 8.0;
 /// The padding around a page's content slivers. A landscape phone drops the side
 /// part: the grid then reaches the safe-area edges, and where the safe area is
 /// zero the content touches the screen.
+/// How far a full-width bar (the app bar) is inset so that, on a window wider
+/// than [appContentMaxWidth], it lines up with the content column and its cards.
+double contentColumnInset(BuildContext context) {
+  final Size size = MediaQuery.sizeOf(context);
+  final EdgeInsets safe = MediaQuery.paddingOf(context);
+  final double sideInset = safe.left > safe.right ? safe.left : safe.right;
+  final double available = size.width - sideInset * 2;
+  final double content = available < appContentMaxWidth
+      ? available
+      : appContentMaxWidth;
+  return (size.width - content) / 2;
+}
+
 /// A side padding that vanishes on a landscape phone.
 double appSidePad(BuildContext context, double value) =>
-    condensedHeader(MediaQuery.sizeOf(context)) ? 0.0 : value;
+    flushSidePadding(MediaQuery.sizeOf(context)) ? 0.0 : value;
 
 EdgeInsets appContentPadding(BuildContext context) =>
-    condensedHeader(MediaQuery.sizeOf(context))
+    flushSidePadding(MediaQuery.sizeOf(context))
     ? const EdgeInsets.symmetric(vertical: appPaddingMedium)
     : const EdgeInsets.all(appPaddingMedium);
 const double appPaddingWide = 16.0;

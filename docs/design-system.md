@@ -84,8 +84,12 @@ side** switch (off by default, remembered under `fabOnLeft`) matches the setting
 switches — a 0.8-scaled adaptive switch in the accent, right-anchored — and never
 makes its label read as active. It moves the FAB to the column's bottom-left, where
 an expanded bar grows rightwards: its reduce chevron moves to the bar's head and
-points back to the left. An open FAB menu in landscape is a plain 24-radius panel,
-and it never shifts the FAB.
+points back to the left. The choice is definitive: it applies in portrait too.
+Every menu action — a document view, the FAB side, the switch — closes the menu
+and the page applies the change before it closes, so the effect is always
+immediate, never waiting for the next visit. An
+open FAB menu in a compact window — a landscape phone, or a tablet — is a plain
+24-radius panel, and it never shifts the FAB.
 
 ## Responsive layout
 
@@ -97,7 +101,7 @@ as the large layout.
 |---|---:|---:|
 | Phone portrait |2|1|
 | Phone landscape |4|2|
-| Tablet portrait |3|2|
+| Tablet portrait |4|3|
 | Tablet landscape |5|4|
 | Width 1440px or more |5|5|
 
@@ -106,24 +110,30 @@ scale: 3 columns on a phone portrait, 5 once the window is landscape or a tablet
 and 7 on a tablet held landscape and above. It is the same `EntitySliver` with an
 overridden count.
 
+The grid/list choice itself lives in one shared `ViewLayoutController`: Home and
+any folder read the same value and listen to it, so a switch made inside a folder
+is already applied when Home comes back — and the other way round.
+
 Both modes share `EntitySliver`. List rows preserve card widths in an incomplete
 last row. Swipe gestures perform no actions; selection and action menus remain
 the way to move, delete and undo. Existing sort, folder/search scope and lock rules
 are preserved.
 
 Every route keeps one centred content column of `appContentMaxWidth` (1080), like
-the site's wrap, and the FAB follows its right edge rather than the window's,
-staying inside the safe area. The FAB's right edge stops 24 short of the column
-while the cards stop 12 short, so the *visible* gap is 12; on a landscape phone
-the bottom edge gets that same 12. An expanded bar keeps that right edge and grows
-leftwards only, stopping 12 from the cards on that side too: the two gaps stay
-symmetric. Whatever the window, the bar keeps the width it has in portrait — the
-shortest side is that width — so rotating only moves it. The settings screen holds
+the site's wrap. A **compact** window — a landscape phone, or a tablet in either
+orientation — anchors the FAB to that column's edge rather than to the window:
+12 from it on a phone, 24 on a tablet, and an expanded bar grows only towards the
+middle. A phone in portrait keeps the older geometry: the FAB follows the
+column's right edge, stopping 24 short, while the cards stop 12 short, so the
+*visible* gap reads 12. Whatever the window, the bar keeps the width it has in
+portrait — the shortest side is that width — so rotating only moves it. On a wide
+window the app bar is inset to that same column, so its back button and its
+actions line up with the cards. The settings screen holds
 the device in portrait while it is on screen. Grid
 cards keep an almost square ratio (0.9) — a folder tile is a perfect square — so
 they follow their width in every column count.
 
-A **folder** on a landscape phone is too short for the big title line: it drops it
+A **folder** in a landscape window — phone or tablet — is too short for the big title line: it drops it
 and the app bar carries the name from the first frame, centred while it fits and
 left-aligned once it is too long, with the flags in front of it. Only the filter
 control (or a rename field) stays above the list; Home keeps its own title line.

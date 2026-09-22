@@ -38,17 +38,29 @@ class FlushFabLocation extends StandardFabLocation {
     final double fabWidth = scaffoldGeometry.floatingActionButtonSize.width;
     final EdgeInsets safe = scaffoldGeometry.minInsets;
     final double sideInset = safe.left > safe.right ? safe.left : safe.right;
-    // A landscape phone anchors the FAB at 12 from the edge of the *content
-    // space*, safe insets excluded. Any other window hugs the centred column.
-    if (screen > scaffoldGeometry.scaffoldSize.height) {
-      return onLeft ? sideInset + 12.0 : screen - sideInset - fabWidth - 12.0;
+    // A compact window — a landscape phone, or a tablet — anchors the FAB to
+    // the edge of its content column, safe insets excluded: 12 for a phone, 24
+    // for a tablet. A phone in portrait keeps hugging that column as before.
+    if (compactChrome(scaffoldGeometry.scaffoldSize)) {
+      final double gap = tabletViewport(scaffoldGeometry.scaffoldSize)
+          ? 24.0
+          : 12.0;
+      final double available = screen - sideInset * 2;
+      final double content = available < appContentMaxWidth
+          ? available
+          : appContentMaxWidth;
+      final double columnLeft = (screen - content) / 2;
+      return onLeft ? columnLeft + gap : columnLeft + content - fabWidth - gap;
     }
     final double available = screen - sideInset * 2;
     final double content = available < appContentMaxWidth
         ? available
         : appContentMaxWidth;
     final double columnLeft = (screen - content) / 2;
-    // Portrait keeps the FAB on the right, exactly as it always was.
+    if (onLeft) {
+      // The left edge is the anchor: an expanded bar grows rightwards from it.
+      return columnLeft + paddingX;
+    }
     // The right edge never moves: an expanded bar grows leftwards from it.
     return columnLeft + content - fabWidth - paddingX;
   }
@@ -59,14 +71,14 @@ class FlushFabLocation extends StandardFabLocation {
     double adjustment,
   ) {
     final Size screen = scaffoldGeometry.scaffoldSize;
-    // The FAB's right edge stops [paddingX] (24) short of the content column,
-    // while the cards stop [appPaddingMedium] (12) short: the *visible* gap is
-    // 12. A landscape phone leaves that same 12 at the bottom, measured from the
-    // physical edge, so the two gaps finally read the same.
-    final bool landscape = screen.width > screen.height;
+    // A compact window keeps the same gap at the bottom, measured from the safe
+    // edge: 12 for a landscape phone, 24 for a tablet. A phone in portrait keeps
+    // its old padding.
+    final bool compact = compactChrome(screen);
+    final double gap = tabletViewport(screen) ? 24.0 : 12.0;
     double offset =
-        (landscape
-            ? screen.height - scaffoldGeometry.minInsets.bottom - 12.0
+        (compact
+            ? screen.height - scaffoldGeometry.minInsets.bottom - gap
             : scaffoldGeometry.contentBottom - paddingY) -
         scaffoldGeometry.floatingActionButtonSize.height;
     if (scaffoldGeometry.snackBarSize.height > 0.0) {
@@ -235,73 +247,84 @@ class _PageScaffoldState extends State<PageScaffold> {
       child: Scaffold(
         key: widget.scaffoldKey,
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          // When the title slides left (undo/redo/save actions visible), keep a
-          // visible gap between the back button and the title.
-          titleSpacing: appSidePad(
-            context,
-            widget.isHome
-                ? appPaddingLarge
-                : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            // A wide window insets the bar to the content column, so its back
+            // button and actions line up with the cards.
+            padding: EdgeInsets.symmetric(
+              horizontal: contentColumnInset(context),
+            ),
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.transparent,
+              // When the title slides left (undo/redo/save actions visible), keep a
+              // visible gap between the back button and the title.
+              titleSpacing: appSidePad(
+                context,
+                widget.isHome
+                    ? appPaddingLarge
+                    : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
+              ),
+              elevation: 0.0,
+              shadowColor: showAppBarTitle
+                  ? Colors.black.withValues(alpha: 0.05)
+                  : Colors.transparent,
+              // Same colour as the cards, with a hairline width.
+              // The paper rules share the warm rule colour, so the scrolled bar
+              // takes the accent: it reads as a bar, not as one more rule.
+              shape: showAppBarTitle
+                  ? Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.0,
+                      ),
+                    )
+                  : null,
+              leading: !widget.isHome
+                  ? IconButton(
+                      icon: Icon(
+                        Symbols.arrow_back_ios_new,
+                        size: 24.0,
+                        color: textColor,
+                      ),
+                      tooltip: AppText.tr('back'),
+                      onPressed:
+                          widget.onPop ?? () => Navigator.of(context).pop(),
+                    )
+                  : null,
+              title: showAppBarTitle
+                  ? (condensed
+                        ? _condensedTitle(textColor, appBarTitleText)
+                        : (widget.appBarTitleWidget ??
+                              Text(
+                                appBarTitleText,
+                                maxLines: 1,
+                                // Same size as the "Cancel" action.
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: appBarTextSize,
+                                  letterSpacing: -0.41,
+                                  color: textColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              )))
+                  : null,
+              // The condensed title leads with its metadata, so it reads from the
+              // left rather than from the middle.
+              centerTitle: !condensed && !widget.isHome && !appBarTitleOnLeft,
+              actions: widget.actions
+                  ?.map(
+                    (a) => Padding(
+                      padding: EdgeInsets.only(
+                        right: appSidePad(context, appPaddingSmall),
+                      ),
+                      child: a,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-          elevation: 0.0,
-          shadowColor: showAppBarTitle
-              ? Colors.black.withValues(alpha: 0.05)
-              : Colors.transparent,
-          // Same colour as the cards, with a hairline width.
-          // The paper rules share the warm rule colour, so the scrolled bar
-          // takes the accent: it reads as a bar, not as one more rule.
-          shape: showAppBarTitle
-              ? Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 1.0,
-                  ),
-                )
-              : null,
-          leading: !widget.isHome
-              ? IconButton(
-                  icon: Icon(
-                    Symbols.arrow_back_ios_new,
-                    size: 24.0,
-                    color: textColor,
-                  ),
-                  tooltip: AppText.tr('back'),
-                  onPressed: widget.onPop ?? () => Navigator.of(context).pop(),
-                )
-              : null,
-          title: showAppBarTitle
-              ? (condensed
-                    ? _condensedTitle(textColor, appBarTitleText)
-                    : (widget.appBarTitleWidget ??
-                          Text(
-                            appBarTitleText,
-                            maxLines: 1,
-                            // Same size as the "Cancel" action.
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: appBarTextSize,
-                              letterSpacing: -0.41,
-                              color: textColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          )))
-              : null,
-          // The condensed title leads with its metadata, so it reads from the
-          // left rather than from the middle.
-          centerTitle: !condensed && !widget.isHome && !appBarTitleOnLeft,
-          actions: widget.actions
-              ?.map(
-                (a) => Padding(
-                  padding: EdgeInsets.only(
-                    right: appSidePad(context, appPaddingSmall),
-                  ),
-                  child: a,
-                ),
-              )
-              .toList(),
         ),
         body: Padding(
           padding: EdgeInsets.symmetric(horizontal: sideInset),

@@ -10,6 +10,7 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 part 'fab_bars.dart';
@@ -128,8 +129,7 @@ class AppFab extends StatefulWidget {
   final bool collapsedByDefault;
 
   /// When true the FAB sits on the left: an expanded bar grows rightwards and
-  /// its reduce chevron moves to the head. Landscape only — portrait keeps the
-  /// chrome it always had (see [AppFabState.effectiveOnLeft]).
+  /// its reduce chevron moves to the head. A definitive choice, in portrait too.
   final bool onLeft;
 
   /// Folder page: creates a note inside the folder.
@@ -187,13 +187,6 @@ class AppFab extends StatefulWidget {
 }
 
 mixin _FabStateMixin on State<AppFab> {
-  /// The left-side option is a landscape feature: portrait always reads the FAB
-  /// the way it did before the option existed.
-  bool get effectiveOnLeft {
-    final Size size = MediaQuery.sizeOf(context);
-    return widget.onLeft && size.width > size.height;
-  }
-
   bool? _isManuallyExpanded;
   bool _wasKeyboardClosed = true;
   FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
@@ -348,14 +341,13 @@ class AppFabState extends State<AppFab>
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final MediaQueryData media = MediaQuery.of(context);
-    final bool landscape = media.size.width > media.size.height;
-    // Portrait keeps the width it always had: the safe width of the window. In
-    // landscape the expanded bar takes the shortest side, which *is* that
-    // portrait width, so rotating then only moves the FAB.
+    // A compact window (landscape phone, any tablet) behaves the same way; a
+    // phone in portrait keeps the width it always had: the safe window width.
+    final bool compact = compactChrome(media.size);
     final double safeSide = media.padding.left > media.padding.right
         ? media.padding.left
         : media.padding.right;
-    final double rawWidth = landscape
+    final double rawWidth = compact
         ? media.size.shortestSide
         : media.size.width - safeSide * 2;
     final double contentWidth = rawWidth < appContentMaxWidth
@@ -366,10 +358,10 @@ class AppFabState extends State<AppFab>
     final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
     final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
 
-    // An open menu in landscape is a plain 24-radius panel; portrait keeps its
-    // original tab shape, and the resting form its rounded bottom.
+    // An open menu in a compact window is a plain 24-radius panel; a portrait
+    // phone keeps its original tab shape, and the resting form its bottom curve.
     final fabRadius = isMenuOpen
-        ? (landscape
+        ? (compact
               ? BorderRadius.circular(24.0)
               : const BorderRadius.vertical(
                   top: Radius.circular(24),
@@ -425,17 +417,17 @@ class AppFabState extends State<AppFab>
       currentWidth = targetExpandedWidth;
     }
 
-    // In landscape the FAB is anchored: it rests, extends and opens its menus
-    // from the same point. Portrait keeps the nudge it always had.
+    // In a compact window the FAB is anchored: it rests, extends and opens its
+    // menus from the same point. A portrait phone keeps the nudge it always had.
     double tx = 0.0;
-    if (!landscape &&
+    if (!compact &&
         (isExpanded || isMenuOpen) &&
         (isMenuOpen || !isKeyboardClosed)) {
       tx = 12.0;
     }
 
     double ty = 0.0;
-    if (!landscape) {
+    if (!compact) {
       if (isMenuOpen) {
         ty = 8.0;
       } else if (!isKeyboardClosed) {

@@ -224,6 +224,10 @@ class AppBarMenuButton extends StatelessWidget {
                                     onChanged: (bool value) {
                                       setLocal(() => localLeft = value);
                                       onLeftChanged?.call(value);
+                                      // Dismiss the menu: a covered page keeps
+                                      // its animations muted, so the move would
+                                      // only show once it is uncovered again.
+                                      Navigator.of(context).pop();
                                     },
                                     activeThumbColor: accentColor(context),
                                   ),

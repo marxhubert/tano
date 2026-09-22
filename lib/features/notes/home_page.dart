@@ -3,7 +3,9 @@ import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
@@ -83,6 +85,8 @@ class HomeState extends State<Home> with RouteAware {
     }
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
+    ViewLayoutController.instance.addListener(_syncViewLayout);
+    FabSideController.instance.addListener(_onFabSideChanged);
     if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _openNoteEditor(add: true, note: Note());
@@ -105,6 +109,8 @@ class HomeState extends State<Home> with RouteAware {
     _searchController.dispose();
     _searchFocusNode.dispose();
     _viewModel.removeListener(_onViewModelChanged);
+    ViewLayoutController.instance.removeListener(_syncViewLayout);
+    FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
   }
@@ -137,17 +143,16 @@ class HomeState extends State<Home> with RouteAware {
     _wasInSelectionMode = _viewModel.isInSelectionMode;
   }
 
-  /// Whether the FAB sits on the left instead of the right.
-  bool _fabOnLeft = false;
+  /// The FAB's side, shared with every other page.
+  bool get _fabOnLeft => FabSideController.instance.onLeft;
 
   Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
 
   Future<void> _loadPreferences() async {
     final SecurePreferences prefs = await _getPrefs();
-    if (!prefs.containsKey('viewLayout')) {
-      await prefs.setString('viewLayout', 'gridlist');
-    }
-    _viewModel.setViewLayout(prefs.getString('viewLayout') ?? 'gridlist');
+    // The shared controller owns the choice; Home only mirrors it.
+    await ViewLayoutController.instance.load();
+    _viewModel.setViewLayout(ViewLayoutController.instance.layout);
     if (!prefs.containsKey('sortBy')) {
       await prefs.setString('sortBy', 'date');
     }
@@ -171,25 +176,23 @@ class HomeState extends State<Home> with RouteAware {
           DocumentFilter.all,
     );
 
-    if (!prefs.containsKey('fabOnLeft')) {
-      await prefs.setBool('fabOnLeft', false);
-    }
-    final bool fabOnLeft = prefs.getBool('fabOnLeft') ?? false;
-    if (fabOnLeft != _fabOnLeft && mounted) {
-      setState(() => _fabOnLeft = fabOnLeft);
-    }
+    await FabSideController.instance.load();
   }
 
+  /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {
-    if (value == _fabOnLeft) return;
-    setState(() => _fabOnLeft = value);
-    final SecurePreferences prefs = await _getPrefs();
-    await prefs.setBool('fabOnLeft', value);
+    await FabSideController.instance.setOnLeft(value);
+    if (mounted) setState(() {});
   }
 
-  Future<void> _saveViewLayoutPref(String viewLayout) async {
-    final SecurePreferences prefs = await _getPrefs();
-    await prefs.setString('viewLayout', viewLayout);
+  void _onFabSideChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The layout changed elsewhere — in a folder, say. Mirror it here.
+  void _syncViewLayout() {
+    if (!mounted) return;
+    _viewModel.setViewLayout(ViewLayoutController.instance.layout);
   }
 
   Future<void> _openNoteEditor({required bool add, required Note note}) async {
@@ -232,8 +235,10 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   void _changeLayout(String viewLayout) {
+    // This page first, so the swap is instant; the controller then keeps every
+    // other page in step and persists the choice.
     _viewModel.setViewLayout(viewLayout);
-    _saveViewLayoutPref(viewLayout);
+    ViewLayoutController.instance.setLayout(viewLayout);
   }
 
   void _clearSearch() {

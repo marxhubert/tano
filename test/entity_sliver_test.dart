@@ -7,7 +7,7 @@ void main() {
   const layouts = <({String name, Size size, int grid, int list})>[
     (name: 'phone portrait', size: Size(390, 844), grid: 2, list: 1),
     (name: 'phone landscape', size: Size(844, 390), grid: 4, list: 2),
-    (name: 'tablet portrait', size: Size(768, 1024), grid: 3, list: 2),
+    (name: 'tablet portrait', size: Size(768, 1024), grid: 4, list: 3),
     (name: 'tablet landscape', size: Size(1024, 768), grid: 5, list: 4),
     (name: 'large window', size: Size(1440, 900), grid: 5, list: 5),
   ];
@@ -64,7 +64,7 @@ void main() {
     'tablet and wide-window breakpoints use logical viewport dimensions',
     () {
       expect(entityColumnCount(const Size(599, 900), isList: false), 2);
-      expect(entityColumnCount(const Size(600, 900), isList: false), 3);
+      expect(entityColumnCount(const Size(600, 900), isList: false), 4);
       expect(entityColumnCount(const Size(900, 599), isList: true), 2);
       expect(entityColumnCount(const Size(900, 600), isList: true), 4);
       expect(entityColumnCount(const Size(1439, 900), isList: true), 4);

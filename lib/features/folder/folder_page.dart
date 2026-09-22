@@ -17,7 +17,9 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
@@ -61,10 +63,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   bool _searchStarted = false;
   bool _isEditingTitle = false;
   String _searchQuery = '';
-  String _viewLayout = 'gridlist';
 
-  /// Whether the FAB sits on the left instead of the right.
-  bool _fabOnLeft = false;
+  /// The layout lives in the shared controller, so Home sees a change made here.
+  String get _viewLayout => ViewLayoutController.instance.layout;
+
+  /// The FAB's side, shared with Home: one global choice.
+  bool get _fabOnLeft => FabSideController.instance.onLeft;
   String _sortBy = 'date';
   String _secondarySortBy = 'date';
   bool _sortAscending = true;
@@ -92,6 +96,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     _loadLockCapability();
     _folder = widget.folder;
     _titleFocusNode.addListener(_onTitleFocusChanged);
+    ViewLayoutController.instance.addListener(_onViewLayoutChanged);
+    FabSideController.instance.addListener(_onFabSideChanged);
     _loadPreferences();
     _load();
   }
@@ -119,6 +125,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   void dispose() {
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
+    ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
+    FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _titleController.dispose();
@@ -127,19 +135,25 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     super.dispose();
   }
 
-  /// The layout is the same preference Home uses, so switching it here shows
-  /// there too.
+  /// The layout is the shared controller Home also listens to, so a switch here
+  /// shows there — and the other way round.
   Future<void> _changeViewLayout(String viewLayout) async {
-    setState(() => _viewLayout = viewLayout);
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setString('viewLayout', viewLayout);
+    await ViewLayoutController.instance.setLayout(viewLayout);
+    if (mounted) setState(() {});
   }
 
+  void _onViewLayoutChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {
-    if (value == _fabOnLeft) return;
-    setState(() => _fabOnLeft = value);
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setBool('fabOnLeft', value);
+    await FabSideController.instance.setOnLeft(value);
+    if (mounted) setState(() {});
+  }
+
+  void _onFabSideChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _openSettings() async {
@@ -153,11 +167,11 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Future<void> _loadPreferences() async {
+    await ViewLayoutController.instance.load();
+    await FabSideController.instance.load();
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
-      _fabOnLeft = prefs.getBool('fabOnLeft') ?? false;
       _documentFilter =
           documentFilterFromName(prefs.getString('documentFilter')) ??
           DocumentFilter.all;
