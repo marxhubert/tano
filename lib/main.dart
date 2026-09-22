@@ -11,6 +11,7 @@ import 'package:tano/features/settings/settings_page.dart';
 import 'package:tano/features/lab/lab_page.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
@@ -37,6 +38,7 @@ Future<void> initializeApplication() async {
     TextScaleController.instance.init(),
     FeedbackController.instance.init(),
     SearchHistoryController.instance.init(),
+    FabSideController.instance.load(),
   ]);
 
   final repository = getIt<NotesRepository>();

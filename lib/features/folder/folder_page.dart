@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
@@ -49,6 +50,8 @@ class FolderPage extends StatefulWidget {
 
 class _FolderPageState extends State<FolderPage> with RouteAware {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
+  Timer? _routeCollapseTimer;
+  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   DocumentFilter _documentFilter = DocumentFilter.all;
@@ -116,13 +119,30 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   /// resting form when the user returns.
   @override
   void didPushNext() {
-    Future<void>.delayed(const Duration(milliseconds: 450), () {
-      if (mounted) _fabKey.currentState?.collapse();
+    _routeCollapseTimer?.cancel();
+    final generation = ++_routeCollapseGeneration;
+    final route = ModalRoute.of(context);
+    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
+      if (mounted &&
+          generation == _routeCollapseGeneration &&
+          route?.isCurrent == false) {
+        _fabKey.currentState?.collapse();
+      }
     });
   }
 
   @override
+  void didPopNext() {
+    // A quick return invalidates the delayed fold from the outgoing route.
+    // It must not close a FAB the user has already reopened on this page.
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
+  }
+
+  @override
   void dispose() {
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);

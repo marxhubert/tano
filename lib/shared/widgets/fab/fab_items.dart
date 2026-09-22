@@ -1,12 +1,11 @@
 part of 'app_fab.dart';
 
-class _SubMenuLayout extends StatelessWidget {
+class _SubMenuLayout extends StatefulWidget {
   const _SubMenuLayout({
     required this.title,
     required this.onBack,
     required this.child,
     this.actions = const [],
-    this.isMeasurement = false,
   });
 
   final String title;
@@ -14,22 +13,28 @@ class _SubMenuLayout extends StatelessWidget {
   final Widget child;
   final List<Widget> actions;
 
-  /// In the offstage measurement pass the body is laid out at its natural
-  /// height (no scroll view), so the reported height matches the real menu.
-  final bool isMeasurement;
+  @override
+  State<_SubMenuLayout> createState() => _SubMenuLayoutState();
+}
+
+class _SubMenuLayoutState extends State<_SubMenuLayout> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    final header =
         // Fixed Header. The action buttons keep a 48px tap target, so their
         // glyph sits ~10px inside their box: the right padding is reduced to
         // line the last icon up with the back action on the left.
         Container(
           padding: const EdgeInsets.fromLTRB(20.0, 2.0, 10.0, 2.0),
           decoration: BoxDecoration(
-            color: _fabMenuSurface(context),
             border: Border(
               bottom: BorderSide(
                 color: _fabForeground(context).withValues(alpha: 0.1),
@@ -40,14 +45,14 @@ class _SubMenuLayout extends StatelessWidget {
           child: Row(
             children: [
               TextButton.icon(
-                onPressed: onBack,
+                onPressed: widget.onBack,
                 icon: Icon(
                   Symbols.arrow_back_ios,
                   size: 20,
                   color: _fabForeground(context),
                 ),
                 label: Text(
-                  title,
+                  widget.title,
                   style: TextStyle(
                     color: _fabForeground(context),
                     fontSize: _fabLabelSize,
@@ -61,30 +66,44 @@ class _SubMenuLayout extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              ...actions,
+              ...widget.actions,
             ],
           ),
-        ),
-        // Scrollable Body. The dark surface comes from the menu area itself.
-        if (isMeasurement)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: child,
-          )
-        else
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
+        );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // With a short landscape keyboard even the header must scroll, otherwise
+        // it consumes the entire viewport and makes every item unreachable.
+        final pinHeader =
+            constraints.maxHeight >= MediaQuery.textScalerOf(context).scale(96);
+        final body = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: widget.child,
+        );
+        // A separate body viewport prevents translucent header text from
+        // overlapping scrolled rows. Keep its controller across size changes.
+        if (pinHeader) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              header,
+              Flexible(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: body,
+                ),
               ),
-              child: child,
-            ),
+            ],
+          );
+        }
+        return SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [header, body],
           ),
-      ],
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/features/editor/task_list_editor.dart';
+import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -385,7 +386,21 @@ void main() {
     expect(menuCaret.dy, closeTo((kToolbarHeight + menuTop) / 2, 28));
     await tester.tap(find.text(AppText.tr('option_link')));
     await tester.pumpAndSettle();
-    final menuBounds = tester.getRect(find.byType(AppFab));
+    // AnimatedContainer translates the painted portrait panel inside its layout
+    // box. Bounds must include that transform when checking screen clearance.
+    final menuBounds = tester.getRect(
+      find
+          .descendant(
+            of: find
+                .descendant(
+                  of: find.byType(AppFab),
+                  matching: find.byType(AnimatedContainer),
+                )
+                .first,
+            matching: find.byType(DecoratedBox),
+          )
+          .first,
+    );
     expect(menuBounds.top, greaterThanOrEqualTo(kToolbarHeight));
     expect(menuBounds.bottom, lessThanOrEqualTo(844 - 260));
     expect(widget.focusNode!.hasFocus, isTrue);
@@ -452,6 +467,44 @@ void main() {
     );
     final fabTop = tester.getTopLeft(find.byType(AppFab)).dy;
     expect(caret.dy, closeTo((kToolbarHeight + fabTop) / 2, 28));
+
+    // Interrupt a new centering animation with a real document drag. A completed
+    // animateTo future must not restart centering and fight the user's scroll.
+    final scrollView = find.descendant(
+      of: find.byType(EditNote),
+      matching: find.byType(CustomScrollView),
+    );
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(of: scrollView, matching: find.byType(Scrollable))
+              .first,
+        )
+        .position;
+    position.jumpTo(0);
+    tester.widget<AppFab>(find.byType(AppFab)).onLayoutChanged!();
+    await tester.pump(const Duration(milliseconds: 330));
+    await tester.pump(const Duration(milliseconds: 80));
+    final gesture = await tester.startGesture(const Offset(10, 300));
+    await gesture.moveBy(const Offset(0, -70));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final afterDrag = position.pixels;
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(position.pixels, closeTo(afterDrag, 1));
+
+    // A later deliberate layout/caret action still recenters normally.
+    tester.widget<AppFab>(find.byType(AppFab)).onLayoutChanged!();
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    final recentered = editable.localToGlobal(
+      editable.getLocalRectForCaret(editable.selection!.extent).center,
+    );
+    expect(recentered.dy, closeTo((kToolbarHeight + fabTop) / 2, 28));
     await tester.pumpWidget(const SizedBox());
   });
 

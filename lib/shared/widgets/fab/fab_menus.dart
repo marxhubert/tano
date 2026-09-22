@@ -1,47 +1,40 @@
 part of 'app_fab.dart';
 
 mixin _FabMenusMixin on _FabStateMixin {
-  Widget _buildVerticalMenuContent(
-    BuildContext context,
-    double width,
-    double height,
-  ) {
-    Widget content;
-    switch (_verticalMenu) {
-      case FabVerticalMenu.color:
-        content = SingleChildScrollView(child: _buildColorMenu(context));
-        break;
-      case FabVerticalMenu.add:
-        content = SingleChildScrollView(child: _buildAddMenu(context));
-        break;
-      case FabVerticalMenu.more:
-        content = SingleChildScrollView(child: _buildMoreMenu(context));
-        break;
-      case FabVerticalMenu.link:
-        content = _buildLinkMenu(context);
-        break;
-      case FabVerticalMenu.move:
-        content = _buildMoveMenu(context);
-        break;
-      default:
-        content = const SizedBox.shrink();
-    }
+  Widget _buildVerticalMenuContent(BuildContext context) {
+    return ColoredBox(
+      color: _fabMenuSurface(context),
+      child: switch (_verticalMenu) {
+        FabVerticalMenu.color => SingleChildScrollView(
+          child: _buildColorMenu(context),
+        ),
+        FabVerticalMenu.add => SingleChildScrollView(
+          child: _buildAddMenu(context),
+        ),
+        FabVerticalMenu.more => SingleChildScrollView(
+          child: _buildMoreMenu(context),
+        ),
+        FabVerticalMenu.link => _buildLinkMenu(context),
+        FabVerticalMenu.move => _buildMoveMenu(context),
+        FabVerticalMenu.none => const SizedBox.shrink(),
+      },
+    );
+  }
 
-    // The dark surface fills the whole menu area while the content stays
-    // anchored at the bottom. The content is laid out at its final size even
-    // while the FAB animates: the animating container clips it, so it never
-    // wraps or squashes into a half-grown menu area.
-    return Container(
-      decoration: BoxDecoration(color: _fabMenuSurface(context)),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: OverflowBox(
-          minWidth: width,
-          maxWidth: width,
-          minHeight: height,
-          maxHeight: height,
-          alignment: Alignment.bottomCenter,
-          child: content,
+  Widget _loadStatus({required bool failed, required VoidCallback retry}) {
+    if (failed) {
+      return _VerticalMenuItem(
+        icon: Symbols.refresh,
+        label: AppText.tr('retry'),
+        onTap: retry,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: SizedBox.square(
+          dimension: 24,
+          child: CircularProgressIndicator(color: _fabForeground(context)),
         ),
       ),
     );
@@ -65,7 +58,7 @@ mixin _FabMenusMixin on _FabStateMixin {
     return sorted;
   }
 
-  Widget _buildLinkMenu(BuildContext context, {bool isMeasurement = false}) {
+  Widget _buildLinkMenu(BuildContext context) {
     final sortedNotes = _getSortedNotes();
 
     final content = Column(
@@ -79,8 +72,8 @@ mixin _FabMenusMixin on _FabStateMixin {
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
+            closeVerticalMenu();
             widget.onNoteLinkSelected?.call(note);
-            setState(() => _verticalMenu = FabVerticalMenu.none);
           },
         );
       }),
@@ -88,10 +81,14 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _SubMenuLayout(
       title: AppText.tr('back'),
-      onBack: () => setState(() => _verticalMenu = FabVerticalMenu.add),
+      onBack: () => _showMenu(FabVerticalMenu.add),
       actions: _buildSortActions(),
-      isMeasurement: isMeasurement,
-      child: content,
+      child: (_notesLoading || _notesFailed)
+          ? _loadStatus(
+              failed: _notesFailed,
+              retry: () => unawaited(_loadNotes()),
+            )
+          : content,
     );
   }
 
@@ -111,7 +108,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   /// The folder list offered by the "move to" action. It mirrors the note-link
   /// list, header included, so both second-degree menus feel the same.
-  Widget _buildMoveMenu(BuildContext context, {bool isMeasurement = false}) {
+  Widget _buildMoveMenu(BuildContext context) {
     final List<Folder> folders = _getSortedFolders();
 
     final Widget content = Column(
@@ -124,8 +121,8 @@ mixin _FabMenusMixin on _FabStateMixin {
           maxLines: 2,
           label: AppText.tr('no_folder'),
           onTap: () {
+            closeVerticalMenu();
             widget.onMoveTo?.call(null);
-            setState(() => _verticalMenu = FabVerticalMenu.none);
           },
         ),
         for (final Folder folder in folders)
@@ -136,8 +133,8 @@ mixin _FabMenusMixin on _FabStateMixin {
             maxLines: 2,
             label: folder.name,
             onTap: () {
+              closeVerticalMenu();
               widget.onMoveTo?.call(folder.id);
-              setState(() => _verticalMenu = FabVerticalMenu.none);
             },
           ),
       ],
@@ -145,10 +142,14 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _SubMenuLayout(
       title: AppText.tr('back'),
-      onBack: () => setState(() => _verticalMenu = _moveReturnTo),
+      onBack: () => _showMenu(_presentation.moveReturnTo),
       actions: _buildSortActions(),
-      isMeasurement: isMeasurement,
-      child: content,
+      child: (_foldersLoading || _foldersFailed)
+          ? _loadStatus(
+              failed: _foldersFailed,
+              retry: () => unawaited(_loadFolders()),
+            )
+          : content,
     );
   }
 
@@ -340,7 +341,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           icon: Symbols.add_notes,
           label: AppText.tr('add_note'),
           onTap: () {
-            _toggleVerticalMenu(FabVerticalMenu.add);
+            collapse();
             widget.onAddNote?.call();
           },
         ),
@@ -348,7 +349,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           icon: Symbols.format_list_bulleted_add,
           label: AppText.tr('add_task'),
           onTap: () {
-            _toggleVerticalMenu(FabVerticalMenu.add);
+            collapse();
             widget.onAddTask?.call();
           },
         ),
@@ -370,7 +371,11 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
         // Nothing to link to when this is the only note.
-        enabled: !_notesLoaded || _availableNotes.isNotEmpty,
+        enabled:
+            !_notesLoaded ||
+            _notesLoading ||
+            _notesFailed ||
+            _availableNotes.isNotEmpty,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
           widget.onLinkSelected?.call();
@@ -447,7 +452,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
         // Nowhere to move to when the app holds no folder at all.
-        enabled: !_foldersLoaded || _hasFolders,
+        enabled:
+            !_foldersLoaded || _foldersLoading || _foldersFailed || _hasFolders,
         onTap: () => _openMoveMenu(FabVerticalMenu.more),
       ),
       _VerticalMenuItem(

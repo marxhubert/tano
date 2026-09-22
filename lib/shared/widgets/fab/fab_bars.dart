@@ -30,7 +30,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.create_new_folder,
         label: AppText.tr('add_folder'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAddFolder?.call();
         },
       ),
@@ -38,7 +38,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.add_notes,
         label: AppText.tr('add_note'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAdd?.call();
         },
       ),
@@ -46,7 +46,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.format_list_bulleted_add,
         label: AppText.tr('add_task'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAddTask?.call();
         },
       ),
@@ -57,7 +57,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 22.0,
-        onTap: () => setState(() => _isManuallyExpanded = false),
+        onTap: collapse,
       ),
     ]);
   }
@@ -120,10 +120,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 20.0,
-        onTap: () => setState(() {
-          _verticalMenu = FabVerticalMenu.none;
-          _isManuallyExpanded = false;
-        }),
+        onTap: collapse,
       ),
     ]);
   }
@@ -403,7 +400,8 @@ mixin _FabBarsMixin on _FabStateMixin {
   Widget _buildHorizontalBar(double width, List<Widget> children) {
     // Anchored on the left, the bar grows rightwards: the reduce chevron moves
     // to its head, next to the FAB's origin, keeping its right-pointing glyph.
-    final List<Widget> ordered = widget.onLeft && children.length > 1
+    final List<Widget> ordered =
+        widget.onLeft && _mode != FabMode.selection && children.length > 1
         ? <Widget>[children.last, ...children.take(children.length - 1)]
         : children;
     return SingleChildScrollView(

@@ -16,6 +16,7 @@ import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
@@ -66,6 +67,8 @@ class _EditNoteState extends State<EditNote>
   final _descriptionFocus = FocusNode();
   bool _showDescription = false;
   Timer? _centerTimer;
+  int _centerGeneration = 0;
+  bool _userScrolling = false;
   double _taskScrollPadding = 100;
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _contentFocus = FocusNode();
@@ -107,11 +110,18 @@ class _EditNoteState extends State<EditNote>
       _contentController.linkCount +
       (_viewModel.isTask ? _descriptionController.linkCount : 0);
 
-  void _queueCenterTaskFocus() {
-    if (!_viewModel.isTask && !_isFindMode) return;
+  void _queueCenterTaskFocus({int? generation, int retries = 2}) {
+    if ((!_viewModel.isTask && !_isFindMode) || _userScrolling) return;
+    final request = generation ?? ++_centerGeneration;
+    if (request != _centerGeneration) return;
     _centerTimer?.cancel();
     _centerTimer = Timer(const Duration(milliseconds: 320), () {
-      if (!mounted) return;
+      if (!mounted ||
+          request != _centerGeneration ||
+          _userScrolling ||
+          ModalRoute.of(context)?.isCurrent == false) {
+        return;
+      }
       final focusContext = _isFindMode
           ? (_viewModel.isTask
                 ? _taskEditorKey.currentState?.selectedRowContext
@@ -159,7 +169,9 @@ class _EditNoteState extends State<EditNote>
       if ((padding - _taskScrollPadding).abs() > 1) {
         setState(() => _taskScrollPadding = padding);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _queueCenterTaskFocus();
+          if (mounted && request == _centerGeneration) {
+            _queueCenterTaskFocus(generation: request, retries: retries);
+          }
         });
         return;
       }
@@ -179,11 +191,40 @@ class _EditNoteState extends State<EditNote>
             )
             .then((_) {
               // EditableText may reveal a newly attached caret after this scroll.
-              // Recheck once layout and its own reveal animation have settled.
-              if (mounted) _queueCenterTaskFocus();
+              // Allow bounded settling, but never restart after a user drag.
+              if (mounted && request == _centerGeneration && retries > 0) {
+                _queueCenterTaskFocus(
+                  generation: request,
+                  retries: retries - 1,
+                );
+              }
             });
       }
     });
+  }
+
+  bool _onEditorScroll(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+    final userStarted =
+        notification is ScrollStartNotification &&
+        notification.dragDetails != null;
+    final userMoved =
+        notification is UserScrollNotification &&
+        notification.direction != ScrollDirection.idle;
+    if (userStarted || userMoved) {
+      _userScrolling = true;
+      _centerGeneration++;
+      _centerTimer?.cancel();
+    } else if (notification is ScrollEndNotification) {
+      _userScrolling = false;
+    }
+    return false;
+  }
+
+  void _onFabSideChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _queueCenterTaskFocus();
   }
 
   Future<void> _loadLockCapability() async {
@@ -197,6 +238,8 @@ class _EditNoteState extends State<EditNote>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    FabSideController.instance.addListener(_onFabSideChanged);
+    FabSideController.instance.load().then((_) => _onFabSideChanged());
     _loadLockCapability();
     _viewModel = EditNoteViewModel(
       repository: getIt<NotesRepository>(),
@@ -252,7 +295,9 @@ class _EditNoteState extends State<EditNote>
   void dispose() {
     _contentFocus.removeListener(_onContentFocusChanged);
     WidgetsBinding.instance.removeObserver(this);
+    _centerGeneration++;
     _centerTimer?.cancel();
+    FabSideController.instance.removeListener(_onFabSideChanged);
     _descriptionController.dispose();
     _descriptionFocus.dispose();
     _titleController.dispose();
@@ -839,7 +884,13 @@ class _EditNoteState extends State<EditNote>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollNotification>(
+        onNotification: _onEditorScroll,
+        child: _buildEditor(context),
+      );
+
+  Widget _buildEditor(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -1172,9 +1223,12 @@ class _EditNoteState extends State<EditNote>
                       ),
                     ),
                 ],
-                floatingActionButtonLocation: const FlushFabLocation(),
+                floatingActionButtonLocation: FlushFabLocation(
+                  onLeft: FabSideController.instance.onLeft,
+                ),
                 floatingActionButton: AppFab(
                   key: _fabKey,
+                  onLeft: FabSideController.instance.onLeft,
                   isEditorMode: true,
                   isAddMode: widget.add,
                   isImportant: _viewModel.important,
@@ -1225,9 +1279,6 @@ class _EditNoteState extends State<EditNote>
                   },
                   onChecklistSelected: () {
                     _insertChecklist();
-                    _fabKey.currentState?.closeVerticalMenu();
-                  },
-                  onLinkSelected: () {
                     _fabKey.currentState?.closeVerticalMenu();
                   },
                   onNoteLinkSelected: (Note selectedNote) {

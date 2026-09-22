@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/folder.dart';
@@ -10,14 +12,17 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
-import 'package:tano/shared/widgets/entity_layout.dart';
+import 'fab_geometry.dart';
+import 'fab_state.dart';
+
+export 'fab_state.dart' show FabVerticalMenu;
 import 'package:tano/shared/widgets/theme.dart';
 
 part 'fab_bars.dart';
 part 'fab_items.dart';
 part 'fab_menus.dart';
-
-enum FabVerticalMenu { none, add, color, more, link, move }
+part 'fab_lifecycle.dart';
+part 'fab_measurement.dart';
 
 enum ListSortCriteria { date, title }
 
@@ -186,472 +191,170 @@ class AppFab extends StatefulWidget {
   State<AppFab> createState() => AppFabState();
 }
 
-mixin _FabStateMixin on State<AppFab> {
-  bool? _isManuallyExpanded;
-  bool _wasKeyboardClosed = true;
-  FabVerticalMenu _verticalMenu = FabVerticalMenu.none;
-  FabVerticalMenu _moveReturnTo = FabVerticalMenu.none;
-  List<Note> _availableNotes = [];
-  List<Folder> _availableFolders = [];
-
-  /// Whether those lists have been read at least once: before that, nothing is
-  /// refused, so a menu never opens greyed out by surprise.
-  bool _notesLoaded = false;
-  bool _foldersLoaded = false;
-
-  /// Whether the app holds a folder at all. The move menu filters the note's
-  /// own folder out, but a note sitting in the only folder can still go home.
-  bool _hasFolders = false;
-
-  // Sorting state for the link and move sub-menu lists.
-  ListSortCriteria _sortCriteria = ListSortCriteria.date;
-  bool _isAscending = true;
-
-  // Measurement keys for dynamic height calculation
-  final GlobalKey _colorMenuKey = GlobalKey();
-  final GlobalKey _addMenuKey = GlobalKey();
-  final GlobalKey _moreMenuKey = GlobalKey();
-  final GlobalKey _linkMenuKey = GlobalKey();
-  final GlobalKey _moveMenuKey = GlobalKey();
-
-  double _colorMenuHeight = 0;
-  double _addMenuHeight = 0;
-  double _moreMenuHeight = 0;
-  double _linkMenuHeight = 0;
-  double _moveMenuHeight = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isEditorMode && widget.isAddMode) {
-      _isManuallyExpanded = false;
-    }
-    // Measure heights after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
-  }
-
-  void _measureMenuHeights() {
-    if (!mounted) return;
-    setState(() {
-      _colorMenuHeight = _colorMenuKey.currentContext?.size?.height ?? 0;
-      _addMenuHeight = _addMenuKey.currentContext?.size?.height ?? 0;
-      _moreMenuHeight = _moreMenuKey.currentContext?.size?.height ?? 0;
-      _linkMenuHeight = _linkMenuKey.currentContext?.size?.height ?? 0;
-      _moveMenuHeight = _moveMenuKey.currentContext?.size?.height ?? 0;
-    });
-  }
-
-  /// Collapses the FAB back to its reduced (circular) form.
-  void collapse() {
-    if (_isManuallyExpanded != false || _verticalMenu != FabVerticalMenu.none) {
-      setState(() {
-        _isManuallyExpanded = false;
-        _verticalMenu = FabVerticalMenu.none;
-      });
-    }
-  }
-
-  void _expand() {
-    setState(() => _isManuallyExpanded = true);
-  }
-
-  void closeVerticalMenu() {
-    if (_verticalMenu != FabVerticalMenu.none) {
-      setState(() => _verticalMenu = FabVerticalMenu.none);
-    }
-  }
-
-  /// Reads the notes the "link a note" list can offer: every note but this one.
-  Future<void> _loadNotes() async {
-    if (!getIt.isRegistered<NotesRepository>()) return;
-    final List<Note> notes = await getIt<NotesRepository>().loadNotes();
-    if (!mounted) return;
-    setState(() {
-      _availableNotes = notes
-          .where(
-            (n) =>
-                n.id != widget.currentNoteId &&
-                !n.isDeleted &&
-                (!widget.isTaskMode || !n.isTask),
-          )
-          .toList();
-      _notesLoaded = true;
-    });
-  }
-
-  /// Reads what the "move to" list can offer: every folder but the one the note
-  /// already sits in, and whether there is any folder at all.
-  Future<void> _loadFolders() async {
-    if (!getIt.isRegistered<NotesRepository>()) return;
-    final NotesRepository repository = getIt<NotesRepository>();
-    final List<Folder> folders = repository is FoldersRepository
-        ? await (repository as FoldersRepository).loadFolders()
-        : const <Folder>[];
-    if (!mounted) return;
-    setState(() {
-      _hasFolders = folders.isNotEmpty;
-      _availableFolders = folders
-          .where((Folder folder) => folder.id != widget.currentFolderId)
-          .toList();
-      _foldersLoaded = true;
-    });
-  }
-
-  Future<void> _toggleVerticalMenu(FabVerticalMenu menu) async {
-    // The link and move sub-menus are built from those lists, and the item that
-    // opens them has to know whether they are empty: read them first.
-    if (menu == FabVerticalMenu.link || menu == FabVerticalMenu.add) {
-      await _loadNotes();
-    } else if (menu == FabVerticalMenu.more) {
-      await _loadFolders();
-    }
-    if (!mounted) return;
-
-    setState(() {
-      _verticalMenu = (_verticalMenu == menu) ? FabVerticalMenu.none : menu;
-      if (_verticalMenu != FabVerticalMenu.none) {
-        _isManuallyExpanded = true;
-      }
-    });
-    // Re-measure after state change to ensure accuracy
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
-  }
-
-  /// Opens the "move to folder" sub-menu. [returnTo] is the menu the back
-  /// action goes back to (the more menu, or none from the selection bar).
-  Future<void> _openMoveMenu(FabVerticalMenu returnTo) async {
-    await _loadFolders();
-    if (!mounted) return;
-    setState(() {
-      _moveReturnTo = returnTo;
-      _verticalMenu = FabVerticalMenu.move;
-      _isManuallyExpanded = true;
-    });
-    // Re-measure after state change to ensure accuracy
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMenuHeights());
-  }
-}
-
 class AppFabState extends State<AppFab>
     with _FabStateMixin, _FabBarsMixin, _FabMenusMixin {
-  (bool, double, double)? _lastReportedLayout;
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final MediaQueryData media = MediaQuery.of(context);
-    // A compact window (landscape phone, any tablet) behaves the same way; a
-    // phone in portrait keeps the width it always had: the safe window width.
-    final bool compact = compactChrome(media.size);
-    final double safeSide = media.padding.left > media.padding.right
-        ? media.padding.left
-        : media.padding.right;
-    final double rawWidth = compact
-        ? media.size.shortestSide
-        : media.size.width - safeSide * 2;
-    final double contentWidth = rawWidth < appContentMaxWidth
-        ? rawWidth
-        : appContentMaxWidth;
-    const double btnHeight = 64.0;
-
-    final bool isKeyboardClosed = MediaQuery.of(context).viewInsets.bottom == 0;
-    final bool isMenuOpen = _verticalMenu != FabVerticalMenu.none;
-
-    // An open menu in a compact window is a plain 24-radius panel; a portrait
-    // phone keeps its original tab shape, and the resting form its bottom curve.
-    final fabRadius = isMenuOpen
-        ? (compact
-              ? BorderRadius.circular(24.0)
-              : const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                  bottom: Radius.circular(55),
-                ))
-        : BorderRadius.circular(55);
+    final media = MediaQuery.of(context);
+    final isExpanded = _presentation.expanded;
+    final isMenuOpen = _verticalMenu != FabVerticalMenu.none;
+    final geometry = FabGeometry.resolve(
+      media: media,
+      expanded: isExpanded,
+      menuOpen: isMenuOpen,
+      compactBar: _mode == FabMode.search || _mode == FabMode.find,
+      onLeft: widget.onLeft,
+      menuHeight: _measuredMenuHeight,
+    );
+    final targetExpandedWidth = geometry.expandedWidth;
+    final barHeight = geometry.barHeight;
+    final fabRadius = geometry.radius;
     final buttonColor = _fabMenuSurface(context);
     final buttonBorder = Color.lerp(
       Theme.of(context).colorScheme.primary,
       Colors.black,
       .22,
     )!;
-
-    if (isKeyboardClosed != _wasKeyboardClosed) {
-      _isManuallyExpanded = null;
-      _wasKeyboardClosed = isKeyboardClosed;
-    }
-
-    final bool isBarMode =
-        widget.isSearchMode || widget.isSelectionMode || widget.isFindMode;
-    bool isExpanded = isBarMode;
-    if (!isBarMode) {
-      // Home and editor/folder share the circular <-> extended model.
-      if (widget.isEditorMode) {
-        isExpanded =
-            _isManuallyExpanded ??
-            (isKeyboardClosed && !widget.collapsedByDefault);
-      } else {
-        // Home: the "+" is the rest form; it expands on tap.
-        isExpanded = _isManuallyExpanded ?? false;
-      }
-    }
-    // While the folder title is being renamed, the FAB stays reduced
-    // (circular) whatever the keyboard/menu state.
-    if (widget.isTitleEditing) {
-      isExpanded = false;
-    }
-
-    if (!isExpanded && isMenuOpen) {
-      _verticalMenu = FabVerticalMenu.none;
-    }
-
-    // Target width based on state. The right edge is the anchor; the resting bar
-    // keeps the same 24 from the column on its left too, so both gaps to the
-    // cards read the same (12 each). An open menu or a keyboard takes the wider
-    // form.
-    final double targetExpandedWidth = isMenuOpen || !isKeyboardClosed
-        ? contentWidth - 24.0
-        : contentWidth - 48.0;
-
-    double currentWidth = btnHeight;
-    if (isExpanded || isMenuOpen) {
-      currentWidth = targetExpandedWidth;
-    }
-
-    // In a compact window the FAB is anchored: it rests, extends and opens its
-    // menus from the same point. A portrait phone keeps the nudge it always had.
-    double tx = 0.0;
-    if (!compact &&
-        (isExpanded || isMenuOpen) &&
-        (isMenuOpen || !isKeyboardClosed)) {
-      tx = 12.0;
-    }
-
-    double ty = 0.0;
-    if (!compact) {
-      if (isMenuOpen) {
-        ty = 8.0;
-      } else if (!isKeyboardClosed) {
-        ty = 12.0;
-      }
-    }
-
-    // Dynamic Vertical Menu Heights
-    double verticalMenuHeight = 0;
-    if (_verticalMenu == FabVerticalMenu.color) {
-      verticalMenuHeight = _colorMenuHeight > 0 ? _colorMenuHeight : 250.0;
-    } else if (_verticalMenu == FabVerticalMenu.add) {
-      verticalMenuHeight = _addMenuHeight > 0 ? _addMenuHeight : 190.0;
-    } else if (_verticalMenu == FabVerticalMenu.more) {
-      verticalMenuHeight = _moreMenuHeight > 0 ? _moreMenuHeight : 310.0;
-    } else if (_verticalMenu == FabVerticalMenu.link) {
-      final double maxMenuHeight = screenHeight * (2 / 3);
-      verticalMenuHeight = _linkMenuHeight > 0 ? _linkMenuHeight : 300.0;
-      if (verticalMenuHeight > maxMenuHeight) {
-        verticalMenuHeight = maxMenuHeight;
-      }
-    } else if (_verticalMenu == FabVerticalMenu.move) {
-      final double maxMenuHeight = screenHeight * (2 / 3);
-      verticalMenuHeight = _moveMenuHeight > 0 ? _moveMenuHeight : 300.0;
-      if (verticalMenuHeight > maxMenuHeight) {
-        verticalMenuHeight = maxMenuHeight;
-      }
-    }
-
-    // In search mode the bar is more compact (48) than the default (64),
-    // and only when the keyboard is open (the "high" position).
-    final double barHeight =
-        ((widget.isSearchMode || widget.isFindMode) && !isKeyboardClosed)
-        ? 48.0
-        : btnHeight;
-
-    // Size menus to the viewport above the keyboard, preserving the app bar
-    // and safe areas. Long menus scroll inside this bounded surface.
-    final availableMenuHeight = math.max(
-      0.0,
-      screenHeight -
-          media.viewInsets.bottom -
-          media.viewPadding.top -
-          media.viewPadding.bottom -
-          kToolbarHeight -
-          24.0 -
-          barHeight,
-    );
-    verticalMenuHeight = math.min(verticalMenuHeight, availableMenuHeight);
-
-    double currentHeight = barHeight;
-    if (isMenuOpen) {
-      currentHeight += verticalMenuHeight;
-    }
-
-    final layout = (
-      isExpanded,
-      currentHeight,
-      MediaQuery.viewInsetsOf(context).bottom,
-    );
-    if (_lastReportedLayout != layout) {
-      _lastReportedLayout = layout;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) widget.onLayoutChanged?.call();
-      });
-    }
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: _hoverEffect(
-        TapRegion(
-          // The theme toggle shares this group, so tapping it keeps the menu open.
-          groupId: fabTapGroup,
-          // Tapping anywhere else closes the menu, then folds the FAB back to its
-          // resting form (circular when the page has a reduce action).
-          onTapOutside: (_) => collapse(),
-          child: AnimatedContainer(
-            onEnd: widget.onLayoutChanged,
-            duration: TanoMotion.base,
-            curve: Curves.easeInOut,
-            height: currentHeight,
-            width: currentWidth,
-            clipBehavior: Clip.antiAlias,
-            // Null while resting: a fresh identity Matrix4 each build made the
-            // implicit animation interpolate for nothing.
-            transform: (tx == 0.0 && ty == 0.0)
-                ? null
-                : Matrix4.translationValues(tx, ty, 0.0),
-            decoration: BoxDecoration(
-              color: buttonColor,
-              border: Border.all(color: buttonBorder),
-              borderRadius: fabRadius,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color.fromRGBO(0, 0, 0, .9),
-                  offset: Offset(0, 10),
-                  blurRadius: 18,
-                  spreadRadius: -14,
-                ),
-              ],
-            ),
-            foregroundDecoration: _PrimaryButtonEdge(buttonBorder, fabRadius),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final double expansionProgress = isExpanded || isMenuOpen
-                    ? (constraints.maxWidth - btnHeight) /
-                          (targetExpandedWidth - btnHeight)
-                    : 0.0;
-
-                final bool showContent =
-                    !isExpanded || isMenuOpen || expansionProgress > 0.8;
-
-                return Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    // The masthead blur: whatever shows through the paper is
-                    // softened, exactly like the site bar.
-                    Positioned.fill(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                        child: const SizedBox.expand(),
+    return _FabSizeObserver(
+      onSizeChanged: (_) => _scheduleLayoutReport(),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: _hoverEffect(
+          TapRegion(
+            // The theme toggle shares this group, so tapping it keeps the menu open.
+            groupId: fabTapGroup,
+            // Tapping anywhere else closes the menu, then folds the FAB back to its
+            // resting form (circular when the page has a reduce action).
+            onTapOutside: (_) => collapse(),
+            child: TextFieldTapRegion(
+              child: AnimatedContainer(
+                onEnd: _reportSettledLayout,
+                duration: TanoMotion.base,
+                curve: Curves.easeInOut,
+                height: geometry.height,
+                width: geometry.width,
+                clipBehavior: Clip.antiAlias,
+                // Null while resting: a fresh identity Matrix4 each build made the
+                // implicit animation interpolate for nothing.
+                transform: (geometry.offset == Offset.zero)
+                    ? null
+                    : Matrix4.translationValues(
+                        geometry.offset.dx,
+                        geometry.offset.dy,
+                        0.0,
                       ),
-                    ),
-                    // Measurement zone - Unconstrained height to avoid race conditions during animation
-                    Offstage(
-                      child: OverflowBox(
-                        // Measure at a fixed open-menu width so the heights stay
-                        // stable no matter the current FAB width (the closed FAB is
-                        // only 64px wide and would otherwise under-measure).
-                        minWidth: 0,
-                        maxWidth: contentWidth - 24.0,
-                        minHeight: 0,
-                        maxHeight: double.infinity,
-                        alignment: Alignment.topCenter,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              key: _colorMenuKey,
-                              child: _buildColorMenu(context),
-                            ),
-                            Container(
-                              key: _addMenuKey,
-                              child: _buildAddMenu(context),
-                            ),
-                            Container(
-                              key: _moreMenuKey,
-                              child: _buildMoreMenu(context),
-                            ),
-                            Container(
-                              key: _linkMenuKey,
-                              child: _buildLinkMenu(
-                                context,
-                                isMeasurement: true,
-                              ),
-                            ),
-                            Container(
-                              key: _moveMenuKey,
-                              child: _buildMoveMenu(
-                                context,
-                                isMeasurement: true,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    if (isMenuOpen)
-                      Positioned(
-                        bottom: btnHeight,
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: AnimatedOpacity(
-                          opacity: showContent ? 1.0 : 0.0,
-                          duration: TanoMotion.fast,
-                          child: _buildVerticalMenuContent(
-                            context,
-                            targetExpandedWidth,
-                            verticalMenuHeight,
-                          ),
-                        ),
-                      ),
-
-                    SizedBox(
-                      height: barHeight,
-                      child: AnimatedOpacity(
-                        opacity: showContent ? 1.0 : 0.0,
-                        duration: TanoMotion.fast,
-                        // Only the icons swap: the FAB box itself does not move.
-                        // The outgoing set zooms out while the incoming zooms in.
-                        child: AnimatedSwitcher(
-                          duration: TanoMotion.base,
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          transitionBuilder:
-                              (Widget child, Animation<double> animation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: ScaleTransition(
-                                    scale: Tween<double>(
-                                      begin: 0.75,
-                                      end: 1.0,
-                                    ).animate(animation),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                          child: KeyedSubtree(
-                            key: ValueKey<bool>(widget.isSelectionMode),
-                            child: _buildMainContent(
-                              context,
-                              isExpanded,
-                              targetExpandedWidth,
-                            ),
-                          ),
-                        ),
-                      ),
+                decoration: BoxDecoration(
+                  color: buttonColor,
+                  border: Border.all(color: buttonBorder),
+                  borderRadius: fabRadius,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 0, 0, .9),
+                      offset: Offset(0, 10),
+                      blurRadius: 18,
+                      spreadRadius: -14,
                     ),
                   ],
-                );
-              },
+                ),
+                foregroundDecoration: _PrimaryButtonEdge(
+                  buttonBorder,
+                  fabRadius,
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final expansionRange = targetExpandedWidth - 64;
+                    final expansionProgress = expansionRange > 0
+                        ? ((constraints.maxWidth - 64) / expansionRange).clamp(
+                            0.0,
+                            1.0,
+                          )
+                        : 1.0;
+                    final showContent =
+                        !isExpanded || isMenuOpen || expansionProgress > .8;
+
+                    return Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        // The masthead blur: whatever shows through the paper is
+                        // softened, exactly like the site bar.
+                        Positioned.fill(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                        if (isMenuOpen)
+                          Positioned(
+                            bottom: barHeight,
+                            left: 0,
+                            right: 0,
+                            height: geometry.menuHeight,
+                            child: OverflowBox(
+                              alignment: Alignment.bottomCenter,
+                              minWidth: targetExpandedWidth,
+                              maxWidth: targetExpandedWidth,
+                              minHeight: 0,
+                              maxHeight: geometry.maxMenuHeight,
+                              child: _FabSizeObserver(
+                                key: ValueKey(_verticalMenu),
+                                onSizeChanged: _menuMeasured,
+                                child: _buildVerticalMenuContent(context),
+                              ),
+                            ),
+                          ),
+
+                        SizedBox(
+                          height: barHeight,
+                          child: AnimatedOpacity(
+                            opacity: showContent ? 1.0 : 0.0,
+                            duration: TanoMotion.fast,
+                            // Only the icons swap: the FAB box itself does not move.
+                            // The outgoing set zooms out while the incoming zooms in.
+                            child:
+                                (_mode == FabMode.search ||
+                                    _mode == FabMode.find)
+                                ? _buildMainContent(
+                                    context,
+                                    isExpanded,
+                                    targetExpandedWidth,
+                                  )
+                                : AnimatedSwitcher(
+                                    duration: TanoMotion.base,
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder: (child, animation) =>
+                                        FadeTransition(
+                                          opacity: animation,
+                                          child: ScaleTransition(
+                                            scale: Tween<double>(
+                                              begin: .75,
+                                              end: 1,
+                                            ).animate(animation),
+                                            child: child,
+                                          ),
+                                        ),
+                                    child: KeyedSubtree(
+                                      key: ValueKey(_mode),
+                                      child: _buildMainContent(
+                                        context,
+                                        isExpanded,
+                                        targetExpandedWidth,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),

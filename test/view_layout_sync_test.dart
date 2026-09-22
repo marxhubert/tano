@@ -11,6 +11,9 @@ import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/main.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
+import 'package:tano/shared/widgets/page_layout.dart';
+import 'package:tano/features/editor/edit_note_page.dart';
 
 class _Repo extends Fake implements NotesRepository, FoldersRepository {
   final folders = <Folder>[Folder(id: 'f0', name: 'Archive')];
@@ -61,6 +64,71 @@ bool _fabOnLeft(WidgetTester tester) =>
     tester.widget<AppFab>(find.byType(AppFab)).onLeft;
 
 void main() {
+  testWidgets('the editor uses the shared FAB side and keeps its state', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+    await FabSideController.instance.setOnLeft(true);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Loose'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EditNote), findsOneWidget);
+    expect(_fabOnLeft(tester), isTrue);
+    final page = find.descendant(
+      of: find.byType(EditNote),
+      matching: find.byType(PageScaffold),
+    );
+    FlushFabLocation location() =>
+        tester.widget<PageScaffold>(page).floatingActionButtonLocation!
+            as FlushFabLocation;
+    expect(location().onLeft, isTrue);
+    final state = tester.state<AppFabState>(find.byType(AppFab));
+
+    await FabSideController.instance.setOnLeft(false);
+    await tester.pumpAndSettle();
+    expect(_fabOnLeft(tester), isFalse);
+    expect(location().onLeft, isFalse);
+    expect(tester.state<AppFabState>(find.byType(AppFab)), same(state));
+    expect(find.text('Loose'), findsOneWidget);
+  });
+
+  for (final inFolder in <bool>[false, true]) {
+    testWidgets(
+      'a quick route return does not fold the ${inFolder ? 'folder' : 'home'} FAB later',
+      (tester) async {
+        await _pumpApp(tester);
+        if (inFolder) {
+          await tester.tap(find.text('Archive'));
+          await tester.pumpAndSettle();
+          if (find.byIcon(Symbols.more_horiz).evaluate().isNotEmpty) {
+            await tester.tap(find.byIcon(Symbols.more_horiz));
+            await tester.pumpAndSettle();
+          }
+        } else {
+          await tester.tap(find.byIcon(Symbols.add_2));
+          await tester.pumpAndSettle();
+        }
+        final action = inFolder ? Symbols.add_circle : Symbols.add_notes;
+        expect(find.byIcon(action), findsOneWidget);
+        final navigator = Navigator.of(tester.element(find.byType(AppFab)));
+        navigator.push<void>(
+          PageRouteBuilder<void>(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (_, _, _) => const Scaffold(body: Text('Temporary')),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+        navigator.pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pumpAndSettle();
+        expect(find.byIcon(action), findsOneWidget);
+      },
+    );
+  }
+
   testWidgets('a folder view switch reaches Home', (WidgetTester tester) async {
     await _pumpApp(tester);
 
