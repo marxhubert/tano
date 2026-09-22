@@ -35,9 +35,15 @@ class FabGeometry {
     final wide = menuOpen || keyboardOpen;
     final sideInset = math.max(media.padding.left, media.padding.right);
     final safeWidth = math.max(0.0, media.size.width - sideInset * 2);
+    // Every compact window — a landscape phone, a tablet — opens no wider than
+    // a portrait phone: the bar keeps the phone's proportions instead of
+    // stretching over the window.
+    final widthCeiling = compactChrome(media.size)
+        ? phonePortraitWidth
+        : appContentMaxWidth;
     final contentWidth = math.min(
       math.min(compact ? media.size.shortestSide : safeWidth, safeWidth),
-      appContentMaxWidth,
+      widthCeiling,
     );
     final horizontalGap = compact
         ? (tabletViewport(media.size) ? 24.0 : 12.0)

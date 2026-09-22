@@ -249,23 +249,20 @@ class _PageScaffoldState extends State<PageScaffold> {
         backgroundColor: Colors.transparent,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: Padding(
-            // A wide window insets the bar to the content column, so its back
-            // button and actions line up with the cards.
-            padding: EdgeInsets.symmetric(
-              horizontal: contentColumnInset(context),
-            ),
+          // The bar itself fills the window, like a site's navbar; only its
+          // items are held to the content column, by [appBarContentInset].
+          child: MediaQuery.removePadding(
+            context: context,
+            removeLeft: true,
+            removeRight: true,
             child: AppBar(
               automaticallyImplyLeading: false,
               backgroundColor: Colors.transparent,
               // When the title slides left (undo/redo/save actions visible), keep a
               // visible gap between the back button and the title.
-              titleSpacing: appSidePad(
-                context,
-                widget.isHome
-                    ? appPaddingLarge
-                    : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
-              ),
+              titleSpacing: widget.isHome
+                  ? appBarContentInset(context)
+                  : (appBarTitleOnLeft ? appPaddingMedium : 0.0),
               elevation: 0.0,
               shadowColor: showAppBarTitle
                   ? Colors.black.withValues(alpha: 0.05)
@@ -281,16 +278,29 @@ class _PageScaffoldState extends State<PageScaffold> {
                       ),
                     )
                   : null,
+              // The back glyph rides the cards' edge: a tap target whose icon
+              // sits at its start. 40 = the 24px icon plus the 16px gap the
+              // title always kept, so the back-to-title spacing does not move.
+              leadingWidth: appBarContentInset(context) + 40.0,
               leading: !widget.isHome
-                  ? IconButton(
-                      icon: Icon(
-                        Symbols.arrow_back_ios_new,
-                        size: 24.0,
-                        color: textColor,
+                  ? Padding(
+                      padding: EdgeInsets.only(
+                        left: appBarContentInset(context),
                       ),
-                      tooltip: AppText.tr('back'),
-                      onPressed:
-                          widget.onPop ?? () => Navigator.of(context).pop(),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Icon(
+                            Symbols.arrow_back_ios_new,
+                            size: 24.0,
+                            color: textColor,
+                          ),
+                        ),
+                        tooltip: AppText.tr('back'),
+                        onPressed:
+                            widget.onPop ?? () => Navigator.of(context).pop(),
+                      ),
                     )
                   : null,
               title: showAppBarTitle
@@ -313,16 +323,24 @@ class _PageScaffoldState extends State<PageScaffold> {
               // The condensed title leads with its metadata, so it reads from the
               // left rather than from the middle.
               centerTitle: !condensed && !widget.isHome && !appBarTitleOnLeft,
-              actions: widget.actions
-                  ?.map(
-                    (a) => Padding(
-                      padding: EdgeInsets.only(
-                        right: appSidePad(context, appPaddingSmall),
+              actions: widget.actions == null
+                  ? null
+                  : <Widget>[
+                      for (final Widget a in widget.actions!)
+                        Padding(
+                          // 6 between the actions, exactly as before.
+                          padding: const EdgeInsets.only(
+                            right: appPaddingSmall,
+                          ),
+                          child: a,
+                        ),
+                      SizedBox(
+                        // The content inset lands once, after the last action.
+                        width: appBarContentInset(context) > appPaddingSmall
+                            ? appBarContentInset(context) - appPaddingSmall
+                            : 0.0,
                       ),
-                      child: a,
-                    ),
-                  )
-                  .toList(),
+                    ],
             ),
           ),
         ),

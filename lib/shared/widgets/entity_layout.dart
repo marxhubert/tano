@@ -22,13 +22,24 @@ int entityColumnCount(Size viewport, {required bool isList}) {
 /// tablets alike.
 bool condensedHeader(Size viewport) => viewport.width > viewport.height;
 
+/// The widest a phone window can be, in logical pixels: past this the window is
+/// a tablet.
+const double phonePortraitMaxWidth = 600.0;
+
+/// A typical phone in portrait, in logical pixels. A tablet caps the FAB to it,
+/// so the button keeps a phone's proportions instead of stretching across the
+/// tablet's width.
+const double phonePortraitWidth = 390.0;
+
 /// A landscape *phone* reaches both edges: the page content it shows is flush.
 /// A landscape tablet keeps a margin, so its chrome can line up with the cards.
 bool flushSidePadding(Size viewport) =>
-    viewport.width > viewport.height && viewport.shortestSide < 600;
+    viewport.width > viewport.height &&
+    viewport.shortestSide < phonePortraitMaxWidth;
 
-/// A tablet window: a shortest side of at least 600 logical pixels.
-bool tabletViewport(Size viewport) => viewport.shortestSide >= 600;
+/// A tablet window: a shortest side of at least [phonePortraitMaxWidth].
+bool tabletViewport(Size viewport) =>
+    viewport.shortestSide >= phonePortraitMaxWidth;
 
 /// A tablet, or a phone held landscape: the chrome takes its compact form — an
 /// anchored FAB that never nudges, a condensed title, panel-shaped menus.

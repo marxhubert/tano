@@ -74,9 +74,14 @@ void main() {
       expect(menu.offset, Offset.zero);
       expect(menu.radius, BorderRadius.circular(24));
     }
+    // Every compact window is capped to a portrait phone: 390 - 48, or 390 - 24
+    // with a menu open. A bigger landscape phone lands on the same width.
     expect(geometry(size: const Size(844, 390), expanded: true).width, 342);
-    expect(geometry(size: const Size(768, 1024), expanded: true).width, 720);
-    expect(geometry(size: const Size(2000, 1400), menuOpen: true).width, 1056);
+    expect(geometry(size: const Size(932, 430), expanded: true).width, 342);
+    expect(geometry(size: const Size(932, 430), menuOpen: true).width, 366);
+    expect(geometry(size: const Size(768, 1024), expanded: true).width, 342);
+    expect(geometry(size: const Size(1024, 768), expanded: true).width, 342);
+    expect(geometry(size: const Size(2000, 1400), menuOpen: true).width, 366);
   });
 
   test('search and find use 48px only while the keyboard is visible', () {
