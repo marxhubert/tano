@@ -21,6 +21,9 @@ select-all/select-none; Move is disabled if a folder is selected. The current fo
 is not a move target. Lock is disabled without device authentication capability.
 Menu states and transitions should remain consistent across screens.
 
+See **[fab.md](fab.md)** for the full description: every form, the geometry, the
+state machine, the motion tokens, the integration and the rules a change must keep.
+
 ## Cards
 
 `EntityCard` renders Note, Folder, Task and Project presentations through a shared
