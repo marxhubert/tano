@@ -23,6 +23,9 @@ test data is disposable.
 - `focusSearchField` / `leaveSearchMode`, `openNoteEditor` and
   `requestLockChange` are the single implementations of the search timing, the
   editor's authentication prologue and the lock decision.
+- `deleteSelectionTitle`, `announceMove` and `announceDeletion` own the delete
+  dialog title and the move/delete feedback; the folder page now taps the same
+  haptic as Home after a delete.
 - Removed dead code: three unreferenced strings, the legacy JSON note codec, an
   unused radius, the unreachable no-selection delete branch and the FAB's
   never-wired callbacks.
@@ -40,10 +43,15 @@ test data is disposable.
 - A configured database passphrase provider that returns null fails closed
   instead of opening SQLCipher in the clear.
 
-## Remaining consolidation
+## Optional future consolidation
 
-- One search-mode controller shared by Home and Folder (selection/search coupling).
-- Shared delete/undo/move command paths, and a common `EntityBrowser` scaffold.
+These are architectural refactors, not known defects: the shared logic they
+would absorb already lives in one place behind the helpers above.
+
+- A search-mode *controller* that owns the active flag and query, rather than
+  each page holding them and calling the shared helpers.
+- A common `EntityBrowser` scaffold and a shared move command path, replacing
+  the remaining Home/Folder page boilerplate.
 
 ## Completed in the previous consolidation
 
