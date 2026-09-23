@@ -1,3 +1,6 @@
+@Tags(<String>['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -69,7 +72,9 @@ void main() {
       ('tablet_portrait', Size(768, 1024)),
       ('tablet_landscape', Size(1024, 768)),
     ]) {
-      testWidgets('paper ${entry.$1} ${mode.name}', (WidgetTester tester) async {
+      testWidgets('paper ${entry.$1} ${mode.name}', (
+        WidgetTester tester,
+      ) async {
         SharedPreferences.setMockInitialValues(<String, Object>{});
         PackageInfo.setMockInitialValues(
           appName: 'TanoNote',
