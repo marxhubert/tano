@@ -2042,6 +2042,43 @@ void main() {
     expect(repo.trashed, contains('n1'));
   });
 
+  testWidgets('a locked note in a folder is never deleted from the list', (
+    tester,
+  ) async {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(
+          id: 'n1',
+          title: 'Locked',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+          folderId: 'f1',
+          isLocked: true,
+        ),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Locked').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.delete));
+    await tester.pumpAndSettle();
+
+    // The list refuses: it names the lock instead, and trashes nothing.
+    expect(find.text(AppText.tr('delete_locked_error')), findsOneWidget);
+    expect(repo.trashed, isEmpty);
+  });
+
   testWidgets('cards show the cover except on locked items', (tester) async {
     getIt.registerSingleton<NotesRepository>(
       _Repo(

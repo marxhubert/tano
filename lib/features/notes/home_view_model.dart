@@ -53,9 +53,18 @@ class HomeViewModel extends ChangeNotifier {
   /// are then simply empty.
   final FoldersRepository? _foldersRepository;
 
-  DocumentFilter documentFilter = DocumentFilter.all;
+  DocumentFilter _documentFilter = DocumentFilter.all;
+
+  /// The filter actually applied. A kind with nothing left to show falls back
+  /// to every document, so a preference the tab no longer offers never blanks
+  /// the list.
+  DocumentFilter get documentFilter =>
+      _documentFilter != DocumentFilter.all && countFor(_documentFilter) == 0
+      ? DocumentFilter.all
+      : _documentFilter;
+
   void setDocumentFilter(DocumentFilter filter) {
-    documentFilter = filter;
+    _documentFilter = filter;
     _selection.exit();
     notifyListeners();
   }
@@ -93,15 +102,6 @@ class HomeViewModel extends ChangeNotifier {
   int get searchableDocsCount {
     final NoteAccessPolicy policy = NoteAccessPolicy(_folders);
     return _allNotes.where(policy.isSearchable).length;
-  }
-
-  /// True when the active filter hides a source that is not empty: the list
-  /// then names what it looked for, rather than reading as blank.
-  bool get isFilterHidingAll {
-    final List<Note> source = hasSearchQuery
-        ? (_searchResults ?? <Note>[])
-        : _unfiledNotes();
-    return source.isNotEmpty && _visibleNotes().isEmpty;
   }
 
   int get foldersCount => folders.length;

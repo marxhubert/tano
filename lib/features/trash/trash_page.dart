@@ -129,6 +129,9 @@ class _TrashPageState extends State<TrashPage> {
                   sliver: EntitySliver<Folder>(
                     items: _viewModel.deletedFolders,
                     isList: _isListLayout,
+                    // Deleted folders read three to a row in the grid; the list
+                    // keeps the shared density.
+                    columnCount: _isListLayout ? null : (Size _) => 3,
                     // A folder tile is a perfect square, like on Home.
                     aspectRatio: 1.0,
                     cardBuilder: _folderCard,
@@ -198,81 +201,87 @@ class _TrashPageState extends State<TrashPage> {
   }
 
   Widget _noteCard(BuildContext context, Note note) {
-    return EntityCard(
-      kind: note.kind,
-      category: note.category,
-      title: note.title,
-      subtitle: formatNoteDate(note.date),
-      coverImage: note.coverImage,
-      isImportant: note.important,
-      // The card must match the sliver layout, or a list card has no intrinsic
-      // height and renders nothing.
-      isListLayout: _isListLayout,
-      builder: (context, textColor, hasCover) => Stack(
-        children: <Widget>[
+    return Stack(
+      children: <Widget>[
+        EntityCard(
+          kind: note.kind,
+          category: note.category,
+          title: note.title,
+          subtitle: formatNoteDate(note.date),
+          coverImage: note.coverImage,
+          isImportant: note.important,
+          // A locked document stays locked, even in the trash.
+          isLocked: note.isLocked,
+          // The card must match the sliver layout, or a list card has no
+          // intrinsic height and renders nothing.
+          isListLayout: _isListLayout,
           // Exactly the normal note body, in either layout.
-          if (_isListLayout)
-            buildNoteListContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _viewModel.activeNoteIds,
-              hasCover: hasCover,
-            )
-          else
-            buildNoteGridContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _viewModel.activeNoteIds,
-              hasCover: hasCover,
-            ),
-          // The only trash-specific part: the two actions.
-          _actions(
-            onRestore: () => _viewModel.restoreNote(note.id),
-            onDelete: () => _deleteNote(context, note.id),
-            textColor: textColor,
-          ),
-        ],
-      ),
+          builder: (context, textColor, hasCover) => _isListLayout
+              ? buildNoteListContent(
+                  note: note,
+                  textColor: textColor,
+                  activeNoteIds: _viewModel.activeNoteIds,
+                  hasCover: hasCover,
+                )
+              : buildNoteGridContent(
+                  note: note,
+                  textColor: textColor,
+                  activeNoteIds: _viewModel.activeNoteIds,
+                  hasCover: hasCover,
+                ),
+        ),
+        // The trash's own part: the two actions, always there, locked or not.
+        _actions(
+          onRestore: () => _viewModel.restoreNote(note.id),
+          onDelete: () => _deleteNote(context, note.id),
+          textColor: _cardTextColor(context, note.category),
+        ),
+      ],
     );
   }
 
   Widget _folderCard(BuildContext context, Folder folder) {
     final int noteCount = _viewModel.noteCountIn(folder.id);
-    return EntityCard(
-      kind: EntityKind.folder,
-      category: folder.category,
-      title: folder.name,
-      subtitle: 'x$noteCount',
-      subtitleIcon: Symbols.sticky_note_2,
-      isImportant: folder.important,
-      isLocked: folder.isLocked,
-      isListLayout: _isListLayout,
-      builder: (context, textColor, hasCover) => Stack(
-        children: <Widget>[
+    return Stack(
+      children: <Widget>[
+        EntityCard(
+          kind: EntityKind.folder,
+          category: folder.category,
+          title: folder.name,
+          subtitle: 'x$noteCount',
+          subtitleIcon: Symbols.sticky_note_2,
+          isImportant: folder.important,
+          isLocked: folder.isLocked,
+          isListLayout: _isListLayout,
           // Same folder body as the home page.
-          if (_isListLayout)
-            buildFolderListContent(
-              folder: folder,
-              noteCount: noteCount,
-              textColor: textColor,
-              hasCover: hasCover,
-            )
-          else
-            buildFolderGridContent(
-              folder: folder,
-              noteCount: noteCount,
-              textColor: textColor,
-              hasCover: hasCover,
-            ),
-          _actions(
-            onRestore: () => _viewModel.restoreFolder(folder.id),
-            onDelete: () => _deleteFolder(context, folder.id),
-            textColor: textColor,
-          ),
-        ],
-      ),
+          builder: (context, textColor, hasCover) => _isListLayout
+              ? buildFolderListContent(
+                  folder: folder,
+                  noteCount: noteCount,
+                  textColor: textColor,
+                  hasCover: hasCover,
+                )
+              : buildFolderGridContent(
+                  folder: folder,
+                  noteCount: noteCount,
+                  textColor: textColor,
+                  hasCover: hasCover,
+                ),
+        ),
+        _actions(
+          onRestore: () => _viewModel.restoreFolder(folder.id),
+          onDelete: () => _deleteFolder(context, folder.id),
+          textColor: _cardTextColor(context, folder.category),
+        ),
+      ],
     );
   }
+
+  /// The ink [EntityCard] computes for [category], so the trash actions sit on
+  /// the card's own colour whatever the card shows.
+  Color _cardTextColor(BuildContext context, String category) => getTextColor(
+    themeCategory(category, true, brightness: Theme.of(context).brightness),
+  );
 
   /// The two trash actions, overlaid on a card (on top of its content). The
   /// only difference from a normal card: in a list they sit centred, 8 px above

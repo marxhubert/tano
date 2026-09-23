@@ -44,12 +44,6 @@ enum DocumentFilter {
   String countText(int count) =>
       this == DocumentFilter.all ? '($count)' : '$count';
 
-  /// What the list says when this filter hides everything.
-  String get emptyLabel => AppText.tr(switch (this) {
-    all => 'no_docs_found',
-    notes => 'no_notes_found',
-    tasks => 'no_tasks_found',
-  });
 }
 
 /// The noun a selection sentence uses. One kind keeps its own name; a selection

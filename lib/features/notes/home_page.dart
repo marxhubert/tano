@@ -418,16 +418,6 @@ class HomeState extends State<Home> with RouteAware {
           ),
         );
       }
-      if (_viewModel.isFilterHidingAll) {
-        return SliverFillRemaining(
-          hasScrollBody: false,
-          child: emptyState(
-            context,
-            _viewModel.documentFilter.emptyLabel,
-            image: EmptyArt.notFound,
-          ),
-        );
-      }
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
@@ -438,16 +428,6 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Widget _notesSliver(List<Note> notes, String viewLayout) {
-    if (notes.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(
-          context,
-          _viewModel.documentFilter.emptyLabel,
-          image: EmptyArt.notFound,
-        ),
-      );
-    }
     switch (viewLayout) {
       case 'gridlist':
         return NoteGridView(
@@ -499,10 +479,11 @@ class HomeState extends State<Home> with RouteAware {
         // title. Only the notes group gets one, styled like the page title.
         // Folders stay a grid whatever layout the documents use.
         FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
-        const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
-        ...<Widget>[
-          // The docs group keeps its tabs only when it holds a document.
-          if (_viewModel.hasDocs) _notesSectionHeader(),
+        // An empty docs group shows nothing at all: no spacer, no tabs, no
+        // empty-state paragraph.
+        if (_viewModel.hasDocs) ...<Widget>[
+          const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+          _notesSectionHeader(),
           _notesSliver(notes, viewLayout),
         ],
       ],
