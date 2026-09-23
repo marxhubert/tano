@@ -11,6 +11,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/folder_card_bodies.dart';
@@ -172,14 +173,11 @@ class _TrashPageState extends State<TrashPage> {
     final int folders = _viewModel.deletedFolders.length;
     final int notes = _viewModel.deletedNotes.length;
     final List<String> parts = <String>[
-      if (folders > 0) _count(folders, 'folder', 'folders'),
-      if (notes > 0) _count(notes, 'note', 'notes'),
+      if (folders > 0) groupCountLabel(total: folders, noun: 'folder'),
+      if (notes > 0) groupCountLabel(total: notes, noun: 'note'),
     ];
     return parts.isEmpty ? AppText.tr('empty') : parts.join(' & ');
   }
-
-  String _count(int count, String singular, String plural) =>
-      '$count ${AppText.tr(count > 1 ? plural : singular)}';
 
   /// A plain group title, like the settings section titles: no underline and
   /// no metadata line, just the label.
