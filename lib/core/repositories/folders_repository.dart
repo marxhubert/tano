@@ -15,9 +15,6 @@ abstract class FoldersRepository {
   /// folder stays whole in the trash and restoring it brings its content back.
   Future<void> trashFolder(String id);
 
-  /// Smallest "Folder X" name that is not already used.
-  Future<String> nextFolderName();
-
   /// Loads every folder in the trash.
   Future<List<Folder>> loadTrashFolders();
 
@@ -54,6 +51,4 @@ class EmptyFoldersRepository implements FoldersRepository {
 
   @override
   Future<void> deleteAllFolders() async {}
-  @override
-  Future<String> nextFolderName() async => 'Folder 1';
 }

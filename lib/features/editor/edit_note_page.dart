@@ -25,6 +25,7 @@ import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -924,6 +925,15 @@ class _EditNoteState extends State<EditNote>
             _contentController.text,
           );
 
+          // A phone in portrait lets the cover bleed to both screen edges;
+          // every other window aligns it with the content and rounds it.
+          final Size viewport = MediaQuery.sizeOf(context);
+          final bool coverFullBleed = !compactChrome(viewport);
+          final double coverInset = coverFullBleed ? 0.0 : appPaddingMedium;
+          final BorderRadius coverRadius = coverFullBleed
+              ? BorderRadius.zero
+              : BorderRadius.circular(appBorderRadius);
+
           return ProtectedContent(
             protected: _viewModel.isLocked || widget.authenticated,
             child: GestureDetector(
@@ -944,6 +954,14 @@ class _EditNoteState extends State<EditNote>
                 title: widget.add
                     ? AppText.tr(_viewModel.isTask ? 'add_task' : 'add_note')
                     : AppText.tr(_viewModel.isTask ? 'edit_task' : 'edit_note'),
+                // The reduced (scrolled) title carries the note's marks, in the
+                // order "bookmark + title + lock".
+                headerMetadataLeading: _viewModel.important
+                    ? reducedTitleBookmark()
+                    : null,
+                headerMetadataTrailing: _viewModel.isLocked
+                    ? reducedTitleLock()
+                    : null,
                 titleController: _titleController,
                 titleFocusNode: _titleFocus,
                 titleHint: AppText.tr('title_here'),
@@ -1007,7 +1025,9 @@ class _EditNoteState extends State<EditNote>
                           leading: Wrap(
                             alignment: WrapAlignment.start,
                             crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8.0,
+                            // Tighter than the shared row gap: the lock, the
+                            // date and the count read as one sentence.
+                            spacing: 4.0,
                             runSpacing: 4.0,
                             children: [
                               if (_viewModel.isLocked) ...[
@@ -1030,12 +1050,15 @@ class _EditNoteState extends State<EditNote>
                             ],
                           ),
                           trailing: <Widget>[
-                            if (_viewModel.isTask && _viewModel.important)
+                            // The same mark on a note and on a task:
+                            // outlined, in the metadata's own ink, and a touch
+                            // larger than the counts beside it.
+                            if (_viewModel.important)
                               metadataGlyph(
                                 context,
                                 Symbols.bookmark,
-                                fill: 1,
-                                color: tanoAmber,
+                                fill: 0,
+                                size: 16.0,
                               ),
 
                             if (!_viewModel.isTask && contentChecklistCount > 0)
@@ -1065,13 +1088,14 @@ class _EditNoteState extends State<EditNote>
                     SliverToBoxAdapter(
                       child: ManageableCover(
                         name: _viewModel.coverImage!,
-                        height: 160,
-                        fit: BoxFit.cover,
+                        borderRadius: coverRadius,
                         lightDimAlpha: 0.0,
                         // Tighter gap above, under the metadata line.
-                        padding: const EdgeInsets.only(
+                        padding: EdgeInsets.only(
                           top: appPaddingSmall,
                           bottom: appPaddingMedium,
+                          left: coverInset,
+                          right: coverInset,
                         ),
                         onRemove: _removeCoverImage,
                       ),

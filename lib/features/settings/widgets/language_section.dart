@@ -14,6 +14,11 @@ class LanguageSection extends StatelessWidget {
       listenable: LocaleController.instance,
       builder: (context, _) {
         final String language = LocaleController.instance.language;
+        // The footer's underlines borrow the section border, exactly like the
+        // card outline around them.
+        final Color underline = cardBorderColor(
+          Theme.of(context).brightness == Brightness.dark,
+        );
 
         return SettingsGroup(
           title: AppText.tr('menu_language'),
@@ -49,10 +54,12 @@ class LanguageSection extends StatelessWidget {
                     const TextSpan(text: 'Misy '),
                     TextSpan(
                       text: 'fiteny',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: tanoAmber,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
+                        decorationColor: underline,
+                        decorationThickness: 1.0,
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
@@ -68,10 +75,12 @@ class LanguageSection extends StatelessWidget {
                     const TextSpan(text: ' na '),
                     TextSpan(
                       text: 'voambolana',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: tanoAmber,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
+                        decorationColor: underline,
+                        decorationThickness: 1.0,
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {

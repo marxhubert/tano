@@ -96,10 +96,26 @@ class _ThemePreview extends StatelessWidget {
             height: 120,
             decoration: BoxDecoration(
               color: screenBg,
-              borderRadius: BorderRadius.circular(isSelected ? 13.0 : 12.0),
+              // The frame never moves: selecting only changes colours, and the
+              // chosen mock earns a halo drawn outside its box.
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: isSelected
+                  ? <BoxShadow>[
+                      BoxShadow(
+                        color: tanoAmber.withValues(alpha: 0.28),
+                      ),
+                    ]
+                  : null,
+            ),
+            // The border sits above the child: painted behind, the teal top bar
+            // swallowed its top edge and the two top corners.
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
               border: Border.all(
-                color: isSelected ? tanoAmber : paperRuleColor(context),
-                width: isSelected ? 2.0 : 1.0,
+                // The unselected outline uses the section border colour, so the
+                // mock and the card around it share one rule.
+                color: isSelected ? tanoAmber : cardBorderColor(isDark),
+                width: 1.0,
               ),
             ),
             clipBehavior: Clip.antiAlias,
@@ -139,9 +155,9 @@ class _ThemePreview extends StatelessWidget {
                 Positioned.fill(
                   top: 20,
                   child: Padding(
-                    padding: isSelected
-                        ? const EdgeInsets.all(3.0)
-                        : const EdgeInsets.all(4.0),
+                    // Constant, unlike the selection: the little cards never
+                    // slide when the choice changes.
+                    padding: const EdgeInsets.all(4.0),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 4,
@@ -175,10 +191,11 @@ class _ThemePreview extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
+            // Normal in both states: a bold label would widen the column and
+            // nudge the whole row sideways.
             style: TextStyle(
               fontSize: TanoText.listTitle,
               color: primaryTextColor(context),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           const SizedBox(height: 6),

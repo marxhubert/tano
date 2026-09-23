@@ -349,8 +349,8 @@ class HomeState extends State<Home> with RouteAware {
     return AppText.tr('delete_note');
   }
 
-  /// Prompts for a folder name and creates the folder. Empty names fall back
-  /// to "Folder X" inside the view model.
+  /// Prompts for a folder name and creates it. The prompt keeps its save action
+  /// disabled until the field holds a name, so no blank folder can be created.
   bool _isAddingFolder = false;
 
   Future<void> _addFolder() async {
@@ -370,6 +370,7 @@ class HomeState extends State<Home> with RouteAware {
       title: AppText.tr('add_folder'),
       hint: AppText.tr('folder_name'),
       maxLength: 54,
+      requireText: true,
     );
 
     if (name == null || !mounted) return;
@@ -417,16 +418,6 @@ class HomeState extends State<Home> with RouteAware {
           ),
         );
       }
-      if (_viewModel.isFilterHidingAll) {
-        return SliverFillRemaining(
-          hasScrollBody: false,
-          child: emptyState(
-            context,
-            _viewModel.documentFilter.emptyLabel,
-            image: EmptyArt.notFound,
-          ),
-        );
-      }
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
@@ -437,16 +428,6 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Widget _notesSliver(List<Note> notes, String viewLayout) {
-    if (notes.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(
-          context,
-          _viewModel.documentFilter.emptyLabel,
-          image: EmptyArt.notFound,
-        ),
-      );
-    }
     switch (viewLayout) {
       case 'gridlist':
         return NoteGridView(
@@ -498,8 +479,13 @@ class HomeState extends State<Home> with RouteAware {
         // title. Only the notes group gets one, styled like the page title.
         // Folders stay a grid whatever layout the documents use.
         FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
-        const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
-        ...<Widget>[_notesSectionHeader(), _notesSliver(notes, viewLayout)],
+        // An empty docs group shows nothing at all: no spacer, no tabs, no
+        // empty-state paragraph.
+        if (_viewModel.hasDocs) ...<Widget>[
+          const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+          _notesSectionHeader(),
+          _notesSliver(notes, viewLayout),
+        ],
       ],
     );
   }
@@ -565,11 +551,15 @@ class HomeState extends State<Home> with RouteAware {
       return <Widget>[CancelButton(onPressed: _exitSearchMode)];
     }
     return <Widget>[
-      IconButton(
-        icon: const Icon(Symbols.document_search),
-        tooltip: AppText.tr('search'),
-        onPressed: _enterSearchMode,
-      ),
+      // Search earns its place from the third searchable document: below that
+      // there is nothing the list could not show at a glance. Locked notes do
+      // not count, search never reaches them.
+      if (_viewModel.searchableDocsCount > 2)
+        IconButton(
+          icon: const Icon(Symbols.document_search),
+          tooltip: AppText.tr('search'),
+          onPressed: _enterSearchMode,
+        ),
       const ThemeToggleButton(),
       _buildAdaptiveMenu(),
     ];
@@ -605,7 +595,8 @@ class HomeState extends State<Home> with RouteAware {
           titleWidget:
               !_showSearchHistory &&
                   !_viewModel.hasFolders &&
-                  !_viewModel.hasSearchQuery
+                  !_viewModel.hasSearchQuery &&
+                  _viewModel.hasDocs
               ? _documentFilterControl()
               : null,
           headerCrossAxisAlignment: CrossAxisAlignment.center,

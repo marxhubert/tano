@@ -1,6 +1,7 @@
 import 'package:tano/features/premium/premium_page.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -34,6 +35,11 @@ class _AboutPageState extends State<AboutPage>
   bool _isCheckingUpdate = false;
   late final AnimationController _rotationController;
 
+  /// Opens the author's page from the copyright. One recognizer for the page's
+  /// life; disposed with it.
+  late final TapGestureRecognizer _authorTap = TapGestureRecognizer()
+    ..onTap = () => _launchUrl(AppConfig.authorUrl);
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +52,7 @@ class _AboutPageState extends State<AboutPage>
 
   @override
   void dispose() {
+    _authorTap.dispose();
     _rotationController.dispose();
     super.dispose();
   }
@@ -159,7 +166,7 @@ class _AboutPageState extends State<AboutPage>
                             : 'Version ${info.version} (${info.buildNumber})',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: mutedTextColor(context),
+                          color: amberColor(context),
                           fontSize: TanoText.label,
                         ),
                       ),
@@ -176,13 +183,17 @@ class _AboutPageState extends State<AboutPage>
                         child: Icon(
                           Symbols.update,
                           size: 16.0,
-                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                          color: _isCheckingUpdate
+                              ? tanoTeal
+                              : amberColor(context),
                         ),
                       ),
                       label: Text(
                         AppText.tr('option_update'),
                         style: TextStyle(
-                          color: _isCheckingUpdate ? tanoTeal : Colors.grey,
+                          color: _isCheckingUpdate
+                              ? tanoTeal
+                              : amberColor(context),
                           fontSize: TanoText.label,
                         ),
                       ),
@@ -397,14 +408,28 @@ class _AboutPageState extends State<AboutPage>
               bottom: sectionGap,
             ),
             alignment: Alignment.bottomCenter,
-            child: Text(
-              // A build that names no author shows the year alone.
-              AppConfig.authorName.isEmpty
-                  ? '© ${AppConfig.year}'
-                  : '© ${AppConfig.year}, ${AppConfig.authorName}',
-              style: TextStyle(
-                color: mutedTextColor(context),
-                fontSize: TanoText.tiny,
+            child: Text.rich(
+              TextSpan(
+                style: TextStyle(
+                  color: mutedTextColor(context),
+                  fontSize: TanoText.tiny,
+                ),
+                children: <InlineSpan>[
+                  // A build that names no author shows the year alone.
+                  if (AppConfig.authorName.isEmpty)
+                    TextSpan(text: '© ${AppConfig.year}')
+                  else ...<InlineSpan>[
+                    TextSpan(text: '© ${AppConfig.year}, '),
+                    // The name is a link only when the build set one; its style
+                    // never changes.
+                    TextSpan(
+                      text: AppConfig.authorName,
+                      recognizer: AppConfig.authorUrl.isEmpty
+                          ? null
+                          : _authorTap,
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

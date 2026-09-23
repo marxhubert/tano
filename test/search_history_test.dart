@@ -24,6 +24,13 @@ class _InMemoryNotesRepository implements NotesRepository {
       content: 'Du pain',
       date: '2026-08-02 10:00:00.000',
     ),
+    // A third searchable doc: the app bar only offers search from the third.
+    Note(
+      id: '3',
+      title: 'Travaux',
+      content: 'La peinture',
+      date: '2026-08-03 10:00:00.000',
+    ),
   ];
 
   @override

@@ -19,6 +19,7 @@ class ManageableCover extends StatefulWidget {
     this.fit = BoxFit.cover,
     this.padding = const EdgeInsets.symmetric(vertical: appPaddingMedium),
     this.lightDimAlpha = 0.12,
+    this.borderRadius,
   });
 
   /// Stored cover name.
@@ -40,6 +41,10 @@ class ManageableCover extends StatefulWidget {
 
   /// Dim applied in the light theme (the dark theme always dims at 0.3).
   final double lightDimAlpha;
+
+  /// Rounds the whole cover, rules and remove button included. Left null (or
+  /// zero) when the cover bleeds to the screen's edges.
+  final BorderRadiusGeometry? borderRadius;
 
   @override
   State<ManageableCover> createState() => _ManageableCoverState();
@@ -90,74 +95,87 @@ class _ManageableCoverState extends State<ManageableCover> {
           // Long press reveals the remove button, like a note's cover.
           onLongPress: () =>
               setState(() => _showRemoveButton = !_showRemoveButton),
-          child: Stack(
-            children: <Widget>[
-              if (widget.height == null)
-                image
-              else
-                SizedBox(
-                  height: widget.height,
-                  width: double.infinity,
-                  child: image,
-                ),
-              // Top and bottom rules, like the card border.
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: borderColor, width: borderWidth),
-                        bottom: BorderSide(
-                          color: borderColor,
-                          width: borderWidth,
+          child: _rounded(
+            Stack(
+              children: <Widget>[
+                if (widget.height == null)
+                  image
+                else
+                  SizedBox(
+                    height: widget.height,
+                    width: double.infinity,
+                    child: image,
+                  ),
+                // Top and bottom rules, like the card border.
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: borderColor,
+                            width: borderWidth,
+                          ),
+                          bottom: BorderSide(
+                            color: borderColor,
+                            width: borderWidth,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (_corrupted)
-                Positioned.fill(
-                  child: Center(
-                    child: Text(
-                      AppText.tr('corrupted_image'),
-                      style: TextStyle(
-                        color: mutedTextColor(context),
-                        fontSize: TanoText.label,
+                if (_corrupted)
+                  Positioned.fill(
+                    child: Center(
+                      child: Text(
+                        AppText.tr('corrupted_image'),
+                        style: TextStyle(
+                          color: mutedTextColor(context),
+                          fontSize: TanoText.label,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (_corrupted || _showRemoveButton)
-                Positioned(
-                  top: 8.0,
-                  right: 8.0,
-                  child: GestureDetector(
-                    onTap: _confirmRemove,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4.0,
-                            offset: Offset(0.0, 2.0),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Symbols.cancel,
-                        color: Colors.red,
-                        size: 24.0,
+                if (_corrupted || _showRemoveButton)
+                  Positioned(
+                    top: 8.0,
+                    right: 8.0,
+                    child: GestureDetector(
+                      onTap: _confirmRemove,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4.0,
+                              offset: Offset(0.0, 2.0),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Symbols.cancel,
+                          color: Colors.red,
+                          size: 24.0,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// Rounds the cover when it is inset. A full-bleed cover keeps its square
+  /// corners and skips the clip layer.
+  Widget _rounded(Widget child) {
+    final BorderRadiusGeometry? radius = widget.borderRadius;
+    if (radius == null) return child;
+    return ClipRRect(borderRadius: radius, child: child);
   }
 }

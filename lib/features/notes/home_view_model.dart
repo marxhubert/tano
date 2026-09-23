@@ -53,9 +53,18 @@ class HomeViewModel extends ChangeNotifier {
   /// are then simply empty.
   final FoldersRepository? _foldersRepository;
 
-  DocumentFilter documentFilter = DocumentFilter.all;
+  DocumentFilter _documentFilter = DocumentFilter.all;
+
+  /// The filter actually applied. A kind with nothing left to show falls back
+  /// to every document, so a preference the tab no longer offers never blanks
+  /// the list.
+  DocumentFilter get documentFilter =>
+      _documentFilter != DocumentFilter.all && countFor(_documentFilter) == 0
+      ? DocumentFilter.all
+      : _documentFilter;
+
   void setDocumentFilter(DocumentFilter filter) {
-    documentFilter = filter;
+    _documentFilter = filter;
     _selection.exit();
     notifyListeners();
   }
@@ -84,13 +93,15 @@ class HomeViewModel extends ChangeNotifier {
   bool get hasFolders => folders.isNotEmpty;
   int get notesCount => _visibleNotes().length;
 
-  /// True when the active filter hides a source that is not empty: the list
-  /// then names what it looked for, rather than reading as blank.
-  bool get isFilterHidingAll {
-    final List<Note> source = hasSearchQuery
-        ? (_searchResults ?? <Note>[])
-        : _unfiledNotes();
-    return source.isNotEmpty && _visibleNotes().isEmpty;
+  /// True when the page holds at least one document, the active kind filter
+  /// aside: an empty docs group hides its tabs.
+  bool get hasDocs => _unfiledNotes().isNotEmpty;
+
+  /// Documents a search from Home could reach: every note, locked ones and the
+  /// ones inside a locked folder left out, because search never considers them.
+  int get searchableDocsCount {
+    final NoteAccessPolicy policy = NoteAccessPolicy(_folders);
+    return _allNotes.where(policy.isSearchable).length;
   }
 
   int get foldersCount => folders.length;
@@ -113,7 +124,7 @@ class HomeViewModel extends ChangeNotifier {
   String get pageTitleKey {
     if (hasSearchQuery) return 'search_results';
     if (hasFolders) return 'my_folders';
-    return 'all_notes';
+    return 'all_docs';
   }
 
   /// Whether any selected note or folder is locked.
@@ -396,15 +407,12 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Creates a folder. An empty [name] falls back to "Folder X".
+  /// Creates a folder. The page only submits a non-blank [name]: there is no
+  /// "Folder X" fallback any more.
   Future<Folder> addFolder(String name) async {
-    final String trimmed = name.trim();
-    final String folderName = trimmed.isNotEmpty
-        ? trimmed
-        : await _foldersRepository?.nextFolderName() ?? 'Folder 1';
     final Folder folder = Folder(
       id: const Uuid().v4(),
-      name: folderName,
+      name: name.trim(),
       date: DateTime.now().toString(),
     );
     await _foldersRepository?.upsertFolder(folder);

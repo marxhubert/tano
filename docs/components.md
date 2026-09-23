@@ -10,7 +10,9 @@ present outside Home. App bars allow at most three actions; Cancel is the text-a
 exception. Hide the theme toggle when editing actions occupy those slots. Titles
 collapse with scrolling and handle long content without overflow. All routes share
 the ruled hero paper; category colors tint cards only. `SectionTitleLine` and `MetadataLine` own header
-text and metadata rather than duplicating ad-hoc Rows.
+text and metadata rather than duplicating ad-hoc Rows. When a title is reduced to the
+app bar its flags read bookmark + title + lock (`headerMetadataLeading` /
+`headerMetadataTrailing`); the body title line keeps its own right-hand metadata.
 
 ## FAB
 
@@ -31,8 +33,10 @@ shell and type-specific content. Types belong to the domain (`EntityKind`). Task
 
 Cards use paper surfaces, radius 8, warm 1px borders and a subtle shadow.
 List heights are compact 100 and normal 112, adjusted for text scaling. Grid covers occupy the
-upper half; list covers occupy the left third. Shared markers represent selection,
-bookmark and lock. Pinning was removed; bookmarks sort first.
+upper half; list covers occupy the left third. A grid cover also earns the kind's
+corner watermark, where a list cover leaves no room for it, and a 1px rule closes the
+cover where it meets the content (bottom in the grid, right in the list). Shared markers
+represent selection, bookmark and lock. Pinning was removed; bookmarks sort first.
 
 Locked cards share a restricted template and inset dotted contour. Grid titles allow
 three lines, list titles two. Insets and inner radii follow the outer-radius-minus-
@@ -41,10 +45,11 @@ leak locked data. Image errors use a neutral placeholder.
 
 ## Covers and settings
 
-`ManageableCover` is shared by folders/editor and uses `CoverImage`. Long press exposes
-remove with confirmation. Covers span full width with shared border rules. Folders
-use height 160 / BoxFit.cover; Note and Task editors also use height 160 / BoxFit.cover, with
-no light-theme dim. Covers decode in memory, not plaintext cache files.
+`ManageableCover` gives the editor's note/task cover its affordances: long press
+exposes remove with confirmation. The cover keeps its own aspect ratio; a phone in
+portrait lets it bleed to both screen edges, while every other window insets it with
+the content and rounds its corners. It keeps the shared top/bottom rules and, in the
+editor, no light-theme dim. Covers decode in memory, not plaintext cache files.
 
 Settings groups have a title, option rows and footer (up to three lines).
 Premium opens an information page while billing is pending, not a fake purchase flow.

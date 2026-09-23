@@ -400,6 +400,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Future<void> _deleteSelected() async {
+    // A locked note is only deleted from inside, once opened: the list never
+    // removes one, exactly like Home.
+    if (_notes.any(
+      (Note note) => _selection.contains(note.id) && note.isLocked,
+    )) {
+      showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+      return;
+    }
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: _deleteActionTitle(),
@@ -492,9 +500,22 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   int _countFor(DocumentFilter filter) =>
       _filterSource().where(filter.matches).length;
 
+  /// Documents a search inside this folder could reach: its notes, locked ones
+  /// left out, because search never considers them.
+  int get _searchableDocCount =>
+      _notes.where((Note note) => !note.isLocked).length;
+
+  /// The filter actually applied. A kind with nothing left to show falls back
+  /// to every document, so a preference the tab no longer offers never blanks
+  /// the list.
+  DocumentFilter get _effectiveDocumentFilter =>
+      _documentFilter != DocumentFilter.all && _countFor(_documentFilter) == 0
+      ? DocumentFilter.all
+      : _documentFilter;
+
   /// Notes shown: the folder content, filtered by the search and the kind.
   List<Note> get _visibleNotes =>
-      _filterSource().where(_documentFilter.matches).toList();
+      _filterSource().where(_effectiveDocumentFilter.matches).toList();
 
   /// True once the user has actually typed in the search field: only then
   /// does the page switch to the results presentation.
@@ -508,10 +529,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   );
 
   /// The kind tags step aside while a search is on screen, exactly as they do
-  /// on Home. A selection keeps them: its sentence is printed there.
+  /// on Home, and an empty folder has nothing to tag. A selection keeps them:
+  /// its sentence is printed there.
   bool get _showFilterTags =>
-      _selection.isActive ||
-      (!_showSearchHistory && _searchQuery.trim().isEmpty);
+      _notes.isNotEmpty &&
+      (_selection.isActive ||
+          (!_showSearchHistory && _searchQuery.trim().isEmpty));
 
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
@@ -554,10 +577,27 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _folderFlags(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
+      if (_folder.isLocked)
+        // The lock reads exactly like the bookmark: same size, same outline,
+        // same amber.
+        metadataGlyph(
+          context,
+          Symbols.lock,
+          color: tanoAmber,
+          fill: 0,
+          size: 18.0,
+        ),
       if (_folder.isLocked && _folder.important) const SizedBox(width: 8),
       if (_folder.important)
-        metadataGlyph(context, Symbols.bookmark, color: tanoAmber, fill: 1),
+        // Bigger and outlined on the title line, so the folder's own mark
+        // reads at a glance next to the lock.
+        metadataGlyph(
+          context,
+          Symbols.bookmark,
+          color: tanoAmber,
+          fill: 0,
+          size: 20.0,
+        ),
     ],
   );
 
@@ -595,6 +635,17 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           headerMetadataWidget: _showSearchHistory
               ? clearSearchHistoryButton(context)
               : (!_resultsVisible ? _folderFlags(context) : null),
+          // On the reduced title the order is the other way round: the bookmark
+          // leads, the title follows, the lock closes the line.
+          headerMetadataLeading: _showSearchHistory
+              ? clearSearchHistoryButton(context)
+              : (!_resultsVisible && _folder.important
+                    ? reducedTitleBookmark()
+                    : null),
+          headerMetadataTrailing:
+              !_showSearchHistory && !_resultsVisible && _folder.isLocked
+              ? reducedTitleLock()
+              : null,
           // Nothing but the illustration: it must hold its place.
           freezeBody: !_loading && _visibleNotes.isEmpty,
           titleWidget: _isEditingTitle
@@ -631,11 +682,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
               : _isSearchMode
               ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
               : <Widget>[
-                  IconButton(
-                    icon: const Icon(Symbols.document_search),
-                    tooltip: AppText.tr('search'),
-                    onPressed: _enterSearchMode,
-                  ),
+                  // Search earns its place from the second searchable note:
+                  // locked notes do not count, search never reaches them.
+                  if (_searchableDocCount > 1)
+                    IconButton(
+                      icon: const Icon(Symbols.document_search),
+                      tooltip: AppText.tr('search'),
+                      onPressed: _enterSearchMode,
+                    ),
                   const ThemeToggleButton(),
                   // The same menu as Home: a folder adds a note from its FAB, so
                   // the app bar no longer carries an "add note" action.
@@ -711,7 +765,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                   ),
                   crossAxisAlignment: CrossAxisAlignment.center,
                   titleWidget: DocumentFilterControl(
-                    value: _documentFilter,
+                    value: _effectiveDocumentFilter,
                     countOf: _countFor,
                     // Selecting something replaces the tags with the sentence.
                     selectionLabel: _selection.isActive
@@ -757,21 +811,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _buildNotes() {
     final List<Note> notes = _visibleNotes;
     if (notes.isEmpty) {
-      // A filter with nothing to show says what it looked for; a folder that
-      // simply holds nothing keeps its own words.
-      final bool filterHidesAll = _notes.isNotEmpty && !_isSearchMode;
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(
           context,
           _isSearchMode
               ? AppText.tr('no_note_found')
-              : (filterHidesAll
-                    ? _documentFilter.emptyLabel
-                    : AppText.tr('folder_empty')),
-          image: _isSearchMode
-              ? EmptyArt.search
-              : (filterHidesAll ? EmptyArt.notFound : EmptyArt.folder),
+              : AppText.tr('folder_empty'),
+          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
         ),
       );
     }

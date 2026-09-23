@@ -8,7 +8,6 @@ import 'package:tano/features/notes/home_page.dart';
 import 'package:tano/features/onboarding/onboarding_page.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/features/settings/settings_page.dart';
-import 'package:tano/features/lab/lab_page.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
@@ -20,6 +19,7 @@ import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/shared/widgets/resize_curtain.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/core/services/crash_reports.dart';
 
@@ -85,7 +85,11 @@ class Tano extends StatelessWidget {
                   system.scale(1.0) * TextScaleController.instance.scale,
                 ),
               ),
-              child: PrivacyGuard(child: child ?? const SizedBox.shrink()),
+              // The curtain hides the stretched frames the engine paints
+              // while the window is still rotating.
+              child: ResizeCurtain(
+                child: PrivacyGuard(child: child ?? const SizedBox.shrink()),
+              ),
             );
           },
           navigatorObservers: <NavigatorObserver>[routeObserver],
@@ -98,7 +102,6 @@ class Tano extends StatelessWidget {
             '/home': (BuildContext context) => const Home(),
             '/settings': (BuildContext context) => const SettingsPage(),
             '/trash': (BuildContext context) => const TrashPage(),
-            '/lab': (BuildContext context) => const LabPage(),
           },
         );
       },

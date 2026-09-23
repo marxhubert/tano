@@ -37,6 +37,10 @@ class AppConfig {
   /// Author e-mail address. Empty when the build sets none.
   static const String authorEmail = String.fromEnvironment('AUTHOR_EMAIL');
 
+  /// The author's page, opened from the copyright line. Empty when the build
+  /// sets none.
+  static const String authorUrl = String.fromEnvironment('AUTHOR_URL');
+
   /// The author's GitHub account. The sponsorship page is derived from it.
   static const String githubAccount = String.fromEnvironment('GITHUB_ACCOUNT');
 

@@ -5,6 +5,7 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 
 class _FakeRepo implements NotesRepository, FoldersRepository {
   _FakeRepo({List<Note>? notes, List<Folder>? folders})
@@ -96,15 +97,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
-  @override
-  Future<String> nextFolderName() async {
-    final Set<String> names = folders.map((Folder f) => f.name).toSet();
-    int i = 1;
-    while (names.contains('Folder $i')) {
-      i++;
-    }
-    return 'Folder $i';
-  }
 }
 
 Note _note({
@@ -134,16 +126,6 @@ HomeViewModel _vm(_FakeRepo repo) => HomeViewModel(
 
 void main() {
   group('folder naming', () {
-    test('empty name falls back to the next "Folder X"', () async {
-      final _FakeRepo repo = _FakeRepo();
-      final HomeViewModel vm = _vm(repo);
-      await vm.addFolder('');
-      expect(vm.folders.single.name, 'Folder 1');
-
-      await vm.addFolder('   ');
-      expect(vm.folders.map((Folder f) => f.name), containsAll(<String>['Folder 1', 'Folder 2']));
-    });
-
     test('a provided name is used as-is', () async {
       final _FakeRepo repo = _FakeRepo();
       final HomeViewModel vm = _vm(repo);
@@ -169,11 +151,11 @@ void main() {
       expect(vm.noteCountIn('f1'), 1);
     });
 
-    test('page title stays "all_notes" without folders', () async {
+    test('page title is "all_docs" without folders', () async {
       final _FakeRepo repo = _FakeRepo(notes: <Note>[_note()]);
       final HomeViewModel vm = _vm(repo);
       expect(vm.hasFolders, isFalse);
-      expect(vm.pageTitleKey, 'all_notes');
+      expect(vm.pageTitleKey, 'all_docs');
     });
 
     test('a bookmarked folder stays first in its group', () async {
@@ -206,6 +188,18 @@ void main() {
       expect(vm.notes.map((Note n) => n.id), containsAll(<String>['n1', 'n3']));
       expect(vm.notes.map((Note n) => n.id), isNot(contains('n2')));
       expect(vm.pageTitleKey, 'search_results');
+    });
+  });
+
+  group('document filter', () {
+    test('a kind with nothing to show falls back to every document', () async {
+      final _FakeRepo repo = _FakeRepo(notes: <Note>[_note()]);
+      final HomeViewModel vm = _vm(repo);
+
+      vm.setDocumentFilter(DocumentFilter.tasks);
+
+      expect(vm.documentFilter, DocumentFilter.all);
+      expect(vm.notes, hasLength(1));
     });
   });
 

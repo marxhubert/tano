@@ -40,8 +40,9 @@ moving, restoring and importing preserve the discriminator.
 A separate description field appears after the cover and before the checklist. It
 is limited to 500 characters in the editor, including link markup. It is included
 in save, undo/redo, global search and import/export, but never counts as a checklist
-item. Note and Task covers are cropped to 160 logical pixels high, like folder
-covers. Inline note links display only their label in the editor text font. FAB menus
+item. Note and Task covers keep their own aspect ratio at the content's width; a
+phone in portrait lets them bleed to both screen edges. Inline note links display
+only their label in the editor text font. FAB menus
 keep the keyboard open and scroll within the remaining viewport.
 
 Checklist rows use the existing `- [ ] text` / `- [x] text` representation. There is
@@ -92,7 +93,8 @@ Folder regressions include descriptions in folder-scoped search.
 
 Home and folders offer every document, the notes and the tasks through one
 segmented control: each segment keeps its label and its own count, and the active
-one is filled with the accent. Counts reflect visible
+one is filled with the accent. A single kind collapses the control to that kind's
+own label, "13 Notes". Counts reflect visible
 documents. Changing filters clears selection, and Select all respects the active
 filter. Folder flags appear beside the title; its document filter sits below the
 cover when present. Task cards count links in both description and checklist,

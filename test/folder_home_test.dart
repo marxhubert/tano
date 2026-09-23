@@ -18,6 +18,7 @@ import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
@@ -115,9 +116,6 @@ class _Repo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
-
-  @override
-  Future<String> nextFolderName() async => 'Folder 1';
 }
 
 /// Fakes the system credential prompt (no platform channel in tests).
@@ -200,6 +198,38 @@ void main() {
     }
   });
 
+  testWidgets('a single kind collapses the tabs to its own count', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'One',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Two',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Only notes: the tab is a single "2 Notes", not a choice between kinds.
+    expect(find.text('2 Notes', findRichText: true), findsOneWidget);
+    expect(find.textContaining('All (', findRichText: true), findsNothing);
+  });
+
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await LocaleController.instance.init();
@@ -272,11 +302,221 @@ void main() {
     await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Perso');
+    // The save action only enables once the field has a name.
+    await tester.pump();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(repo.folders, hasLength(1));
     expect(repo.folders.single.name, 'Perso');
+  });
+
+  testWidgets('an empty home hides the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(notes: <Note>[], folders: <Folder>[]),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+    // The empty home is titled "All docs" rather than "All notes".
+    expect(find.text('All docs'), findsOneWidget);
+  });
+
+  testWidgets('a home with only folders hides the docs tabs', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // The docs group is empty, so its tabs and the search stay away, even
+    // though the page holds a folder.
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a home with one doc keeps the filter but hides the search', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Free note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a home shows the search from three searchable docs', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'One', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Two', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n3', title: 'Three', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
+  });
+
+  testWidgets('a locked doc does not reach the home search threshold', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'One', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Two', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n3',
+            title: 'Locked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Two searchable docs: the locked third does not tip the count.
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('an empty folder hides the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Vide', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a folder with one doc keeps the filter but hides the search', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a folder shows the search from two searchable docs', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'One',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Two',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n3',
+            title: 'Locked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // Two searchable docs: the locked third does not tip the count.
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
   });
 
   testWidgets('tapping elsewhere folds the home FAB extended bar back to "+"', (
@@ -350,7 +590,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('All (', findRichText: true), findsWidgets);
+    expect(find.text('1 Note', findRichText: true), findsOneWidget);
     expect(_folderCards(), findsNothing);
   });
 
@@ -387,7 +627,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('All (2)', findRichText: true), findsOneWidget);
+    expect(find.text('2 Notes', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -722,25 +962,83 @@ void main() {
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('All (1)', findRichText: true)),
+      find.descendant(
+        of: page,
+        matching: find.text('1 Note', findRichText: true),
+      ),
       findsOneWidget,
     );
     expect(
       find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
       findsOneWidget,
     );
-    // The bookmark is the filled amber variant, at the shared metadata size.
-    final Icon bookmark = tester.widget<Icon>(
-      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
+    // The reduced title's own mark: filled amber, ahead of the name.
+    final Finder mark = find.descendant(
+      of: page,
+      matching: find.byIcon(Symbols.bookmark),
     );
+    final Icon bookmark = tester.widget<Icon>(mark);
     expect(bookmark.fill, 1.0);
     expect(bookmark.color, tanoAmber);
-    expect(bookmark.size, metadataIconSize);
+    // Small and discreet next to the app bar title.
+    expect(bookmark.size, reducedTitleBookmarkSize);
+    expect(
+      tester.getRect(mark).left,
+      lessThan(
+        tester.getRect(
+          find.descendant(of: page, matching: find.text('Perso')),
+        ).left,
+      ),
+    );
     // Not locked, so no lock flag.
     expect(
       find.descendant(of: page, matching: find.byIcon(Symbols.lock)),
       findsNothing,
     );
+  });
+
+  testWidgets('in portrait the folder bookmark stays outlined on the title line', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(
+            id: 'f1',
+            name: 'Perso',
+            date: '2026-01-01 00:00:00.000',
+            important: true,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    final Finder page = find.byType(FolderPage);
+    final Icon bookmark = tester.widget<Icon>(
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
+    );
+    // The body's title line keeps the outlined mark.
+    expect(bookmark.fill, 0.0);
+    expect(bookmark.color, tanoAmber);
   });
 
   testWidgets('without folder flags the count sits next to the title', (
@@ -772,7 +1070,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('All (1)', findRichText: true), findsOneWidget);
+    expect(find.text('1 Note', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -875,6 +1173,13 @@ void main() {
             date: '2026-01-01 00:00:00.000',
             folderId: 'f1',
           ),
+          Note(
+            id: 'n2',
+            title: 'Other',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -961,6 +1266,13 @@ void main() {
           Note(
             id: 'n1',
             title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Other',
             content: 'x',
             date: '2026-01-01 00:00:00.000',
             folderId: 'f1',
@@ -1408,6 +1720,18 @@ void main() {
             content: 'x',
             date: '2026-01-01 00:00:00.000',
           ),
+          Note(
+            id: 'n2',
+            title: 'Beta',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n3',
+            title: 'Gamma',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
         ],
         folders: <Folder>[],
       ),
@@ -1434,7 +1758,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
-    expect(find.textContaining('All (', findRichText: true), findsWidgets);
+    expect(find.text('3 Notes', findRichText: true), findsOneWidget);
     expect(find.text('Results'), findsNothing);
   });
 
@@ -1716,6 +2040,43 @@ void main() {
     await tester.tap(find.text('DELETE'));
     await tester.pumpAndSettle();
     expect(repo.trashed, contains('n1'));
+  });
+
+  testWidgets('a locked note in a folder is never deleted from the list', (
+    tester,
+  ) async {
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(
+          id: 'n1',
+          title: 'Locked',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+          folderId: 'f1',
+          isLocked: true,
+        ),
+      ],
+      folders: <Folder>[
+        Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+      ],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Locked').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.delete));
+    await tester.pumpAndSettle();
+
+    // The list refuses: it names the lock instead, and trashes nothing.
+    expect(find.text(AppText.tr('delete_locked_error')), findsOneWidget);
+    expect(repo.trashed, isEmpty);
   });
 
   testWidgets('cards show the cover except on locked items', (tester) async {

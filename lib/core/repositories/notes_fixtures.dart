@@ -41,7 +41,10 @@ const List<String> _folderNames = <String>[
 ///   are locked (never the empty one), and no bookmarked note is locked;
 /// - 3 to 12 inserted notes and 1 to 3 checklists (each with a title and 6 to
 ///   15 items) on the notes that are not deliberately "empty";
-/// - a 450 to 630 word text on every note.
+/// - a 450 to 630 word text on every note that is not a task;
+/// - a task is a checklist of short rows, never that long note text: 5 to 15
+///   rows, some as many as 40, and one task in three carries a description.
+///   Every row stays far below the 250-character task limit.
 ///
 /// Locks are omitted when the device has no system credential.
 /// The generator uses a fixed seed; pass [now] for reproducible dates too.
@@ -130,23 +133,51 @@ TanoFixtures buildFixtures({required bool canLock, DateTime? now}) {
     plans.add(_plan(random, null, looseSpecs[n], baseDate, plans.length));
   }
 
+  // Three items out of eight are tasks — a 3:5 ratio, so the tasks are 60% of
+  // the notes — without touching the counts or the shape of the fixtures.
   final List<Note> notes = <Note>[
     for (int i = 0; i < plans.length; i++)
-      Note(
-        id: 'fixture-${i + 1}',
-        title: plans[i].title,
-        content: '',
-        date: plans[i].date,
-        important: plans[i].spec.mark,
-        category: plans[i].category,
-        isLocked: canLock && plans[i].spec.lock,
-        folderId: plans[i].folderId,
-      ),
+      if (i % 8 < 3)
+        Task(
+          id: 'fixture-${i + 1}',
+          title: plans[i].title,
+          content: '',
+          date: plans[i].date,
+          important: plans[i].spec.mark,
+          category: plans[i].category,
+          isLocked: canLock && plans[i].spec.lock,
+          folderId: plans[i].folderId,
+        )
+      else
+        Note(
+          id: 'fixture-${i + 1}',
+          title: plans[i].title,
+          content: '',
+          date: plans[i].date,
+          important: plans[i].spec.mark,
+          category: plans[i].category,
+          isLocked: canLock && plans[i].spec.lock,
+          folderId: plans[i].folderId,
+        ),
   ];
 
   // --- Content -------------------------------------------------------------
   for (int i = 0; i < notes.length; i++) {
     final _Spec spec = plans[i].spec;
+
+    // A task is a checklist, never the long note paragraph: its rows stay far
+    // below the 250-character task limit. Some hold a long list, and one in
+    // three carries a description.
+    if (notes[i].isTask) {
+      notes[i] = notes[i].copyWith(
+        content: _generateTaskList(random, empty: spec.empty, index: i),
+        description: !spec.empty && i % 3 == 0
+            ? _taskDescriptions[random.nextInt(_taskDescriptions.length)]
+            : '',
+      );
+      continue;
+    }
+
     final StringBuffer content = StringBuffer(_generateText(random));
 
     if (!spec.empty) {
@@ -256,6 +287,29 @@ String _generateText(Random random) {
   return text[0].toUpperCase() + text.substring(1);
 }
 
+/// A task's own content: one short row per item, each far inside the
+/// 250-character task limit. An "empty" task keeps a couple of rows; every
+/// fifth task is a deliberately long list.
+String _generateTaskList(
+  Random random, {
+  required bool empty,
+  required int index,
+}) {
+  final int items = empty
+      ? 2 + random.nextInt(2)
+      : index % 5 == 0
+      ? 26 + random.nextInt(15)
+      : 5 + random.nextInt(11);
+  final StringBuffer buffer = StringBuffer();
+  for (int it = 0; it < items; it++) {
+    if (it > 0) buffer.write('\n');
+    final String verb = _taskVerbs[random.nextInt(_taskVerbs.length)];
+    final String object = _taskObjects[random.nextInt(_taskObjects.length)];
+    buffer.write('- [${random.nextInt(3) == 0 ? 'x' : ' '}] $verb $object');
+  }
+  return buffer.toString();
+}
+
 /// Flag combination of a generated note.
 class _Spec {
   const _Spec({required this.lock, required this.mark, this.empty = false});
@@ -303,6 +357,33 @@ const List<String> _taskVerbs = <String>[
   'Document',
   'Test',
   'Deploy',
+];
+
+/// Objects the generated task rows act on; short, so every row stays far below
+/// the 250-character task limit.
+const List<String> _taskObjects = <String>[
+  'the brief',
+  'the roadmap',
+  'the budget',
+  'the design',
+  'the copy',
+  'the specs',
+  'the release notes',
+  'the feedback',
+  'the backlog',
+  'the invoice',
+  'the contract',
+  'the schedule',
+  'the report',
+];
+
+/// Descriptions carried by one generated task in three.
+const List<String> _taskDescriptions = <String>[
+  'Small steps, reviewed at the end of the week.',
+  'Everything here fits the current sprint.',
+  'Check the details before the next review.',
+  'A quick pass through the routine.',
+  'Keep the list short and finish one row at a time.',
 ];
 
 const List<String> _words = <String>[

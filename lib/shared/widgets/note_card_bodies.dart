@@ -116,16 +116,16 @@ Widget buildNoteListContent({
         ),
         const SizedBox(height: 4.0),
         Expanded(
-          child: hasCover && note.isTask
-              ? const SizedBox.shrink()
-              : _noteExcerpt(
-                  content: note.isTask
-                      ? TaskContent.preview(note.content)
-                      : note.content,
-                  textColor: textColor,
-                  activeNoteIds: activeNoteIds,
-                  isTask: note.isTask,
-                ),
+          // A checklist keeps its preview even under a cover: the list leaves
+          // it the room a coverless row has.
+          child: _noteExcerpt(
+            content: note.isTask
+                ? TaskContent.preview(note.content)
+                : note.content,
+            textColor: textColor,
+            activeNoteIds: activeNoteIds,
+            isTask: note.isTask,
+          ),
         ),
         NoteCounts(
           content: note.content,
@@ -218,7 +218,8 @@ class NoteCounts extends StatelessWidget {
           if (isImportant) ...<Widget>[
             const Icon(
               Symbols.bookmark,
-              size: cardMetaIconSize,
+              // A touch larger than the counts beside it.
+              size: cardMetaIconSize + 3.0,
               fill: 1.0,
               color: tanoAmber,
             ),

@@ -41,14 +41,16 @@ Color _fabMenuSurface(BuildContext context) =>
 /// tint. A lighter tint here is what left the two teals in the first place.
 Color _fabActiveSurface(BuildContext context) =>
     Theme.of(context).colorScheme.primary;
+/// The bookmark once it is full: solid ink, so it stands off the teal bar —
+/// white on the light theme, black on the dark one. No outline.
 Color _fabImportant(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF603600)
-    : const Color(0xFFFFE0B2);
-Color _fabDestructive(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF8C1D18)
-    : const Color(0xFFFFDAD6);
+    ? Colors.black
+    : Colors.white;
+
+/// A destructive FAB action ("delete", "delete the selection"): the app's red,
+/// softened to the lighter variant so it sits quietly on the teal bars.
+Color _fabDestructive(BuildContext context) => TanoStates.error.dark;
 
 /// The unified FAB that morphs between various states (Home, Search, Selection, Editor).
 class AppFab extends StatefulWidget {
