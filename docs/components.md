@@ -10,7 +10,9 @@ present outside Home. App bars allow at most three actions; Cancel is the text-a
 exception. Hide the theme toggle when editing actions occupy those slots. Titles
 collapse with scrolling and handle long content without overflow. All routes share
 the ruled hero paper; category colors tint cards only. `SectionTitleLine` and `MetadataLine` own header
-text and metadata rather than duplicating ad-hoc Rows.
+text and metadata rather than duplicating ad-hoc Rows. When a title is reduced to the
+app bar its flags read bookmark + title + lock (`headerMetadataLeading` /
+`headerMetadataTrailing`); the body title line keeps its own right-hand metadata.
 
 ## FAB
 

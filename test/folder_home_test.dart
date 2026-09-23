@@ -21,6 +21,7 @@ import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -731,19 +732,73 @@ void main() {
       find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
       findsOneWidget,
     );
-    // The folder's own mark: amber, outlined, and larger than the metadata.
-    final Icon bookmark = tester.widget<Icon>(
-      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
+    // The reduced title's own mark: filled amber, ahead of the name.
+    final Finder mark = find.descendant(
+      of: page,
+      matching: find.byIcon(Symbols.bookmark),
     );
-    expect(bookmark.fill, 0.0);
+    final Icon bookmark = tester.widget<Icon>(mark);
+    expect(bookmark.fill, 1.0);
     expect(bookmark.color, tanoAmber);
-    // Larger than the shared metadata size, whatever the host chrome's own.
-    expect(bookmark.size, greaterThanOrEqualTo(20.0));
+    // Small and discreet next to the app bar title.
+    expect(bookmark.size, reducedTitleBookmarkSize);
+    expect(
+      tester.getRect(mark).left,
+      lessThan(
+        tester.getRect(
+          find.descendant(of: page, matching: find.text('Perso')),
+        ).left,
+      ),
+    );
     // Not locked, so no lock flag.
     expect(
       find.descendant(of: page, matching: find.byIcon(Symbols.lock)),
       findsNothing,
     );
+  });
+
+  testWidgets('in portrait the folder bookmark stays outlined on the title line', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(
+            id: 'f1',
+            name: 'Perso',
+            date: '2026-01-01 00:00:00.000',
+            important: true,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    final Finder page = find.byType(FolderPage);
+    final Icon bookmark = tester.widget<Icon>(
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
+    );
+    // The body's title line keeps the outlined mark.
+    expect(bookmark.fill, 0.0);
+    expect(bookmark.color, tanoAmber);
   });
 
   testWidgets('without folder flags the count sits next to the title', (

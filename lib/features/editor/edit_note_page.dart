@@ -944,6 +944,14 @@ class _EditNoteState extends State<EditNote>
                 title: widget.add
                     ? AppText.tr(_viewModel.isTask ? 'add_task' : 'add_note')
                     : AppText.tr(_viewModel.isTask ? 'edit_task' : 'edit_note'),
+                // The reduced (scrolled) title carries the note's marks, in the
+                // order "bookmark + title + lock".
+                headerMetadataLeading: _viewModel.important
+                    ? reducedTitleBookmark()
+                    : null,
+                headerMetadataTrailing: _viewModel.isLocked
+                    ? reducedTitleLock()
+                    : null,
                 titleController: _titleController,
                 titleFocusNode: _titleFocus,
                 titleHint: AppText.tr('title_here'),
@@ -1007,7 +1015,9 @@ class _EditNoteState extends State<EditNote>
                           leading: Wrap(
                             alignment: WrapAlignment.start,
                             crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8.0,
+                            // Tighter than the shared row gap: the lock, the
+                            // date and the count read as one sentence.
+                            spacing: 4.0,
                             runSpacing: 4.0,
                             children: [
                               if (_viewModel.isLocked) ...[
@@ -1030,12 +1040,15 @@ class _EditNoteState extends State<EditNote>
                             ],
                           ),
                           trailing: <Widget>[
-                            if (_viewModel.isTask && _viewModel.important)
+                            // The same mark on a note and on a task:
+                            // outlined, in the metadata's own ink, and a touch
+                            // larger than the counts beside it.
+                            if (_viewModel.important)
                               metadataGlyph(
                                 context,
                                 Symbols.bookmark,
-                                fill: 1,
-                                color: tanoAmber,
+                                fill: 0,
+                                size: 16.0,
                               ),
 
                             if (!_viewModel.isTask && contentChecklistCount > 0)
