@@ -434,23 +434,31 @@ class _EditNoteState extends State<EditNote>
   Future<bool> _persistSafely(Note note) =>
       _tryStorage(() => _viewModel.persistSavedNote(note));
 
-  Future<void> _saveNote() async {
+  /// Saves the editor, whether it stays open ([popAfter] false, the in-place
+  /// save) or closes ([popAfter] true, the back/save action). The validation
+  /// and the write are shared; only what happens on success differs.
+  Future<void> _save({required bool popAfter}) async {
     _cleanupEmptyChecklists();
-    final Note note = _viewModel.buildNote(
-      title: _titleController.text,
-      content: _contentController.text,
-    );
     if (!_viewModel.isValid(
       title: _titleController.text,
       content: _contentController.text,
     )) {
       showAdaptiveNotice(context, AppText.tr('content_empty'));
-    } else {
-      if (await _persistSafely(note) && mounted) {
-        // The caller reloads; never pop a draft before its write succeeds.
-        Navigator.pop(context);
-      }
+      return;
     }
+    final Note note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (!await _persistSafely(note) || !mounted) return;
+    if (popAfter) {
+      // The caller reloads; never pop a draft before its write succeeds.
+      Navigator.pop(context);
+      return;
+    }
+    // Keep the undo/redo history so the user can still revert to the pre-save
+    // state after saving in place. Rebuild to gray the save button out.
+    setState(() {});
   }
 
   void _deleteNote() {
@@ -600,25 +608,6 @@ class _EditNoteState extends State<EditNote>
     _viewModel.setCoverImage(snapshot.coverImage);
     _getNoteContentLength(snapshot.content);
     setState(() {});
-  }
-
-  Future<void> _save() async {
-    _cleanupEmptyChecklists();
-    if (!_viewModel.isValid(
-      title: _titleController.text,
-      content: _contentController.text,
-    )) {
-      showAdaptiveNotice(context, AppText.tr('content_empty'));
-      return;
-    }
-    final note = _viewModel.buildNote(
-      title: _titleController.text,
-      content: _contentController.text,
-    );
-    if (!await _persistSafely(note)) return;
-    // Keep the undo/redo history so the user can still revert to the
-    // pre-save state after saving in place. Rebuild to gray the save button.
-    if (mounted) setState(() {});
   }
 
   Future<void> _handleLinkTap([LinkTextEditingController? source]) async {
@@ -991,7 +980,9 @@ class _EditNoteState extends State<EditNote>
                         visualDensity: VisualDensity.compact,
                         icon: const Icon(Symbols.save, size: 21.0),
                         tooltip: AppText.tr('save'),
-                        onPressed: isDirty ? _save : null,
+                        onPressed: isDirty
+                            ? () => _save(popAfter: false)
+                            : null,
                       ),
                     ] else
                       const ThemeToggleButton(),
@@ -1266,9 +1257,7 @@ class _EditNoteState extends State<EditNote>
                   onFindPrev: _prevOccurrence,
                   onFindNext: _nextOccurrence,
                   onFindReset: _clearFind,
-                  onSave: _saveNote,
-                  onColorLens:
-                      () {}, // Placeholder for animation triggering if needed
+                  onSave: () => _save(popAfter: true),
                   onColorSelected: (String colorName) async {
                     _cleanupEmptyChecklists();
                     _viewModel.setCategory(colorName);
@@ -1282,8 +1271,6 @@ class _EditNoteState extends State<EditNote>
                       return;
                     }
                   },
-                  onMore:
-                      () {}, // Placeholder for animation triggering if needed
                   onImageSelected: () {
                     _tryStorage(_selectCoverImage);
                     _fabKey.currentState?.closeVerticalMenu();

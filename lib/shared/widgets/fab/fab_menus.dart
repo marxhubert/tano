@@ -381,10 +381,7 @@ mixin _FabMenusMixin on _FabStateMixin {
             _notesLoading ||
             _notesFailed ||
             _availableNotes.isNotEmpty,
-        onTap: () {
-          _toggleVerticalMenu(FabVerticalMenu.link);
-          widget.onLinkSelected?.call();
-        },
+        onTap: () => _toggleVerticalMenu(FabVerticalMenu.link),
       ),
       if (widget.isTaskMode)
         _VerticalMenuItem(
