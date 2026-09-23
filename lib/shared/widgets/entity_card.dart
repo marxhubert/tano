@@ -67,8 +67,9 @@ class EntityCard extends StatelessWidget {
   /// Radius of anything inset by [contentInset]: outer - margin.
   static const double innerRadius = outerRadius - contentInset;
 
-  /// The folder card keeps a watermark; the other kinds dropped theirs. The
-  /// glyph is 24 (its native size) x 3 and bleeds past the right edge.
+  /// A folder always carries a watermark, a grid cover earns one too, and a
+  /// locked card keeps its own. The glyph is 24 (its native size) x 3 and
+  /// bleeds past the right edge.
   static const double watermarkSize = 72.0;
   static const double _folderWatermarkRight = -16.0;
 
@@ -149,10 +150,10 @@ class EntityCard extends StatelessWidget {
                   bottom: isListLayout ? 0.0 : null,
                   width: isListLayout ? coverWidth : null,
                   height: isListLayout ? null : coverHeight,
-                  // Hairline between the cover and the content, like the cover
-                  // rules of the managed cover; drawn on top of the image. It
-                  // faces the content: bottom in the grid (cover on top),
-                  // right in the list (cover on the left).
+                  // Thin rule between the cover and the content, in the card
+                  // border colour; drawn on top of the image. It faces the
+                  // content: bottom in the grid (cover on top), right in the
+                  // list (cover on the left).
                   child: DecoratedBox(
                     position: DecorationPosition.foreground,
                     decoration: BoxDecoration(
@@ -160,13 +161,13 @@ class EntityCard extends StatelessWidget {
                           ? Border(
                               right: BorderSide(
                                 color: cardBorderColor(isDark),
-                                width: 0.5,
+                                width: 1.0,
                               ),
                             )
                           : Border(
                               bottom: BorderSide(
                                 color: cardBorderColor(isDark),
-                                width: 0.5,
+                                width: 1.0,
                               ),
                             ),
                     ),
@@ -174,9 +175,13 @@ class EntityCard extends StatelessWidget {
                   ),
                 ),
               // Folder watermark: the glyph bleeds off the bottom-right corner,
-              // pushed past both edges. The other kinds carry one only while
-              // they are locked, the same way a locked card is closed off.
-              if (kind == EntityKind.folder || isLocked)
+              // pushed past both edges. A cover carries one too, but only in the
+              // grid: a list's cover takes the left third and leaves no room.
+              // The other kinds keep one while they are locked, the same way a
+              // locked card is closed off.
+              if (kind == EntityKind.folder ||
+                  isLocked ||
+                  (showCover && !isListLayout))
                 Positioned(
                   right: _folderWatermarkRight,
                   bottom: -8.0,

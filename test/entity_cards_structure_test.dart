@@ -129,7 +129,9 @@ void main() {
           );
           expect(find.text('x5'), findsOneWidget);
           final checkbox = find.byIcon(Symbols.check_box_outline_blank);
-          expect(checkbox, cover ? findsNothing : findsNWidgets(4));
+          // A grid cover hides the excerpt; a list cover now keeps it, exactly
+          // like a coverless row.
+          expect(checkbox, !list && cover ? findsNothing : findsNWidgets(4));
           if (!cover) {
             expect(
               tester.getTopLeft(checkbox.first).dx,
@@ -318,6 +320,28 @@ void main() {
 
       expect(mark.center.dy, closeTo(counts.center.dy, 1.0));
       expect(mark.left, lessThan(counts.left));
+    });
+  });
+
+  group('cover watermark', () {
+    testWidgets('a grid cover earns the corner watermark, a list one does not', (
+      tester,
+    ) async {
+      final Finder watermark = find.byKey(
+        const ValueKey<String>('entity-card-watermark'),
+      );
+
+      await tester.pumpWidget(_host(_noteCard(_note(coverImage: 'cover.png'))));
+      expect(watermark, findsOneWidget);
+
+      await tester.pumpWidget(
+        _host(
+          _noteCard(_note(coverImage: 'cover.png'), isList: true),
+          width: 300.0,
+          height: 112.0,
+        ),
+      );
+      expect(watermark, findsNothing);
     });
   });
 }

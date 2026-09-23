@@ -33,8 +33,10 @@ shell and type-specific content. Types belong to the domain (`EntityKind`). Task
 
 Cards use paper surfaces, radius 8, warm 1px borders and a subtle shadow.
 List heights are compact 100 and normal 112, adjusted for text scaling. Grid covers occupy the
-upper half; list covers occupy the left third. Shared markers represent selection,
-bookmark and lock. Pinning was removed; bookmarks sort first.
+upper half; list covers occupy the left third. A grid cover also earns the kind's
+corner watermark, where a list cover leaves no room for it, and a 1px rule closes the
+cover where it meets the content (bottom in the grid, right in the list). Shared markers
+represent selection, bookmark and lock. Pinning was removed; bookmarks sort first.
 
 Locked cards share a restricted template and inset dotted contour. Grid titles allow
 three lines, list titles two. Insets and inner radii follow the outer-radius-minus-
