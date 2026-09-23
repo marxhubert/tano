@@ -6,6 +6,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/config/card_sorting.dart';
@@ -148,8 +149,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// IDs of all active (not deleted) notes.
-  Set<String> get activeNoteIds =>
-      _allNotes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
+  Set<String> get activeNoteIds => activeEntityIds(_allNotes);
 
   /// Loads notes and folders from the repository.
   Future<void> load() async {

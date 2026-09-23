@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -51,10 +52,7 @@ class TrashViewModel extends ChangeNotifier {
     _deletedNotes = await notesRepository.loadTrashNotes();
     _deletedFolders = await foldersRepository.loadTrashFolders();
     _activeNotes = await notesRepository.loadNotes();
-    _activeNoteIds = _activeNotes
-        .where((Note note) => !note.isDeleted)
-        .map((Note note) => note.id)
-        .toSet();
+    _activeNoteIds = activeEntityIds(_activeNotes);
     // Newest deleted first, notes and folders sharing the same rule.
     _deletedNotes.sort((a, b) => _newestFirst(a.deletedAt, b.deletedAt));
     _deletedFolders.sort((a, b) => _newestFirst(a.deletedAt, b.deletedAt));

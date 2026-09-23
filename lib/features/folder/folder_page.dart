@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -213,10 +214,7 @@ class _FolderPageState extends State<FolderPage>
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
     if (!mounted) return;
     setState(() {
-      _activeNoteIds = all
-          .where((Note note) => !note.isDeleted)
-          .map((Note note) => note.id)
-          .toSet();
+      _activeNoteIds = activeEntityIds(all);
       _notes = _sorted(
         all.where((Note note) => note.folderId == _folder.id).toList(),
       );

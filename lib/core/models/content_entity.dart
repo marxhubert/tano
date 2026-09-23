@@ -24,6 +24,15 @@ class _UnchangedField {
   const _UnchangedField();
 }
 
+/// The ids of [entities] that are not deleted.
+///
+/// Note links are only styled as active for a target that still exists; Home,
+/// Folder and the trash all needed this same set. Home, Folder and Trash share it.
+Set<String> activeEntityIds(Iterable<ContentEntity> entities) =>
+    entities.where((ContentEntity entity) => !entity.isDeleted).map(
+      (ContentEntity entity) => entity.id,
+    ).toSet();
+
 T? copiedNullable<T>(Object? value, T? previous) =>
     identical(value, unchangedField) ? previous : value as T?;
 
