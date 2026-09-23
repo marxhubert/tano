@@ -12,6 +12,11 @@ test data is disposable.
   and geometry.
 - `EntitySliver` requires a `ContentEntity` and keys every card by id; one
   attachment glyph across cards, the editor and the FAB menu.
+- One `NoteCards` widget for the note grid and list, and one `buildNoteCard`
+  shared by Home and Folder.
+- One `cardTextColor` for the card ink, used by the card and the trash overlay.
+- The editor's two save paths merged into `_save({required bool popAfter})`;
+  the FAB's never-wired `onColorLens`, `onMore` and `onLinkSelected` removed.
 - Removed the repository-level `toggleLock`, which no caller used and which
   bypassed the editor's authentication and feedback flow.
 - Folder search records its query in the shared history, like Home.
@@ -29,7 +34,7 @@ test data is disposable.
 ## Remaining consolidation
 
 - One search-mode controller shared by Home and Folder (selection/search coupling).
-- Unified card factory and shared delete/undo/move command paths.
+- Shared delete/undo/move command paths, and a common `EntityBrowser` scaffold.
 
 ## Completed in the previous consolidation
 
