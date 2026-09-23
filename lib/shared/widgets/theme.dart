@@ -363,13 +363,15 @@ ThemeData tanoTheme(Brightness brightness) {
     dialogTheme: DialogThemeData(
       backgroundColor: card,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(appBorderRadius),
         side: BorderSide(color: rule),
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: card,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(appBorderRadius),
+      ),
     ),
     popupMenuTheme: PopupMenuThemeData(
       color: card,
