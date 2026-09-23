@@ -574,27 +574,27 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
             },
             onReset: _clearSearch,
             onDelete: () async {
-              if (!_viewModel.hasSelection) {
-                // TODO: No action needed for now, maybe show a hint?
-              } else if (_viewModel.hasLockedInSelection) {
+              // The FAB only offers delete with a selection, so the only
+              // refusal left is a locked item.
+              if (_viewModel.hasLockedInSelection) {
                 showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
-              } else {
-                final bool? confirmDeletion = await getConfirmation(
-                  context: context,
-                  actionTitle: _deleteActionTitle(),
-                  action: AppText.tr('delete'),
-                  message: _viewModel.hasFolderInSelection
-                      ? AppText.tr('delete_folder_question', <String, String>{
-                          'count': '${_viewModel.selectedFoldersNoteCount}',
-                        })
-                      : null,
-                );
-                if (confirmDeletion == true) {
-                  await _viewModel.deleteSelected();
-                  await FeedbackController.instance.impact();
-                  if (!mounted) return;
-                  _showUndoSnackBar();
-                }
+                return;
+              }
+              final bool? confirmDeletion = await getConfirmation(
+                context: context,
+                actionTitle: _deleteActionTitle(),
+                action: AppText.tr('delete'),
+                message: _viewModel.hasFolderInSelection
+                    ? AppText.tr('delete_folder_question', <String, String>{
+                        'count': '${_viewModel.selectedFoldersNoteCount}',
+                      })
+                    : null,
+              );
+              if (confirmDeletion == true) {
+                await _viewModel.deleteSelected();
+                await FeedbackController.instance.impact();
+                if (!mounted) return;
+                _showUndoSnackBar();
               }
             },
             onMoveTo: _moveSelectedTo,
