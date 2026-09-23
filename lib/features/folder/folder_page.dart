@@ -492,6 +492,11 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   int _countFor(DocumentFilter filter) =>
       _filterSource().where(filter.matches).length;
 
+  /// Documents a search inside this folder could reach: its notes, locked ones
+  /// left out, because search never considers them.
+  int get _searchableDocCount =>
+      _notes.where((Note note) => !note.isLocked).length;
+
   /// Notes shown: the folder content, filtered by the search and the kind.
   List<Note> get _visibleNotes =>
       _filterSource().where(_documentFilter.matches).toList();
@@ -661,8 +666,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
               : _isSearchMode
               ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
               : <Widget>[
-                  // Nothing to search when the folder holds no note.
-                  if (_notes.isNotEmpty)
+                  // Search earns its place from the second searchable note:
+                  // locked notes do not count, search never reaches them.
+                  if (_searchableDocCount > 1)
                     IconButton(
                       icon: const Icon(Symbols.document_search),
                       tooltip: AppText.tr('search'),

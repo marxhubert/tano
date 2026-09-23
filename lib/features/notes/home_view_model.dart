@@ -84,6 +84,17 @@ class HomeViewModel extends ChangeNotifier {
   bool get hasFolders => folders.isNotEmpty;
   int get notesCount => _visibleNotes().length;
 
+  /// True when the page holds at least one document, the active kind filter
+  /// aside: an empty docs group hides its tabs.
+  bool get hasDocs => _unfiledNotes().isNotEmpty;
+
+  /// Documents a search from Home could reach: every note, locked ones and the
+  /// ones inside a locked folder left out, because search never considers them.
+  int get searchableDocsCount {
+    final NoteAccessPolicy policy = NoteAccessPolicy(_folders);
+    return _allNotes.where(policy.isSearchable).length;
+  }
+
   /// True when the active filter hides a source that is not empty: the list
   /// then names what it looked for, rather than reading as blank.
   bool get isFilterHidingAll {
@@ -113,7 +124,7 @@ class HomeViewModel extends ChangeNotifier {
   String get pageTitleKey {
     if (hasSearchQuery) return 'search_results';
     if (hasFolders) return 'my_folders';
-    return 'all_notes';
+    return 'all_docs';
   }
 
   /// Whether any selected note or folder is locked.

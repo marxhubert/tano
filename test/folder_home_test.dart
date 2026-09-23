@@ -292,9 +292,31 @@ void main() {
 
     expect(find.byType(DocumentFilterControl), findsNothing);
     expect(find.byIcon(Symbols.document_search), findsNothing);
+    // The empty home is titled "All docs" rather than "All notes".
+    expect(find.text('All docs'), findsOneWidget);
   });
 
-  testWidgets('a home with a note keeps the filter and the search action', (
+  testWidgets('a home with only folders hides the docs tabs', (tester) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // The docs group is empty, so its tabs and the search stay away, even
+    // though the page holds a folder.
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a home with one doc keeps the filter but hides the search', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -316,7 +338,56 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a home shows the search from three searchable docs', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'One', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Two', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n3', title: 'Three', content: 'x', date: '2026-01-01 00:00:00.000'),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
     expect(find.byIcon(Symbols.document_search), findsOneWidget);
+  });
+
+  testWidgets('a locked doc does not reach the home search threshold', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(id: 'n1', title: 'One', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(id: 'n2', title: 'Two', content: 'x', date: '2026-01-01 00:00:00.000'),
+          Note(
+            id: 'n3',
+            title: 'Locked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Two searchable docs: the locked third does not tip the count.
+    expect(find.byIcon(Symbols.document_search), findsNothing);
   });
 
   testWidgets('an empty folder hides the filter and the search action', (
@@ -341,7 +412,7 @@ void main() {
     expect(find.byIcon(Symbols.document_search), findsNothing);
   });
 
-  testWidgets('a folder with a note keeps the filter and the search action', (
+  testWidgets('a folder with one doc keeps the filter but hides the search', (
     tester,
   ) async {
     getIt.registerSingleton<NotesRepository>(
@@ -368,6 +439,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a folder shows the search from two searchable docs', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'One',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Two',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n3',
+            title: 'Locked',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+            isLocked: true,
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    // Two searchable docs: the locked third does not tip the count.
     expect(find.byIcon(Symbols.document_search), findsOneWidget);
   });
 
@@ -1025,6 +1141,13 @@ void main() {
             date: '2026-01-01 00:00:00.000',
             folderId: 'f1',
           ),
+          Note(
+            id: 'n2',
+            title: 'Other',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
         ],
         folders: <Folder>[
           Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
@@ -1111,6 +1234,13 @@ void main() {
           Note(
             id: 'n1',
             title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Other',
             content: 'x',
             date: '2026-01-01 00:00:00.000',
             folderId: 'f1',
@@ -1555,6 +1685,18 @@ void main() {
           Note(
             id: 'n1',
             title: 'Alpha',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Beta',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n3',
+            title: 'Gamma',
             content: 'x',
             date: '2026-01-01 00:00:00.000',
           ),

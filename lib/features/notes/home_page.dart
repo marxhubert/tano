@@ -500,7 +500,11 @@ class HomeState extends State<Home> with RouteAware {
         // Folders stay a grid whatever layout the documents use.
         FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
         const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
-        ...<Widget>[_notesSectionHeader(), _notesSliver(notes, viewLayout)],
+        ...<Widget>[
+          // The docs group keeps its tabs only when it holds a document.
+          if (_viewModel.hasDocs) _notesSectionHeader(),
+          _notesSliver(notes, viewLayout),
+        ],
       ],
     );
   }
@@ -566,8 +570,10 @@ class HomeState extends State<Home> with RouteAware {
       return <Widget>[CancelButton(onPressed: _exitSearchMode)];
     }
     return <Widget>[
-      // Nothing to search when the page holds neither a note nor a folder.
-      if (!_isEmptyHome)
+      // Search earns its place from the third searchable document: below that
+      // there is nothing the list could not show at a glance. Locked notes do
+      // not count, search never reaches them.
+      if (_viewModel.searchableDocsCount > 2)
         IconButton(
           icon: const Icon(Symbols.document_search),
           tooltip: AppText.tr('search'),
@@ -609,7 +615,7 @@ class HomeState extends State<Home> with RouteAware {
               !_showSearchHistory &&
                   !_viewModel.hasFolders &&
                   !_viewModel.hasSearchQuery &&
-                  !_isEmptyHome
+                  _viewModel.hasDocs
               ? _documentFilterControl()
               : null,
           headerCrossAxisAlignment: CrossAxisAlignment.center,
