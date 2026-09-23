@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/shared/config/date_format.dart';
-import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
-import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/note_card.dart';
 
 /// Notes as a grid or a list of cards.
 ///
@@ -35,40 +33,14 @@ class NoteCards extends StatelessWidget {
     );
   }
 
-  Widget _card(Note note) {
-    return EntityCard(
-      kind: note.kind,
-      category: note.category,
-      title: note.title,
-      subtitle: formatNoteDate(note.date),
-      coverImage: note.coverImage,
-      isImportant: note.important,
-      isLocked: note.isLocked,
-      isListLayout: isList,
-      isSelected: viewModel.selected.contains(note.id),
-      isInSelectionMode: viewModel.isInSelectionMode,
-      onTap: () {
-        if (viewModel.isInSelectionMode) {
-          viewModel.toggleSelection(note.id);
-        } else {
-          onOpenNote(note);
-        }
-      },
-      onLongPress: () => viewModel.enterSelectionMode(note.id),
-      onSelectionToggle: () => viewModel.toggleSelection(note.id),
-      builder: (context, textColor, hasCover) => isList
-          ? buildNoteListContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: viewModel.activeNoteIds,
-              hasCover: hasCover,
-            )
-          : buildNoteGridContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: viewModel.activeNoteIds,
-              hasCover: hasCover,
-            ),
-    );
-  }
+  Widget _card(Note note) => buildNoteCard(
+    note: note,
+    isList: isList,
+    isSelected: viewModel.selected.contains(note.id),
+    isInSelectionMode: viewModel.isInSelectionMode,
+    activeNoteIds: viewModel.activeNoteIds,
+    onOpen: () => onOpenNote(note),
+    onToggleSelection: () => viewModel.toggleSelection(note.id),
+    onEnterSelection: () => viewModel.enterSelectionMode(note.id),
+  );
 }

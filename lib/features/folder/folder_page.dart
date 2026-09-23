@@ -28,13 +28,11 @@ import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
-import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
-import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -815,41 +813,14 @@ class _FolderPageState extends State<FolderPage>
     );
   }
 
-  Widget _card(Note note, {required bool isList}) {
-    return EntityCard(
-      kind: note.kind,
-      category: note.category,
-      title: note.title,
-      subtitle: formatNoteDate(note.date),
-      coverImage: note.coverImage,
-      isImportant: note.important,
-      isLocked: note.isLocked,
-      isListLayout: isList,
-      isSelected: _selection.contains(note.id),
-      isInSelectionMode: _selection.isActive,
-      onSelectionToggle: () => _toggleSelection(note.id),
-      onLongPress: () => _enterSelection(note.id),
-      onTap: () {
-        if (_selection.isActive) {
-          _toggleSelection(note.id);
-        } else {
-          _openNote(add: false, note: note);
-        }
-      },
-      // Same body as the home page cards.
-      builder: (BuildContext context, Color textColor, bool hasCover) => isList
-          ? buildNoteListContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _activeNoteIds,
-              hasCover: hasCover,
-            )
-          : buildNoteGridContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _activeNoteIds,
-              hasCover: hasCover,
-            ),
-    );
-  }
+  Widget _card(Note note, {required bool isList}) => buildNoteCard(
+    note: note,
+    isList: isList,
+    isSelected: _selection.contains(note.id),
+    isInSelectionMode: _selection.isActive,
+    activeNoteIds: _activeNoteIds,
+    onOpen: () => _openNote(add: false, note: note),
+    onToggleSelection: () => _toggleSelection(note.id),
+    onEnterSelection: () => _enterSelection(note.id),
+  );
 }
