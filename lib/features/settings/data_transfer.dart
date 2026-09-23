@@ -57,11 +57,22 @@ Future<void> exportData(BuildContext context) async {
   passwordController.dispose();
   if (confirmed != true || !context.mounted) return;
 
-  final Uint8List bytes = await ExportService().build(
-    notes: notes,
-    password: encrypted ? password : null,
-    unlockLockedNotes: !encrypted,
-  );
+  final Uint8List bytes;
+  try {
+    bytes = await ExportService().build(
+      notes: notes,
+      password: encrypted ? password : null,
+    );
+  } on ExportException catch (error) {
+    if (context.mounted) {
+      showAdaptiveAlert(
+        context: context,
+        title: AppText.tr('export_failed'),
+        message: error.message,
+      );
+    }
+    return;
+  }
   final String stamp = DateTime.now().toIso8601String().split('T').first;
   await FilePicker.saveFile(
     fileName: 'tanonote-$stamp.tano',
@@ -87,6 +98,12 @@ Future<bool?> _showExportDialog(
     builder: (BuildContext dialogContext, bool isApple) => StatefulBuilder(
       builder: (BuildContext context, StateSetter setDialogState) {
         final bool encrypted = isEncrypted();
+        // A locked note must never land in a cleartext file, so the switch is
+        // frozen on as soon as the selection contains one.
+        void setEncrypted(bool value) => setDialogState(() {
+          onEncryptedChanged(value);
+          onErrorChanged(null);
+        });
         final List<Widget> content = <Widget>[
           if (isApple)
             Row(
@@ -94,10 +111,7 @@ Future<bool?> _showExportDialog(
                 Expanded(child: Text(AppText.tr('export_encrypt'))),
                 CupertinoSwitch(
                   value: encrypted,
-                  onChanged: (bool value) => setDialogState(() {
-                    onEncryptedChanged(value);
-                    onErrorChanged(null);
-                  }),
+                  onChanged: hasLockedNotes ? null : setEncrypted,
                 ),
               ],
             )
@@ -106,10 +120,7 @@ Future<bool?> _showExportDialog(
               contentPadding: EdgeInsets.zero,
               title: Text(AppText.tr('export_encrypt')),
               value: encrypted,
-              onChanged: (bool value) => setDialogState(() {
-                onEncryptedChanged(value);
-                onErrorChanged(null);
-              }),
+              onChanged: hasLockedNotes ? null : setEncrypted,
             ),
           if (encrypted) ...<Widget>[
             if (isApple) ...<Widget>[
@@ -147,18 +158,18 @@ Future<bool?> _showExportDialog(
               AppText.tr('import_clear_warning'),
               style: const TextStyle(fontSize: TanoText.tiny),
             ),
-            if (hasLockedNotes) ...<Widget>[
-              if (!isApple) const SizedBox(height: appPaddingTight),
-              Text(
-                AppText.tr('export_locked_warning'),
-                style: TextStyle(
-                  fontSize: TanoText.tiny,
-                  color: isApple
-                      ? CupertinoColors.systemRed
-                      : TanoStates.error.dark,
-                ),
+          ],
+          if (hasLockedNotes) ...<Widget>[
+            if (!isApple) const SizedBox(height: appPaddingTight),
+            Text(
+              AppText.tr('export_locked_required'),
+              style: TextStyle(
+                fontSize: TanoText.tiny,
+                color: isApple
+                    ? CupertinoColors.systemRed
+                    : TanoStates.error.dark,
               ),
-            ],
+            ),
           ],
         ];
 

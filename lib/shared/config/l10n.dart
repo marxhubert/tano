@@ -181,8 +181,8 @@ class AppText {
     'export_password': 'Password',
     'export_password_hint': '8 characters minimum',
     'password_too_short': 'The password must be at least 8 characters.',
-    'export_locked_warning':
-        'Some notes are locked: a cleartext export will unlock them.',
+    'export_locked_required': 'Locked notes require an encrypted export.',
+    'export_failed': 'Export failed',
     'export_done': 'Export saved.',
     'import_password_title': 'Encrypted export',
     'import_password_message': 'Enter the password of this export.',
@@ -450,8 +450,9 @@ class AppText {
     'export_password': 'Mot de passe',
     'export_password_hint': '8 caractères minimum',
     'password_too_short': 'Le mot de passe doit faire au moins 8 caractères.',
-    'export_locked_warning':
-        'Des notes sont verrouillées : un export en clair les déverrouillera.',
+    'export_locked_required':
+        'Les notes verrouillées exigent un export chiffré.',
+    'export_failed': "Échec de l'export",
     'export_done': 'Export enregistré.',
     'import_password_title': 'Export chiffré',
     'import_password_message': "Saisissez le mot de passe de cet export.",
@@ -720,8 +721,9 @@ class AppText {
     'export_password': 'Teny miafina',
     'export_password_hint': '8 litera farafahakeliny',
     'password_too_short': 'Tokony 8 litera Farafahakeliny ny teny miafina.',
-    'export_locked_warning':
-        'Misy naoty voahidy: ny fanondranana mazava dia hamaha azy ireo.',
+    'export_locked_required':
+        'Mila fanondranana voahidy ny naoty voahidy.',
+    'export_failed': 'Tsy nahomby ny fanondranana',
     'export_done': 'Voatahiry ny fanondranana.',
     'import_password_title': 'Fanondranana voahidy',
     'import_password_message':

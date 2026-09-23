@@ -224,14 +224,11 @@ void main() {
     expect(titles, isNot(contains('Imported a')));
   });
 
-  test('cleartext export unlocks locked notes in the archive', () async {
-    final Uint8List bytes = await exporter().build(
-      notes: <Note>[_note(isLocked: true)],
-      unlockLockedNotes: true,
+  test('cleartext export refuses to include a locked note', () async {
+    expect(
+      () => exporter().build(notes: <Note>[_note(isLocked: true)]),
+      throwsA(isA<ExportException>()),
     );
-    final ImportResult result = await importer().import(bytes);
-    expect(result.added, 1);
-    expect((await repository.loadNotes()).single.isLocked, isFalse);
   });
 
   test(

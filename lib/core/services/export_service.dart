@@ -35,6 +35,16 @@ class Argon2Params {
   );
 }
 
+/// Raised when an export cannot be produced for a safety or format reason.
+class ExportException implements Exception {
+  const ExportException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'ExportException: $message';
+}
+
 class ExportService {
   ExportService({
     AttachmentsStore? attachments,
@@ -53,18 +63,21 @@ class ExportService {
 
   /// Builds the `.tano` bytes for [notes].
   ///
-  /// [unlockLockedNotes] clears the locked flag in the manifest (used by a
-  /// cleartext export). [password] encrypts the whole archive.
+  /// [password] encrypts the whole archive. A cleartext export (no password)
+  /// is refused when [notes] holds a locked note, so protected content never
+  /// reaches an unprotected file.
   Future<Uint8List> build({
     required List<Note> notes,
     String? password,
-    bool unlockLockedNotes = false,
   }) async {
-    final List<Map<String, dynamic>> encoded = notes.map((Note note) {
-      final Map<String, dynamic> json = note.toJson();
-      if (unlockLockedNotes) json['isLocked'] = 0;
-      return json;
-    }).toList();
+    if (password == null && notes.any((Note note) => note.isLocked)) {
+      throw const ExportException(
+        'Locked notes cannot be written to a cleartext export.',
+      );
+    }
+    final List<Map<String, dynamic>> encoded = notes
+        .map((Note note) => note.toJson())
+        .toList();
 
     final Archive archive = Archive();
     archive.addFile(
