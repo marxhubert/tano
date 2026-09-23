@@ -56,6 +56,20 @@ void main() {
       expect(await repository.loadFolders(), isEmpty);
     });
 
+    test('a configured provider with no passphrase fails closed', () async {
+      final SQLiteNotesRepository guarded = SQLiteNotesRepository(
+        databaseFactoryOverride: databaseFactoryFfi,
+        databasePath: '${tempDir.path}/guarded.db',
+        documentsDirectory: () async => tempDir,
+        passwordProvider: () async => null,
+      );
+
+      await expectLater(
+        guarded.loadNotes(),
+        throwsA(isA<StorageUnavailableException>()),
+      );
+    });
+
     test('deleteAllFolders empties the folders, trashed or not', () async {
       await repository.upsertFolder(
         Folder(id: 'f1', name: 'One', date: '2026-01-01 00:00:00.000'),

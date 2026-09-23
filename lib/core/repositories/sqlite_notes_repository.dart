@@ -10,6 +10,18 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
+/// Raised when the encrypted store cannot be opened safely.
+///
+/// Startup shows its retry screen for it instead of touching the data.
+class StorageUnavailableException implements Exception {
+  const StorageUnavailableException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'StorageUnavailableException: $message';
+}
+
 /// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
 class SQLiteNotesRepository
     implements
@@ -66,7 +78,20 @@ class SQLiteNotesRepository
     final String path =
         _databasePath ??
         join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
-    final String? password = await _passwordProvider?.call();
+    // A null provider is the explicit test-only cleartext mode. When a
+    // provider is configured, it must yield a passphrase: falling back to a
+    // cleartext database would silently drop the encryption the key protects.
+    final String? password;
+    if (_passwordProvider == null) {
+      password = null;
+    } else {
+      password = await _passwordProvider();
+      if (password == null || password.isEmpty) {
+        throw const StorageUnavailableException(
+          'The database passphrase is unavailable.',
+        );
+      }
+    }
 
     // Pre-release data is disposable. Never recover plaintext test databases.
     final directory = await _documentsDirectory();
