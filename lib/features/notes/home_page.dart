@@ -33,6 +33,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -89,6 +90,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
     ViewLayoutController.instance.addListener(_syncViewLayout);
+    SortPreferencesController.instance.addListener(_onSortChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -114,6 +116,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     _searchFocusNode.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     ViewLayoutController.instance.removeListener(_syncViewLayout);
+    SortPreferencesController.instance.removeListener(_onSortChanged);
     FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
@@ -157,20 +160,8 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     // The shared controller owns the choice; Home only mirrors it.
     await ViewLayoutController.instance.load();
     _viewModel.setViewLayout(ViewLayoutController.instance.layout);
-    if (!prefs.containsKey('sortBy')) {
-      await prefs.setString('sortBy', 'date');
-    }
-    _viewModel.setSortBy(prefs.getString('sortBy') ?? 'date');
-
-    if (!prefs.containsKey('secondarySortBy')) {
-      await prefs.setString('secondarySortBy', 'date');
-    }
-    _viewModel.setSecondarySortBy(prefs.getString('secondarySortBy') ?? 'date');
-
-    if (!prefs.containsKey('sortAscending')) {
-      await prefs.setBool('sortAscending', true);
-    }
-    _viewModel.setSortAscending(prefs.getBool('sortAscending') ?? true);
+    await SortPreferencesController.instance.load();
+    _applySortPreferences();
 
     if (!prefs.containsKey('documentFilter')) {
       await prefs.setString('documentFilter', DocumentFilter.all.name);
@@ -182,6 +173,17 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
 
     await FabSideController.instance.load();
   }
+
+  /// Mirrors the shared sorting controller into the view model, which re-sorts
+  /// and notifies on any real change.
+  void _applySortPreferences() {
+    final SortPreferencesController sort = SortPreferencesController.instance;
+    _viewModel.setSortBy(sort.by);
+    _viewModel.setSecondarySortBy(sort.secondaryBy);
+    _viewModel.setSortAscending(sort.ascending);
+  }
+
+  void _onSortChanged() => _applySortPreferences();
 
   /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {

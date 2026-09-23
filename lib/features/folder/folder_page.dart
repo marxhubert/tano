@@ -21,6 +21,7 @@ import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/route_observer.dart';
@@ -102,6 +103,7 @@ class _FolderPageState extends State<FolderPage>
     _folder = widget.folder;
     _titleFocusNode.addListener(_onTitleFocusChanged);
     ViewLayoutController.instance.addListener(_onViewLayoutChanged);
+    SortPreferencesController.instance.addListener(_onSortChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     _loadPreferences();
     _load();
@@ -125,6 +127,7 @@ class _FolderPageState extends State<FolderPage>
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
+    SortPreferencesController.instance.removeListener(_onSortChanged);
     FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -167,6 +170,7 @@ class _FolderPageState extends State<FolderPage>
 
   Future<void> _loadPreferences() async {
     await ViewLayoutController.instance.load();
+    await SortPreferencesController.instance.load();
     await FabSideController.instance.load();
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
@@ -174,9 +178,24 @@ class _FolderPageState extends State<FolderPage>
       _documentFilter =
           documentFilterFromName(prefs.getString('documentFilter')) ??
           DocumentFilter.all;
-      _sortBy = prefs.getString('sortBy') ?? 'date';
-      _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
-      _sortAscending = prefs.getBool('sortAscending') ?? true;
+      _syncSort();
+      _notes = _sorted(_notes);
+    });
+  }
+
+  /// Copies the shared sorting controller into the page's own fields.
+  void _syncSort() {
+    final SortPreferencesController sort = SortPreferencesController.instance;
+    _sortBy = sort.by;
+    _secondarySortBy = sort.secondaryBy;
+    _sortAscending = sort.ascending;
+  }
+
+  /// Settings changed the chosen order: re-sort without re-reading the keys.
+  void _onSortChanged() {
+    if (!mounted) return;
+    setState(() {
+      _syncSort();
       _notes = _sorted(_notes);
     });
   }
