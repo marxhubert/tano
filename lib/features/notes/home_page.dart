@@ -32,6 +32,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/search_mode.dart';
 import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -254,23 +255,15 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     setState(() {
       _isSearchMode = true;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Only focus if the user is still in search mode: the frame may run
-      // after a quick enter-then-cancel, which must not leave an orphaned
-      // focused node (and an open keyboard) on the home screen.
-      if (mounted && _isSearchMode) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+    focusSearchField(
+      focusNode: _searchFocusNode,
+      isStillActive: () => mounted && _isSearchMode,
+    );
   }
 
   void _exitSearchMode() {
-    // Leaving the search is what makes it a search: remember the query before
-    // the field is emptied.
-    SearchHistoryController.instance.add(_searchController.text);
+    leaveSearchMode(controller: _searchController, focusNode: _searchFocusNode);
     _clearSearch();
-    // Release the search focus so the keyboard closes immediately.
-    _searchFocusNode.unfocus();
     setState(() {
       _isSearchMode = false;
     });

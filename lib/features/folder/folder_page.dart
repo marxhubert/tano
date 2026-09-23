@@ -22,6 +22,7 @@ import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/search_mode.dart';
 import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
@@ -232,19 +233,14 @@ class _FolderPageState extends State<FolderPage>
       _isSearchMode = true;
       _searchStarted = false;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _isSearchMode) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+    focusSearchField(
+      focusNode: _searchFocusNode,
+      isStillActive: () => mounted && _isSearchMode,
+    );
   }
 
   void _exitSearchMode() {
-    // Leaving the search is what makes it a search: remember the query before
-    // the field is emptied, exactly like Home does.
-    SearchHistoryController.instance.add(_searchController.text);
-    _searchController.clear();
-    _searchFocusNode.unfocus();
+    leaveSearchMode(controller: _searchController, focusNode: _searchFocusNode);
     setState(() {
       _isSearchMode = false;
       _searchStarted = false;
