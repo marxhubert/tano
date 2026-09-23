@@ -14,6 +14,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/core/services/lock_gate.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/shared/config/card_sorting.dart';
@@ -309,32 +310,25 @@ class _FolderPageState extends State<FolderPage>
   Note _newNote() => Note(folderId: _folder.id, category: _folder.category);
 
   Future<void> _toggleLock() async {
-    if (!_folder.isLocked) {
-      if (!await getIt<AuthService>().isAvailable()) {
-        if (!mounted) return;
-        await showAdaptiveAlert(
-          context: context,
-          title: AppText.tr('lock_unavailable_title'),
-          message: AppText.tr('lock_requires_device_lock'),
-        );
-        return;
-      }
-      await _save(_folder.copyWith(isLocked: true));
+    final LockGateResult gate = await requestLockChange(
+      isLocked: _folder.isLocked,
+    );
+    if (gate == LockGateResult.unavailable) {
       if (!mounted) return;
-      await FeedbackController.instance.success();
-      if (!mounted) return;
-      await showLockToast(context, locked: true, folder: true);
+      await showAdaptiveAlert(
+        context: context,
+        title: AppText.tr('lock_unavailable_title'),
+        message: AppText.tr('lock_requires_device_lock'),
+      );
       return;
     }
-    final bool authenticated = await getIt<AuthService>().authenticate(
-      reason: AppText.tr('auth_reason'),
-    );
-    if (!authenticated || !mounted) return;
-    await _save(_folder.copyWith(isLocked: false));
+    if (gate == LockGateResult.refused || !mounted) return;
+    final bool locked = !_folder.isLocked;
+    await _save(_folder.copyWith(isLocked: locked));
     if (!mounted) return;
     await FeedbackController.instance.success();
     if (!mounted) return;
-    await showLockToast(context, locked: false, folder: true);
+    await showLockToast(context, locked: locked, folder: true);
   }
 
   Future<void> _delete() async {

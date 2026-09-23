@@ -4,9 +4,7 @@ import 'package:tano/core/models/content_entity.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/services/auth_service.dart';
-import 'package:tano/shared/config/l10n.dart';
-import 'package:tano/shared/config/service_locator.dart';
+import 'package:tano/core/services/lock_gate.dart';
 
 /// Outcome of [EditNoteViewModel.toggleLock], so the UI can react to each case.
 enum LockToggleResult {
@@ -95,22 +93,17 @@ class EditNoteViewModel extends ChangeNotifier {
   /// then never be unlocked again. Unlocking always requires the system
   /// credential.
   Future<LockToggleResult> toggleLock() async {
-    if (isLocked) {
-      final bool authenticated = await getIt<AuthService>().authenticate(
-        reason: AppText.tr('auth_reason'),
-      );
-      if (!authenticated) return LockToggleResult.cancelled;
-      isLocked = false;
-      notifyListeners();
-      return LockToggleResult.unlocked;
+    final LockGateResult gate = await requestLockChange(isLocked: isLocked);
+    switch (gate) {
+      case LockGateResult.unavailable:
+        return LockToggleResult.unavailable;
+      case LockGateResult.refused:
+        return LockToggleResult.cancelled;
+      case LockGateResult.granted:
+        isLocked = !isLocked;
+        notifyListeners();
+        return isLocked ? LockToggleResult.locked : LockToggleResult.unlocked;
     }
-
-    if (!await getIt<AuthService>().isAvailable()) {
-      return LockToggleResult.unavailable;
-    }
-    isLocked = true;
-    notifyListeners();
-    return LockToggleResult.locked;
   }
 
   void setCategory(String category) {
