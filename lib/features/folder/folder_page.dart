@@ -537,7 +537,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           (!_showSearchHistory && _searchQuery.trim().isEmpty));
 
   String _noteCountLabel(int count) =>
-      '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
+      groupCountLabel(total: count, noun: 'note');
 
   /// Metadata on the title line, mirroring the home page: the selection while
   /// selecting, the result count while searching, the note count otherwise.
@@ -546,7 +546,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       // While searching, the total is the number of results.
       final int count = _selection.count;
       final int total = _visibleNotes.length;
-      if (count == 0) return AppText.tr('no_note_selected');
       final List<Note> selected = _visibleNotes
           .where((Note note) => _selection.contains(note.id))
           .toList();
@@ -555,20 +554,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         tasks: selected.where((Note note) => note.isTask).length,
         folders: 0,
       );
-      if (count > 1 && count == total) {
-        return AppText.tr('all_${noun}s_selected', <String, String>{
-          'count': '$count',
-        });
-      }
-      if (count > 1) {
-        return AppText.tr('${noun}s_selected', <String, String>{
-          'count': '$count',
-          'total': '$total',
-        });
-      }
-      return AppText.tr('single_${noun}_selected', <String, String>{
-        'count': '$count',
-      });
+      return selectionCountLabel(count: count, total: total, noun: noun);
     }
     if (_resultsVisible) return _noteCountLabel(_visibleNotes.length);
     return null;

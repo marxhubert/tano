@@ -320,22 +320,9 @@ class HomeState extends State<Home> with RouteAware {
     required String noun,
   }) {
     if (!_viewModel.isInSelectionMode || count == 0) {
-      return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
+      return groupCountLabel(total: total, noun: noun);
     }
-    if (count > 1) {
-      if (count == total) {
-        return AppText.tr('all_${noun}s_selected', <String, String>{
-          'count': '$count',
-        });
-      }
-      return AppText.tr('${noun}s_selected', <String, String>{
-        'count': '$count',
-        'total': '$total',
-      });
-    }
-    return AppText.tr('single_${noun}_selected', <String, String>{
-      'count': '$count',
-    });
+    return selectionCountLabel(count: count, total: total, noun: noun);
   }
 
   String _deleteActionTitle() {
