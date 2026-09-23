@@ -76,6 +76,32 @@ void main() {
     expect(await File(await store.pathOf(name)).exists(), isFalse);
     expect(await File(plainPath).exists(), isFalse);
   });
+  test('an old materialized copy is swept after its viewing window', () async {
+    final File source = File('${tempDir.path}/src3.txt');
+    await source.writeAsString('secret');
+    final String name = await store.import(source.path, 'note3.txt');
+    final String plain = await store.materialize(name);
+
+    // Age the plaintext beyond the shelf life, then sweep.
+    await File(plain).setLastModified(
+      DateTime.now().subtract(AttachmentsStore.materializedTtl * 2),
+    );
+    await store.clearExpiredMaterialized();
+
+    expect(await File(plain).exists(), isFalse);
+  });
+
+  test('a fresh materialized copy survives the sweep', () async {
+    final File source = File('${tempDir.path}/src4.txt');
+    await source.writeAsString('fresh');
+    final String name = await store.import(source.path, 'note4.txt');
+    final String plain = await store.materialize(name);
+
+    await store.clearExpiredMaterialized();
+
+    expect(await File(plain).exists(), isTrue);
+  });
+
   test('untrusted names cannot escape the attachment store', () async {
     for (final name in [
       '../outside',

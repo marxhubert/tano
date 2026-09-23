@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -143,7 +146,14 @@ class _PrivacyGuardState extends State<PrivacyGuard>
     }
     _session.blocked = state != AppLifecycleState.resumed || _locked;
     setState(() => _state = state);
-    if (state == AppLifecycleState.resumed) _releaseNativeCoverAfterFrame();
+    if (state == AppLifecycleState.resumed) {
+      _releaseNativeCoverAfterFrame();
+      // Returning from the system viewer is the moment to sweep plaintext
+      // copies that have outlived their viewing session.
+      if (getIt.isRegistered<AttachmentsStore>()) {
+        unawaited(getIt<AttachmentsStore>().clearExpiredMaterialized());
+      }
+    }
   }
 
   Future<void> _unlock() async {
