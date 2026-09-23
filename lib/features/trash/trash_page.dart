@@ -112,12 +112,11 @@ class _TrashPageState extends State<TrashPage> {
                 child: Center(child: CircularProgressIndicator.adaptive()),
               )
             else if (_viewModel.isEmpty)
-              SliverFillRemaining(
-                child: emptyState(
-                  context,
-                  AppText.tr('trash_empty'),
-                  image: EmptyArt.bin,
-                ),
+              emptyStateSliver(
+                context,
+                AppText.tr('trash_empty'),
+                image: EmptyArt.bin,
+                hasScrollBody: true,
               )
             else ...<Widget>[
               // Folders first, like on the home page: they keep their content,

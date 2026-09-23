@@ -789,15 +789,10 @@ class _FolderPageState extends State<FolderPage>
   Widget _buildNotes() {
     final List<Note> notes = _visibleNotes;
     if (notes.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(
-          context,
-          _isSearchMode
-              ? AppText.tr('no_note_found')
-              : AppText.tr('folder_empty'),
-          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
-        ),
+      return emptyStateSliver(
+        context,
+        _isSearchMode ? AppText.tr('no_note_found') : AppText.tr('folder_empty'),
+        image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
       );
     }
 

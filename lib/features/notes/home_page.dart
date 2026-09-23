@@ -379,18 +379,16 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
       if (_viewModel.hasSearchQuery) {
-        return SliverFillRemaining(
-          hasScrollBody: false,
-          child: emptyState(
-            context,
-            AppText.tr('no_note_found'),
-            image: EmptyArt.search,
-          ),
+        return emptyStateSliver(
+          context,
+          AppText.tr('no_note_found'),
+          image: EmptyArt.search,
         );
       }
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
+      return emptyStateSliver(
+        context,
+        AppText.tr('no_data'),
+        image: EmptyArt.box,
       );
     }
 

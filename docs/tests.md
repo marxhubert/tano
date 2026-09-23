@@ -29,14 +29,16 @@ Initial 18 September consolidation: 316 passing tests including 20 goldens. Foll
 with clean static analysis. The command output is the source of truth for counts. Native builds, SQLCipher/backup verification and captured
 Sentry envelopes are separate checks, not implied by Dart test success.
 
-## Step 2 validation
+## Current validation
 
-451 tests pass, including 32 unchanged goldens. Static analysis is clean.
-Debug Android and unsigned debug iOS builds succeed. Scenarios cover lifecycle
-privacy, protected drafts/system Back, OS credential return, startup retries and
-partial initialization, unreadable preferences, save failure/retry, and orphan
-collection with shared/trash/corrupt references. See [history](history.md) for the
-earlier validation record. These builds do not replace real-device security checks.
+On `refactor/consolidation`: 451 tests pass, including 32 unchanged goldens.
+Static analysis is clean. Scenarios cover lifecycle privacy, protected
+drafts/system Back, OS credential return, startup retries and partial
+initialization, unreadable preferences, save failure/retry, orphan collection
+with shared/trash/corrupt references, cleartext-export refusal, locked trash
+deletion and the shared sort/filter controllers. See [history](history.md) for
+the earlier validation records. These builds do not replace real-device security
+checks.
 
 ## Developer fixtures
 
