@@ -23,7 +23,7 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
@@ -204,26 +204,14 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   Future<void> _openNoteEditor({required bool add, required Note note}) async {
     // Opening a note leaves the search: coming back shows the whole list.
     if (_isSearchMode) _exitSearchMode();
-    bool authenticated = false;
     // A locked note filed in a locked folder does not prompt again.
-    if (_viewModel.isNoteEffectivelyLocked(note)) {
-      authenticated = await getIt<AuthService>().authenticate(
-        reason: AppText.tr('auth_reason'),
-      );
-      // The system prompt is awaited: the widget may be gone by now.
-      if (!authenticated || !mounted) return;
-    }
-
-    final NoteAction? result = await Navigator.push(
+    final NoteAction? result = await openNoteEditor(
       context,
-      MaterialPageRoute<NoteAction>(
-        builder: (context) => EditNote(
-          add: add,
-          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
-          authenticated: authenticated,
-        ),
-        fullscreenDialog: true,
-      ),
+      add: add,
+      note: note,
+      authenticated: false,
+      requiresAuthentication: _viewModel.isNoteEffectivelyLocked(note),
+      fullscreenDialog: true,
     );
     if (result != null) {
       await _viewModel.applyNoteAction(

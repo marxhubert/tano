@@ -15,7 +15,7 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
-import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
@@ -289,22 +289,12 @@ class _FolderPageState extends State<FolderPage>
     if (_isSearchMode) _exitSearchMode();
     // A locked note always asks for the system credential, unless the folder
     // itself is locked: opening it already authenticated the user.
-    bool authenticated = _folder.isLocked;
-    if (note.isLocked && !authenticated) {
-      authenticated = await getIt<AuthService>().authenticate(
-        reason: AppText.tr('auth_reason'),
-      );
-      if (!authenticated || !mounted) return;
-    }
-    final NoteAction? result = await Navigator.push<NoteAction>(
+    final NoteAction? result = await openNoteEditor(
       context,
-      MaterialPageRoute<NoteAction>(
-        builder: (BuildContext context) => EditNote(
-          add: add,
-          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
-          authenticated: authenticated,
-        ),
-      ),
+      add: add,
+      note: note,
+      authenticated: _folder.isLocked,
+      requiresAuthentication: note.isLocked && !_folder.isLocked,
     );
     if (result != null && result.note != null) {
       if (result.kind == NoteActionKind.delete) {
