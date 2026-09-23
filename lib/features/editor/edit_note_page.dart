@@ -36,9 +36,7 @@ import 'package:tano/shared/widgets/toast.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
-  final int index;
   final NoteAction noteAction;
-  final Note? sourceNote;
 
   /// Whether the lock chain was already unlocked before opening this note.
   /// When true, following a link to a locked note does not prompt again.
@@ -47,9 +45,7 @@ class EditNote extends StatefulWidget {
   const EditNote({
     super.key,
     required this.add,
-    required this.index,
     required this.noteAction,
-    this.sourceNote,
     this.authenticated = false,
   });
 
@@ -683,7 +679,6 @@ class _EditNoteState extends State<EditNote>
       MaterialPageRoute(
         builder: (context) => EditNote(
           add: false,
-          index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: targetNote),
           authenticated: authenticated,
         ),
@@ -907,15 +902,7 @@ class _EditNoteState extends State<EditNote>
         listenable: _viewModel,
         builder: (BuildContext context, Widget? child) {
           final bool isDark = Theme.of(context).brightness == Brightness.dark;
-          final Color noteColor = themeCategory(
-            _viewModel.category,
-            true,
-            brightness: Theme.of(context).brightness,
-          );
-          final Color immersiveBg = getImmersiveBackgroundColor(
-            noteColor,
-            isDark: isDark,
-          );
+          final Color immersiveBg = getImmersiveBackgroundColor(isDark: isDark);
 
           final bool isDirty = _viewModel.isDirty(
             title: _titleController.text,

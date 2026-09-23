@@ -214,7 +214,6 @@ void main() {
         expect(vm.notesCount, 1);
         expect(vm.notes.first.id, '2');
         expect(vm.isInSelectionMode, isFalse);
-        expect(vm.actionButtons, 'add');
         
         // In Phase 2, notes are not removed from repository but marked as deleted
         expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));

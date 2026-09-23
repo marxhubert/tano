@@ -234,7 +234,6 @@ class HomeState extends State<Home> with RouteAware {
       MaterialPageRoute<NoteAction>(
         builder: (context) => EditNote(
           add: add,
-          index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
           authenticated: authenticated,
         ),

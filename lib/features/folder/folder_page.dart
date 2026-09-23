@@ -307,7 +307,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       MaterialPageRoute<NoteAction>(
         builder: (BuildContext context) => EditNote(
           add: add,
-          index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
           authenticated: authenticated,
         ),
@@ -589,17 +588,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    // The folder's colour theming tints the page, exactly like a note.
+    // The folder's colour tints its own card, not the page.
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color folderColor = themeCategory(
-      _folder.category,
-      true,
-      brightness: Theme.of(context).brightness,
-    );
-    final Color immersiveBg = getImmersiveBackgroundColor(
-      folderColor,
-      isDark: isDark,
-    );
+    final Color immersiveBg = getImmersiveBackgroundColor(isDark: isDark);
     // The folder's FAB always rests in its reduced form; tapping it expands
     // the action bar. This keeps it from hiding the notes or the cover.
     // The recent searches live in a shared controller: the page rebuilds when

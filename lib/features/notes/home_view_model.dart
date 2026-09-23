@@ -41,11 +41,9 @@ class HomeViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Mirrors the selection into the FAB shape.
-  void _onSelectionChanged() {
-    _actionButtons = _selection.isActive ? 'multiple' : 'add';
-    notifyListeners();
-  }
+  /// Rebuilds the page when the selection changes: the header, the FAB and the
+  /// actions all read it.
+  void _onSelectionChanged() => notifyListeners();
 
   final NotesRepository repository;
 
@@ -78,7 +76,6 @@ class HomeViewModel extends ChangeNotifier {
   bool _sortAscending = true;
   String _viewLayout = 'gridlist';
   late final SelectionController _selection;
-  String _actionButtons = 'add';
 
   /// Notes and folders removed by the last delete, so undo can restore both.
   DeletedBatch? _lastDeleted;
@@ -106,15 +103,11 @@ class HomeViewModel extends ChangeNotifier {
 
   int get foldersCount => folders.length;
 
-  /// Total selectable items on the home page: unfiled notes plus folders
-  /// (notes filed in a folder are not shown here).
-  int get itemsCount => notesCount + foldersCount;
   String get sortBy => _sortBy;
   String get secondarySortBy => _secondarySortBy;
   bool get sortAscending => _sortAscending;
   String get viewLayout => _viewLayout;
   bool get isInSelectionMode => _selection.isActive;
-  String get actionButtons => _actionButtons;
   bool get hasSelection => _selection.isNotEmpty;
   int get selectedCount => _selection.count;
   Set<String> get selected => _selection.ids;
@@ -310,11 +303,6 @@ class HomeViewModel extends ChangeNotifier {
     folders: selectedFoldersCount,
   );
 
-  bool get hasNoteInSelection => selectedNotesCount > 0;
-
-  /// True when the selection mixes notes and folders.
-  bool get hasMixedSelection => hasNoteInSelection && hasFolderInSelection;
-
   /// Total number of notes held by the selected folders, for the delete
   /// confirmation.
   int get selectedFoldersNoteCount {
@@ -420,27 +408,6 @@ class HomeViewModel extends ChangeNotifier {
     _sort();
     notifyListeners();
     return folder;
-  }
-
-  /// Persists a folder change (name, theme, cover, lock…).
-  Future<void> saveFolder(Folder folder) async {
-    final Folder updated = folder.copyWith(
-      updatedAt: DateTime.now().toString(),
-    );
-    final int index = _folders.indexWhere((Folder f) => f.id == updated.id);
-    if (index != -1) {
-      _folders[index] = updated;
-    } else {
-      _folders.add(updated);
-    }
-    await _foldersRepository?.upsertFolder(updated);
-    _sort();
-    notifyListeners();
-  }
-
-  /// Notes filed in [folderId], sorted with the current criteria.
-  List<Note> notesInFolder(String folderId) {
-    return _allNotes.where((Note n) => n.folderId == folderId).toList();
   }
 
   /// Number of notes filed in [folderId].

@@ -36,10 +36,6 @@ class TanoStates {
   static const reference = (light: Color(0xFF2196F3), dark: Color(0xFF64B5F6));
   static const subtle = (light: Color(0xFFB0BEC5), dark: Color(0xFF90A4AE));
   static const archive = (light: Color(0xFF78909C), dark: Color(0xFF546E7A));
-
-  static Color get(BuildContext context, Color Function(bool isDark) picker) {
-    return picker(Theme.of(context).brightness == Brightness.dark);
-  }
 }
 
 // --- Palette Pastel (Notes) ---
@@ -174,30 +170,14 @@ Color getTextColor(Color background) {
       : const Color(0xFFEFE4D0);
 }
 
-/// Helper to get a subtle border color based on the background.
-Color getBorderColor(Color background, {bool isDark = false}) {
-  if (background == Colors.white ||
-      background == darkBackground ||
-      background == const Color(0xFF1E1E1E)) {
-    return isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.1);
-  }
-
-  // Light mode: make the border slightly darker
-  // Dark mode: make the border slightly lighter
-  return Color.lerp(background, isDark ? Colors.white : Colors.black, 0.12)!;
-}
-
 /// Border colour shared by the cards, the cover rules and the app bar:
 /// light in dark mode, dark in light mode.
 Color cardBorderColor(bool isDark) =>
     isDark ? const Color(0xFF3A3122) : const Color(0xFFD9CBB0);
 
-/// Every route uses the hero paper; category colors belong to cards only.
-/// The page keeps one paper everywhere: a note or a folder colours its own
-/// card, never the sheet it sits on.
-Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) =>
+/// Every route uses the hero paper; category colours belong to cards only. A
+/// note or a folder colours its own card, never the sheet it sits on.
+Color getImmersiveBackgroundColor({bool isDark = false}) =>
     isDark ? darkBackground : lightBackground;
 
 /// The swatch's own tone: the same hue as the theme, pushed to a saturation
@@ -240,13 +220,6 @@ Color mutedTextColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
       ? const Color(0xFFB1A288)
       : const Color(0xFF6F6553);
-}
-
-/// Subtle fill for inputs and chips.
-Color chipFillColor(BuildContext context) {
-  return Theme.of(context).brightness == Brightness.dark
-      ? Colors.white.withValues(alpha: 0.05)
-      : Colors.black.withValues(alpha: 0.05);
 }
 
 /// Helper for category-based colors (States or Pastels).
