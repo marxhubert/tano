@@ -218,7 +218,8 @@ class NoteCounts extends StatelessWidget {
           if (isImportant) ...<Widget>[
             const Icon(
               Symbols.bookmark,
-              size: cardMetaIconSize,
+              // A touch larger than the counts beside it.
+              size: cardMetaIconSize + 3.0,
               fill: 1.0,
               color: tanoAmber,
             ),

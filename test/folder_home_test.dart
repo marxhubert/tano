@@ -21,7 +21,6 @@ import 'package:tano/shared/widgets/cover_image.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
-import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -722,20 +721,24 @@ void main() {
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('All (1)', findRichText: true)),
+      find.descendant(
+        of: page,
+        matching: find.text('All (1)', findRichText: true),
+      ),
       findsOneWidget,
     );
     expect(
       find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
       findsOneWidget,
     );
-    // The bookmark is the filled amber variant, at the shared metadata size.
+    // The folder's own mark: amber, outlined, and larger than the metadata.
     final Icon bookmark = tester.widget<Icon>(
       find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
     );
-    expect(bookmark.fill, 1.0);
+    expect(bookmark.fill, 0.0);
     expect(bookmark.color, tanoAmber);
-    expect(bookmark.size, metadataIconSize);
+    // Larger than the shared metadata size, whatever the host chrome's own.
+    expect(bookmark.size, greaterThanOrEqualTo(20.0));
     // Not locked, so no lock flag.
     expect(
       find.descendant(of: page, matching: find.byIcon(Symbols.lock)),
