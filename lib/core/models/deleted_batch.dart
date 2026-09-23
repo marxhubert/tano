@@ -3,6 +3,25 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
+/// The notes of [notes] that [isSelected] accepts, with the indexes they held.
+///
+/// Home and Folder both need this pair to build a [DeletedBatch] and to put the
+/// notes back at their old positions; only the selection test differs.
+({List<Note> notes, List<int> indexes}) collectSelectedNotes(
+  List<Note> notes,
+  bool Function(Note note) isSelected,
+) {
+  final List<Note> selected = <Note>[];
+  final List<int> indexes = <int>[];
+  for (int i = 0; i < notes.length; i++) {
+    if (isSelected(notes[i])) {
+      selected.add(notes[i]);
+      indexes.add(i);
+    }
+  }
+  return (notes: selected, indexes: indexes);
+}
+
 /// What a deletion removed, and the places it left.
 ///
 /// One value shared by every screen that deletes: it carries what has to go

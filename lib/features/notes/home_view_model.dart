@@ -316,8 +316,6 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteSelected() async {
-    final List<Note> removed = <Note>[];
-    final List<int> indexes = <int>[];
     final List<Folder> deletedFolders = _folders
         .where((Folder f) => _selection.contains(f.id))
         .toList();
@@ -328,17 +326,18 @@ class HomeViewModel extends ChangeNotifier {
     }
     _folders.removeWhere((Folder f) => _selection.contains(f.id));
 
-    for (int i = 0; i < _allNotes.length; i++) {
-      if (_selection.contains(_allNotes[i].id)) {
-        removed.add(_allNotes[i]);
-        indexes.add(i);
-        await repository.trashNote(_allNotes[i].id);
-      }
+    final ({List<Note> notes, List<int> indexes}) selected =
+        collectSelectedNotes(
+          _allNotes,
+          (Note note) => _selection.contains(note.id),
+        );
+    for (final Note note in selected.notes) {
+      await repository.trashNote(note.id);
     }
     _allNotes.removeWhere((Note note) => _selection.contains(note.id));
     _lastDeleted = DeletedBatch(
-      notes: removed,
-      indexes: indexes,
+      notes: selected.notes,
+      indexes: selected.indexes,
       folders: deletedFolders,
     );
     _selection.exit();

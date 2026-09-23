@@ -417,15 +417,12 @@ class _FolderPageState extends State<FolderPage>
 
     // Keep what leaves, with its place, so the undo can put it back exactly
     // where it was - the same accounting the home page does.
-    final List<int> indexes = <int>[];
-    final List<Note> removed = <Note>[];
-    for (int i = 0; i < _notes.length; i++) {
-      if (_selection.contains(_notes[i].id)) {
-        indexes.add(i);
-        removed.add(_notes[i]);
-      }
-    }
-    for (final Note note in removed) {
+    final ({List<Note> notes, List<int> indexes}) selected =
+        collectSelectedNotes(
+          _notes,
+          (Note note) => _selection.contains(note.id),
+        );
+    for (final Note note in selected.notes) {
       await repository.trashNote(note.id);
     }
     if (!mounted) return;
@@ -435,17 +432,20 @@ class _FolderPageState extends State<FolderPage>
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
-    if (removed.isNotEmpty) {
+    if (selected.notes.isNotEmpty) {
       showUndoDelete(
         context,
         repository: repository,
-        batch: DeletedBatch(notes: removed, indexes: indexes),
+        batch: DeletedBatch(notes: selected.notes, indexes: selected.indexes),
         onRestored: () async {
           if (!mounted) return;
           setState(() {
             // From the end, so an insertion never shifts a place still to come.
-            for (int i = indexes.length - 1; i >= 0; i--) {
-              _notes.insert(indexes[i].clamp(0, _notes.length), removed[i]);
+            for (int i = selected.indexes.length - 1; i >= 0; i--) {
+              _notes.insert(
+                selected.indexes[i].clamp(0, _notes.length),
+                selected.notes[i],
+              );
             }
           });
         },
