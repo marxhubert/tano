@@ -255,13 +255,15 @@ void main() {
     await tester.tap(find.byIcon(Symbols.build_circle));
     await tester.pumpAndSettle();
 
-    // The filled bookmark in the more menu wears the app's brown.
+    // The filled bookmark in the more menu goes solid white on the light
+    // theme, with no outline.
     final Icon bookmark = tester.widget<Icon>(
       find.byWidgetPredicate(
         (Widget w) => w is Icon && w.icon == Symbols.bookmark && w.fill == 1.0,
       ),
     );
-    expect(bookmark.color, tanoAmber);
+    expect(bookmark.color, Colors.white);
+    expect(bookmark.shadows, isNull);
     // Delete wears the app's red, softened for the teal bars.
     expect(
       tester.widget<Icon>(find.byIcon(Symbols.delete)).color,
