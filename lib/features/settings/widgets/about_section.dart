@@ -32,12 +32,6 @@ class AboutSection extends StatelessWidget {
               value: viewModel.bugReportEnabled,
               onChanged: (val) => viewModel.setBugReportEnabled(val),
             ),
-            // Design sandbox for the future task and project cards.
-            SettingsTile(
-              title: 'Labo',
-              selected: false,
-              onTap: () => Navigator.of(context).pushNamed('/lab'),
-            ),
           ],
           footer: <Widget>[
             SettingsFooterText(text: AppText.tr('desc_bug_report')),

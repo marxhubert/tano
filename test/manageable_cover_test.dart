@@ -48,4 +48,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(removed, isTrue);
   });
+
+  testWidgets('an inset cover clips its corners to the given radius', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ManageableCover(
+            name: 'missing.png',
+            height: 160.0,
+            borderRadius: BorderRadius.circular(12.0),
+            onRemove: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final ClipRRect clip = tester.widget<ClipRRect>(
+      find.descendant(
+        of: find.byType(ManageableCover),
+        matching: find.byType(ClipRRect),
+      ),
+    );
+    expect(clip.borderRadius, BorderRadius.circular(12.0));
+  });
 }

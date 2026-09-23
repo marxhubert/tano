@@ -43,10 +43,11 @@ leak locked data. Image errors use a neutral placeholder.
 
 ## Covers and settings
 
-`ManageableCover` is shared by folders/editor and uses `CoverImage`. Long press exposes
-remove with confirmation. Covers span full width with shared border rules. Folders
-use height 160 / BoxFit.cover; Note and Task editors also use height 160 / BoxFit.cover, with
-no light-theme dim. Covers decode in memory, not plaintext cache files.
+`ManageableCover` gives the editor's note/task cover its affordances: long press
+exposes remove with confirmation. The cover keeps its own aspect ratio; a phone in
+portrait lets it bleed to both screen edges, while every other window insets it with
+the content and rounds its corners. It keeps the shared top/bottom rules and, in the
+editor, no light-theme dim. Covers decode in memory, not plaintext cache files.
 
 Settings groups have a title, option rows and footer (up to three lines).
 Premium opens an information page while billing is pending, not a fake purchase flow.

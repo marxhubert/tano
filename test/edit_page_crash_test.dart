@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/main.dart';
 import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// In-memory [NotesRepository] so the widget test never touches the disk.
@@ -95,6 +97,9 @@ void main() {
     );
     if (getIt.isRegistered<NotesRepository>()) {
       getIt.unregister<NotesRepository>();
+    }
+    if (!getIt.isRegistered<AttachmentsStore>()) {
+      getIt.registerLazySingleton<AttachmentsStore>(() => AttachmentsStore());
     }
   });
 
@@ -262,5 +267,43 @@ void main() {
       tester.widget<Icon>(find.byIcon(Symbols.delete)).color,
       TanoStates.error.dark,
     );
+  });
+
+  testWidgets('the editor cover bleeds on a phone and is inset on landscape', (
+    tester,
+  ) async {
+    final _InMemoryNotesRepository repository = _InMemoryNotesRepository(<Note>[
+      Note(
+        id: '1',
+        title: 'Hello',
+        content: 'World',
+        date: '2026-08-12 10:00:00.000',
+        coverImage: 'cover.png',
+      ),
+    ]);
+    getIt.registerSingleton<NotesRepository>(repository);
+
+    // A phone in portrait: the cover bleeds to both edges, square.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hello'));
+    await tester.pumpAndSettle();
+
+    ManageableCover cover() =>
+        tester.widget<ManageableCover>(find.byType(ManageableCover));
+    expect(cover().padding.left, 0.0);
+    expect(cover().padding.right, 0.0);
+    expect(cover().borderRadius, BorderRadius.zero);
+
+    // A landscape window aligns it with the content and rounds it.
+    tester.view.physicalSize = const Size(844, 390);
+    await tester.pumpAndSettle();
+    expect(cover().padding.left, appPaddingMedium);
+    expect(cover().padding.right, appPaddingMedium);
+    expect(cover().borderRadius, BorderRadius.circular(appBorderRadius));
   });
 }
