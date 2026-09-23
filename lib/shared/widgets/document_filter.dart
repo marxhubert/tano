@@ -172,8 +172,8 @@ class DocumentFilterControl extends StatelessWidget {
         selectedBackgroundColor: scheme.primary,
         selectedForegroundColor: scheme.onPrimary,
         side: BorderSide(color: paperRuleColor(context)),
-        // Four segments with counts have to fit a phone: 12px of padding would
-        // wrap "Projects" onto a second line.
+        // The segments with counts have to fit a phone: 12px of padding would
+        // wrap the longest label onto a second line.
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         // The theme's control font, not a bare TextStyle: a family-less style
         // would fall back to whatever the platform supplies.

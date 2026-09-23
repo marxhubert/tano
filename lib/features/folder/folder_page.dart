@@ -181,7 +181,7 @@ class _FolderPageState extends State<FolderPage>
     });
   }
 
-  /// Notes sorted like the home screen: pinned first, then the chosen
+  /// Notes sorted like the home screen: important first, then the chosen
   /// criterion. Without this the folder kept the raw repository order.
   List<Note> _sorted(List<Note> notes) => NoteSorting(
     by: _sortBy,
@@ -664,6 +664,8 @@ class _FolderPageState extends State<FolderPage>
           floatingActionButton: AppFab(
             key: _fabKey,
             onLeft: _fabOnLeft,
+            // The folder shares the editor's bar (its add/more menus), so it
+            // must select it here; isFolderMode then adapts those menus.
             isEditorMode: true,
             isFolderMode: true,
             isSelectionMode: _selection.isActive,
