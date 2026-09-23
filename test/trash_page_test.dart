@@ -51,8 +51,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> restoreFolder(String id) async {}
   @override
-  Future<void> toggleLock(String id, {String? password}) async {}
-  @override
   Future<void> deleteNotePermanently(String id) async {
     permanentlyDeleted.add(id);
   }

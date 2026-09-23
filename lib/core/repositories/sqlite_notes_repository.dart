@@ -459,30 +459,6 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<void> toggleLock(String id, {String? password}) async {
-    // Authentication belongs to the application boundary, using the OS credential.
-    final db = await _database;
-    final List<Map<String, dynamic>> result = await db.query(
-      'notes',
-      columns: ['isLocked'],
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (result.isNotEmpty) {
-      final int currentLock = result.first['isLocked'] as int;
-      await db.update(
-        'notes',
-        {
-          'isLocked': currentLock == 1 ? 0 : 1,
-          'updatedAt': DateTime.now().toString(),
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-    }
-  }
-
-  @override
   Future<void> deleteNotePermanently(String id) async {
     final db = await _database;
     await db.delete('notes', where: 'id = ?', whereArgs: [id]);

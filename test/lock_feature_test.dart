@@ -84,14 +84,6 @@ class _InMemoryNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> toggleLock(String id, {String? password}) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
-    }
-  }
-
-  @override
   Future<void> deleteNotePermanently(String id) async {
     notes.removeWhere((n) => n.id == id);
   }

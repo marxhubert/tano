@@ -25,6 +25,19 @@ protected content. Imported locks survive when OS authentication is available;
 otherwise they are removed for the imported objects. V1 exports notes/files, not
 a full app backup.
 
+## Known tradeoffs
+
+- A locked card still shows its title, date and kind: they identify the note,
+  while the body, cover and attachments stay behind the credential. Redacting
+  the title would make a locked list unusable.
+- On Android 13+ the app hides the task-switcher thumbnail
+  (`setRecentsScreenshotEnabled(false)`) but leaves screenshots and screen
+  recording available; older versions fall back to `FLAG_SECURE`, which blocks
+  both. iOS covers the last frame before a scene snapshot.
+- A decrypted attachment lives in the cache for at most ten minutes after the
+  viewer opens it, then a sweep removes it; startup and hard reset clear the
+  whole cache.
+
 ## Pre-release cleanup
 
 The app has never shipped. Old plaintext test databases, JSON and their known

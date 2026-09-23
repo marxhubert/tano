@@ -12,6 +12,8 @@ test data is disposable.
   and geometry.
 - `EntitySliver` requires a `ContentEntity` and keys every card by id; one
   attachment glyph across cards, the editor and the FAB menu.
+- Removed the repository-level `toggleLock`, which no caller used and which
+  bypassed the editor's authentication and feedback flow.
 - Folder search records its query in the shared history, like Home.
 - App Store links from the update lookup are only followed when Apple + HTTPS.
 - A cleartext export is refused while the selection contains a locked note.
