@@ -400,6 +400,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Future<void> _deleteSelected() async {
+    // A locked note is only deleted from inside, once opened: the list never
+    // removes one, exactly like Home.
+    if (_notes.any(
+      (Note note) => _selection.contains(note.id) && note.isLocked,
+    )) {
+      showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+      return;
+    }
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: _deleteActionTitle(),
@@ -497,9 +505,17 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   int get _searchableDocCount =>
       _notes.where((Note note) => !note.isLocked).length;
 
+  /// The filter actually applied. A kind with nothing left to show falls back
+  /// to every document, so a preference the tab no longer offers never blanks
+  /// the list.
+  DocumentFilter get _effectiveDocumentFilter =>
+      _documentFilter != DocumentFilter.all && _countFor(_documentFilter) == 0
+      ? DocumentFilter.all
+      : _documentFilter;
+
   /// Notes shown: the folder content, filtered by the search and the kind.
   List<Note> get _visibleNotes =>
-      _filterSource().where(_documentFilter.matches).toList();
+      _filterSource().where(_effectiveDocumentFilter.matches).toList();
 
   /// True once the user has actually typed in the search field: only then
   /// does the page switch to the results presentation.
@@ -749,7 +765,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                   ),
                   crossAxisAlignment: CrossAxisAlignment.center,
                   titleWidget: DocumentFilterControl(
-                    value: _documentFilter,
+                    value: _effectiveDocumentFilter,
                     countOf: _countFor,
                     // Selecting something replaces the tags with the sentence.
                     selectionLabel: _selection.isActive
@@ -795,21 +811,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _buildNotes() {
     final List<Note> notes = _visibleNotes;
     if (notes.isEmpty) {
-      // A filter with nothing to show says what it looked for; a folder that
-      // simply holds nothing keeps its own words.
-      final bool filterHidesAll = _notes.isNotEmpty && !_isSearchMode;
       return SliverFillRemaining(
         hasScrollBody: false,
         child: emptyState(
           context,
           _isSearchMode
               ? AppText.tr('no_note_found')
-              : (filterHidesAll
-                    ? _documentFilter.emptyLabel
-                    : AppText.tr('folder_empty')),
-          image: _isSearchMode
-              ? EmptyArt.search
-              : (filterHidesAll ? EmptyArt.notFound : EmptyArt.folder),
+              : AppText.tr('folder_empty'),
+          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
         ),
       );
     }

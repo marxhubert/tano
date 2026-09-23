@@ -5,6 +5,7 @@ import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 
 class _FakeRepo implements NotesRepository, FoldersRepository {
   _FakeRepo({List<Note>? notes, List<Folder>? folders})
@@ -187,6 +188,18 @@ void main() {
       expect(vm.notes.map((Note n) => n.id), containsAll(<String>['n1', 'n3']));
       expect(vm.notes.map((Note n) => n.id), isNot(contains('n2')));
       expect(vm.pageTitleKey, 'search_results');
+    });
+  });
+
+  group('document filter', () {
+    test('a kind with nothing to show falls back to every document', () async {
+      final _FakeRepo repo = _FakeRepo(notes: <Note>[_note()]);
+      final HomeViewModel vm = _vm(repo);
+
+      vm.setDocumentFilter(DocumentFilter.tasks);
+
+      expect(vm.documentFilter, DocumentFilter.all);
+      expect(vm.notes, hasLength(1));
     });
   });
 
