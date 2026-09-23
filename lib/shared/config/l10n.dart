@@ -111,9 +111,7 @@ class AppText {
   /// Every translatable string, by key.
   static const Map<String, String> _en = <String, String>{
     // Home
-    'all_notes': 'All notes',
     'all_docs': 'All docs',
-    'all_tasks': 'All tasks',
     'filter_all': 'All',
     'filter_notes': 'Notes',
     'filter_tasks': 'Tasks',
@@ -359,7 +357,6 @@ class AppText {
     'onboarding_replay': 'Replay the introduction',
     // Feedback and text
     'menu_feedback': 'Feedback and text',
-    'text_size': 'Text size',
     'text_size_small': 'Small',
     'text_size_normal': 'Normal',
     'text_size_large': 'Large',
@@ -379,9 +376,7 @@ class AppText {
 
   static const Map<String, String> _fr = <String, String>{
     // Home
-    'all_notes': 'Toutes les notes',
     'all_docs': 'Tous les docs',
-    'all_tasks': 'Toutes les tâches',
     'filter_all': 'Tous',
     'filter_notes': 'Notes',
     'filter_tasks': 'Tâches',
@@ -629,7 +624,6 @@ class AppText {
     'onboarding_replay': "Revoir l'introduction",
     // Retours et texte
     'menu_feedback': 'Retours et texte',
-    'text_size': 'Taille du texte',
     'text_size_small': 'Petit',
     'text_size_normal': 'Normal',
     'text_size_large': 'Grand',
@@ -649,9 +643,7 @@ class AppText {
 
   static const Map<String, String> _mg = <String, String>{
     // Home
-    'all_notes': 'Naoty rehetra',
     'all_docs': 'Rakitra rehetra',
-    'all_tasks': 'Asa rehetra',
     'filter_all': 'Rehetra',
     'filter_notes': 'Naoty',
     'filter_tasks': 'Asa',
@@ -899,7 +891,6 @@ class AppText {
     'onboarding_replay': 'Avereno jerena ny fanazavana',
     // Famaliana sy lahatsoratra
     'menu_feedback': 'Famaliana sy lahatsoratra',
-    'text_size': "Haben'ny soratra",
     'text_size_small': 'Kely',
     'text_size_normal': 'Antonony',
     'text_size_large': 'Lehibe',
