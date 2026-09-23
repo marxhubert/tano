@@ -12,8 +12,7 @@ import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
-import 'package:tano/features/notes/widgets/note_grid_view.dart';
-import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/notes/widgets/note_cards.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
@@ -399,23 +398,13 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   }
 
   Widget _notesSliver(List<Note> notes, String viewLayout) {
-    switch (viewLayout) {
-      case 'gridlist':
-        return NoteGridView(
-          viewModel: _viewModel,
-          onOpenNote: (Note note) {
-            _openNoteEditor(add: false, note: note);
-          },
-        );
-      case 'list':
-      default:
-        return NoteListView(
-          viewModel: _viewModel,
-          onOpenNote: (Note note) {
-            _openNoteEditor(add: false, note: note);
-          },
-        );
-    }
+    return NoteCards(
+      viewModel: _viewModel,
+      isList: viewLayout == 'list',
+      onOpenNote: (Note note) {
+        _openNoteEditor(add: false, note: note);
+      },
+    );
   }
 
   /// True while the field is open on an empty query with something to offer.
