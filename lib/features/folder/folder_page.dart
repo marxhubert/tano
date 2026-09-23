@@ -26,6 +26,7 @@ import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
+import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
@@ -50,10 +51,9 @@ class FolderPage extends StatefulWidget {
   State<FolderPage> createState() => _FolderPageState();
 }
 
-class _FolderPageState extends State<FolderPage> with RouteAware {
+class _FolderPageState extends State<FolderPage>
+    with RouteAware, FabRouteCollapse<FolderPage> {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  Timer? _routeCollapseTimer;
-  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   DocumentFilter _documentFilter = DocumentFilter.all;
@@ -116,35 +116,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     }
   }
 
-  /// Called when another route (the editor, ...) is pushed on top of this page.
-  /// Fold the FAB once the page is fully covered, so it is already back in its
-  /// resting form when the user returns.
   @override
-  void didPushNext() {
-    _routeCollapseTimer?.cancel();
-    final generation = ++_routeCollapseGeneration;
-    final route = ModalRoute.of(context);
-    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
-      if (mounted &&
-          generation == _routeCollapseGeneration &&
-          route?.isCurrent == false) {
-        _fabKey.currentState?.collapse();
-      }
-    });
-  }
-
-  @override
-  void didPopNext() {
-    // A quick return invalidates the delayed fold from the outgoing route.
-    // It must not close a FAB the user has already reopened on this page.
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
-  }
+  GlobalKey<AppFabState> get fabKey => _fabKey;
 
   @override
   void dispose() {
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    disposeFabRouteCollapse();
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);

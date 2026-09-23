@@ -17,6 +17,7 @@ import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
+import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
@@ -54,12 +55,10 @@ class Home extends StatefulWidget {
   }
 }
 
-class HomeState extends State<Home> with RouteAware {
+class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  Timer? _routeCollapseTimer;
-  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
@@ -109,8 +108,7 @@ class HomeState extends State<Home> with RouteAware {
 
   @override
   void dispose() {
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    disposeFabRouteCollapse();
     routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -121,32 +119,17 @@ class HomeState extends State<Home> with RouteAware {
     super.dispose();
   }
 
+  @override
+  GlobalKey<AppFabState> get fabKey => _fabKey;
+
   /// Called when another route (editor, settings, ...) is pushed on top of
   /// Home. Dismiss the undo snack bar immediately so it does not linger if
-  /// the user comes back before its timeout.
+  /// the user comes back before its timeout, then let [FabRouteCollapse] fold
+  /// the FAB.
   @override
   void didPushNext() {
     ScaffoldMessenger.of(context).clearSnackBars();
-    // Fold the FAB once Home is fully covered, so it is already reduced when
-    // the user comes back, with no visible collapse during the push.
-    _routeCollapseTimer?.cancel();
-    final generation = ++_routeCollapseGeneration;
-    final route = ModalRoute.of(context);
-    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
-      if (mounted &&
-          generation == _routeCollapseGeneration &&
-          route?.isCurrent == false) {
-        _fabKey.currentState?.collapse();
-      }
-    });
-  }
-
-  @override
-  void didPopNext() {
-    // A quick return invalidates the delayed fold from the outgoing route.
-    // It must not close a FAB the user has already reopened on this page.
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    super.didPushNext();
   }
 
   void _onViewModelChanged() {
