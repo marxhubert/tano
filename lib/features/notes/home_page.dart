@@ -289,17 +289,6 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     return selectionCountLabel(count: count, total: total, noun: noun);
   }
 
-  String _deleteActionTitle() {
-    if (_viewModel.selectedCount > 1) {
-      return _viewModel.selectedCount == _viewModel.notesCount
-          ? AppText.tr('delete_all_notes')
-          : AppText.tr('delete_notes', <String, String>{
-              'count': '${_viewModel.selectedCount}',
-            });
-    }
-    return AppText.tr('delete_note');
-  }
-
   /// Prompts for a folder name and creates it. The prompt keeps its save action
   /// disabled until the field holds a name, so no blank folder can be created.
   bool _isAddingFolder = false;
@@ -582,7 +571,10 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
               }
               final bool? confirmDeletion = await getConfirmation(
                 context: context,
-                actionTitle: _deleteActionTitle(),
+                actionTitle: deleteSelectionTitle(
+                  count: _viewModel.selectedCount,
+                  total: _viewModel.notesCount,
+                ),
                 action: AppText.tr('delete'),
                 message: _viewModel.hasFolderInSelection
                     ? AppText.tr('delete_folder_question', <String, String>{

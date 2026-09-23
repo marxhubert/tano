@@ -364,18 +364,6 @@ class _FolderPageState extends State<FolderPage>
     if (_isSearchMode) _exitSearchMode();
   }
 
-  /// Title of the delete confirmation, based on the current selection.
-  String _deleteActionTitle() {
-    final int count = _selection.count;
-    final int total = _visibleNotes.length;
-    if (count > 1) {
-      return count == total
-          ? AppText.tr('delete_all_notes')
-          : AppText.tr('delete_notes', <String, String>{'count': '$count'});
-    }
-    return AppText.tr('delete_note');
-  }
-
   Future<void> _deleteSelected() async {
     // A locked note is only deleted from inside, once opened: the list never
     // removes one, exactly like Home.
@@ -387,7 +375,10 @@ class _FolderPageState extends State<FolderPage>
     }
     final bool? confirm = await getConfirmation(
       context: context,
-      actionTitle: _deleteActionTitle(),
+      actionTitle: deleteSelectionTitle(
+        count: _selection.count,
+        total: _visibleNotes.length,
+      ),
       action: AppText.tr('delete'),
     );
     if (confirm != true || !mounted) return;

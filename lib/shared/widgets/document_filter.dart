@@ -89,6 +89,17 @@ String selectionCountLabel({
   });
 }
 
+/// The title of the delete confirmation for [count] selected notes out of the
+/// [total] currently shown: taking the whole visible list reads "delete all".
+String deleteSelectionTitle({required int count, required int total}) {
+  if (count > 1) {
+    return count == total
+        ? AppText.tr('delete_all_notes')
+        : AppText.tr('delete_notes', <String, String>{'count': '$count'});
+  }
+  return AppText.tr('delete_note');
+}
+
 /// The stored filter name, or null for anything unknown.
 DocumentFilter? documentFilterFromName(String? name) {
   for (final DocumentFilter filter in DocumentFilter.values) {
