@@ -4,7 +4,7 @@
 
 A `Folder` groups notes through nullable `Note.folderId`. Null means unfiled.
 There are no nested folders. Common fields include stable ID, name, timestamps,
-bookmark, color category, lock and trash state. Rich content, attachments,
+important, color category, lock and trash state. Rich content, attachments,
 checklists and note links belong to notes, not folders.
 
 Home shows folders first, then unfiled notes. Each group uses common sorting;
@@ -26,7 +26,7 @@ locked folder. Home search includes eligible notes inside unlocked folders.
 Folders themselves are not currently full-text search results.
 
 The folder screen reuses card layouts and sorting, with its name as the title,
-bookmark, rename, lock and deletion actions. Without a device credential, Lock is
+important, rename, lock and deletion actions. Without a device credential, Lock is
 disabled and the folder keeps the only remaining corner watermark; it no longer
 has a cover.
 

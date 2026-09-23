@@ -43,7 +43,7 @@ earlier validation record. These builds do not replace real-device security chec
 In a debug build, open Settings > Reset data > Developer reset and confirm.
 This replaces all notes, folders, attachments and preferences with synthetic
 fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
-populated folder, with long text, bookmarks, themes, note links and checklists.
+populated folder, with long text, important marks, themes, note links and checklists.
 Locked fixtures are enabled only when the device has a system credential.
 The button is hidden and the operation rejected in profile/release builds.
 Normal reset and first launch keep an empty database. Fixtures cover notes, folders

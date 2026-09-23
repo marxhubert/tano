@@ -136,7 +136,7 @@ class PageScaffold extends StatefulWidget {
   final bool alignAppBarTitleLeft;
 
   /// When true, a landscape phone drops the body's title line and moves the
-  /// title to the app bar, its flags around it ("bookmark + title + lock").
+  /// title to the app bar, its flags around it ("important + title + lock").
   /// Home keeps its title line; only a folder asks for this.
   final bool condenseHeader;
 
@@ -147,7 +147,7 @@ class PageScaffold extends StatefulWidget {
   final Widget? headerMetadataWidget;
 
   /// Flags shown in front of the reduced (app bar) title, in the order
-  /// "bookmark + title + lock". The body title line keeps using
+  /// "important + title + lock". The body title line keeps using
   /// [headerMetadataWidget], so each presentation can style its own mark.
   final Widget? headerMetadataLeading;
 

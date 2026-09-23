@@ -942,7 +942,7 @@ class _EditNoteState extends State<EditNote>
                     ? AppText.tr(_viewModel.isTask ? 'add_task' : 'add_note')
                     : AppText.tr(_viewModel.isTask ? 'edit_task' : 'edit_note'),
                 // The reduced (scrolled) title carries the note's marks, in the
-                // order "bookmark + title + lock".
+                // order "important + title + lock".
                 headerMetadataLeading: _viewModel.important
                     ? reducedTitleBookmark()
                     : null,
