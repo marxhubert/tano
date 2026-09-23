@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:tano/shared/widgets/entity_layout.dart';
+import 'package:tano/shared/widgets/fab/fab_layout_metrics.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Pure geometry for the FAB's current mode and viewport.
@@ -45,9 +46,7 @@ class FabGeometry {
       math.min(compact ? media.size.shortestSide : safeWidth, safeWidth),
       widthCeiling,
     );
-    final horizontalGap = compact
-        ? (tabletViewport(media.size) ? 24.0 : 12.0)
-        : 24.0;
+    final horizontalGap = fabHorizontalGap(media.size);
     final nudge = !compact && wide ? 12.0 : 0.0;
     final maxExpandedWidth = math.max(0.0, safeWidth - horizontalGap + nudge);
     final expandedWidth = (contentWidth - (wide ? 24.0 : 48.0))
@@ -66,9 +65,7 @@ class FabGeometry {
       media.viewInsets.bottom,
       media.viewPadding.bottom,
     );
-    final bottomGap = compact
-        ? (tabletViewport(media.size) ? 24.0 : 12.0)
-        : 20.0;
+    final bottomGap = fabBottomGap(media.size);
     final paintedBottom =
         media.size.height - bottomInset - bottomGap + offset.dy;
     // A second-degree menu never takes more than two thirds of the screen: its
