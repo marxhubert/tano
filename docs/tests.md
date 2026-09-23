@@ -46,7 +46,10 @@ fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
 populated folder, with long text, bookmarks, themes, note links and checklists.
 Locked fixtures are enabled only when the device has a system credential.
 The button is hidden and the operation rejected in profile/release builds.
-Normal reset and first launch keep an empty database. Fixtures cover notes, folders and four task lists (mixed, completed and locked).
+Normal reset and first launch keep an empty database. Fixtures cover notes, folders
+and task checklists: every task is a list of short rows (5 to 15, some 26 to 40, one
+task in three described) and no row passes 250 characters; four hand-written lists
+add the mixed, completed and locked shapes.
 
 Run `flutter test test/developer_reset_test.dart` to check replacement,
 repeatability, reference integrity and both device-lock capability states.
