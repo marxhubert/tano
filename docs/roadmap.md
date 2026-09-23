@@ -1,8 +1,32 @@
 # Consolidation roadmap
 
-Updated 19 September 2026. The app has never shipped; old test data is disposable.
+Updated for the `refactor/consolidation` branch. The app has never shipped; old
+test data is disposable.
 
-## Completed in this consolidation
+## Consolidation and security cycle (current branch)
+
+- One wording source for group counts and selection sentences (`document_filter.dart`).
+- One `FabRouteCollapse` mixin for Home and Folder instead of two copies.
+- Folder search records its query in the shared history, like Home.
+- App Store links from the update lookup are only followed when Apple + HTTPS.
+- A cleartext export is refused while the selection contains a locked note.
+- Destroying locked trash content, or emptying the trash with locked items in it,
+  requires the device credential.
+- A generated installation key is read back from secure storage; an unpersisted
+  key fails loudly instead of silently changing on the next launch.
+- Materialized attachment plaintext expires after ten minutes and is swept on
+  return from the system viewer.
+- A configured database passphrase provider that returns null fails closed
+  instead of opening SQLCipher in the clear.
+
+## Remaining consolidation
+
+- One search-mode controller shared by Home and Folder (selection/search coupling).
+- One sort-preferences controller instead of each page re-reading the keys.
+- Unified card factory and shared delete/undo/move command paths.
+- One `FabLayoutMetrics` for the FAB location and geometry.
+
+## Completed in the previous consolidation
 
 - Archive bounds/path validation, import collision handling and SQLite batch rollback.
 - Search/navigation/export parent-folder access policy and explicit lock rules.
@@ -43,4 +67,4 @@ from a collaborator's permission to a shared resource.
 
 Use `develop` for integration and PRs into protected `master` for release promotion.
 
-Implementation details and limits: [consolidation step 2](consolidation-step-2.md).
+Earlier audits and the step 2 journal: [history](history.md).

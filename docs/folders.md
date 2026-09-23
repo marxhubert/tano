@@ -4,11 +4,11 @@
 
 A `Folder` groups notes through nullable `Note.folderId`. Null means unfiled.
 There are no nested folders. Common fields include stable ID, name, timestamps,
-bookmark, color category, lock, cover and trash state. Rich content, attachments,
+bookmark, color category, lock and trash state. Rich content, attachments,
 checklists and note links belong to notes, not folders.
 
 Home shows folders first, then unfiled notes. Each group uses common sorting;
-bookmarks sort first in their group. Default folder names use the lowest available
+favourites sort first in their group. Default folder names use the lowest available
 `Folder N`. Grid and list use the shared entity cards. A folder name allows up to
 three lines in grid and two in list. Metadata is omitted when empty.
 
@@ -26,13 +26,15 @@ locked folder. Home search includes eligible notes inside unlocked folders.
 Folders themselves are not currently full-text search results.
 
 The folder screen reuses card layouts and sorting, with its name as the title,
-cover management, bookmark, rename, lock and deletion actions. Without a device
-credential, Lock is disabled. A cover is full-width and 160 high with BoxFit.cover.
+bookmark, rename, lock and deletion actions. Without a device credential, Lock is
+disabled and the folder keeps the only remaining corner watermark; it no longer
+has a cover.
 
 ## Deletion
 
 Trashing a folder keeps its notes linked, so restoration brings the folder back
 intact. They are excluded from global results while the parent is deleted.
 Permanent folder deletion removes its notes and folder record in one transaction.
-Encrypted attachment orphan collection is still pending. Confirmation indicates
+Encrypted orphan attachments are collected at startup against the complete
+reference set. Confirmation indicates
 the affected contents. Nested folders and remote synchronization are not implemented.
