@@ -3,9 +3,9 @@ import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
-import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
@@ -91,6 +91,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     _viewModel.addListener(_onViewModelChanged);
     ViewLayoutController.instance.addListener(_syncViewLayout);
     SortPreferencesController.instance.addListener(_onSortChanged);
+    DocumentFilterController.instance.addListener(_onDocumentFilterChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -117,6 +118,9 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     _viewModel.removeListener(_onViewModelChanged);
     ViewLayoutController.instance.removeListener(_syncViewLayout);
     SortPreferencesController.instance.removeListener(_onSortChanged);
+    DocumentFilterController.instance.removeListener(
+      _onDocumentFilterChanged,
+    );
     FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
@@ -153,23 +157,15 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   /// The FAB's side, shared with every other page.
   bool get _fabOnLeft => FabSideController.instance.onLeft;
 
-  Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
-
   Future<void> _loadPreferences() async {
-    final SecurePreferences prefs = await _getPrefs();
-    // The shared controller owns the choice; Home only mirrors it.
+    // The shared controllers own the choices; Home only mirrors them.
     await ViewLayoutController.instance.load();
     _viewModel.setViewLayout(ViewLayoutController.instance.layout);
     await SortPreferencesController.instance.load();
     _applySortPreferences();
 
-    if (!prefs.containsKey('documentFilter')) {
-      await prefs.setString('documentFilter', DocumentFilter.all.name);
-    }
-    _viewModel.setDocumentFilter(
-      documentFilterFromName(prefs.getString('documentFilter')) ??
-          DocumentFilter.all,
-    );
+    await DocumentFilterController.instance.load();
+    _viewModel.setDocumentFilter(DocumentFilterController.instance.filter);
 
     await FabSideController.instance.load();
   }
@@ -184,6 +180,10 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   }
 
   void _onSortChanged() => _applySortPreferences();
+
+  void _onDocumentFilterChanged() => _viewModel.setDocumentFilter(
+    DocumentFilterController.instance.filter,
+  );
 
   /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {
@@ -468,16 +468,8 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     countOf: _viewModel.countFor,
     // Selecting something replaces the tags with the selection sentence.
     selectionLabel: _viewModel.isInSelectionMode ? _notesMetadata : null,
-    onChanged: (DocumentFilter filter) {
-      _viewModel.setDocumentFilter(filter);
-      _saveDocumentFilterPref(filter);
-    },
+    onChanged: DocumentFilterController.instance.set,
   );
-
-  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
-    final SecurePreferences prefs = await _getPrefs();
-    await prefs.setString('documentFilter', filter.name);
-  }
 
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(

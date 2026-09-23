@@ -7,6 +7,11 @@ test data is disposable.
 
 - One wording source for group counts and selection sentences (`document_filter.dart`).
 - One `FabRouteCollapse` mixin for Home and Folder instead of two copies.
+- One `SortPreferencesController` and one `DocumentFilterController` owned by
+  Home, Folder and Settings, and one `FabLayoutMetrics` for the FAB location
+  and geometry.
+- `EntitySliver` requires a `ContentEntity` and keys every card by id; one
+  attachment glyph across cards, the editor and the FAB menu.
 - Folder search records its query in the shared history, like Home.
 - App Store links from the update lookup are only followed when Apple + HTTPS.
 - A cleartext export is refused while the selection contains a locked note.
@@ -22,9 +27,7 @@ test data is disposable.
 ## Remaining consolidation
 
 - One search-mode controller shared by Home and Folder (selection/search coupling).
-- One sort-preferences controller instead of each page re-reading the keys.
 - Unified card factory and shared delete/undo/move command paths.
-- One `FabLayoutMetrics` for the FAB location and geometry.
 
 ## Completed in the previous consolidation
 

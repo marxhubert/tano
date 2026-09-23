@@ -16,10 +16,10 @@ import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
+import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
-import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
@@ -104,6 +104,7 @@ class _FolderPageState extends State<FolderPage>
     _titleFocusNode.addListener(_onTitleFocusChanged);
     ViewLayoutController.instance.addListener(_onViewLayoutChanged);
     SortPreferencesController.instance.addListener(_onSortChanged);
+    DocumentFilterController.instance.addListener(_onDocumentFilterChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     _loadPreferences();
     _load();
@@ -128,6 +129,9 @@ class _FolderPageState extends State<FolderPage>
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
     SortPreferencesController.instance.removeListener(_onSortChanged);
+    DocumentFilterController.instance.removeListener(
+      _onDocumentFilterChanged,
+    );
     FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -163,21 +167,14 @@ class _FolderPageState extends State<FolderPage>
     if (mounted) await _loadPreferences();
   }
 
-  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setString('documentFilter', filter.name);
-  }
-
   Future<void> _loadPreferences() async {
     await ViewLayoutController.instance.load();
     await SortPreferencesController.instance.load();
+    await DocumentFilterController.instance.load();
     await FabSideController.instance.load();
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _documentFilter =
-          documentFilterFromName(prefs.getString('documentFilter')) ??
-          DocumentFilter.all;
+      _documentFilter = DocumentFilterController.instance.filter;
       _syncSort();
       _notes = _sorted(_notes);
     });
@@ -198,6 +195,12 @@ class _FolderPageState extends State<FolderPage>
       _syncSort();
       _notes = _sorted(_notes);
     });
+  }
+
+  /// The filter changed on this page or on Home: mirror it.
+  void _onDocumentFilterChanged() {
+    if (!mounted) return;
+    setState(() => _documentFilter = DocumentFilterController.instance.filter);
   }
 
   /// Notes sorted like the home screen: important first, then the chosen
@@ -749,11 +752,10 @@ class _FolderPageState extends State<FolderPage>
                     selectionLabel: _selection.isActive
                         ? _headerMetadata
                         : null,
-                    onChanged: (DocumentFilter filter) => setState(() {
-                      _selection.exit();
-                      _documentFilter = filter;
-                      _saveDocumentFilterPref(filter);
-                    }),
+                    onChanged: (DocumentFilter filter) {
+                      setState(_selection.exit);
+                      DocumentFilterController.instance.set(filter);
+                    },
                   ),
                 ),
               ),

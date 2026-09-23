@@ -31,7 +31,7 @@ Sentry envelopes are separate checks, not implied by Dart test success.
 
 ## Step 2 validation
 
-447 tests pass, including 32 unchanged goldens. Static analysis is clean.
+451 tests pass, including 32 unchanged goldens. Static analysis is clean.
 Debug Android and unsigned debug iOS builds succeed. Scenarios cover lifecycle
 privacy, protected drafts/system Back, OS credential return, startup retries and
 partial initialization, unreadable preferences, save failure/retry, and orphan
