@@ -106,21 +106,42 @@ class DocumentFilterControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final String? sentence = selectionLabel;
+    // One kind needs no choice: its own count says everything the three
+    // segments would.
+    final DocumentFilter? onlyKind = sentence == null ? _onlyKind() : null;
     return SegmentedButton<DocumentFilter>(
       segments: <ButtonSegment<DocumentFilter>>[
         if (sentence != null)
           ButtonSegment<DocumentFilter>(value: value, label: Text(sentence))
+        else if (onlyKind != null)
+          ButtonSegment<DocumentFilter>(
+            value: onlyKind,
+            // The only segment is the selected one, whatever the stored filter
+            // is, so its number takes the on-accent ink.
+            label: _label(
+              context,
+              onlyKind,
+              countOf(onlyKind),
+              isSelected: true,
+            ),
+          )
         else
           for (final DocumentFilter filter in DocumentFilter.values)
             ButtonSegment<DocumentFilter>(
               value: filter,
-              label: _label(context, filter, countOf(filter)),
+              label: _label(
+                context,
+                filter,
+                countOf(filter),
+                isSelected: filter == value,
+              ),
             ),
       ],
-      selected: <DocumentFilter>{value},
+      selected: <DocumentFilter>{onlyKind ?? value},
       // The sentence's own segment stays enabled — it wears the active fill —
-      // but there is nothing left to choose while selecting.
-      onSelectionChanged: sentence != null
+      // but there is nothing left to choose while selecting, nor when a single
+      // kind leaves nothing to switch to.
+      onSelectionChanged: sentence != null || onlyKind != null
           ? (Set<DocumentFilter> _) {}
           : (Set<DocumentFilter> selection) => onChanged(selection.first),
       showSelectedIcon: false,
@@ -143,12 +164,25 @@ class DocumentFilterControl extends StatelessWidget {
     );
   }
 
+  /// The one kind the page holds, or null when it mixes notes and tasks (or
+  /// holds none): a single kind has nothing to switch between.
+  DocumentFilter? _onlyKind() {
+    final bool hasNotes = countOf(DocumentFilter.notes) > 0;
+    final bool hasTasks = countOf(DocumentFilter.tasks) > 0;
+    if (hasNotes == hasTasks) return null;
+    return hasNotes ? DocumentFilter.notes : DocumentFilter.tasks;
+  }
+
   /// "All (33)" and "0 Task": the number and its parentheses take a light
   /// weight and the muted ink, so the noun keeps the segment's own colour —
   /// on-accent when the segment is the selected one.
-  Widget _label(BuildContext context, DocumentFilter filter, int count) {
+  Widget _label(
+    BuildContext context,
+    DocumentFilter filter,
+    int count, {
+    required bool isSelected,
+  }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool isSelected = filter == value;
     final TextStyle? light = Theme.of(context).textTheme.labelLarge?.copyWith(
       fontWeight: FontWeight.w400,
       color: isSelected
