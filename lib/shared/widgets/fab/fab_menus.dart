@@ -296,11 +296,13 @@ mixin _FabMenusMixin on _FabStateMixin {
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: <Widget>[
-                                            // White disc behind the check.
+                                            // White disc behind the check, a
+                                            // hair wider than the icon so it also
+                                            // rings the check's own disc.
                                             Container(
-                                              width: diameter * 0.40,
-                                              height: diameter * 0.40,
-                                              decoration: BoxDecoration(
+                                              width: diameter * 0.50,
+                                              height: diameter * 0.50,
+                                              decoration: const BoxDecoration(
                                                 // The check icon is full: its own
                                                 // colour paints the disc, and the
                                                 // check shows the white behind it.

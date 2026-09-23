@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 // ---------------------------------------------------------------------------
@@ -159,6 +160,38 @@ Widget metadataItem(
     ),
     Text(label, style: metadataLineStyle(context)),
   ],
+);
+
+// ---------------------------------------------------------------------------
+// Reduced title flags
+// ---------------------------------------------------------------------------
+
+/// Size of the bookmark on a reduced (app bar) title.
+const double reducedTitleBookmarkSize = 16.0;
+
+/// Size of the lock on a reduced (app bar) title, a touch smaller than the
+/// bookmark beside it.
+const double reducedTitleLockSize = 12.0;
+
+/// Gap between a reduced (app bar) title and the flags around it.
+const double reducedTitleFlagGap = 2.0;
+
+/// The bookmark of a reduced title: filled, in the folder's accent amber. On a
+/// reduced title the mark stands alone, so it has to read at a glance.
+Widget reducedTitleBookmark() => const Icon(
+  Symbols.bookmark,
+  size: reducedTitleBookmarkSize,
+  color: tanoAmber,
+  fill: 1.0,
+);
+
+/// The lock of a reduced title: outlined, in the same accent amber as the
+/// bookmark it pairs with.
+Widget reducedTitleLock() => const Icon(
+  Symbols.lock,
+  size: reducedTitleLockSize,
+  color: tanoAmber,
+  fill: 0.0,
 );
 
 /// The line under a page title: a leading widget (date, count, ...) on the left

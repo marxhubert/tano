@@ -10,6 +10,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_layout.dart';
+import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/main.dart';
 
@@ -134,5 +135,34 @@ void main() {
     // adds the app bar's side padding on top of it.
     expect(phoneGap, lessThan(tabletGap));
     expect(tabletGap - phoneGap, greaterThanOrEqualTo(appPaddingSmall));
+  });
+
+  testWidgets('the reduced title reads bookmark + title + lock', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageScaffold(
+          title: 'Perso',
+          condenseHeader: true,
+          headerMetadataLeading: const Icon(
+            Symbols.bookmark,
+            key: ValueKey<String>('lead'),
+          ),
+          headerMetadataTrailing: const Icon(
+            Symbols.lock,
+            key: ValueKey<String>('trail'),
+          ),
+          slivers: const <Widget>[],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final double lead = tester.getRect(find.byKey(const ValueKey<String>('lead'))).left;
+    final double title = tester.getRect(find.text('Perso')).left;
+    final double trail = tester.getRect(find.byKey(const ValueKey<String>('trail'))).left;
+    expect(lead, lessThan(title));
+    expect(title, lessThan(trail));
   });
 }

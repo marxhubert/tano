@@ -612,6 +612,17 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           headerMetadataWidget: _showSearchHistory
               ? clearSearchHistoryButton(context)
               : (!_resultsVisible ? _folderFlags(context) : null),
+          // On the reduced title the order is the other way round: the bookmark
+          // leads, the title follows, the lock closes the line.
+          headerMetadataLeading: _showSearchHistory
+              ? clearSearchHistoryButton(context)
+              : (!_resultsVisible && _folder.important
+                    ? reducedTitleBookmark()
+                    : null),
+          headerMetadataTrailing:
+              !_showSearchHistory && !_resultsVisible && _folder.isLocked
+              ? reducedTitleLock()
+              : null,
           // Nothing but the illustration: it must hold its place.
           freezeBody: !_loading && _visibleNotes.isEmpty,
           titleWidget: _isEditingTitle

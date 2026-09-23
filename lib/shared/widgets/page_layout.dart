@@ -106,6 +106,8 @@ class PageScaffold extends StatefulWidget {
     this.alignAppBarTitleLeft = false,
     this.headerMetadata,
     this.headerMetadataWidget,
+    this.headerMetadataLeading,
+    this.headerMetadataTrailing,
     this.headerCrossAxisAlignment = CrossAxisAlignment.baseline,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
@@ -141,8 +143,8 @@ class PageScaffold extends StatefulWidget {
   final bool alignAppBarTitleLeft;
 
   /// When true, a landscape phone drops the body's title line and moves the
-  /// title, with its metadata in front of it, to the app bar. Home keeps its
-  /// title line; only a folder asks for this.
+  /// title to the app bar, its flags around it ("bookmark + title + lock").
+  /// Home keeps its title line; only a folder asks for this.
   final bool condenseHeader;
 
   /// Small metadata printed at the right of the body title line.
@@ -150,6 +152,15 @@ class PageScaffold extends StatefulWidget {
 
   /// Tappable metadata for the same slot, when a plain string will not do.
   final Widget? headerMetadataWidget;
+
+  /// Flags shown in front of the reduced (app bar) title, in the order
+  /// "bookmark + title + lock". The body title line keeps using
+  /// [headerMetadataWidget], so each presentation can style its own mark.
+  final Widget? headerMetadataLeading;
+
+  /// Flags shown after the reduced (app bar) title.
+  final Widget? headerMetadataTrailing;
+
   final CrossAxisAlignment headerCrossAxisAlignment;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
@@ -304,21 +315,7 @@ class _PageScaffoldState extends State<PageScaffold> {
                     )
                   : null,
               title: showAppBarTitle
-                  ? (condensed
-                        ? _condensedTitle(textColor, appBarTitleText)
-                        : (widget.appBarTitleWidget ??
-                              Text(
-                                appBarTitleText,
-                                maxLines: 1,
-                                // Same size as the "Cancel" action.
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: appBarTextSize,
-                                  letterSpacing: -0.41,
-                                  color: textColor,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              )))
+                  ? _appBarTitle(textColor, appBarTitleText, condensed)
                   : null,
               // The condensed title leads with its metadata, so it reads from the
               // left rather than from the middle.
@@ -352,39 +349,57 @@ class _PageScaffoldState extends State<PageScaffold> {
     );
   }
 
-  /// The app bar title of a condensed folder: the flags, then the name, on one
-  /// line. It is centred while the whole group fits; a longer name keeps the
-  /// left edge so it is not cut on both sides.
-  Widget _condensedTitle(Color textColor, String title) {
+  /// The title shown in the app bar. A condensed page leads with its flags and
+  /// is centred while the whole group fits; any other page that shows a reduced
+  /// (scrolled) title gets the same flags when it has some.
+  Widget _appBarTitle(Color textColor, String title, bool condensed) {
     final TextStyle titleStyle = TextStyle(
       fontWeight: FontWeight.w600,
       fontSize: appBarTextSize,
       letterSpacing: -0.41,
       color: textColor,
     );
+    final bool hasFlags =
+        widget.headerMetadataLeading != null ||
+        widget.headerMetadataTrailing != null;
+    if (!condensed && !hasFlags) {
+      return widget.appBarTitleWidget ??
+          Text(
+            title,
+            maxLines: 1,
+            // Same size as the "Cancel" action.
+            style: titleStyle,
+            overflow: TextOverflow.ellipsis,
+          );
+    }
+    final Widget row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (widget.headerMetadataLeading != null) ...<Widget>[
+          widget.headerMetadataLeading!,
+          const SizedBox(width: reducedTitleFlagGap),
+        ],
+        if (widget.headerMetadata != null) ...<Widget>[
+          Text(widget.headerMetadata!, style: titleMetadataStyle(context)),
+          const SizedBox(width: appPaddingTight),
+        ],
+        Flexible(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          ),
+        ),
+        if (widget.headerMetadataTrailing != null) ...<Widget>[
+          const SizedBox(width: reducedTitleFlagGap),
+          widget.headerMetadataTrailing!,
+        ],
+      ],
+    );
+    if (!condensed) return row;
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final Widget row = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (widget.headerMetadataWidget != null) ...<Widget>[
-              widget.headerMetadataWidget!,
-              const SizedBox(width: appPaddingSmall),
-            ],
-            if (widget.headerMetadata != null) ...<Widget>[
-              Text(widget.headerMetadata!, style: titleMetadataStyle(context)),
-              const SizedBox(width: appPaddingTight),
-            ],
-            Flexible(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: titleStyle,
-              ),
-            ),
-          ],
-        );
         return constraints.maxWidth >= _condensedTitleWidth(title, titleStyle)
             ? Center(child: row)
             : row;
@@ -392,7 +407,7 @@ class _PageScaffoldState extends State<PageScaffold> {
     );
   }
 
-  /// The width the untouched title needs, metadata included, so the decision to
+  /// The width the untouched title needs, flags included, so the decision to
   /// centre does not depend on the layout having happened yet.
   double _condensedTitleWidth(String title, TextStyle style) {
     final TextPainter painter = TextPainter(
@@ -411,9 +426,12 @@ class _PageScaffoldState extends State<PageScaffold> {
       maxLines: 1,
       textDirection: Directionality.of(context),
     )..layout();
-    // The flags widget cannot be measured before layout; a short allowance keeps
-    // the decision honest.
-    return painter.width + (widget.headerMetadataWidget != null ? 56.0 : 0.0);
+    // The flag widgets cannot be measured before layout; a short allowance per
+    // side keeps the decision honest.
+    double allowance = 0.0;
+    if (widget.headerMetadataLeading != null) allowance += 28.0;
+    if (widget.headerMetadataTrailing != null) allowance += 28.0;
+    return painter.width + allowance;
   }
 
   /// The body scroll view.
