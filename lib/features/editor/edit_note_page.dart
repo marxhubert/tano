@@ -25,6 +25,7 @@ import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/link_text_controller.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -924,6 +925,15 @@ class _EditNoteState extends State<EditNote>
             _contentController.text,
           );
 
+          // A phone in portrait lets the cover bleed to both screen edges;
+          // every other window aligns it with the content and rounds it.
+          final Size viewport = MediaQuery.sizeOf(context);
+          final bool coverFullBleed = !compactChrome(viewport);
+          final double coverInset = coverFullBleed ? 0.0 : appPaddingMedium;
+          final BorderRadius coverRadius = coverFullBleed
+              ? BorderRadius.zero
+              : BorderRadius.circular(appBorderRadius);
+
           return ProtectedContent(
             protected: _viewModel.isLocked || widget.authenticated,
             child: GestureDetector(
@@ -1078,13 +1088,14 @@ class _EditNoteState extends State<EditNote>
                     SliverToBoxAdapter(
                       child: ManageableCover(
                         name: _viewModel.coverImage!,
-                        height: 160,
-                        fit: BoxFit.cover,
+                        borderRadius: coverRadius,
                         lightDimAlpha: 0.0,
                         // Tighter gap above, under the metadata line.
-                        padding: const EdgeInsets.only(
+                        padding: EdgeInsets.only(
                           top: appPaddingSmall,
                           bottom: appPaddingMedium,
+                          left: coverInset,
+                          right: coverInset,
                         ),
                         onRemove: _removeCoverImage,
                       ),
