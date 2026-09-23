@@ -554,10 +554,27 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _folderFlags(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
+      if (_folder.isLocked)
+        // The lock reads exactly like the bookmark: same size, same outline,
+        // same amber.
+        metadataGlyph(
+          context,
+          Symbols.lock,
+          color: tanoAmber,
+          fill: 0,
+          size: 18.0,
+        ),
       if (_folder.isLocked && _folder.important) const SizedBox(width: 8),
       if (_folder.important)
-        metadataGlyph(context, Symbols.bookmark, color: tanoAmber, fill: 1),
+        // Bigger and outlined on the title line, so the folder's own mark
+        // reads at a glance next to the lock.
+        metadataGlyph(
+          context,
+          Symbols.bookmark,
+          color: tanoAmber,
+          fill: 0,
+          size: 20.0,
+        ),
     ],
   );
 

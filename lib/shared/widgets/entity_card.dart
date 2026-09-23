@@ -174,8 +174,9 @@ class EntityCard extends StatelessWidget {
                   ),
                 ),
               // Folder watermark: the glyph bleeds off the bottom-right corner,
-              // pushed past both edges. The other kinds no longer carry one.
-              if (kind == EntityKind.folder)
+              // pushed past both edges. The other kinds carry one only while
+              // they are locked, the same way a locked card is closed off.
+              if (kind == EntityKind.folder || isLocked)
                 Positioned(
                   right: _folderWatermarkRight,
                   bottom: -8.0,
@@ -183,7 +184,12 @@ class EntityCard extends StatelessWidget {
                   height: watermarkSize,
                   child: IgnorePointer(
                     child: Icon(
-                      Symbols.folder_open,
+                      // The kind's own mark: a folder, a note or a task.
+                      switch (kind) {
+                        EntityKind.task => Symbols.list_alt,
+                        EntityKind.folder => Symbols.folder_open,
+                        _ => Symbols.sticky_note_2,
+                      },
                       key: const ValueKey<String>('entity-card-watermark'),
                       size: watermarkSize,
                       weight: 100.0,

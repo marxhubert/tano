@@ -328,10 +328,8 @@ class _PageScaffoldState extends State<PageScaffold> {
                   : <Widget>[
                       for (final Widget a in widget.actions!)
                         Padding(
-                          // 6 between the actions, exactly as before.
-                          padding: const EdgeInsets.only(
-                            right: appPaddingSmall,
-                          ),
+                          // A tighter gap between the actions.
+                          padding: const EdgeInsets.only(right: 2.0),
                           child: a,
                         ),
                       SizedBox(

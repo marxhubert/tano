@@ -133,9 +133,10 @@ Widget metadataGlyph(
   IconData icon, {
   Color? color,
   double? fill,
+  double? size,
 }) => Icon(
   icon,
-  size: metadataIconSize,
+  size: size ?? metadataIconSize,
   color: color ?? mutedTextColor(context),
   fill: fill,
 );

@@ -130,18 +130,32 @@ TanoFixtures buildFixtures({required bool canLock, DateTime? now}) {
     plans.add(_plan(random, null, looseSpecs[n], baseDate, plans.length));
   }
 
+  // Three items out of eight are tasks — a 3:5 ratio, so the tasks are 60% of
+  // the notes — without touching the counts or the shape of the fixtures.
   final List<Note> notes = <Note>[
     for (int i = 0; i < plans.length; i++)
-      Note(
-        id: 'fixture-${i + 1}',
-        title: plans[i].title,
-        content: '',
-        date: plans[i].date,
-        important: plans[i].spec.mark,
-        category: plans[i].category,
-        isLocked: canLock && plans[i].spec.lock,
-        folderId: plans[i].folderId,
-      ),
+      if (i % 8 < 3)
+        Task(
+          id: 'fixture-${i + 1}',
+          title: plans[i].title,
+          content: '',
+          date: plans[i].date,
+          important: plans[i].spec.mark,
+          category: plans[i].category,
+          isLocked: canLock && plans[i].spec.lock,
+          folderId: plans[i].folderId,
+        )
+      else
+        Note(
+          id: 'fixture-${i + 1}',
+          title: plans[i].title,
+          content: '',
+          date: plans[i].date,
+          important: plans[i].spec.mark,
+          category: plans[i].category,
+          isLocked: canLock && plans[i].spec.lock,
+          folderId: plans[i].folderId,
+        ),
   ];
 
   // --- Content -------------------------------------------------------------
