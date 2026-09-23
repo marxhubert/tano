@@ -222,8 +222,9 @@ Future<T?> showPlatformDialog<T>({
 }
 
 /// Shows an adaptive single-field prompt (CupertinoTextField on iOS/macOS, a
-/// TextField in a Material dialog elsewhere). Returns the entered text
-/// (possibly empty) or null when cancelled.
+/// TextField in a Material dialog elsewhere). Returns the entered text or null
+/// when cancelled. With [requireText], the confirm action stays disabled until
+/// the field holds more than blanks.
 Future<String?> showAdaptivePrompt({
   required BuildContext context,
   required String title,
@@ -234,6 +235,7 @@ Future<String?> showAdaptivePrompt({
   bool obscureText = false,
   TextInputType? keyboardType,
   String? confirmLabel,
+  bool requireText = false,
 }) async {
   final TextEditingController controller = TextEditingController(
     text: initialValue ?? '',
@@ -243,75 +245,86 @@ Future<String?> showAdaptivePrompt({
   return showPlatformDialog<String>(
     context: context,
     builder: (BuildContext dialogContext, bool isApple) {
-      final Widget field = isApple
-          ? CupertinoTextField(
-              controller: controller,
-              autofocus: true,
-              obscureText: obscureText,
-              keyboardType: keyboardType,
-              maxLength: maxLength,
-              placeholder: hint,
-              padding: const EdgeInsets.all(appPaddingTight),
-            )
-          : TextField(
-              controller: controller,
-              autofocus: true,
-              obscureText: obscureText,
-              keyboardType: keyboardType,
-              maxLength: maxLength,
-              decoration: InputDecoration(labelText: hint),
-            );
-      final Widget content = message == null
-          // A small gap between the title and the field, so they do not look
-          // glued together when there is no message.
-          ? Padding(
-              padding: const EdgeInsets.only(top: appPaddingTight),
-              child: field,
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: isApple
-                  ? CrossAxisAlignment.stretch
-                  : CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(message),
-                const SizedBox(height: 12.0),
-                field,
-              ],
-            );
-      final List<Widget> actions = <Widget>[
-        isApple
-            ? CupertinoDialogAction(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(AppText.tr('cancel')),
-              )
-            : TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(AppText.tr('cancel')),
-              ),
-        isApple
-            ? CupertinoDialogAction(
-                isDefaultAction: true,
-                onPressed: () => Navigator.pop(dialogContext, controller.text),
-                child: Text(confirm),
-              )
-            : TextButton(
-                onPressed: () => Navigator.pop(dialogContext, controller.text),
-                child: Text(confirm),
-              ),
-      ];
-      return isApple
-          ? CupertinoAlertDialog(
-              title: Text(title),
-              content: content,
-              actions: actions,
-            )
-          : AlertDialog(
-              scrollable: true,
-              title: Text(title),
-              content: content,
-              actions: actions,
-            );
+      // Rebuild on every keystroke, so the confirm action follows the field.
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (BuildContext context, TextEditingValue value, Widget? _) {
+          final bool canConfirm = !requireText || value.text.trim().isNotEmpty;
+          final Widget field = isApple
+              ? CupertinoTextField(
+                  controller: controller,
+                  autofocus: true,
+                  obscureText: obscureText,
+                  keyboardType: keyboardType,
+                  maxLength: maxLength,
+                  placeholder: hint,
+                  padding: const EdgeInsets.all(appPaddingTight),
+                )
+              : TextField(
+                  controller: controller,
+                  autofocus: true,
+                  obscureText: obscureText,
+                  keyboardType: keyboardType,
+                  maxLength: maxLength,
+                  decoration: InputDecoration(labelText: hint),
+                );
+          final Widget content = message == null
+              // A small gap between the title and the field, so they do not look
+              // glued together when there is no message.
+              ? Padding(
+                  padding: const EdgeInsets.only(top: appPaddingTight),
+                  child: field,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: isApple
+                      ? CrossAxisAlignment.stretch
+                      : CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(message),
+                    const SizedBox(height: 12.0),
+                    field,
+                  ],
+                );
+          final List<Widget> actions = <Widget>[
+            isApple
+                ? CupertinoDialogAction(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(AppText.tr('cancel')),
+                  )
+                : TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(AppText.tr('cancel')),
+                  ),
+            isApple
+                ? CupertinoDialogAction(
+                    isDefaultAction: true,
+                    onPressed: canConfirm
+                        ? () => Navigator.pop(dialogContext, controller.text)
+                        : null,
+                    child: Text(confirm),
+                  )
+                : TextButton(
+                    onPressed: canConfirm
+                        ? () => Navigator.pop(dialogContext, controller.text)
+                        : null,
+                    child: Text(confirm),
+                  ),
+          ];
+          return isApple
+              ? CupertinoAlertDialog(
+                  title: Text(title),
+                  content: content,
+                  actions: actions,
+                )
+              : AlertDialog(
+                  scrollable: true,
+                  title: Text(title),
+                  content: content,
+                  actions: actions,
+                );
+        },
+      );
     },
   );
 }

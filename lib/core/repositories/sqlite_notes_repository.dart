@@ -359,18 +359,6 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<String> nextFolderName() async {
-    final Set<String> names = (await loadFolders())
-        .map((Folder f) => f.name)
-        .toSet();
-    int i = 1;
-    while (names.contains('Folder $i')) {
-      i++;
-    }
-    return 'Folder $i';
-  }
-
-  @override
   Future<List<Note>> loadNotes() async {
     final db = await _database;
 

@@ -396,15 +396,12 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Creates a folder. An empty [name] falls back to "Folder X".
+  /// Creates a folder. The page only submits a non-blank [name]: there is no
+  /// "Folder X" fallback any more.
   Future<Folder> addFolder(String name) async {
-    final String trimmed = name.trim();
-    final String folderName = trimmed.isNotEmpty
-        ? trimmed
-        : await _foldersRepository?.nextFolderName() ?? 'Folder 1';
     final Folder folder = Folder(
       id: const Uuid().v4(),
-      name: folderName,
+      name: name.trim(),
       date: DateTime.now().toString(),
     );
     await _foldersRepository?.upsertFolder(folder);

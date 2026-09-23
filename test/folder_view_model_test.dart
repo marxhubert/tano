@@ -96,15 +96,6 @@ class _FakeRepo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
-  @override
-  Future<String> nextFolderName() async {
-    final Set<String> names = folders.map((Folder f) => f.name).toSet();
-    int i = 1;
-    while (names.contains('Folder $i')) {
-      i++;
-    }
-    return 'Folder $i';
-  }
 }
 
 Note _note({
@@ -134,16 +125,6 @@ HomeViewModel _vm(_FakeRepo repo) => HomeViewModel(
 
 void main() {
   group('folder naming', () {
-    test('empty name falls back to the next "Folder X"', () async {
-      final _FakeRepo repo = _FakeRepo();
-      final HomeViewModel vm = _vm(repo);
-      await vm.addFolder('');
-      expect(vm.folders.single.name, 'Folder 1');
-
-      await vm.addFolder('   ');
-      expect(vm.folders.map((Folder f) => f.name), containsAll(<String>['Folder 1', 'Folder 2']));
-    });
-
     test('a provided name is used as-is', () async {
       final _FakeRepo repo = _FakeRepo();
       final HomeViewModel vm = _vm(repo);

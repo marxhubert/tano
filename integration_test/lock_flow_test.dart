@@ -62,8 +62,6 @@ class _Repo implements NotesRepository, FoldersRepository {
   Future<void> deleteAllFolders() async {}
   @override
   Future<void> deleteFolderPermanently(String id) async {}
-  @override
-  Future<String> nextFolderName() async => 'Folder 1';
 }
 
 /// Answers instead of the device: a real biometric prompt cannot be driven by a

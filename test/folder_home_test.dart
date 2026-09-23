@@ -18,6 +18,7 @@ import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/cover_image.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
@@ -115,9 +116,6 @@ class _Repo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
-
-  @override
-  Future<String> nextFolderName() async => 'Folder 1';
 }
 
 /// Fakes the system credential prompt (no platform channel in tests).
@@ -272,11 +270,105 @@ void main() {
     await tester.tap(find.byIcon(Symbols.create_new_folder));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Perso');
+    // The save action only enables once the field has a name.
+    await tester.pump();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(repo.folders, hasLength(1));
     expect(repo.folders.single.name, 'Perso');
+  });
+
+  testWidgets('an empty home hides the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(notes: <Note>[], folders: <Folder>[]),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a home with a note keeps the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Free note',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
+  });
+
+  testWidgets('an empty folder hides the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Vide', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
+  testWidgets('a folder with a note keeps the filter and the search action', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'Filed',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Perso', date: '2026-01-01 00:00:00.000'),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(_folderCards());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentFilterControl), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
   });
 
   testWidgets('tapping elsewhere folds the home FAB extended bar back to "+"', (
