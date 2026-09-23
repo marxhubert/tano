@@ -20,6 +20,9 @@ test data is disposable.
 - The FAB link/move menus sort with the shared `EntitySorting`; the trash counts
   with `groupCountLabel`; `collectSelectedNotes` and `emptyStateSliver` own the
   selection accounting and the empty screen.
+- `focusSearchField` / `leaveSearchMode`, `openNoteEditor` and
+  `requestLockChange` are the single implementations of the search timing, the
+  editor's authentication prologue and the lock decision.
 - Removed the repository-level `toggleLock`, which no caller used and which
   bypassed the editor's authentication and feedback flow.
 - Folder search records its query in the shared history, like Home.
