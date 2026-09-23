@@ -1063,7 +1063,7 @@ class _EditNoteState extends State<EditNote>
                             if (_viewModel.attachments.isNotEmpty)
                               metadataItem(
                                 context,
-                                Symbols.attach_file,
+                                Symbols.attachment,
                                 'x${_viewModel.attachments.length}',
                               ),
                           ],
@@ -1202,7 +1202,7 @@ class _EditNoteState extends State<EditNote>
                             Row(
                               children: [
                                 Icon(
-                                  Symbols.attach_file,
+                                  Symbols.attachment,
                                   size: 18.0,
                                   color: mutedTextColor(context),
                                 ),

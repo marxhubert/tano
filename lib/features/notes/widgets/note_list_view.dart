@@ -29,7 +29,6 @@ class NoteListView extends StatelessWidget {
   Widget _row(BuildContext context, Note note) {
     final bool isSelected = viewModel.selected.contains(note.id);
     return EntityCard(
-      key: ValueKey(note.id),
       kind: note.kind,
       category: note.category,
       title: note.title,
