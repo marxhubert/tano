@@ -1033,7 +1033,7 @@ class _EditNoteState extends State<EditNote>
                             if (_viewModel.isTask && _viewModel.important)
                               metadataGlyph(
                                 context,
-                                Symbols.label_important,
+                                Symbols.bookmark,
                                 fill: 1,
                                 color: tanoAmber,
                               ),

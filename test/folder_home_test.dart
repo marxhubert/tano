@@ -726,12 +726,12 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
       findsOneWidget,
     );
     // The bookmark is the filled amber variant, at the shared metadata size.
     final Icon bookmark = tester.widget<Icon>(
-      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
     );
     expect(bookmark.fill, 1.0);
     expect(bookmark.color, tanoAmber);

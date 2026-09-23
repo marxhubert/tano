@@ -12,6 +12,9 @@ const Color tanoAmberDark = Color(0xFFDFA14A);
 
 // --- Fonds (60%) ---
 const Color lightBackground = Color(0xFFF2EBDC);
+
+/// The dark paper is the site's fixed background in its dark mode: the page's
+/// own `--paper`, under the grain that shows through every transparent section.
 const Color darkBackground = Color(0xFF18140E);
 
 /// The content column, as on the site: whatever the window, the page keeps the

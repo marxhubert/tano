@@ -301,14 +301,16 @@ mixin _FabMenusMixin on _FabStateMixin {
                                               width: diameter * 0.40,
                                               height: diameter * 0.40,
                                               decoration: BoxDecoration(
-                                                color: _fabForeground(context),
+                                                // The check icon is full: its own
+                                                // colour paints the disc, and the
+                                                // check shows the white behind it.
+                                                color: Colors.white,
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
-                                            // Full amber disc...
                                             Icon(
                                               Symbols.check_circle,
-                                              color: _fabImportant(context),
+                                              color: const Color(0xFF603600),
                                               fill: 1.0,
                                               size: diameter * 0.53,
                                             ),
@@ -407,7 +409,7 @@ mixin _FabMenusMixin on _FabStateMixin {
     if (widget.isFolderMode) {
       return _buildVerticalList([
         _VerticalMenuItem(
-          icon: Symbols.label_important,
+          icon: Symbols.bookmark,
           fill: widget.isImportant ? 1.0 : 0.0,
           label: AppText.tr('important'),
           iconColor: widget.isImportant ? _fabImportant(context) : null,
@@ -438,7 +440,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _buildVerticalList([
       _VerticalMenuItem(
-        icon: Symbols.label_important,
+        icon: Symbols.bookmark,
         fill: widget.isImportant ? 1.0 : 0.0,
         label: AppText.tr('important'),
         iconColor: widget.isImportant ? _fabImportant(context) : null,

@@ -557,12 +557,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
       if (_folder.isLocked && _folder.important) const SizedBox(width: 8),
       if (_folder.important)
-        metadataGlyph(
-          context,
-          Symbols.label_important,
-          color: tanoAmber,
-          fill: 1,
-        ),
+        metadataGlyph(context, Symbols.bookmark, color: tanoAmber, fill: 1),
     ],
   );
 

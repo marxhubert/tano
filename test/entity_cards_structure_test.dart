@@ -313,7 +313,7 @@ void main() {
     ) async {
       await tester.pumpWidget(_host(_noteCard(_note(important: true))));
 
-      final Rect mark = tester.getRect(find.byIcon(Symbols.label_important));
+      final Rect mark = tester.getRect(find.byIcon(Symbols.bookmark));
       final Rect counts = tester.getRect(find.byIcon(Symbols.attachment));
 
       expect(mark.center.dy, closeTo(counts.center.dy, 1.0));

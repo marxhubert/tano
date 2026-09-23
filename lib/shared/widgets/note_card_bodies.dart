@@ -217,7 +217,7 @@ class NoteCounts extends StatelessWidget {
           // The bookmark always comes first in the metadata.
           if (isImportant) ...<Widget>[
             const Icon(
-              Symbols.label_important,
+              Symbols.bookmark,
               size: cardMetaIconSize,
               fill: 1.0,
               color: tanoAmber,

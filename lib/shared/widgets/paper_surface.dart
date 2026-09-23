@@ -35,7 +35,13 @@ class PaperSurface extends StatelessWidget {
                 painter: _PaperPainter(
                   paper: paper ?? barColor(context),
                   rule: paperRuleColor(context),
-                  grain: primaryTextColor(context).withValues(alpha: .025),
+                  // The site's own paper grain, at the strength its background
+                  // shows. The dark page needs it to read as the same material.
+                  grain: primaryTextColor(context).withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark
+                        ? .085
+                        : .025,
+                  ),
                   margin: amberColor(context).withValues(alpha: .22),
                   notebook: notebook,
                   spacing: 34 * MediaQuery.textScalerOf(context).scale(1),

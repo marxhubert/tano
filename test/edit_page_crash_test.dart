@@ -152,11 +152,11 @@ void main() {
     await tester.pumpAndSettle();
 
     Icon bookmarkIcon() =>
-        tester.widget<Icon>(find.byIcon(Symbols.label_important));
+        tester.widget<Icon>(find.byIcon(Symbols.bookmark));
     // Outlined while the note is not bookmarked.
     expect(bookmarkIcon().fill, 0.0);
 
-    await tester.tap(find.byIcon(Symbols.label_important));
+    await tester.tap(find.byIcon(Symbols.bookmark));
     await tester.pumpAndSettle();
 
     // Filled (and amber) once bookmarked.
