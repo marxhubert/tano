@@ -121,7 +121,6 @@ const double appPaddingWide = 16.0;
 /// is four of those.
 const double sectionGap = 24.0;
 const double appBorderRadius = 12.0;
-const double sectionBorderRadius = 24.0;
 
 /// Pill radius of the full-width buttons (reset, confirm).
 const double pillRadius = 55.0;
