@@ -66,8 +66,9 @@ Home and a folder share one control: a segmented button reading **All (30) ·
 23 Notes · 7 Tasks**. Every choice keeps its label and its own count — `All (n)`
 for the whole list, `n Note` or `n Task` for one kind, singular for zero and one —
 so the title line carries no separate counter; only a selection still needs a
-sentence there. The number and its parentheses print light, so the word stays the
-label. The selected segment takes
+sentence there. A page that holds a single kind has nothing to choose: the control
+collapses to that kind alone, **23 Notes**. The number and its parentheses print
+light, so the word stays the label. The selected segment takes
 the accent fill with on-accent content, and the filter is remembered under the
 `documentFilter` preference. The control scopes the document list only: folders are
 structure, not documents, and the search scope and selection rules are unchanged.

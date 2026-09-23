@@ -198,6 +198,38 @@ void main() {
     }
   });
 
+  testWidgets('a single kind collapses the tabs to its own count', (
+    tester,
+  ) async {
+    getIt.registerSingleton<NotesRepository>(
+      _Repo(
+        notes: <Note>[
+          Note(
+            id: 'n1',
+            title: 'One',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+          Note(
+            id: 'n2',
+            title: 'Two',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        ],
+        folders: <Folder>[],
+      ),
+    );
+
+    await tester.pumpWidget(const Tano());
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    // Only notes: the tab is a single "2 Notes", not a choice between kinds.
+    expect(find.text('2 Notes', findRichText: true), findsOneWidget);
+    expect(find.textContaining('All (', findRichText: true), findsNothing);
+  });
+
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await LocaleController.instance.init();
@@ -558,7 +590,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('All (', findRichText: true), findsWidgets);
+    expect(find.text('1 Note', findRichText: true), findsOneWidget);
     expect(_folderCards(), findsNothing);
   });
 
@@ -595,7 +627,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('All (2)', findRichText: true), findsOneWidget);
+    expect(find.text('2 Notes', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -932,7 +964,7 @@ void main() {
     expect(
       find.descendant(
         of: page,
-        matching: find.text('All (1)', findRichText: true),
+        matching: find.text('1 Note', findRichText: true),
       ),
       findsOneWidget,
     );
@@ -1038,7 +1070,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('All (1)', findRichText: true), findsOneWidget);
+    expect(find.text('1 Note', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -1726,7 +1758,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
-    expect(find.textContaining('All (', findRichText: true), findsWidgets);
+    expect(find.text('3 Notes', findRichText: true), findsOneWidget);
     expect(find.text('Results'), findsNothing);
   });
 
