@@ -508,10 +508,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   );
 
   /// The kind tags step aside while a search is on screen, exactly as they do
-  /// on Home. A selection keeps them: its sentence is printed there.
+  /// on Home, and an empty folder has nothing to tag. A selection keeps them:
+  /// its sentence is printed there.
   bool get _showFilterTags =>
-      _selection.isActive ||
-      (!_showSearchHistory && _searchQuery.trim().isEmpty);
+      _notes.isNotEmpty &&
+      (_selection.isActive ||
+          (!_showSearchHistory && _searchQuery.trim().isEmpty));
 
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
@@ -659,11 +661,13 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
               : _isSearchMode
               ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
               : <Widget>[
-                  IconButton(
-                    icon: const Icon(Symbols.document_search),
-                    tooltip: AppText.tr('search'),
-                    onPressed: _enterSearchMode,
-                  ),
+                  // Nothing to search when the folder holds no note.
+                  if (_notes.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Symbols.document_search),
+                      tooltip: AppText.tr('search'),
+                      onPressed: _enterSearchMode,
+                    ),
                   const ThemeToggleButton(),
                   // The same menu as Home: a folder adds a note from its FAB, so
                   // the app bar no longer carries an "add note" action.

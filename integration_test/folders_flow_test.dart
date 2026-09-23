@@ -82,8 +82,6 @@ class _Repo implements NotesRepository, FoldersRepository {
     folders.removeWhere((Folder f) => f.id == id);
     notes.removeWhere((Note n) => n.folderId == id);
   }
-  @override
-  Future<String> nextFolderName() async => 'Folder 1';
 }
 
 void main() {

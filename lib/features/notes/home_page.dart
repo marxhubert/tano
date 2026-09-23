@@ -349,8 +349,8 @@ class HomeState extends State<Home> with RouteAware {
     return AppText.tr('delete_note');
   }
 
-  /// Prompts for a folder name and creates the folder. Empty names fall back
-  /// to "Folder X" inside the view model.
+  /// Prompts for a folder name and creates it. The prompt keeps its save action
+  /// disabled until the field holds a name, so no blank folder can be created.
   bool _isAddingFolder = false;
 
   Future<void> _addFolder() async {
@@ -370,6 +370,7 @@ class HomeState extends State<Home> with RouteAware {
       title: AppText.tr('add_folder'),
       hint: AppText.tr('folder_name'),
       maxLength: 54,
+      requireText: true,
     );
 
     if (name == null || !mounted) return;
@@ -565,11 +566,13 @@ class HomeState extends State<Home> with RouteAware {
       return <Widget>[CancelButton(onPressed: _exitSearchMode)];
     }
     return <Widget>[
-      IconButton(
-        icon: const Icon(Symbols.document_search),
-        tooltip: AppText.tr('search'),
-        onPressed: _enterSearchMode,
-      ),
+      // Nothing to search when the page holds neither a note nor a folder.
+      if (!_isEmptyHome)
+        IconButton(
+          icon: const Icon(Symbols.document_search),
+          tooltip: AppText.tr('search'),
+          onPressed: _enterSearchMode,
+        ),
       const ThemeToggleButton(),
       _buildAdaptiveMenu(),
     ];
@@ -605,7 +608,8 @@ class HomeState extends State<Home> with RouteAware {
           titleWidget:
               !_showSearchHistory &&
                   !_viewModel.hasFolders &&
-                  !_viewModel.hasSearchQuery
+                  !_viewModel.hasSearchQuery &&
+                  !_isEmptyHome
               ? _documentFilterControl()
               : null,
           headerCrossAxisAlignment: CrossAxisAlignment.center,
