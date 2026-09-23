@@ -222,6 +222,9 @@ class _FolderPageState extends State<FolderPage>
   }
 
   void _exitSearchMode() {
+    // Leaving the search is what makes it a search: remember the query before
+    // the field is emptied, exactly like Home does.
+    SearchHistoryController.instance.add(_searchController.text);
     _searchController.clear();
     _searchFocusNode.unfocus();
     setState(() {
