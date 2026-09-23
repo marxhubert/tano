@@ -31,6 +31,22 @@ class TrashViewModel extends ChangeNotifier {
   int noteCountIn(String folderId) =>
       _activeNotes.where((Note note) => note.folderId == folderId).length;
 
+  /// Whether permanently deleting [folderId] would also destroy locked
+  /// content: the folder itself is locked, or a locked note is filed in it.
+  bool folderHasLockedContent(String folderId) {
+    for (final Folder folder in _deletedFolders) {
+      if (folder.id == folderId && folder.isLocked) return true;
+    }
+    return _activeNotes.any(
+      (Note note) => note.folderId == folderId && note.isLocked,
+    );
+  }
+
+  /// Whether emptying the trash would destroy at least one locked item.
+  bool get hasLockedItems =>
+      _deletedNotes.any((Note note) => note.isLocked) ||
+      _deletedFolders.any((Folder folder) => folderHasLockedContent(folder.id));
+
   Future<void> load() async {
     _deletedNotes = await notesRepository.loadTrashNotes();
     _deletedFolders = await foldersRepository.loadTrashFolders();

@@ -4,6 +4,7 @@ import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -82,9 +83,14 @@ class _TrashPageState extends State<TrashPage> {
                     actionTitle: AppText.tr('delete_all_notes'),
                     action: AppText.tr('delete'),
                   );
-                  if (confirm == true) {
-                    await _viewModel.emptyTrash();
+                  if (confirm != true || !context.mounted) return;
+                  // Emptying the trash destroys locked items for good, so the
+                  // device owner must authenticate first.
+                  if (_viewModel.hasLockedItems &&
+                      !await _confirmLockedDeletion(context)) {
+                    return;
                   }
+                  await _viewModel.emptyTrash();
                 },
               ),
             // The empty screen has nothing left to do but leave, so the way
@@ -233,7 +239,7 @@ class _TrashPageState extends State<TrashPage> {
         // The trash's own part: the two actions, always there, locked or not.
         _actions(
           onRestore: () => _viewModel.restoreNote(note.id),
-          onDelete: () => _deleteNote(context, note.id),
+          onDelete: () => _deleteNote(context, note),
           textColor: _cardTextColor(context, note.category),
         ),
       ],
@@ -270,7 +276,7 @@ class _TrashPageState extends State<TrashPage> {
         ),
         _actions(
           onRestore: () => _viewModel.restoreFolder(folder.id),
-          onDelete: () => _deleteFolder(context, folder.id),
+          onDelete: () => _deleteFolder(context, folder),
           textColor: _cardTextColor(context, folder.category),
         ),
       ],
@@ -324,22 +330,40 @@ class _TrashPageState extends State<TrashPage> {
     );
   }
 
-  Future<void> _deleteNote(BuildContext context, String id) async {
+  Future<void> _deleteNote(BuildContext context, Note note) async {
+    if (note.isLocked && !await _confirmLockedDeletion(context)) return;
+    if (!context.mounted) return;
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: AppText.tr('delete_note'),
       action: AppText.tr('delete'),
     );
-    if (confirm == true) await _viewModel.deleteNotePermanently(id);
+    if (confirm == true) await _viewModel.deleteNotePermanently(note.id);
   }
 
-  Future<void> _deleteFolder(BuildContext context, String id) async {
+  Future<void> _deleteFolder(BuildContext context, Folder folder) async {
+    if (_viewModel.folderHasLockedContent(folder.id) &&
+        !await _confirmLockedDeletion(context)) {
+      return;
+    }
+    if (!context.mounted) return;
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: AppText.tr('delete_folder'),
       action: AppText.tr('delete'),
     );
-    if (confirm == true) await _viewModel.deleteFolderPermanently(id);
+    if (confirm == true) await _viewModel.deleteFolderPermanently(folder.id);
+  }
+
+  /// Asks the device owner to authenticate before locked content is destroyed
+  /// for good. A refusal (or a device without any credential) keeps the item
+  /// and reports why, exactly like deleting a locked note from Home.
+  Future<bool> _confirmLockedDeletion(BuildContext context) async {
+    final bool authenticated = await getIt<AuthService>().authenticate();
+    if (!authenticated && context.mounted) {
+      showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+    }
+    return authenticated;
   }
 }
 

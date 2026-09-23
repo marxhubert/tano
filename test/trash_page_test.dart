@@ -7,6 +7,7 @@ import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/trash/trash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -19,6 +20,10 @@ class _Repo implements NotesRepository, FoldersRepository {
 
   final List<Note> notes;
   final List<Folder> folders;
+
+  /// Ids passed to [deleteNotePermanently], so a test can prove a locked item
+  /// was never destroyed.
+  final List<String> permanentlyDeleted = <String>[];
 
   @override
   Future<List<Note>> loadNotes() async =>
@@ -48,7 +53,9 @@ class _Repo implements NotesRepository, FoldersRepository {
   @override
   Future<void> toggleLock(String id, {String? password}) async {}
   @override
-  Future<void> deleteNotePermanently(String id) async {}
+  Future<void> deleteNotePermanently(String id) async {
+    permanentlyDeleted.add(id);
+  }
   @override
   Future<void> deleteFolderPermanently(String id) async {}
   @override
@@ -57,6 +64,16 @@ class _Repo implements NotesRepository, FoldersRepository {
   Future<void> deleteAllNotes() async {}
   @override
   Future<void> deleteAllFolders() async {}
+}
+
+/// Authentication that is available but always refused, so the test never
+/// depends on the host platform's biometrics.
+class _DeniedAuth extends AuthService {
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  Future<bool> authenticate({String? reason}) async => false;
 }
 
 Folder _folder(int i) => Folder(
@@ -164,5 +181,40 @@ void main() {
     // ...and both keep the restore and delete actions.
     expect(find.byIcon(Symbols.undo), findsNWidgets(2));
     expect(find.byIcon(Symbols.delete_forever), findsNWidgets(2));
+  });
+
+  testWidgets('a locked note is only destroyed after authentication', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final _Repo repo = _Repo(
+      notes: <Note>[
+        Note(
+          id: 'n1',
+          title: 'Locked doc',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+          isDeleted: true,
+          isLocked: true,
+        ),
+      ],
+      folders: <Folder>[],
+    );
+    getIt.registerSingleton<NotesRepository>(repo);
+    getIt.registerSingleton<AuthService>(_DeniedAuth());
+
+    await tester.pumpWidget(
+      MaterialApp(theme: tanoTheme(Brightness.light), home: const TrashPage()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.delete_forever));
+    await tester.pumpAndSettle();
+
+    expect(repo.permanentlyDeleted, isEmpty);
+    expect(find.text(AppText.tr('delete_locked_error')), findsOneWidget);
   });
 }
