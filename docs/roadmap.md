@@ -17,6 +17,9 @@ test data is disposable.
 - One `cardTextColor` for the card ink, used by the card and the trash overlay.
 - The editor's two save paths merged into `_save({required bool popAfter})`;
   the FAB's never-wired `onColorLens`, `onMore` and `onLinkSelected` removed.
+- The FAB link/move menus sort with the shared `EntitySorting`; the trash counts
+  with `groupCountLabel`; `collectSelectedNotes` and `emptyStateSliver` own the
+  selection accounting and the empty screen.
 - Removed the repository-level `toggleLock`, which no caller used and which
   bypassed the editor's authentication and feedback flow.
 - Folder search records its query in the shared history, like Home.
