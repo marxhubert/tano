@@ -276,7 +276,7 @@ void main() {
       expect(vm.notes.first.id, '2');
     });
 
-    test('removeNote removes a note (swipe-to-delete)', () async {
+    test('removeNote moves a note to trash', () async {
       final initialNotes = <Note>[_note('1'), _note('2')];
       final repository = _InMemoryNotesRepository(List.from(initialNotes));
       final vm = HomeViewModel(

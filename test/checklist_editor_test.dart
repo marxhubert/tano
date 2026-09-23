@@ -234,11 +234,11 @@ void main() {
 
     // Leaving cleans the empty checklist first, so the note is not dirty
     // anymore and no confirmation dialog appears.
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
-    expect(find.text('All docs'), findsOneWidget);
+    expect(find.textContaining('All (', findRichText: true), findsOneWidget);
   });
 
   testWidgets('tapping the checkbox toggles without activating focus',
@@ -370,17 +370,26 @@ void main() {
     await tester.tap(find.text('Hello'));
     await tester.pumpAndSettle();
 
+    // The metadata counter remains at the top, independently of the scroll.
+    expect(find.text('x2'), findsOneWidget);
+
+    // On a compact screen, the notebook's taller text pushes this section
+    // below the viewport; scroll the document as a user would.
+    await tester.scrollUntilVisible(
+      find.text('Attachments'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     // The attachments zone title and rows.
     expect(find.text('Attachments'), findsOneWidget);
     expect(find.text('doc.pdf'), findsOneWidget);
     expect(find.text('fichier.txt'), findsOneWidget);
     expect(find.byIcon(Symbols.file_present), findsNWidgets(2));
-
-    // The info-line counter shows the attachment count (last position).
-    expect(find.text('x2'), findsOneWidget);
   });
 
-  testWidgets('the add action stays white inside the link sub-menu',
+  testWidgets('the add action keeps the primary button foreground inside the link sub-menu',
       (tester) async {
     getIt.registerSingleton<NotesRepository>(_InMemoryNotesRepository(<Note>[
       Note(
@@ -406,15 +415,21 @@ void main() {
 
     Icon addIcon() => tester.widget<Icon>(find.byIcon(Symbols.add_circle));
 
-    // Opening the add menu keeps the glyph plain white.
+    // Opening the add menu keeps the glyph in the primary button foreground.
     await tester.tap(find.byIcon(Symbols.add_circle));
     await tester.pumpAndSettle();
-    expect(addIcon().color, Colors.white);
+    expect(
+      addIcon().color,
+      Theme.of(tester.element(find.byIcon(Symbols.add_circle))).colorScheme.onPrimary,
+    );
 
-    // Its link option opens a second-degree menu: the action stays white.
+    // Its link option opens a nested menu without changing that color.
     await tester.tap(find.byIcon(Symbols.sticky_note_2));
     await tester.pumpAndSettle();
     expect(find.text('Other'), findsOneWidget);
-    expect(addIcon().color, Colors.white);
+    expect(
+      addIcon().color,
+      Theme.of(tester.element(find.byIcon(Symbols.add_circle))).colorScheme.onPrimary,
+    );
   });
 }

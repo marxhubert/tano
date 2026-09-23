@@ -29,10 +29,7 @@ class TaskListEditor extends StatefulWidget {
 
 class _Row {
   _Row(TaskItem item)
-    : controller = LinkTextEditingController(
-        text: item.text,
-        linkColor: tanoAmber,
-      ),
+    : controller = LinkTextEditingController(text: item.text),
       done = item.done;
   final key = GlobalKey();
   final LinkTextEditingController controller;

@@ -1,16 +1,17 @@
+import 'dart:async';
 import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
-import 'package:tano/features/notes/widgets/folder_list_view.dart';
 import 'package:tano/features/notes/widgets/note_grid_view.dart';
 import 'package:tano/features/notes/widgets/note_list_view.dart';
 import 'package:tano/features/folder/folder_page.dart';
@@ -31,6 +32,7 @@ import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/widgets/empty_state.dart';
@@ -56,6 +58,8 @@ class HomeState extends State<Home> with RouteAware {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
+  Timer? _routeCollapseTimer;
+  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
@@ -85,6 +89,8 @@ class HomeState extends State<Home> with RouteAware {
     }
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
+    ViewLayoutController.instance.addListener(_syncViewLayout);
+    FabSideController.instance.addListener(_onFabSideChanged);
     if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _openNoteEditor(add: true, note: Note());
@@ -103,10 +109,14 @@ class HomeState extends State<Home> with RouteAware {
 
   @override
   void dispose() {
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
     routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _viewModel.removeListener(_onViewModelChanged);
+    ViewLayoutController.instance.removeListener(_syncViewLayout);
+    FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
   }
@@ -119,9 +129,24 @@ class HomeState extends State<Home> with RouteAware {
     ScaffoldMessenger.of(context).clearSnackBars();
     // Fold the FAB once Home is fully covered, so it is already reduced when
     // the user comes back, with no visible collapse during the push.
-    Future<void>.delayed(const Duration(milliseconds: 450), () {
-      if (mounted) _fabKey.currentState?.collapse();
+    _routeCollapseTimer?.cancel();
+    final generation = ++_routeCollapseGeneration;
+    final route = ModalRoute.of(context);
+    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
+      if (mounted &&
+          generation == _routeCollapseGeneration &&
+          route?.isCurrent == false) {
+        _fabKey.currentState?.collapse();
+      }
     });
+  }
+
+  @override
+  void didPopNext() {
+    // A quick return invalidates the delayed fold from the outgoing route.
+    // It must not close a FAB the user has already reopened on this page.
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
   }
 
   void _onViewModelChanged() {
@@ -139,14 +164,16 @@ class HomeState extends State<Home> with RouteAware {
     _wasInSelectionMode = _viewModel.isInSelectionMode;
   }
 
+  /// The FAB's side, shared with every other page.
+  bool get _fabOnLeft => FabSideController.instance.onLeft;
+
   Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
 
   Future<void> _loadPreferences() async {
     final SecurePreferences prefs = await _getPrefs();
-    if (!prefs.containsKey('viewLayout')) {
-      await prefs.setString('viewLayout', 'gridlist');
-    }
-    _viewModel.setViewLayout(prefs.getString('viewLayout') ?? 'gridlist');
+    // The shared controller owns the choice; Home only mirrors it.
+    await ViewLayoutController.instance.load();
+    _viewModel.setViewLayout(ViewLayoutController.instance.layout);
     if (!prefs.containsKey('sortBy')) {
       await prefs.setString('sortBy', 'date');
     }
@@ -161,11 +188,32 @@ class HomeState extends State<Home> with RouteAware {
       await prefs.setBool('sortAscending', true);
     }
     _viewModel.setSortAscending(prefs.getBool('sortAscending') ?? true);
+
+    if (!prefs.containsKey('documentFilter')) {
+      await prefs.setString('documentFilter', DocumentFilter.all.name);
+    }
+    _viewModel.setDocumentFilter(
+      documentFilterFromName(prefs.getString('documentFilter')) ??
+          DocumentFilter.all,
+    );
+
+    await FabSideController.instance.load();
   }
 
-  Future<void> _saveViewLayoutPref(String viewLayout) async {
-    final SecurePreferences prefs = await _getPrefs();
-    await prefs.setString('viewLayout', viewLayout);
+  /// The side is global: the controller notifies every page and persists it.
+  Future<void> _setFabOnLeft(bool value) async {
+    await FabSideController.instance.setOnLeft(value);
+    if (mounted) setState(() {});
+  }
+
+  void _onFabSideChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The layout changed elsewhere — in a folder, say. Mirror it here.
+  void _syncViewLayout() {
+    if (!mounted) return;
+    _viewModel.setViewLayout(ViewLayoutController.instance.layout);
   }
 
   Future<void> _openNoteEditor({required bool add, required Note note}) async {
@@ -208,8 +256,10 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   void _changeLayout(String viewLayout) {
+    // This page first, so the swap is instant; the controller then keeps every
+    // other page in step and persists the choice.
     _viewModel.setViewLayout(viewLayout);
-    _saveViewLayoutPref(viewLayout);
+    ViewLayoutController.instance.setLayout(viewLayout);
   }
 
   void _clearSearch() {
@@ -250,9 +300,6 @@ class HomeState extends State<Home> with RouteAware {
           count: _viewModel.selectedFoldersCount,
           total: _viewModel.foldersCount,
           noun: 'folder',
-          single: 'single_folder_selected',
-          many: 'folders_selected',
-          all: 'all_folders_selected',
         )
       : _notesMetadata;
 
@@ -260,10 +307,9 @@ class HomeState extends State<Home> with RouteAware {
   String get _notesMetadata => _groupMetadata(
     count: _viewModel.selectedNotesCount,
     total: _viewModel.notesCount,
-    noun: 'note',
-    single: 'single_note_selected',
-    many: 'notes_selected',
-    all: 'all_notes_selected',
+    // "notes", "tasks", or "docs" once the kinds are mixed — a folder in the
+    // selection counts as another kind.
+    noun: _viewModel.selectionNoun,
   );
 
   /// One group's metadata: its own selection wording while selecting, its
@@ -272,23 +318,24 @@ class HomeState extends State<Home> with RouteAware {
     required int count,
     required int total,
     required String noun,
-    required String single,
-    required String many,
-    required String all,
   }) {
     if (!_viewModel.isInSelectionMode || count == 0) {
       return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
     }
     if (count > 1) {
       if (count == total) {
-        return AppText.tr(all, <String, String>{'count': '$count'});
+        return AppText.tr('all_${noun}s_selected', <String, String>{
+          'count': '$count',
+        });
       }
-      return AppText.tr(many, <String, String>{
+      return AppText.tr('${noun}s_selected', <String, String>{
         'count': '$count',
         'total': '$total',
       });
     }
-    return AppText.tr(single, <String, String>{'count': '$count'});
+    return AppText.tr('single_${noun}_selected', <String, String>{
+      'count': '$count',
+    });
   }
 
   String _deleteActionTitle() {
@@ -415,68 +462,27 @@ class HomeState extends State<Home> with RouteAware {
           onOpenNote: (Note note) {
             _openNoteEditor(add: false, note: note);
           },
-          onShowUndoSnackBar: _showUndoSnackBar,
-          confirmDelete: _confirmDelete,
         );
     }
   }
 
-  /// The recent searches, shown while the field is empty: the shortcut a
-  /// search screen is expected to offer.
-  Widget _searchHistorySliver(List<String> entries) {
-    return SliverList(
-      delegate: SliverChildListDelegate(<Widget>[
-        for (final String query in entries)
-          InkWell(
-            borderRadius: BorderRadius.circular(appBorderRadius),
-            onTap: () {
-              _searchController.text = query;
-              _viewModel.setSearchQuery(query);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: appPaddingSmall,
-                vertical: appPaddingMedium,
-              ),
-              child: Text(
-                query,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: TanoText.body,
-                  color: primaryTextColor(context),
-                ),
-              ),
-            ),
-          ),
-      ]),
-    );
-  }
-
   /// True while the field is open on an empty query with something to offer.
-  bool get _showSearchHistory =>
-      _isSearchMode &&
-      !_viewModel.hasSearchQuery &&
-      SearchHistoryController.instance.entries.isNotEmpty;
-
-  /// The "Clear" action, in the metadata slot of the title line.
-  Widget _clearHistoryButton() {
-    return TextButton(
-      onPressed: () => SearchHistoryController.instance.clear(),
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.zero,
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(AppText.tr('clear'), style: titleMetadataStyle(context)),
-    );
-  }
+  bool get _showSearchHistory => showSearchHistory(
+    isSearchMode: _isSearchMode,
+    hasQuery: _viewModel.hasSearchQuery,
+  );
 
   /// Home content: the folder group on top, then the unfiled notes.
   Widget _buildHomeContent() {
     // While the field is empty, the recent searches stand in for the list.
     if (_showSearchHistory) {
-      return _searchHistorySliver(SearchHistoryController.instance.entries);
+      return searchHistorySliver(
+        context,
+        onSelected: (String query) {
+          _searchController.text = query;
+          _viewModel.setSearchQuery(query);
+        },
+      );
     }
     final List<Folder> folders = _viewModel.folders;
     final List<Note> notes = _viewModel.notes;
@@ -490,22 +496,31 @@ class HomeState extends State<Home> with RouteAware {
       slivers: <Widget>[
         // The folder group has no header of its own: the page title is its
         // title. Only the notes group gets one, styled like the page title.
-        if (viewLayout == 'list')
-          FolderListView(viewModel: _viewModel, onOpenFolder: _openFolder)
-        else
-          FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
+        // Folders stay a grid whatever layout the documents use.
+        FolderGridView(viewModel: _viewModel, onOpenFolder: _openFolder),
         const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
         ...<Widget>[_notesSectionHeader(), _notesSliver(notes, viewLayout)],
       ],
     );
   }
 
-  /// "My notes" group header: same style as the page title, with the note
-  /// count on the same line.
-  Widget _documentFilterButtons() => DocumentFilterButtons(
+  /// The kind control, shared by the page header and the notes group header.
+  /// It prints every count, so no separate counter is needed.
+  Widget _documentFilterControl() => DocumentFilterControl(
     value: _viewModel.documentFilter,
-    onChanged: _viewModel.setDocumentFilter,
+    countOf: _viewModel.countFor,
+    // Selecting something replaces the tags with the selection sentence.
+    selectionLabel: _viewModel.isInSelectionMode ? _notesMetadata : null,
+    onChanged: (DocumentFilter filter) {
+      _viewModel.setDocumentFilter(filter);
+      _saveDocumentFilterPref(filter);
+    },
   );
+
+  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
+    final SecurePreferences prefs = await _getPrefs();
+    await prefs.setString('documentFilter', filter.name);
+  }
 
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
@@ -514,11 +529,11 @@ class HomeState extends State<Home> with RouteAware {
         // above its content, above and below.
         padding: const EdgeInsets.only(bottom: appPaddingTight),
         child: SectionTitleLine(
-          titleWidget: _documentFilterButtons(),
-          metadata: _viewModel.isInSelectionMode
-              ? _notesMetadata
-              : _viewModel.documentFilter.countLabel(_viewModel.notesCount),
-          padding: const EdgeInsets.symmetric(horizontal: appPaddingSmall),
+          titleWidget: _documentFilterControl(),
+          crossAxisAlignment: CrossAxisAlignment.center,
+          padding: EdgeInsets.symmetric(
+            horizontal: appSidePad(context, appPaddingSmall),
+          ),
         ),
       ),
     );
@@ -542,14 +557,6 @@ class HomeState extends State<Home> with RouteAware {
     await _viewModel.load();
   }
 
-  Future<bool?> _confirmDelete() {
-    return getConfirmation(
-      context: context,
-      actionTitle: _deleteActionTitle(),
-      action: AppText.tr('delete'),
-    );
-  }
-
   List<Widget>? _buildAppBarActions() {
     if (_viewModel.isInSelectionMode) {
       return <Widget>[CancelButton(onPressed: _viewModel.exitSelectionMode)];
@@ -559,7 +566,7 @@ class HomeState extends State<Home> with RouteAware {
     }
     return <Widget>[
       IconButton(
-        icon: const Icon(Symbols.search),
+        icon: const Icon(Symbols.document_search),
         tooltip: AppText.tr('search'),
         onPressed: _enterSearchMode,
       ),
@@ -568,137 +575,17 @@ class HomeState extends State<Home> with RouteAware {
     ];
   }
 
-  Widget _buildAdaptiveMenu() {
-    final ThemeData theme = Theme.of(context);
-    if (theme.platform == TargetPlatform.iOS ||
-        theme.platform == TargetPlatform.macOS) {
-      return IconButton(
-        icon: const Icon(Symbols.more_vert, weight: 900.0),
-        tooltip: AppText.tr('more'),
-        onPressed: () => _showCupertinoActionSheet(),
-      );
-    }
-
-    return PopupMenuButton<PopupItem>(
-      icon: const Icon(Symbols.more_vert, weight: 900.0),
-      offset: const Offset(0, 56),
-      elevation: 4.0,
-      constraints: const BoxConstraints(minWidth: 160.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(appBorderRadius),
-      ),
-      onSelected: ((valueSelected) async {
-        _handleMenuAction(valueSelected.value.toLowerCase());
-      }),
-      itemBuilder: (BuildContext context) {
-        final List<PopupItem> popupItems = [];
-        menuItems.forEach((String key, PopupItem popupItem) {
-          popupItems.add(popupItem);
-        });
-        return popupItems.map<PopupMenuEntry<PopupItem>>((PopupItem popupItem) {
-          if (popupItem.value == 'separator') {
-            return const PopupMenuDivider(height: 1.0);
-          }
-          return PopupMenuItem<PopupItem>(
-            value: popupItem,
-            height: popupItem.value == 'header' ? 40.0 : 48.0,
-            enabled: popupItem.value != 'header',
-            padding: EdgeInsets.zero,
-            child: popupButton(
-              context: context,
-              popupItem: popupItem,
-              layout: _viewModel.viewLayout,
-              lang: LocaleController.instance.language,
-            ),
-          );
-        }).toList();
-      },
-    );
-  }
-
-  void _showCupertinoActionSheet() {
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('list');
-            },
-            child: Text(
-              AppText.tr('menu_list'),
-              style: TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'list'
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('gridlist');
-            },
-            child: Text(
-              AppText.tr('menu_grid'),
-              style: TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-                fontWeight: _viewModel.viewLayout == 'gridlist'
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _handleMenuAction('settings');
-            },
-            child: Text(
-              AppText.tr('settings'),
-              style: const TextStyle(
-                color: tanoTeal,
-                fontSize: TanoText.sheetAction,
-              ),
-            ),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            AppText.tr('cancel'),
-            style: TextStyle(
-              color: primaryTextColor(context),
-              fontSize: TanoText.sheetAction,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleMenuAction(String action) async {
-    switch (action) {
-      case "list":
-        _changeLayout('list');
-        break;
-      case "gridlist":
-        _changeLayout('gridlist');
-        break;
-      case "settings":
-        await Navigator.of(context).pushNamed('/settings');
-        _loadPreferences();
-        await _viewModel.load();
-        break;
-    }
-  }
+  Widget _buildAdaptiveMenu() => AppBarMenuButton(
+    layout: _viewModel.viewLayout,
+    onLayout: _changeLayout,
+    onLeft: _fabOnLeft,
+    onLeftChanged: _setFabOnLeft,
+    onSettings: () async {
+      await Navigator.of(context).pushNamed('/settings');
+      _loadPreferences();
+      await _viewModel.load();
+    },
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -719,33 +606,33 @@ class HomeState extends State<Home> with RouteAware {
               !_showSearchHistory &&
                   !_viewModel.hasFolders &&
                   !_viewModel.hasSearchQuery
-              ? _documentFilterButtons()
+              ? _documentFilterControl()
               : null,
+          headerCrossAxisAlignment: CrossAxisAlignment.center,
           isHome: true,
           freezeBody: _isEmptyHome,
           // Scrolled in, the reduced title is the app's name.
           appBarTitleWidget: const TanoAppBarTitle(),
           scaffoldKey: _scaffoldState,
           actions: _buildAppBarActions(),
-          headerMetadata: _showSearchHistory
+          // The document counts live in the segmented control; this line keeps
+          // the folder count, and the selection wording.
+          headerMetadata: _showSearchHistory || !_viewModel.hasFolders
               ? null
-              : (!_viewModel.hasFolders && !_viewModel.isInSelectionMode
-                    ? _viewModel.documentFilter.countLabel(
-                        _viewModel.notesCount,
-                      )
-                    : _pageMetadata),
+              : _pageMetadata,
           headerMetadataWidget: _showSearchHistory
-              ? _clearHistoryButton()
+              ? clearSearchHistoryButton(context)
               : null,
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(appPaddingMedium),
+              padding: appContentPadding(context),
               sliver: _buildHomeContent(),
             ),
           ],
-          floatingActionButtonLocation: const FlushEndFabLocation(),
+          floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
           floatingActionButton: AppFab(
             key: _fabKey,
+            onLeft: _fabOnLeft,
             isSearchMode: _isSearchMode,
             isSelectionMode: _viewModel.isInSelectionMode,
             // Moving needs a selection and never applies to a folder.

@@ -1,61 +1,155 @@
 # Design system
 
-`lib/shared/widgets/theme.dart`, `page_header.dart` and card typography are the
-implementation sources. Do not duplicate palettes in screens.
+The reference is the static [site](../site/index.html), audited in
+[Site design audit](site-design-audit.md). The implementation sources are
+`theme.dart`, `paper_surface.dart`, `card_typography.dart` and `entity_layout.dart`.
 
-## Surfaces and identity
+## Paper and ink
 
-Use the 60/30/10 balance: dominant background, teal identity and amber accent.
-Light background #F8F9FA; dark #121212. Editor surfaces use white / #1E1E1E.
-Teal #009688; amber #FF9800 light / #FFB74D dark.
-
-| State | Light | Dark |
+| Role | Light | Dark |
 |---|---|---|
-| Neutral | #90A4AE | #78909C |
-| Action | #009688 | #4DB6AC |
-| Success | #4CAF50 | #81C784 |
-| Warning | #FF9800 | #FFB74D |
-| Error | #E53935 | #E57373 |
-| Purple | #9C27B0 | #BA68C8 |
-| Yellow | #FBC02D | #FDD835 |
-| Reference | #2196F3 | #64B5F6 |
-| Subtle | #B0BEC5 | #90A4AE |
-| Archive | #78909C | #546E7A |
+| Paper | #F2EBDC | #18140E |
+| Secondary paper | #EAE0CB | #1F1A12 |
+| Neutral card | #FFFDF6 | #221C14 |
+| Ink | #241F18 | #EFE4D0 |
+| Muted ink | #6F6553 | #B1A288 |
+| Border | #D9CBB0 | #3A3122 |
+| Ruled line | #E6DAC2 | #2B2417 |
+| Accent | #0F766E | #5CC9BD |
+| Amber | #B06A0C | #DFA14A |
 
-Pastel names below are persisted category identifiers, not documentation language.
+`PaperSurface` paints the hero's horizontal ruling (34 logical pixels, scaled with
+text size) and subtle deterministic grain. It is a decorative, noninteractive,
+separate repaint boundary. All routes use this same background, including folders,
+settings and editors. Editor paper adds a fine notebook margin. Category colors
+only tint cards; category identifiers and stored data are unchanged. Native splash
+backgrounds use the same paper colors.
 
-| Category | Light | Dark |
-|---|---|---|
-| menthe | #E0F2F1 | #004D40 |
-| citron | #FFF9C4 | #827717 |
-| peche | #FFE0B2 | #BF360C |
-| lavande | #F3E5F5 | #4A148C |
-| rose | #FFEBEE | #880E4F |
-| azur | #E1F5FE | #01579B |
-| sable | #F5F5DC | #3E2723 |
-| sauge | #F1F8E9 | #1B5E20 |
-| bonbon | #FCE4EC | #AD1457 |
-| nuage (default) | #ECEFF1 | #263238 |
+The FAB keeps the site's primary `.btn` treatment, shared by “Read the
+documentation” and “Repository”: accent fill, on-accent text and icons, fully
+rounded resting/extended forms with the original menu corners, a 1px border mixing
+78% accent with 22% black in sRGB, a 1px white highlight inside the top edge and
+the compact black shadow. The fill is drawn at **86% over a 10px backdrop blur**,
+so the page shows through the way it does behind the site's masthead, while the
+content stays on-accent. Modes, icons and focus behavior are unchanged. Flutter
+and browser rasterization can differ despite these shared source values.
 
-## Layout and type
+FAB modes, icons, menu layout and focus behavior stay unchanged. Pointer hover
+uses the site's 160ms ease, a 1px lift and 105% brightness. Action states,
+search fields and menu text must remain legible on their actual backgrounds.
+Menus remain bounded by the available space above the keyboard.
 
-| Token | Value |
-|---|---|
-| appPaddingLarge / Medium / Small | 18 / 12 / 6 |
-| appBorderRadius | 12 |
-| sectionBorderRadius | 18 |
-| menuMinWidth | 160 |
-| appBarOffset | 56 |
-| sectionTitleSize | 24, w600 |
-| appBarTextSize | 17; title w600, Cancel w400 |
+## Typography and cards
 
-Shared TanoText sizes: pageTitle 24, emptyState 20, wordmark 18, listTitle 17,
-body 16, label 14, tiny 12, badge 10. Card typography has its own compact scale.
-Primary/muted text colors adapt to brightness; colored surfaces use contrast-aware
-text. Card borders use black alpha .16 in light mode, white alpha .22 in dark mode.
-Page cover rules and app-bar borders remain 0.5 in both themes.
+Noto Serif 2.015 is bundled under SIL OFL 1.1 (see `assets/fonts/README.md`). The
+Flutter alias `TanoSerif` is used for page titles, Note prose and card titles. This
+is a portable equivalent to the site's platform serif stack, not its exact font.
+Task rows, controls and small metadata use the system sans serif. No runtime font
+requests or external assets are needed.
 
-Material Symbols sizes: primary FAB 24, app bar 22, back/chevrons 20,
-metadata 12, card markers 11. Bookmark is filled amber `label_important` when active.
-Back uses `arrow_back_ios`. Use adaptive switches/dialogs and shared rounded sections.
-Motion tokens: fast 150 ms, base 250 ms, slow 450 ms. Waiting for I/O is not motion.
+Page titles 28, section titles 26, document filter 22, body 17, labels 15, metadata 12.
+Cards use their own compact scale: title 14, body 12, date/count 10. Small card
+metadata uses shared muted ink with tested contrast across all category surfaces.
+
+Cards have 8px corners, a 1px warm border and a discreet shadow. Document covers,
+locked templates and selection affordances stay intact. A folder has no cover any
+more, its tile is a perfect square, and it keeps the only remaining corner
+watermark. List
+heights are 100/112px as appropriate, and grow with accessibility text sizing.
+Task covers hide their checklist previews. Grid covers occupy the upper half;
+list covers occupy the left third. Settings cards use the same paper surface and
+fine border. Material Symbols identities and existing navigation are unchanged.
+
+## Document filters
+
+Home and a folder share one control: a segmented button reading **All (30) ·
+23 Notes · 7 Tasks**. Every choice keeps its label and its own count — `All (n)`
+for the whole list, `n Note` or `n Task` for one kind, singular for zero and one —
+so the title line carries no separate counter; only a selection still needs a
+sentence there. The number and its parentheses print light, so the word stays the
+label. The selected segment takes
+the accent fill with on-accent content, and the filter is remembered under the
+`documentFilter` preference. The control scopes the document list only: folders are
+structure, not documents, and the search scope and selection rules are unchanged.
+
+## Menus
+
+One app-bar menu everywhere: the Material popup with **Grid / List / Settings**.
+Home and a folder both carry it, and the iOS Cupertino action sheet is gone — there
+is a single menu style, on every platform. A folder no longer shows an "add note"
+action in its app bar: documents are added from its FAB. The active item takes the
+accent (light and dark) with its glyph filled, and the divider under it is drawn in
+the same accent. Rows are 40 tall inside a 4px vertical menu padding. A **Left
+side** switch (off by default, remembered under `fabOnLeft`) matches the settings
+switches — a 0.8-scaled adaptive switch in the accent, right-anchored — and never
+makes its label read as active. It moves the FAB to the column's bottom-left, where
+an expanded bar grows rightwards: its reduce chevron moves to the bar's head and
+points back to the left. The choice is definitive: it applies in portrait too.
+Every menu action — a document view, the FAB side, the switch — closes the menu
+and the page applies the change before it closes, so the effect is always
+immediate, never waiting for the next visit. An
+open FAB menu in a compact window — a landscape phone, or a tablet — is a plain
+24-radius panel, and it never shifts the FAB.
+
+## Responsive layout
+
+Counts follow logical viewport dimensions, including split-screen resizing. A
+shortest side of 600px identifies a tablet window; a width of 1440px takes precedence
+as the large layout.
+
+| Viewport | Grid columns | List columns |
+|---|---:|---:|
+| Phone portrait |2|1|
+| Phone landscape |4|2|
+| Tablet portrait |4|3|
+| Tablet landscape |5|4|
+| Width 1440px or more |5|5|
+
+The folder group ignores that list/grid choice and stays a grid, on its own denser
+scale: 3 columns on a phone portrait, 5 once the window is landscape or a tablet,
+and 7 on a tablet held landscape and above. It is the same `EntitySliver` with an
+overridden count.
+
+The grid/list choice itself lives in one shared `ViewLayoutController`: Home and
+any folder read the same value and listen to it, so a switch made inside a folder
+is already applied when Home comes back — and the other way round.
+
+Both modes share `EntitySliver`. List rows preserve card widths in an incomplete
+last row. Swipe gestures perform no actions; selection and action menus remain
+the way to move, delete and undo. Existing sort, folder/search scope and lock rules
+are preserved.
+
+Every route keeps one centred content column of `appContentMaxWidth` (1080), like
+the site's wrap. A **compact** window — a landscape phone, or a tablet in either
+orientation — anchors the FAB to that column's edge rather than to the window:
+12 from it on a phone, 24 on a tablet, and an expanded bar grows only towards the
+middle. A phone in portrait keeps the older geometry: the FAB follows the
+column's right edge, stopping 24 short, while the cards stop 12 short, so the
+*visible* gap reads 12. Whatever the window, the bar keeps the width it has in
+portrait — the shortest side is that width — so rotating only moves it. On a wide
+window the app bar is inset to that same column, so its back button and its
+actions line up with the cards. The settings screen holds
+the device in portrait while it is on screen. Grid
+cards keep an almost square ratio (0.9) — a folder tile is a perfect square — so
+they follow their width in every column count.
+
+A **folder** in a landscape window — phone or tablet — is too short for the big title line: it drops it
+and the app bar carries the name from the first frame, centred while it fits and
+left-aligned once it is too long, with the flags in front of it. Only the filter
+control (or a rename field) stays above the list; Home keeps its own title line.
+The document grid fits four tiles on a landscape phone, on Home and in a folder
+alike; the folder cards keep their own denser scale.
+
+On a landscape phone the page body is inset on both sides by the larger of the
+two safe-area insets, so the writing clears the island, the punch-hole and the
+rounded corners whichever side they sit on. The notebook margin line moves with
+the content. The app bar keeps its own margins — the island sits at mid-height,
+well below it — so no space is wasted around the back button and the actions. The
+scrolled app bar draws its bottom hairline in the accent, since the warm rule
+colour would read as one more paper rule.
+
+Motion remains 150/250/450ms. Typography scales with the system and app preference.
+Golden previews cover light/dark Home, Note, Task and menus in addition to card
+states. Structural tests cover the column matrix, long titles and locked content;
+widget tests cover keyboard/find behavior. Real-device keyboard, shadow rendering,
+performance and native launch validation are still release checks.

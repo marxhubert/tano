@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:tano/core/models/note_access_policy.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
@@ -10,7 +10,6 @@ import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
@@ -19,7 +18,11 @@ import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/view_layout_controller.dart';
+import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
@@ -27,8 +30,8 @@ import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
-import 'package:tano/shared/widgets/manageable_cover.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
@@ -49,7 +52,8 @@ class FolderPage extends StatefulWidget {
 
 class _FolderPageState extends State<FolderPage> with RouteAware {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  final AttachmentsStore _attachmentsStore = AttachmentsStore();
+  Timer? _routeCollapseTimer;
+  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   DocumentFilter _documentFilter = DocumentFilter.all;
@@ -64,7 +68,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   bool _searchStarted = false;
   bool _isEditingTitle = false;
   String _searchQuery = '';
-  String _viewLayout = 'gridlist';
+
+  /// The layout lives in the shared controller, so Home sees a change made here.
+  String get _viewLayout => ViewLayoutController.instance.layout;
+
+  /// The FAB's side, shared with Home: one global choice.
+  bool get _fabOnLeft => FabSideController.instance.onLeft;
   String _sortBy = 'date';
   String _secondarySortBy = 'date';
   bool _sortAscending = true;
@@ -92,6 +101,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     _loadLockCapability();
     _folder = widget.folder;
     _titleFocusNode.addListener(_onTitleFocusChanged);
+    ViewLayoutController.instance.addListener(_onViewLayoutChanged);
+    FabSideController.instance.addListener(_onFabSideChanged);
     _loadPreferences();
     _load();
   }
@@ -110,15 +121,34 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   /// resting form when the user returns.
   @override
   void didPushNext() {
-    Future<void>.delayed(const Duration(milliseconds: 450), () {
-      if (mounted) _fabKey.currentState?.collapse();
+    _routeCollapseTimer?.cancel();
+    final generation = ++_routeCollapseGeneration;
+    final route = ModalRoute.of(context);
+    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
+      if (mounted &&
+          generation == _routeCollapseGeneration &&
+          route?.isCurrent == false) {
+        _fabKey.currentState?.collapse();
+      }
     });
   }
 
   @override
+  void didPopNext() {
+    // A quick return invalidates the delayed fold from the outgoing route.
+    // It must not close a FAB the user has already reopened on this page.
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
+  }
+
+  @override
   void dispose() {
+    _routeCollapseGeneration++;
+    _routeCollapseTimer?.cancel();
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
+    ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
+    FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _titleController.dispose();
@@ -127,11 +157,46 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     super.dispose();
   }
 
+  /// The layout is the shared controller Home also listens to, so a switch here
+  /// shows there — and the other way round.
+  Future<void> _changeViewLayout(String viewLayout) async {
+    await ViewLayoutController.instance.setLayout(viewLayout);
+    if (mounted) setState(() {});
+  }
+
+  void _onViewLayoutChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The side is global: the controller notifies every page and persists it.
+  Future<void> _setFabOnLeft(bool value) async {
+    await FabSideController.instance.setOnLeft(value);
+    if (mounted) setState(() {});
+  }
+
+  void _onFabSideChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).pushNamed('/settings');
+    if (mounted) await _loadPreferences();
+  }
+
+  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
+    final SecurePreferences prefs = await SecurePreferences.getInstance();
+    await prefs.setString('documentFilter', filter.name);
+  }
+
   Future<void> _loadPreferences() async {
+    await ViewLayoutController.instance.load();
+    await FabSideController.instance.load();
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _viewLayout = prefs.getString('viewLayout') ?? 'gridlist';
+      _documentFilter =
+          documentFilterFromName(prefs.getString('documentFilter')) ??
+          DocumentFilter.all;
       _sortBy = prefs.getString('sortBy') ?? 'date';
       _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
       _sortAscending = prefs.getBool('sortAscending') ?? true;
@@ -259,16 +324,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   }
 
   Note _newNote() => Note(folderId: _folder.id, category: _folder.category);
-
-  Future<void> _selectCover() async {
-    final PlatformFile? result = await FilePicker.pickFile(
-      type: FileType.image,
-    );
-    final String? path = result?.path;
-    if (path == null) return;
-    final String name = await _attachmentsStore.import(path, result!.name);
-    await _save(_folder.copyWith(coverImage: name));
-  }
 
   Future<void> _toggleLock() async {
     if (!_folder.isLocked) {
@@ -414,15 +469,15 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     await showMovedToast(context, count: count, folderId: folderId);
   }
 
-  /// Notes shown: the folder content, filtered by the local search. A locked
-  /// note never shows up in the search results.
-  List<Note> get _visibleNotes {
+  /// The folder content narrowed by the local search, before the kind filter:
+  /// the segmented control counts every kind from here. A locked note never
+  /// shows up in the search results.
+  List<Note> _filterSource() {
     final String query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return _notes.where(_documentFilter.matches).toList();
+    if (query.isEmpty) return _notes;
     return _notes
         .where(
           (Note note) =>
-              _documentFilter.matches(note) &&
               NoteAccessPolicy([
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
@@ -433,9 +488,30 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         .toList();
   }
 
+  /// How many notes the given view would show right now.
+  int _countFor(DocumentFilter filter) =>
+      _filterSource().where(filter.matches).length;
+
+  /// Notes shown: the folder content, filtered by the search and the kind.
+  List<Note> get _visibleNotes =>
+      _filterSource().where(_documentFilter.matches).toList();
+
   /// True once the user has actually typed in the search field: only then
   /// does the page switch to the results presentation.
   bool get _resultsVisible => _isSearchMode && _searchStarted;
+
+  /// The recent searches stand in for the results while the field is empty —
+  /// the same screen Home offers.
+  bool get _showSearchHistory => showSearchHistory(
+    isSearchMode: _isSearchMode,
+    hasQuery: _searchQuery.trim().isNotEmpty,
+  );
+
+  /// The kind tags step aside while a search is on screen, exactly as they do
+  /// on Home. A selection keeps them: its sentence is printed there.
+  bool get _showFilterTags =>
+      _selection.isActive ||
+      (!_showSearchHistory && _searchQuery.trim().isEmpty);
 
   String _noteCountLabel(int count) =>
       '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
@@ -448,18 +524,26 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       final int count = _selection.count;
       final int total = _visibleNotes.length;
       if (count == 0) return AppText.tr('no_note_selected');
+      final List<Note> selected = _visibleNotes
+          .where((Note note) => _selection.contains(note.id))
+          .toList();
+      final String noun = selectionNounKey(
+        notes: selected.where((Note note) => !note.isTask).length,
+        tasks: selected.where((Note note) => note.isTask).length,
+        folders: 0,
+      );
       if (count > 1 && count == total) {
-        return AppText.tr('all_notes_selected', <String, String>{
+        return AppText.tr('all_${noun}s_selected', <String, String>{
           'count': '$count',
         });
       }
       if (count > 1) {
-        return AppText.tr('notes_selected', <String, String>{
+        return AppText.tr('${noun}s_selected', <String, String>{
           'count': '$count',
           'total': '$total',
         });
       }
-      return AppText.tr('single_note_selected', <String, String>{
+      return AppText.tr('single_${noun}_selected', <String, String>{
         'count': '$count',
       });
     }
@@ -473,12 +557,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       if (_folder.isLocked) metadataGlyph(context, Symbols.lock),
       if (_folder.isLocked && _folder.important) const SizedBox(width: 8),
       if (_folder.important)
-        metadataGlyph(
-          context,
-          Symbols.label_important,
-          color: tanoAmber,
-          fill: 1,
-        ),
+        metadataGlyph(context, Symbols.bookmark, color: tanoAmber, fill: 1),
     ],
   );
 
@@ -497,162 +576,180 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
     // The folder's FAB always rests in its reduced form; tapping it expands
     // the action bar. This keeps it from hiding the notes or the cover.
-    return ProtectedContent(
-      protected: _folder.isLocked,
-      child: PageScaffold(
-        backgroundColor: immersiveBg,
-        // The folder name is always the page title, even in selection mode.
-        title: _resultsVisible ? AppText.tr('search_results') : _folder.name,
+    // The recent searches live in a shared controller: the page rebuilds when
+    // they change, exactly as Home does.
+    return ListenableBuilder(
+      listenable: SearchHistoryController.instance,
+      builder: (BuildContext context, Widget? child) => ProtectedContent(
+        protected: _folder.isLocked,
+        child: PageScaffold(
+          backgroundColor: immersiveBg,
+          // The folder name is always the page title, even in selection mode.
+          title: _showSearchHistory
+              ? AppText.tr('search_history')
+              : (_resultsVisible ? AppText.tr('search_results') : _folder.name),
+          // A landscape phone moves the folder title, flags included, to the app
+          // bar and drops the body's title line. Home keeps its own.
+          condenseHeader: true,
 
-        headerMetadataWidget: !_resultsVisible ? _folderFlags(context) : null,
-        // Nothing but the illustration: it must hold its place.
-        freezeBody: !_loading && _visibleNotes.isEmpty,
-        titleWidget: _isEditingTitle
-            ? TapRegion(
-                onTapOutside: (_) => _exitTitleEdit(),
-                child: TextField(
-                  controller: _titleController,
-                  focusNode: _titleFocusNode,
-                  autofocus: true,
-                  maxLines: 3,
-                  minLines: 1,
-                  maxLength: 54,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _exitTitleEdit(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: TanoText.pageTitle,
-                    letterSpacing: -0.41,
-                    color: getTextColor(
-                      Theme.of(context).scaffoldBackgroundColor,
+          headerMetadataWidget: _showSearchHistory
+              ? clearSearchHistoryButton(context)
+              : (!_resultsVisible ? _folderFlags(context) : null),
+          // Nothing but the illustration: it must hold its place.
+          freezeBody: !_loading && _visibleNotes.isEmpty,
+          titleWidget: _isEditingTitle
+              ? TapRegion(
+                  onTapOutside: (_) => _exitTitleEdit(),
+                  child: TextField(
+                    controller: _titleController,
+                    focusNode: _titleFocusNode,
+                    autofocus: true,
+                    maxLines: 3,
+                    minLines: 1,
+                    maxLength: 54,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _exitTitleEdit(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: TanoText.pageTitle,
+                      letterSpacing: -0.41,
+                      color: getTextColor(
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ),
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                      counter: Offstage(),
                     ),
                   ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                    counter: Offstage(),
+                )
+              : null,
+          actions: _selection.isActive
+              ? <Widget>[CancelButton(onPressed: _exitSelection)]
+              : _isSearchMode
+              ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
+              : <Widget>[
+                  IconButton(
+                    icon: const Icon(Symbols.document_search),
+                    tooltip: AppText.tr('search'),
+                    onPressed: _enterSearchMode,
+                  ),
+                  const ThemeToggleButton(),
+                  // The same menu as Home: a folder adds a note from its FAB, so
+                  // the app bar no longer carries an "add note" action.
+                  AppBarMenuButton(
+                    layout: _viewLayout,
+                    onLayout: _changeViewLayout,
+                    onLeft: _fabOnLeft,
+                    onLeftChanged: _setFabOnLeft,
+                    onSettings: _openSettings,
+                  ),
+                ],
+          floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
+          // A single, stable FAB for both modes: only the icons animate when the
+          // selection mode toggles, the FAB box itself does not move.
+          floatingActionButton: AppFab(
+            key: _fabKey,
+            onLeft: _fabOnLeft,
+            isEditorMode: true,
+            isFolderMode: true,
+            isSelectionMode: _selection.isActive,
+            // Moving needs at least one selected note.
+            canMove: _selection.isNotEmpty,
+            canDelete: _selection.isNotEmpty,
+            isSearchMode: _isSearchMode,
+            collapsedByDefault: true,
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            isImportant: _folder.important,
+            isLocked: _folder.isLocked,
+            canLock: _canLock,
+            isTitleEditing: _isEditingTitle,
+            currentCategory: _folder.category,
+            currentFolderId: _folder.id,
+            onAddNote: () => _openNote(add: true, note: _newNote()),
+            onAddTask: () => _openNote(
+              add: true,
+              note: Task(folderId: _folder.id, category: _folder.category),
+            ),
+            onColorSelected: (String name) =>
+                _save(_folder.copyWith(category: name)),
+            onImportantSelected: () =>
+                _save(_folder.copyWith(important: !_folder.important)),
+            onLockSelected: _toggleLock,
+            onDeleteSelected: _delete,
+            onEditTitle: _startTitleEdit,
+            onSearchChanged: (String value) {
+              setState(() {
+                _searchQuery = value;
+                // Only from the first typed letter does the page switch to the
+                // results presentation.
+                if (value.trim().isNotEmpty) {
+                  _searchStarted = true;
+                }
+              });
+            },
+            onReset: _clearSearch,
+            onDelete: _deleteSelected,
+            onMoveTo: _moveTo,
+            onClearSelection: () => setState(_selection.clear),
+            onSelectAll: () => setState(
+              // Only the notes currently shown (search results included).
+              () => _selection.selectAll(
+                _visibleNotes.map((Note note) => note.id),
+              ),
+            ),
+          ),
+          slivers: <Widget>[
+            if (!_loading && _showFilterTags)
+              SliverToBoxAdapter(
+                child: SectionTitleLine(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: appSidePad(context, appPaddingLarge),
+                  ),
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  titleWidget: DocumentFilterControl(
+                    value: _documentFilter,
+                    countOf: _countFor,
+                    // Selecting something replaces the tags with the sentence.
+                    selectionLabel: _selection.isActive
+                        ? _headerMetadata
+                        : null,
+                    onChanged: (DocumentFilter filter) => setState(() {
+                      _selection.exit();
+                      _documentFilter = filter;
+                      _saveDocumentFilterPref(filter);
+                    }),
                   ),
                 ),
+              ),
+            if (_loading)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator.adaptive()),
               )
-            : null,
-        actions: _selection.isActive
-            ? <Widget>[CancelButton(onPressed: _exitSelection)]
-            : _isSearchMode
-            ? <Widget>[CancelButton(onPressed: _exitSearchMode)]
-            : <Widget>[
-                // Add first, as requested on the folder page.
-                IconButton(
-                  icon: const Icon(Symbols.add_notes),
-                  tooltip: AppText.tr('add_note'),
-                  onPressed: () => _openNote(add: true, note: _newNote()),
+            else if (_showSearchHistory)
+              SliverPadding(
+                // The same frame as the notes above it, so the ruled rows line
+                // up with the cards.
+                padding: appContentPadding(context),
+                sliver: searchHistorySliver(
+                  context,
+                  onSelected: (String query) {
+                    setState(() {
+                      _searchController.text = query;
+                      _searchQuery = query;
+                      _searchStarted = true;
+                    });
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Symbols.search),
-                  tooltip: AppText.tr('search'),
-                  onPressed: _enterSearchMode,
-                ),
-                const ThemeToggleButton(),
-              ],
-        floatingActionButtonLocation: const FlushEndFabLocation(),
-        // A single, stable FAB for both modes: only the icons animate when the
-        // selection mode toggles, the FAB box itself does not move.
-        floatingActionButton: AppFab(
-          key: _fabKey,
-          isEditorMode: true,
-          isFolderMode: true,
-          isSelectionMode: _selection.isActive,
-          // Moving needs at least one selected note.
-          canMove: _selection.isNotEmpty,
-          canDelete: _selection.isNotEmpty,
-          isSearchMode: _isSearchMode,
-          collapsedByDefault: true,
-          controller: _searchController,
-          focusNode: _searchFocusNode,
-          isImportant: _folder.important,
-          isLocked: _folder.isLocked,
-          canLock: _canLock,
-          isTitleEditing: _isEditingTitle,
-          currentCategory: _folder.category,
-          currentFolderId: _folder.id,
-          onAddNote: () => _openNote(add: true, note: _newNote()),
-          onAddTask: () => _openNote(
-            add: true,
-            note: Task(folderId: _folder.id, category: _folder.category),
-          ),
-          onImageSelected: () {
-            _fabKey.currentState?.closeVerticalMenu();
-            _selectCover();
-          },
-          onColorSelected: (String name) =>
-              _save(_folder.copyWith(category: name)),
-          onImportantSelected: () =>
-              _save(_folder.copyWith(important: !_folder.important)),
-          onLockSelected: _toggleLock,
-          onDeleteSelected: _delete,
-          onEditTitle: _startTitleEdit,
-          onSearchChanged: (String value) {
-            setState(() {
-              _searchQuery = value;
-              // Only from the first typed letter does the page switch to the
-              // results presentation.
-              if (value.trim().isNotEmpty) {
-                _searchStarted = true;
-              }
-            });
-          },
-          onReset: _clearSearch,
-          onDelete: _deleteSelected,
-          onMoveTo: _moveTo,
-          onClearSelection: () => setState(_selection.clear),
-          onSelectAll: () => setState(
-            // Only the notes currently shown (search results included).
-            () =>
-                _selection.selectAll(_visibleNotes.map((Note note) => note.id)),
-          ),
+              )
+            else
+              _buildNotes(),
+          ],
         ),
-        slivers: <Widget>[
-          if (_folder.coverImage != null && !_resultsVisible)
-            SliverToBoxAdapter(
-              child: ManageableCover(
-                name: _folder.coverImage!,
-                height: 160.0,
-                // Tighter gap below, towards the notes grid / list.
-                padding: const EdgeInsets.only(
-                  top: appPaddingMedium,
-                  bottom: appPaddingSmall,
-                ),
-                onRemove: () async {
-                  await _save(_folder.withoutCover());
-                },
-              ),
-            ),
-          if (!_loading)
-            SliverToBoxAdapter(
-              child: SectionTitleLine(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: appPaddingLarge,
-                ),
-                titleWidget: DocumentFilterButtons(
-                  value: _documentFilter,
-                  onChanged: (filter) => setState(() {
-                    _selection.exit();
-                    _documentFilter = filter;
-                  }),
-                ),
-                metadata: _selection.isActive
-                    ? _headerMetadata
-                    : _documentFilter.countLabel(_visibleNotes.length),
-              ),
-            ),
-          if (_loading)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: CircularProgressIndicator.adaptive()),
-            )
-          else
-            _buildNotes(),
-        ],
       ),
     );
   }
@@ -681,7 +778,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
     final bool isList = _viewLayout == 'list';
     return SliverPadding(
-      padding: const EdgeInsets.all(appPaddingMedium),
+      padding: appContentPadding(context),
       sliver: EntitySliver<Note>(
         items: notes,
         isList: isList,

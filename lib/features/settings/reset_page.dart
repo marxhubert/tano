@@ -117,11 +117,11 @@ class _ResetPageState extends State<ResetPage> {
                                 ? null
                                 : _handleDeveloperReset,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey.withValues(
-                                alpha: 0.4,
-                              ),
+                              backgroundColor: paperSecondary(context),
+                              foregroundColor: primaryTextColor(context),
+                              disabledBackgroundColor: paperSecondary(
+                                context,
+                              ).withValues(alpha: 0.4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(pillRadius),
                               ),

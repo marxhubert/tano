@@ -13,18 +13,19 @@ import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'golden_setup.dart';
 
 /// The two real card boxes: the grid tile and the compact list row.
-const Size _grid = Size(113.0, 128.0);
-const Size _list = Size(340.0, 80.0);
+const Size _grid = Size(176.0, 196.0);
+const Size _list = Size(340.0, 100.0);
 
 Note _note() => Note(
   id: 'n1',
   title: 'Idées en vrac pour la semaine',
   content: 'Acheter du pain\nAppeler le plombier\nRanger le garage',
   date: '2026-02-01 09:00:00.000',
-  category: 'menthe',
+  category: 'nuage',
 );
 
 Note _task() => Note(
+  kind: EntityKind.task,
   id: 't1',
   title: 'Préparer la release',
   content: '- [x] Tests\n- [ ] Notes de version\n- [ ] Tag',
@@ -79,13 +80,13 @@ EntityCard _card(
     }
     return isList
         ? buildNoteListContent(
-            note: note(),
+            note: note().copyWith(important: isImportant),
             textColor: textColor,
             activeNoteIds: const <String>{},
             hasCover: hasCover,
           )
         : buildNoteGridContent(
-            note: note(),
+            note: note().copyWith(important: isImportant),
             textColor: textColor,
             activeNoteIds: const <String>{},
             hasCover: hasCover,

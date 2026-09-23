@@ -47,7 +47,7 @@ Future<bool?> getConfirmation({
             child: Text(
               action,
               style: TextStyle(
-                color: isDestructive ? Colors.red : tanoTeal,
+                color: isDestructive ? Colors.red : accentColor(context),
                 fontSize: TanoText.listTitle,
                 fontWeight: isDestructive ? FontWeight.normal : FontWeight.bold,
               ),
@@ -70,14 +70,14 @@ Future<bool?> getConfirmation({
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             (isSave ? AppText.tr('quit') : AppText.tr('cancel')).toUpperCase(),
-            style: TextStyle(color: isSave ? Colors.red : tanoTeal),
+            style: TextStyle(color: isSave ? Colors.red : accentColor(context)),
           ),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
           child: Text(
             action.toUpperCase(),
-            style: TextStyle(color: isSave ? tanoTeal : Colors.red),
+            style: TextStyle(color: isSave ? accentColor(context) : Colors.red),
           ),
         ),
       ],
@@ -264,7 +264,10 @@ Future<String?> showAdaptivePrompt({
       final Widget content = message == null
           // A small gap between the title and the field, so they do not look
           // glued together when there is no message.
-          ? Padding(padding: const EdgeInsets.only(top: appPaddingTight), child: field)
+          ? Padding(
+              padding: const EdgeInsets.only(top: appPaddingTight),
+              child: field,
+            )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: isApple

@@ -6,7 +6,7 @@ import 'package:tano/shared/widgets/theme.dart';
 // ---------------------------------------------------------------------------
 
 /// Size of a page / section title.
-const double sectionTitleSize = 24.0;
+const double sectionTitleSize = 26.0;
 
 /// Size of the small metadata printed at the right of a title line.
 const double titleMetadataSize = 12.0;
@@ -15,6 +15,7 @@ const double titleMetadataSize = 12.0;
 TextStyle sectionTitleStyle(BuildContext context, {Color? color}) => TextStyle(
   fontWeight: FontWeight.w600,
   fontSize: sectionTitleSize,
+  fontFamily: 'TanoSerif',
   letterSpacing: -0.41,
   color: color ?? primaryTextColor(context),
 );
@@ -80,21 +81,23 @@ class SectionTitleLine extends StatelessWidget {
               if (metadataWidget != null)
                 Padding(
                   padding: const EdgeInsets.only(left: appPaddingMedium),
-                  child: metadataWidget,
+                  child: _metadataNudge(metadataWidget!),
                 )
               else if (metadata != null)
                 Padding(
                   padding: const EdgeInsets.only(left: appPaddingMedium),
-                  child: ConstrainedBox(
-                    // The metadata only takes what it needs, up to 60% of the
-                    // line: the title keeps the rest.
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * 0.6,
-                    ),
-                    child: Text(
-                      metadata!,
-                      style: titleMetadataStyle(context),
-                      overflow: TextOverflow.ellipsis,
+                  child: _metadataNudge(
+                    ConstrainedBox(
+                      // The metadata only takes what it needs, up to 60% of the
+                      // line: the title keeps the rest.
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * 0.6,
+                      ),
+                      child: Text(
+                        metadata!,
+                        style: titleMetadataStyle(context),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
@@ -104,6 +107,13 @@ class SectionTitleLine extends StatelessWidget {
       ),
     );
   }
+
+  /// Centre-aligned, a small metadata sits a touch high next to a big title:
+  /// nudge it down so the two read as if they shared their baseline.
+  Widget _metadataNudge(Widget child) =>
+      crossAxisAlignment == CrossAxisAlignment.center
+      ? Transform.translate(offset: const Offset(0, 8), child: child)
+      : child;
 }
 
 // ---------------------------------------------------------------------------

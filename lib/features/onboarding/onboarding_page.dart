@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -45,9 +46,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) => SplashScreen(
-          openEditorWhenEmpty: createFirstNote,
-        ),
+        builder: (BuildContext context) =>
+            SplashScreen(openEditorWhenEmpty: createFirstNote),
       ),
     );
   }
@@ -58,59 +58,60 @@ class _OnboardingPageState extends State<OnboardingPage> {
       _finish(createFirstNote: true);
       return;
     }
-    _controller.nextPage(
-      duration: TanoMotion.base,
-      curve: Curves.easeOut,
-    );
+    _controller.nextPage(duration: TanoMotion.base, curve: Curves.easeOut);
   }
 
   @override
   Widget build(BuildContext context) {
     final List<OnboardingSlide> slides = onboardingSlides();
     final bool isLast = _index == _lastIndex;
-    return Scaffold(
-      backgroundColor: barColor(context),
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: appPaddingTight),
-                child: TextButton(
-                  onPressed: _finish,
-                  child: Text(
-                    AppText.tr('onboarding_skip'),
-                    style: TextStyle(
-                      color: mutedTextColor(context),
-                      fontSize: TanoText.listTitle,
+    return PaperSurface(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: appPaddingTight,
+                  ),
+                  child: TextButton(
+                    onPressed: _finish,
+                    child: Text(
+                      AppText.tr('onboarding_skip'),
+                      style: TextStyle(
+                        color: mutedTextColor(context),
+                        fontSize: TanoText.listTitle,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: slides.length,
-                onPageChanged: (int index) => setState(() => _index = index),
-                itemBuilder: (BuildContext context, int index) =>
-                    _Slide(slide: slides[index]),
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: slides.length,
+                  onPageChanged: (int index) => setState(() => _index = index),
+                  itemBuilder: (BuildContext context, int index) =>
+                      _Slide(slide: slides[index]),
+                ),
               ),
-            ),
-            _Dots(count: slides.length, index: _index),
-            const SizedBox(height: sectionGap),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-              child: _PrimaryButton(
-                label: isLast
-                    ? AppText.tr('onboarding_start')
-                    : AppText.tr('onboarding_next'),
-                onPressed: _next,
+              _Dots(count: slides.length, index: _index),
+              const SizedBox(height: sectionGap),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: sectionGap),
+                child: _PrimaryButton(
+                  label: isLast
+                      ? AppText.tr('onboarding_start')
+                      : AppText.tr('onboarding_next'),
+                  onPressed: _next,
+                ),
               ),
-            ),
-            const SizedBox(height: sectionGap),
-          ],
+              const SizedBox(height: sectionGap),
+            ],
+          ),
         ),
       ),
     );
@@ -204,15 +205,15 @@ class _PrimaryButton extends StatelessWidget {
         width: double.infinity,
         height: 50.0,
         child: CupertinoButton.filled(
-          color: tanoTeal,
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(pillRadius),
           onPressed: onPressed,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: TanoText.listTitle,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ),
@@ -224,8 +225,8 @@ class _PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: tanoTeal,
-          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(pillRadius),
           ),

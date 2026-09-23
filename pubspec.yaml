@@ -44,18 +44,17 @@ dev_dependencies:
 # Native splash screen (Android + iOS), generated with:
 #   dart run flutter_native_splash:create
 flutter_native_splash:
-  # Colors.blueGrey.shade50 (light) / Colors.blueGrey.shade900 (dark), the
-  # same surfaces the in-app splash uses.
-  color: "#ECEFF1"
-  color_dark: "#263238"
+  # Shared website/app paper colors, also used by the in-app splash.
+  color: "#f2ebdc"
+  color_dark: "#18140e"
   # Logo matching the in-app splash: black87 circle + white bookmark.
   # The main images are full-screen composites (logo + text) for pixel-perfect
   # matching on iOS and pre-Android-12.
   image: assets/splash_logo.png
   image_dark: assets/splash_logo_dark.png
   android_12:
-    color: "#ECEFF1"
-    color_dark: "#263238"
+    color: "#f2ebdc"
+    color_dark: "#18140e"
     # Android 12+ uses a separate icon (circle only) and branding (text only).
     image: assets/splash_logo_android12.png
     branding: assets/splash_branding.png
@@ -70,6 +69,18 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: TanoSerif
+      fonts:
+        - asset: assets/fonts/NotoSerif-Regular.ttf
+        - asset: assets/fonts/NotoSerif-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/NotoSerif-Italic.ttf
+          style: italic
+        - asset: assets/fonts/NotoSerif-BoldItalic.ttf
+          weight: 700
+          style: italic
 
   assets:
     - assets/config/malagasy_refs.json

@@ -114,6 +114,9 @@ class AppText {
     'all_notes': 'All notes',
     'all_docs': 'All docs',
     'all_tasks': 'All tasks',
+    'filter_all': 'All',
+    'filter_notes': 'Notes',
+    'filter_tasks': 'Tasks',
     'docs': 'docs',
     'doc': 'doc',
     'my_folders': 'My folders',
@@ -135,6 +138,12 @@ class AppText {
     'all_notes_selected': 'All {count} notes are selected',
     'notes_selected': '{count}/{total} notes selected',
     'single_note_selected': '{count} single note selected',
+    'single_task_selected': '{count} single task selected',
+    'single_doc_selected': '{count} single doc selected',
+    'tasks_selected': '{count}/{total} tasks selected',
+    'all_tasks_selected': 'All {count} tasks are selected',
+    'docs_selected': '{count}/{total} docs selected',
+    'all_docs_selected': 'All {count} docs are selected',
     'single_folder_selected': '{count} single folder selected',
     'folders_selected': '{count}/{total} folders selected',
     'all_folders_selected': 'All {count} folders are selected',
@@ -283,6 +292,7 @@ class AppText {
         'This will reset all your settings (theme, language, sorting) to their default values.',
     // Menu
     'menu_list': 'List',
+    'menu_left_side': 'Left side',
     'menu_grid': 'Grid',
     'menu_sorting': 'Sorting',
     'menu_theme': 'Appearance',
@@ -368,7 +378,7 @@ class AppText {
     'folder_locked': 'Folder locked',
     'folder_unlocked': 'Folder unlocked',
     // Search
-    'search_history': 'Recent searches',
+    'search_history': 'Recent',
   };
 
   static const Map<String, String> _fr = <String, String>{
@@ -376,6 +386,9 @@ class AppText {
     'all_notes': 'Toutes les notes',
     'all_docs': 'Tous les docs',
     'all_tasks': 'Toutes les tâches',
+    'filter_all': 'Tous',
+    'filter_notes': 'Notes',
+    'filter_tasks': 'Tâches',
     'docs': 'docs',
     'doc': 'doc',
     'my_folders': 'Mes dossiers',
@@ -397,6 +410,12 @@ class AppText {
     'all_notes_selected': 'Toutes les {count} notes sont sélectionnées',
     'notes_selected': '{count}/{total} notes sélectionnées',
     'single_note_selected': '{count} seule note sélectionnée',
+    'single_task_selected': '{count} seule tâche sélectionnée',
+    'single_doc_selected': '{count} seul doc sélectionné',
+    'tasks_selected': '{count}/{total} tâches sélectionnées',
+    'all_tasks_selected': 'Toutes les {count} tâches sont sélectionnées',
+    'docs_selected': '{count}/{total} docs sélectionnés',
+    'all_docs_selected': 'Tous les {count} docs sont sélectionnés',
     'single_folder_selected': '{count} seul dossier sélectionné',
     'folders_selected': '{count}/{total} dossiers sélectionnés',
     'all_folders_selected': 'Tous les {count} dossiers sont sélectionnés',
@@ -546,6 +565,7 @@ class AppText {
         'Ceci réinitialisera tous vos réglages (thème, langue, tri) à leurs valeurs par défaut.',
     // Menu
     'menu_list': 'Liste',
+    'menu_left_side': 'À gauche',
     'menu_grid': 'Grille',
     'menu_sorting': 'Triage',
     'menu_theme': 'Apparence',
@@ -631,7 +651,7 @@ class AppText {
     'folder_locked': 'Dossier verrouillé',
     'folder_unlocked': 'Dossier déverrouillé',
     // Recherche
-    'search_history': 'Recherches récentes',
+    'search_history': 'Récentes',
   };
 
   static const Map<String, String> _mg = <String, String>{
@@ -639,6 +659,9 @@ class AppText {
     'all_notes': 'Naoty rehetra',
     'all_docs': 'Rakitra rehetra',
     'all_tasks': 'Asa rehetra',
+    'filter_all': 'Rehetra',
+    'filter_notes': 'Naoty',
+    'filter_tasks': 'Asa',
     'docs': 'rakitra',
     'doc': 'rakitra',
     'my_folders': 'Ireo rakitra',
@@ -660,6 +683,12 @@ class AppText {
     'all_notes_selected': 'Voafantina daholo ny naoty {count}',
     'notes_selected': 'Naoty {count}/{total} voafantina',
     'single_note_selected': 'Naoty {count} voafantina',
+    'single_task_selected': 'Asa {count} voafantina',
+    'single_doc_selected': 'Rakitra {count} voafantina',
+    'tasks_selected': 'Asa {count}/{total} voafantina',
+    'all_tasks_selected': 'Voafantina daholo ny asa {count}',
+    'docs_selected': 'Rakitra {count}/{total} voafantina',
+    'all_docs_selected': 'Voafantina daholo ny rakitra {count}',
     'single_folder_selected': 'Vosana {count} voafantina',
     'folders_selected': 'Vosana {count}/{total} voafantina',
     'all_folders_selected': 'Voafantina daholo ny vosana {count}',
@@ -809,6 +838,7 @@ class AppText {
         'Hamerina ny fikirana rehetra (loko, fiteny, filaminana) amin\'ny teo aloha izany.',
     // Menu
     'menu_list': 'Lisitra',
+    'menu_left_side': 'Ankavia',
     'menu_grid': 'Efajoro',
     'menu_sorting': 'Filaminana',
     'menu_theme': 'Endrika',
@@ -894,7 +924,7 @@ class AppText {
     'folder_locked': 'Voahidy ny rakitra',
     'folder_unlocked': 'Novahana ny rakitra',
     // Fikarohana
-    'search_history': 'Fikarohana vao haingana',
+    'search_history': 'Teo aloha',
   };
 
   /// Returns the string associated with [key] in the current language,

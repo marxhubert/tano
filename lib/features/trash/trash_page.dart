@@ -129,6 +129,8 @@ class _TrashPageState extends State<TrashPage> {
                   sliver: EntitySliver<Folder>(
                     items: _viewModel.deletedFolders,
                     isList: _isListLayout,
+                    // A folder tile is a perfect square, like on Home.
+                    aspectRatio: 1.0,
                     cardBuilder: _folderCard,
                   ),
                 ),
@@ -242,7 +244,6 @@ class _TrashPageState extends State<TrashPage> {
       title: folder.name,
       subtitle: 'x$noteCount',
       subtitleIcon: Symbols.sticky_note_2,
-      coverImage: folder.coverImage,
       isImportant: folder.important,
       isLocked: folder.isLocked,
       isListLayout: _isListLayout,
@@ -351,11 +352,11 @@ class _TrashAction extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(appPaddingSmall),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
+          color: barColor(context),
           shape: BoxShape.circle,
-          // A hairline keeps the white dots readable on pale cards.
+          // A hairline keeps the dots readable on pale cards.
           border: Border.all(
-            color: Colors.black.withValues(alpha: 0.18),
+            color: primaryTextColor(context).withValues(alpha: 0.18),
             width: 0.5,
           ),
         ),

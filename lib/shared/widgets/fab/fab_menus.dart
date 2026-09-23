@@ -1,47 +1,41 @@
 part of 'app_fab.dart';
 
 mixin _FabMenusMixin on _FabStateMixin {
-  Widget _buildVerticalMenuContent(
-    BuildContext context,
-    double width,
-    double height,
-  ) {
-    Widget content;
-    switch (_verticalMenu) {
-      case FabVerticalMenu.color:
-        content = SingleChildScrollView(child: _buildColorMenu(context));
-        break;
-      case FabVerticalMenu.add:
-        content = SingleChildScrollView(child: _buildAddMenu(context));
-        break;
-      case FabVerticalMenu.more:
-        content = SingleChildScrollView(child: _buildMoreMenu(context));
-        break;
-      case FabVerticalMenu.link:
-        content = _buildLinkMenu(context);
-        break;
-      case FabVerticalMenu.move:
-        content = _buildMoveMenu(context);
-        break;
-      default:
-        content = const SizedBox.shrink();
-    }
+  Widget _buildVerticalMenuContent(BuildContext context) {
+    // A first-degree menu's space wears the active action's colour, exactly as a
+    // second-degree one's list does; the second keeps its header untouched.
+    Widget active(Widget child) =>
+        ColoredBox(color: _fabActiveSurface(context), child: child);
+    return switch (_verticalMenu) {
+      FabVerticalMenu.color => active(
+        SingleChildScrollView(child: _buildColorMenu(context)),
+      ),
+      FabVerticalMenu.add => active(
+        SingleChildScrollView(child: _buildAddMenu(context)),
+      ),
+      FabVerticalMenu.more => active(
+        SingleChildScrollView(child: _buildMoreMenu(context)),
+      ),
+      FabVerticalMenu.link => _buildLinkMenu(context),
+      FabVerticalMenu.move => _buildMoveMenu(context),
+      FabVerticalMenu.none => const SizedBox.shrink(),
+    };
+  }
 
-    // The dark surface fills the whole menu area while the content stays
-    // anchored at the bottom. The content is laid out at its final size even
-    // while the FAB animates: the animating container clips it, so it never
-    // wraps or squashes into a half-grown menu area.
-    return Container(
-      decoration: BoxDecoration(color: _fabMenuSurface(context)),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: OverflowBox(
-          minWidth: width,
-          maxWidth: width,
-          minHeight: height,
-          maxHeight: height,
-          alignment: Alignment.bottomCenter,
-          child: content,
+  Widget _loadStatus({required bool failed, required VoidCallback retry}) {
+    if (failed) {
+      return _VerticalMenuItem(
+        icon: Symbols.refresh,
+        label: AppText.tr('retry'),
+        onTap: retry,
+      ); //
+    }
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: SizedBox.square(
+          dimension: 24,
+          child: CircularProgressIndicator(color: _fabForeground(context)),
         ),
       ),
     );
@@ -65,7 +59,7 @@ mixin _FabMenusMixin on _FabStateMixin {
     return sorted;
   }
 
-  Widget _buildLinkMenu(BuildContext context, {bool isMeasurement = false}) {
+  Widget _buildLinkMenu(BuildContext context) {
     final sortedNotes = _getSortedNotes();
 
     final content = Column(
@@ -75,12 +69,12 @@ mixin _FabMenusMixin on _FabStateMixin {
         return _VerticalMenuItem(
           icon: Symbols.sticky_note_2,
           iconSize: 20.0,
-          fontSize: TanoText.listTitle,
+          fontSize: _fabLabelSize,
           maxLines: 2,
           label: note.title.isEmpty ? AppText.tr('no_title') : note.title,
           onTap: () {
+            closeVerticalMenu();
             widget.onNoteLinkSelected?.call(note);
-            setState(() => _verticalMenu = FabVerticalMenu.none);
           },
         );
       }),
@@ -88,10 +82,14 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _SubMenuLayout(
       title: AppText.tr('back'),
-      onBack: () => setState(() => _verticalMenu = FabVerticalMenu.add),
+      onBack: () => _showMenu(FabVerticalMenu.add),
       actions: _buildSortActions(),
-      isMeasurement: isMeasurement,
-      child: content,
+      child: (_notesLoading || _notesFailed)
+          ? _loadStatus(
+              failed: _notesFailed,
+              retry: () => unawaited(_loadNotes()),
+            )
+          : content,
     );
   }
 
@@ -111,7 +109,7 @@ mixin _FabMenusMixin on _FabStateMixin {
 
   /// The folder list offered by the "move to" action. It mirrors the note-link
   /// list, header included, so both second-degree menus feel the same.
-  Widget _buildMoveMenu(BuildContext context, {bool isMeasurement = false}) {
+  Widget _buildMoveMenu(BuildContext context) {
     final List<Folder> folders = _getSortedFolders();
 
     final Widget content = Column(
@@ -120,24 +118,24 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.home,
           iconSize: 20.0,
-          fontSize: TanoText.listTitle,
+          fontSize: _fabLabelSize,
           maxLines: 2,
           label: AppText.tr('no_folder'),
           onTap: () {
+            closeVerticalMenu();
             widget.onMoveTo?.call(null);
-            setState(() => _verticalMenu = FabVerticalMenu.none);
           },
         ),
         for (final Folder folder in folders)
           _VerticalMenuItem(
             icon: Symbols.folder,
             iconSize: 20.0,
-            fontSize: TanoText.listTitle,
+            fontSize: _fabLabelSize,
             maxLines: 2,
             label: folder.name,
             onTap: () {
+              closeVerticalMenu();
               widget.onMoveTo?.call(folder.id);
-              setState(() => _verticalMenu = FabVerticalMenu.none);
             },
           ),
       ],
@@ -145,10 +143,14 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _SubMenuLayout(
       title: AppText.tr('back'),
-      onBack: () => setState(() => _verticalMenu = _moveReturnTo),
+      onBack: () => _showMenu(_presentation.moveReturnTo),
       actions: _buildSortActions(),
-      isMeasurement: isMeasurement,
-      child: content,
+      child: (_foldersLoading || _foldersFailed)
+          ? _loadStatus(
+              failed: _foldersFailed,
+              retry: () => unawaited(_loadFolders()),
+            )
+          : content,
     );
   }
 
@@ -162,7 +164,7 @@ mixin _FabMenusMixin on _FabStateMixin {
               ? Symbols.history_2
               : Symbols.sort_by_alpha,
           size: 20,
-          color: Colors.white,
+          color: _fabForeground(context),
         ),
         onPressed: () => setState(() {
           _sortCriteria = _sortCriteria == ListSortCriteria.date
@@ -177,7 +179,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Icon(
           _isAscending ? Symbols.arrow_downward : Symbols.arrow_upward,
           size: 20,
-          color: Colors.white,
+          color: _fabForeground(context),
         ),
         onPressed: () => setState(() => _isAscending = !_isAscending),
         padding: const EdgeInsets.all(appPaddingTight),
@@ -195,9 +197,9 @@ mixin _FabMenusMixin on _FabStateMixin {
         children: [
           Text(
             AppText.tr('menu_theme'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: TanoText.listTitle,
+            style: TextStyle(
+              color: _fabForeground(context),
+              fontSize: _fabLabelSize,
             ),
           ),
           const SizedBox(height: 16),
@@ -244,7 +246,9 @@ mixin _FabMenusMixin on _FabStateMixin {
                                   width: halo,
                                   height: halo,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
+                                    color: _fabForeground(
+                                      context,
+                                    ).withValues(alpha: 0.18),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -261,7 +265,9 @@ mixin _FabMenusMixin on _FabStateMixin {
                                 foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.white30,
+                                    color: _fabForeground(
+                                      context,
+                                    ).withValues(alpha: .3),
                                     width: 1.0,
                                   ),
                                 ),
@@ -273,10 +279,14 @@ mixin _FabMenusMixin on _FabStateMixin {
                                       child: Row(
                                         children: <Widget>[
                                           Expanded(
-                                            child: Container(color: pair.light),
+                                            child: Container(
+                                              color: swatchTone(pair.light),
+                                            ),
                                           ),
                                           Expanded(
-                                            child: Container(color: pair.dark),
+                                            child: Container(
+                                              color: swatchTone(pair.dark),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -290,15 +300,17 @@ mixin _FabMenusMixin on _FabStateMixin {
                                             Container(
                                               width: diameter * 0.40,
                                               height: diameter * 0.40,
-                                              decoration: const BoxDecoration(
+                                              decoration: BoxDecoration(
+                                                // The check icon is full: its own
+                                                // colour paints the disc, and the
+                                                // check shows the white behind it.
                                                 color: Colors.white,
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
-                                            // Full amber disc...
                                             Icon(
                                               Symbols.check_circle,
-                                              color: tanoAmber,
+                                              color: const Color(0xFF603600),
                                               fill: 1.0,
                                               size: diameter * 0.53,
                                             ),
@@ -324,19 +336,15 @@ mixin _FabMenusMixin on _FabStateMixin {
   }
 
   Widget _buildAddMenu(BuildContext context) {
-    // On the folder page the "+" offers a cover image or a new note.
+    // On the folder page the "+" offers a new note or a task: a folder has no
+    // cover to choose.
     if (widget.isFolderMode) {
       return _buildVerticalList([
-        _VerticalMenuItem(
-          icon: Symbols.imagesmode,
-          label: AppText.tr('option_image'),
-          onTap: widget.onImageSelected,
-        ),
         _VerticalMenuItem(
           icon: Symbols.add_notes,
           label: AppText.tr('add_note'),
           onTap: () {
-            _toggleVerticalMenu(FabVerticalMenu.add);
+            collapse();
             widget.onAddNote?.call();
           },
         ),
@@ -344,7 +352,7 @@ mixin _FabMenusMixin on _FabStateMixin {
           icon: Symbols.format_list_bulleted_add,
           label: AppText.tr('add_task'),
           onTap: () {
-            _toggleVerticalMenu(FabVerticalMenu.add);
+            collapse();
             widget.onAddTask?.call();
           },
         ),
@@ -366,7 +374,11 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.sticky_note_2,
         label: AppText.tr('option_link'),
         // Nothing to link to when this is the only note.
-        enabled: !_notesLoaded || _availableNotes.isNotEmpty,
+        enabled:
+            !_notesLoaded ||
+            _notesLoading ||
+            _notesFailed ||
+            _availableNotes.isNotEmpty,
         onTap: () {
           _toggleVerticalMenu(FabVerticalMenu.link);
           widget.onLinkSelected?.call();
@@ -397,10 +409,10 @@ mixin _FabMenusMixin on _FabStateMixin {
     if (widget.isFolderMode) {
       return _buildVerticalList([
         _VerticalMenuItem(
-          icon: Symbols.label_important,
+          icon: Symbols.bookmark,
           fill: widget.isImportant ? 1.0 : 0.0,
           label: AppText.tr('important'),
-          iconColor: widget.isImportant ? tanoAmber : null,
+          iconColor: widget.isImportant ? _fabImportant(context) : null,
           onTap: widget.onImportantSelected,
         ),
         _VerticalMenuItem(
@@ -419,8 +431,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         _VerticalMenuItem(
           icon: Symbols.delete,
           label: capitalizedDelete,
-          iconColor: TanoStates.error.dark,
-          textColor: TanoStates.error.dark,
+          iconColor: _fabDestructive(context),
+          textColor: _fabDestructive(context),
           onTap: widget.onDeleteSelected,
         ),
       ]);
@@ -428,10 +440,10 @@ mixin _FabMenusMixin on _FabStateMixin {
 
     return _buildVerticalList([
       _VerticalMenuItem(
-        icon: Symbols.label_important,
+        icon: Symbols.bookmark,
         fill: widget.isImportant ? 1.0 : 0.0,
         label: AppText.tr('important'),
-        iconColor: widget.isImportant ? tanoAmber : null,
+        iconColor: widget.isImportant ? _fabImportant(context) : null,
         onTap: widget.onImportantSelected,
       ),
       _VerticalMenuItem(
@@ -443,7 +455,8 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.drive_file_move,
         label: AppText.tr('option_move'),
         // Nowhere to move to when the app holds no folder at all.
-        enabled: !_foldersLoaded || _hasFolders,
+        enabled:
+            !_foldersLoaded || _foldersLoading || _foldersFailed || _hasFolders,
         onTap: () => _openMoveMenu(FabVerticalMenu.more),
       ),
       _VerticalMenuItem(
@@ -457,8 +470,8 @@ mixin _FabMenusMixin on _FabStateMixin {
       _VerticalMenuItem(
         icon: Symbols.delete,
         label: capitalizedDelete,
-        iconColor: TanoStates.error.dark,
-        textColor: TanoStates.error.dark,
+        iconColor: _fabDestructive(context),
+        textColor: _fabDestructive(context),
         onTap: widget.onDeleteSelected,
       ),
     ]);

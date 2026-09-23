@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/folder_card_bodies.dart';
 
@@ -22,6 +23,9 @@ class FolderGridView extends StatelessWidget {
     return EntitySliver<Folder>(
       items: viewModel.folders,
       isList: false,
+      columnCount: folderColumnCount,
+      // A folder tile is a perfect square; only documents keep the 0.9 ratio.
+      aspectRatio: 1.0,
       cardBuilder: (BuildContext context, Folder folder) => _card(folder),
     );
   }
@@ -34,7 +38,6 @@ class FolderGridView extends StatelessWidget {
       title: folder.name,
       subtitle: 'x$noteCount',
       subtitleIcon: Symbols.sticky_note_2,
-      coverImage: folder.coverImage,
       isImportant: folder.important,
       isLocked: folder.isLocked,
       isSelectable: !folder.isLocked,

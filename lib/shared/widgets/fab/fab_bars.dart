@@ -30,7 +30,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.create_new_folder,
         label: AppText.tr('add_folder'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAddFolder?.call();
         },
       ),
@@ -38,7 +38,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.add_notes,
         label: AppText.tr('add_note'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAdd?.call();
         },
       ),
@@ -46,16 +46,18 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.format_list_bulleted_add,
         label: AppText.tr('add_task'),
         onTap: () {
-          setState(() => _isManuallyExpanded = false);
+          collapse();
           widget.onAddTask?.call();
         },
       ),
       _EditorAction(
-        icon: Symbols.arrow_forward_ios,
+        icon: widget.onLeft
+            ? Symbols.arrow_back_ios
+            : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 22.0,
-        onTap: () => setState(() => _isManuallyExpanded = false),
+        onTap: collapse,
       ),
     ]);
   }
@@ -67,7 +69,11 @@ mixin _FabBarsMixin on _FabStateMixin {
   ) {
     if (!isExpanded) {
       return IconButton(
-        icon: Icon(Symbols.more_horiz, color: Colors.white, weight: 900.0),
+        icon: Icon(
+          Symbols.more_horiz,
+          color: _fabForeground(context),
+          weight: 900.0,
+        ),
         tooltip: AppText.tr('more'),
         onPressed: _expand,
       );
@@ -77,7 +83,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       _EditorAction(
         icon: Symbols.add_circle,
         label: AppText.tr('add'),
-        // Stay amber while one of the add menu's sub-menus (link) is open.
+        // Keep the active background while the link sub-menu is open.
         isActive:
             _verticalMenu == FabVerticalMenu.add ||
             _verticalMenu == FabVerticalMenu.link,
@@ -98,7 +104,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       _EditorAction(
         icon: Symbols.build_circle,
         label: AppText.tr('more'),
-        // Stay amber while the move sub-menu, opened from "more", is shown.
+        // Keep the active background while the move sub-menu is open.
         isActive:
             _verticalMenu == FabVerticalMenu.more ||
             _verticalMenu == FabVerticalMenu.move,
@@ -108,14 +114,13 @@ mixin _FabBarsMixin on _FabStateMixin {
         },
       ),
       _EditorAction(
-        icon: Symbols.arrow_forward_ios,
+        icon: widget.onLeft
+            ? Symbols.arrow_back_ios
+            : Symbols.arrow_forward_ios,
         label: AppText.tr('reduce'),
         // The chevron fills its box more than the other glyphs: a hair smaller.
         size: 20.0,
-        onTap: () => setState(() {
-          _verticalMenu = FabVerticalMenu.none;
-          _isManuallyExpanded = false;
-        }),
+        onTap: collapse,
       ),
     ]);
   }
@@ -144,7 +149,7 @@ mixin _FabBarsMixin on _FabStateMixin {
       _EditorAction(
         icon: Symbols.delete,
         label: AppText.tr('delete'),
-        color: TanoStates.error.dark,
+        color: _fabDestructive(context),
         onTap: widget.canDelete ? (widget.onDelete ?? () {}) : null,
       ),
     ]);
@@ -161,21 +166,24 @@ mixin _FabBarsMixin on _FabStateMixin {
         child: Row(
           spacing: 8.0,
           children: <Widget>[
-            const Icon(Symbols.search, color: Colors.white, size: 24.0),
+            Icon(Symbols.search, color: _fabForeground(context), size: 24.0),
             Expanded(
               child: TextField(
+                key: fieldKey,
                 controller: widget.controller,
                 focusNode: widget.focusNode,
-                cursorColor: Colors.white,
+                cursorColor: _fabForeground(context),
                 cursorWidth: 1.0,
                 cursorHeight: 16.0,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: TanoText.body,
+                style: TextStyle(
+                  color: _fabForeground(context),
+                  fontSize: _fabLabelSize,
                 ),
                 decoration: InputDecoration(
                   hintText: ' ${AppText.tr('search')}',
-                  hintStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(
+                    color: _fabForeground(context).withValues(alpha: .8),
+                  ),
                   border: InputBorder.none,
                   isDense: true,
                 ),
@@ -184,7 +192,7 @@ mixin _FabBarsMixin on _FabStateMixin {
             ),
             if (widget.controller?.text.isNotEmpty ?? false)
               IconButton(
-                icon: const Icon(Symbols.backspace, color: Colors.white),
+                icon: Icon(Symbols.backspace, color: _fabForeground(context)),
                 tooltip: AppText.tr('clear'),
                 onPressed: () {
                   widget.onReset?.call();
@@ -199,16 +207,15 @@ mixin _FabBarsMixin on _FabStateMixin {
   Widget _buildDefaultAddButton() {
     // The "+" expands into the extended bar.
     return IconButton(
-      icon: const Icon(Symbols.add_2, color: Colors.white, size: 22.0),
+      icon: Icon(Symbols.add_2, color: _fabForeground(context), size: 22.0),
       tooltip: AppText.tr('add'),
       onPressed: _expand,
     );
   }
 
   Widget _buildFindBar(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final Color navColor = Color.lerp(scheme.primary, Colors.black, 0.1)!;
-    final Color fieldColor = scheme.primary.withValues(alpha: 0.35);
+    final Color navColor = _fabMenuSurface(context);
+    final Color fieldColor = Colors.transparent;
     final bool hasQuery = widget.controller?.text.isNotEmpty ?? false;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -233,10 +240,10 @@ mixin _FabBarsMixin on _FabStateMixin {
                 padding: const EdgeInsets.only(left: appPaddingTight),
                 child: SizedBox(
                   width: 44.0,
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Symbols.search,
-                      color: Colors.white,
+                      color: _fabForeground(context),
                       size: 26.0,
                     ),
                   ),
@@ -250,21 +257,24 @@ mixin _FabBarsMixin on _FabStateMixin {
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             alignment: Alignment.center,
             child: TextField(
+              key: fieldKey,
               controller: widget.controller,
               focusNode: widget.focusNode,
-              cursorColor: Colors.white,
+              cursorColor: _fabForeground(context),
               // One line, centred, scrolled horizontally when it overflows.
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
               textInputAction: TextInputAction.search,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: TanoText.body,
+              style: TextStyle(
+                color: _fabForeground(context),
+                fontSize: _fabLabelSize,
               ),
               decoration: InputDecoration(
                 isCollapsed: true,
                 hintText: AppText.tr('find_in_note'),
-                hintStyle: const TextStyle(color: Colors.white70),
+                hintStyle: TextStyle(
+                  color: _fabForeground(context).withValues(alpha: .8),
+                ),
                 border: InputBorder.none,
               ),
               inputFormatters: <TextInputFormatter>[
@@ -288,7 +298,7 @@ mixin _FabBarsMixin on _FabStateMixin {
               Padding(
                 padding: const EdgeInsets.only(right: 4.0),
                 child: IconButton(
-                  icon: const Icon(Symbols.close, color: Colors.white),
+                  icon: Icon(Symbols.close, color: _fabForeground(context)),
                   tooltip: AppText.tr('close_button'),
                   onPressed: () => widget.onFindReset?.call(),
                 ),
@@ -315,7 +325,9 @@ mixin _FabBarsMixin on _FabStateMixin {
           color: color,
           child: InkWell(
             onTap: onPressed,
-            child: Center(child: Icon(icon, color: Colors.white, size: 28.0)),
+            child: Center(
+              child: Icon(icon, color: _fabForeground(context), size: 28.0),
+            ),
           ),
         ),
       ),
@@ -337,8 +349,8 @@ mixin _FabBarsMixin on _FabStateMixin {
             children: <Widget>[
               Text(
                 '${widget.findCurrent}',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: _fabForeground(context),
                   fontSize: TanoText.label,
                   fontWeight: FontWeight.bold,
                   height: 0.8,
@@ -348,8 +360,8 @@ mixin _FabBarsMixin on _FabStateMixin {
                 offset: const Offset(0, 0),
                 child: Text(
                   '/$total',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: _fabForeground(context),
                     fontSize: TanoText.badge,
                     height: 0.8,
                   ),
@@ -367,14 +379,14 @@ mixin _FabBarsMixin on _FabStateMixin {
       child: Center(
         child: RichText(
           text: TextSpan(
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: _fabForeground(context),
               fontSize: TanoText.label,
             ),
             children: <InlineSpan>[
               TextSpan(
                 text: '${widget.findCurrent}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextSpan(
                 text: '/$total',
@@ -388,6 +400,12 @@ mixin _FabBarsMixin on _FabStateMixin {
   }
 
   Widget _buildHorizontalBar(double width, List<Widget> children) {
+    // Anchored on the left, the bar grows rightwards: the reduce chevron moves
+    // to its head, next to the FAB's origin, keeping its right-pointing glyph.
+    final List<Widget> ordered =
+        widget.onLeft && _mode != FabMode.selection && children.length > 1
+        ? <Widget>[children.last, ...children.take(children.length - 1)]
+        : children;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
@@ -398,7 +416,7 @@ mixin _FabBarsMixin on _FabStateMixin {
           // action: no spacing, padding or margin between them.
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            for (final Widget child in children) Expanded(child: child),
+            for (final Widget child in ordered) Expanded(child: child),
           ],
         ),
       ),

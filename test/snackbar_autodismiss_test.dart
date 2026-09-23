@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -96,6 +97,9 @@ List<Note> _demoNotes() => List<Note>.generate(
 
 void main() {
   setUp(() {
+    // Selection deletion awaits the haptic acknowledgement before offering undo.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
     SharedPreferences.setMockInitialValues({});
     PackageInfo.setMockInitialValues(
       appName: 'tano',
@@ -104,6 +108,11 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
   testWidgets('undo snackbar auto-dismisses after its duration', (tester) async {
@@ -122,17 +131,15 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Switch to list layout so swipe-to-delete is available.
-    await tester.tap(find.byIcon(Symbols.more_vert).first);
+    // The list keeps deletion available through the selection action bar.
+    await tester.tap(find.byIcon(Symbols.pending).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();
 
-    // Swipe the first note to delete it.
-    await tester.drag(
-      find.textContaining('Note number').first,
-      const Offset(-500, 0),
-    );
+    await tester.longPress(find.text('Note number 0'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.delete));
     await tester.pumpAndSettle();
 
     // The delete confirmation dialog is shown.
@@ -169,17 +176,15 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Switch to list layout so swipe-to-delete is available.
-    await tester.tap(find.byIcon(Symbols.more_vert).first);
+    // The list keeps deletion available through the selection action bar.
+    await tester.tap(find.byIcon(Symbols.pending).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('List').last);
     await tester.pumpAndSettle();
 
-    // Swipe the first note to delete it.
-    await tester.drag(
-      find.textContaining('Note number').first,
-      const Offset(-500, 0),
-    );
+    await tester.longPress(find.text('Note number 0'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.delete));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     await tester.tap(find.text('DELETE').last);

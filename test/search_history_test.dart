@@ -104,7 +104,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search).first);
+    await tester.tap(find.byIcon(Symbols.document_search).first);
     await tester.pumpAndSettle();
 
     expect(find.text(AppText.tr('search_history')), findsOneWidget);
@@ -126,7 +126,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search).first);
+    await tester.tap(find.byIcon(Symbols.document_search).first);
     await tester.pumpAndSettle();
     expect(find.text(AppText.tr('search_history')), findsOneWidget);
 

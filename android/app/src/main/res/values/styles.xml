@@ -24,6 +24,6 @@
          After the Flutter UI draws its first frame, this theme is removed,
          leaving the Flutter UI to draw. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowBackground">#f2ebdc</item>
     </style>
 </resources>

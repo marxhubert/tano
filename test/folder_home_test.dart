@@ -22,6 +22,7 @@ import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/theme.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
@@ -179,19 +180,19 @@ void main() {
     await tester.pumpAndSettle();
     for (var page = 0; page < 2; page++) {
       final prefix = page == 0 ? 'Home' : 'Folder';
-      expect(find.text('2 docs'), findsOneWidget);
-      await tester.tap(find.byTooltip('All tasks'));
+      expect(find.text('All (2)', findRichText: true), findsOneWidget);
+      await tester.tap(find.text('1 Task', findRichText: true));
       await tester.pumpAndSettle();
       expect(find.text('$prefix task'), findsOneWidget);
       expect(find.text('$prefix note'), findsNothing);
-      expect(find.text('1 task'), findsOneWidget);
-      await tester.tap(find.byTooltip('All notes'));
+      expect(find.text('1 Task', findRichText: true), findsOneWidget);
+      await tester.tap(find.text('1 Note', findRichText: true));
       await tester.pumpAndSettle();
       expect(find.text('$prefix note'), findsOneWidget);
       expect(find.text('$prefix task'), findsNothing);
-      await tester.tap(find.byTooltip('All docs'));
+      await tester.tap(find.text('All (2)', findRichText: true));
       await tester.pumpAndSettle();
-      expect(find.text('2 docs'), findsOneWidget);
+      expect(find.text('All (2)', findRichText: true), findsOneWidget);
       if (page == 0) {
         await tester.tap(_folderCards());
         await tester.pumpAndSettle();
@@ -349,7 +350,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.text('All docs'), findsWidgets);
+    expect(find.textContaining('All (', findRichText: true), findsWidgets);
     expect(_folderCards(), findsNothing);
   });
 
@@ -386,7 +387,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Perso'), findsWidgets);
-    expect(find.text('2 docs'), findsOneWidget);
+    expect(find.text('All (2)', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder more menu offers Edit right after Bookmark', (
@@ -577,7 +578,7 @@ void main() {
       // Finish the push and let the deferred fold run (Home is covered).
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+      await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
       await tester.pumpAndSettle();
 
       // Back on Home, the FAB is already reduced.
@@ -624,7 +625,7 @@ void main() {
     await tester.tap(find.text('A'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // Back on the folder, the FAB is reduced again and its menu is closed.
@@ -653,11 +654,35 @@ void main() {
       of: find.byType(FolderPage),
       matching: find.byType(Scaffold),
     );
-    final Scaffold before = tester.widget<Scaffold>(folderScaffold);
+    final Finder paper = find.ancestor(
+      of: folderScaffold,
+      matching: find.byType(PaperSurface),
+    );
+    expect(paper, findsOneWidget);
+    final Finder backgroundPaint = find
+        .descendant(of: paper, matching: find.byType(CustomPaint))
+        .first;
+    final CustomPainter before = tester
+        .widget<CustomPaint>(backgroundPaint)
+        .painter!;
+    expect(
+      tester.widget<Scaffold>(folderScaffold).backgroundColor,
+      Colors.transparent,
+    );
+    expect(barColor(tester.element(paper)), lightBackground);
+
     await tester.tap(find.byIcon(Symbols.dark_mode));
     await tester.pumpAndSettle();
-    final Scaffold after = tester.widget<Scaffold>(folderScaffold);
-    expect(after.backgroundColor, isNot(before.backgroundColor));
+
+    final CustomPainter after = tester
+        .widget<CustomPaint>(backgroundPaint)
+        .painter!;
+    expect(
+      tester.widget<Scaffold>(folderScaffold).backgroundColor,
+      Colors.transparent,
+    );
+    expect(barColor(tester.element(paper)), darkBackground);
+    expect(after.shouldRepaint(before), isTrue);
   });
 
   testWidgets('folder metadata line shows the count and the flags', (
@@ -697,16 +722,16 @@ void main() {
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
     // Count on the left, not next to the title.
     expect(
-      find.descendant(of: page, matching: find.text('1 doc')),
+      find.descendant(of: page, matching: find.text('All (1)', findRichText: true)),
       findsOneWidget,
     );
     expect(
-      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
       findsOneWidget,
     );
     // The bookmark is the filled amber variant, at the shared metadata size.
     final Icon bookmark = tester.widget<Icon>(
-      find.descendant(of: page, matching: find.byIcon(Symbols.label_important)),
+      find.descendant(of: page, matching: find.byIcon(Symbols.bookmark)),
     );
     expect(bookmark.fill, 1.0);
     expect(bookmark.color, tanoAmber);
@@ -747,7 +772,7 @@ void main() {
 
     // No metadata line: the count goes back to the right of the title.
     expect(find.byKey(const ValueKey<String>('folder_metadata')), findsNothing);
-    expect(find.text('1 doc'), findsOneWidget);
+    expect(find.text('All (1)', findRichText: true), findsOneWidget);
   });
 
   testWidgets('folder title is capped at 54 chars and three lines', (
@@ -864,7 +889,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
 
     // The FAB became the search input.
@@ -959,7 +984,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
 
     final Finder page = find.byType(FolderPage);
@@ -1222,11 +1247,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 single note selected'), findsOneWidget);
 
-    // Adding the folder: each group speaks about its own type.
+    // Adding the folder: the folder group speaks about folders, and the notes
+    // group stops calling a mixed selection "notes" — it is one doc plus one
+    // folder, so it says "doc".
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
     expect(find.text('1 single folder selected'), findsOneWidget);
-    expect(find.text('1 single note selected'), findsOneWidget);
+    expect(find.text('1 single doc selected'), findsOneWidget);
 
     // The move action is disabled when a folder is part of the selection.
     final IconButton moveButton = tester.widget<IconButton>(
@@ -1390,7 +1417,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1403,11 +1430,11 @@ void main() {
     // Open the note from the results, then come back.
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // The search is gone: back to the normal title.
-    expect(find.text('All docs'), findsWidgets);
+    expect(find.textContaining('All (', findRichText: true), findsWidgets);
     expect(find.text('Results'), findsNothing);
   });
 
@@ -1454,7 +1481,7 @@ void main() {
     await tester.tap(_folderCards());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Symbols.search));
+    await tester.tap(find.byIcon(Symbols.document_search));
     await tester.pumpAndSettle();
     final Finder field = find.descendant(
       of: find.byType(AppFab),
@@ -1481,7 +1508,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Results'), findsNothing);
     // Back to the normal folder view: the search action is available again.
-    expect(find.byIcon(Symbols.search), findsOneWidget);
+    expect(find.byIcon(Symbols.document_search), findsOneWidget);
     expect(find.text('Perso'), findsWidgets);
   });
 
@@ -1733,8 +1760,9 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Only the unlocked note and folder render a cover.
-    expect(find.byType(CoverImage), findsNWidgets(2));
+    // A folder never renders a cover any more, and a locked note hides its
+    // own: only the unlocked note shows one.
+    expect(find.byType(CoverImage), findsOneWidget);
   });
 
   testWidgets('scrolling home shows the TanoNote app bar title', (
@@ -1816,7 +1844,7 @@ void main() {
     await tester.tap(find.text('Alpha'));
     await tester.pumpAndSettle();
     expectLabelled();
-    await tester.tap(find.byIcon(Symbols.arrow_back_ios).first);
+    await tester.tap(find.byIcon(Symbols.arrow_back_ios_new).first);
     await tester.pumpAndSettle();
 
     // Folder app bar.

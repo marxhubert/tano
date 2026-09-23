@@ -14,13 +14,13 @@ export 'package:tano/core/models/content_entity.dart' show EntityKind;
 
 /// The only three card heights allowed by the design, shared by notes and
 /// folders:
-/// - [compact]: list row without a cover (80)
-/// - [normal]: list row with a cover (92)
-/// - [square]: grid tile (128), subtly taller than wide rather than a square
+/// - [compact]: list row without a cover (100)
+/// - [normal]: list row with a cover (112)
+/// - [square]: grid tile reference height (176), sized by the responsive view
 enum EntityCardHeight {
-  compact(80.0),
-  normal(92.0),
-  square(128.0);
+  compact(100.0),
+  normal(112.0),
+  square(176.0);
 
   const EntityCardHeight(this.value);
 
@@ -32,8 +32,8 @@ typedef EntityCardBodyBuilder =
 
 /// The single card container (note, folder, later task/project).
 ///
-/// Flat by design (no shadow), with a border that is dark in the light theme
-/// and light in the dark theme. Locked cards get a discreet dashed outline
+/// A warm paper surface with a fine rule and a quiet lifted shadow.
+/// Locked cards get a discreet dashed outline
 /// inset by [contentInset], the same margin used by the content and the
 /// markers. The body comes from [builder].
 class EntityCard extends StatelessWidget {
@@ -45,7 +45,6 @@ class EntityCard extends StatelessWidget {
     this.title = '',
     this.subtitle,
     this.subtitleIcon,
-    this.watermarkIcon,
     this.coverImage,
     this.isImportant = false,
     this.isLocked = false,
@@ -63,14 +62,15 @@ class EntityCard extends StatelessWidget {
   static const double contentInset = 6.0;
 
   /// Card radius.
-  static const double outerRadius = appBorderRadius;
+  static const double outerRadius = 8.0;
 
   /// Radius of anything inset by [contentInset]: outer - margin.
   static const double innerRadius = outerRadius - contentInset;
 
-  /// Watermark glyph size (folders and notes): 24 (its native size) x 3. It is
-  /// pushed past the bottom-right edges, so most of the glyph stays inside.
+  /// The folder card keeps a watermark; the other kinds dropped theirs. The
+  /// glyph is 24 (its native size) x 3 and bleeds past the right edge.
   static const double watermarkSize = 72.0;
+  static const double _folderWatermarkRight = -16.0;
 
   final EntityKind kind;
   final String category;
@@ -82,26 +82,6 @@ class EntityCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? subtitleIcon;
-
-  /// Overrides the watermark glyph (a folder keeps its drawn path).
-  final IconData? watermarkIcon;
-
-  /// Watermark glyph of a kind.
-  static IconData _watermarkGlyph(EntityKind kind) => switch (kind) {
-    EntityKind.note => Symbols.sticky_note_2,
-    EntityKind.task => Symbols.list_alt,
-    EntityKind.project => Symbols.business_center,
-    EntityKind.folder => Symbols.folder_open,
-  };
-
-  /// Horizontal bleed of the watermark, tuned per glyph so each one sits the
-  /// same distance from the right edge.
-  static double _watermarkRight(EntityKind kind) => switch (kind) {
-    EntityKind.note => -6.0,
-    EntityKind.task => -6.0,
-    EntityKind.project => -4.0,
-    EntityKind.folder => -2.0,
-  };
 
   final String? coverImage;
   final bool isImportant;
@@ -128,12 +108,28 @@ class EntityCard extends StatelessWidget {
     final Color textColor = getTextColor(bgColor);
     final Color borderColor = cardBorderColor(isDark);
     final bool showCover = coverImage != null && !isLocked;
+    // Keep dates and titles clear of the selection control. A grid cover
+    // already provides an independent area for the control.
+    final double selectionInset =
+        isInSelectionMode && isSelectable && (isListLayout || !showCover)
+        ? 24.0
+        : 0.0;
 
     final Widget card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(outerRadius),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(
+              0xFF261A06,
+            ).withValues(alpha: isDark ? 0.3 : 0.14),
+            blurRadius: 12.0,
+            spreadRadius: -6.0,
+            offset: const Offset(0.0, 5.0),
+          ),
+        ],
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
@@ -177,26 +173,26 @@ class EntityCard extends StatelessWidget {
                     child: CoverImage(name: coverImage!),
                   ),
                 ),
-              // Watermark: the glyph bleeds off the bottom-right corner, pushed
-              // past both edges. The kind picks the glyph, and the marker in
-              // the metadata carries the "important" state.
-              Positioned(
-                right: _watermarkRight(kind),
-                bottom: -20.0,
-                width: watermarkSize,
-                height: watermarkSize,
-                child: IgnorePointer(
-                  child: Icon(
-                    watermarkIcon ?? _watermarkGlyph(kind),
-                    key: const ValueKey<String>('entity-card-watermark'),
-                    size: watermarkSize,
-                    weight: 100.0,
-                    color: textColor.withValues(alpha: 0.10),
+              // Folder watermark: the glyph bleeds off the bottom-right corner,
+              // pushed past both edges. The other kinds no longer carry one.
+              if (kind == EntityKind.folder)
+                Positioned(
+                  right: _folderWatermarkRight,
+                  bottom: -8.0,
+                  width: watermarkSize,
+                  height: watermarkSize,
+                  child: IgnorePointer(
+                    child: Icon(
+                      Symbols.folder_open,
+                      key: const ValueKey<String>('entity-card-watermark'),
+                      size: watermarkSize,
+                      weight: 100.0,
+                      color: textColor.withValues(alpha: 0.10),
+                    ),
                   ),
                 ),
-              ),
               if (isLocked)
-                ..._lockedOverlay(textColor, isDark)
+                ..._lockedOverlay(textColor)
               else if (isListLayout)
                 // Fill the whole card: a list card has a fixed height, and an
                 // overlay (like the trash actions) must be positioned against
@@ -206,7 +202,10 @@ class EntityCard extends StatelessWidget {
                     onTap: onTap,
                     onLongPress: onLongPress,
                     child: Padding(
-                      padding: EdgeInsets.only(left: coverWidth),
+                      padding: EdgeInsets.only(
+                        left: coverWidth,
+                        right: selectionInset,
+                      ),
                       child: builder(context, textColor, showCover),
                     ),
                   ),
@@ -217,7 +216,10 @@ class EntityCard extends StatelessWidget {
                     onTap: onTap,
                     onLongPress: onLongPress,
                     child: Padding(
-                      padding: EdgeInsets.only(top: coverHeight),
+                      padding: EdgeInsets.only(
+                        top: coverHeight,
+                        right: selectionInset,
+                      ),
                       child: builder(context, textColor, showCover),
                     ),
                   ),
@@ -239,18 +241,13 @@ class EntityCard extends StatelessWidget {
                   ),
                 ),
               // The border is painted last, above the cover and the content, so
-              // neither can hide it (which used to truncate the rounded corners
-              // of a covered card). It is thicker in the dark theme, where a
-              // hairline reads too faintly.
+              // neither can hide the rounded paper edge.
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(outerRadius),
-                      border: Border.all(
-                        color: borderColor,
-                        width: isDark ? 1.0 : 0.5,
-                      ),
+                      border: Border.all(color: borderColor, width: 1.0),
                     ),
                   ),
                 ),
@@ -278,18 +275,16 @@ class EntityCard extends StatelessWidget {
     );
   }
 
-  List<Widget> _lockedOverlay(Color textColor, bool isDark) {
-    final Color dotColor = isDark
-        ? Colors.white.withValues(alpha: 0.34)
-        : Colors.black.withValues(alpha: 0.28);
+  List<Widget> _lockedOverlay(Color textColor) {
+    final Color dotColor = textColor.withValues(alpha: 0.3);
     return <Widget>[
       Positioned.fill(
         child: GestureDetector(
           onTap: onTap,
           onLongPress: onLongPress,
           child: Container(
-            // Transparent, so the watermark stays visible through the lock
-            // overlay: the card itself already paints [bgColor].
+            // Transparent, so the lock overlay sits on the card's own colour:
+            // the card itself already paints [bgColor].
             color: Colors.transparent,
             // Grid keeps contentInset x2 on every side; the locked list gets
             // wider left/right gutters.
@@ -328,28 +323,24 @@ class EntityCard extends StatelessWidget {
       Symbols.lock,
       size: 24.0,
       weight: 200,
-      color: textColor.withValues(alpha: 0.6),
+      color: cardMutedColor(textColor),
     );
     final String shownTitle = title.isEmpty ? AppText.tr('no_title') : title;
-    final TextStyle titleStyle = TextStyle(
-      fontSize: cardTitleSize,
-      fontWeight: FontWeight.bold,
-      color: textColor,
-    );
-    final Color metaColor = textColor.withValues(alpha: 0.6);
+    final TextStyle titleStyle = cardTitleStyle(textColor);
+    final Color metaColor = cardMutedColor(textColor);
     final Widget? meta = subtitle == null
         ? null
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (subtitleIcon != null)
-                Icon(subtitleIcon, size: 11.0, color: metaColor),
+                Icon(subtitleIcon, size: cardMetaIconSize, color: metaColor),
               Flexible(
                 child: Text(
                   subtitle!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: cardMetaSize, color: metaColor),
+                  style: cardMetaStyle(metaColor),
                 ),
               ),
             ],

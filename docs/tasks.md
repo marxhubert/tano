@@ -25,8 +25,8 @@ all rows completed can still add new active rows. The metadata shows the bookmar
 date, separated by a divider. It counts all nonblank
 rows, completed or not; the empty drafting row is not counted or persisted.
 
-Home, folder and trash cards use the Task watermark (`list_alt`) from the lab,
-show checkbox previews with active rows first, and count items rather than blocks.
+Home, folder and trash cards show checkbox previews with active rows first, and
+count items rather than blocks.
 Locked cards continue to hide content. Task lists have no Premium gate.
 
 ## Shared implementation
@@ -90,8 +90,9 @@ Folder regressions include descriptions in folder-scoped search.
 
 ## Document filters
 
-Home and folders offer All docs, All notes and All tasks. Only the active filter
-is displayed as text; the others are icon buttons. Counts reflect visible
+Home and folders offer every document, the notes and the tasks through one
+segmented control: each segment keeps its label and its own count, and the active
+one is filled with the accent. Counts reflect visible
 documents. Changing filters clears selection, and Select all respects the active
 filter. Folder flags appear beside the title; its document filter sits below the
 cover when present. Task cards count links in both description and checklist,

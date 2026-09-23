@@ -1,33 +1,41 @@
 import 'package:flutter/material.dart';
 
-/// Card typography, shared by every card body.
-///
-/// The reference is the note grid card: every size below is taken from it, so
-/// notes, folders, grid and list all read the same.
-const double cardTitleSize = 11.0;
-const double cardDateSize = 9.0;
-const double cardContentSize = 10.0;
-const double cardMetaSize = 9.0;
-const double cardMetaIconSize = 11.0;
+/// Paper-card typography shared by note, task, folder and locked bodies.
+/// Editorial serif text echoes the site; compact metadata stays in the app's
+/// sans-serif family so dates and counts remain easy to scan.
+const double cardTitleSize = 14.0;
+const double cardDateSize = 10.0;
+const double cardContentSize = 12.0;
+const double cardContentLineHeight = 1.45;
+const double cardMetaSize = 10.0;
+const double cardMetaIconSize = 12.0;
 
-/// Bold title.
 TextStyle cardTitleStyle(Color textColor) => TextStyle(
-      fontSize: cardTitleSize,
-      fontWeight: FontWeight.bold,
-      color: textColor,
-    );
+  fontFamily: 'TanoSerif',
+  fontSize: cardTitleSize,
+  height: 1.2,
+  fontWeight: FontWeight.w600,
+  color: textColor,
+);
 
-/// Muted date.
-TextStyle cardDateStyle(Color textColor) =>
-    TextStyle(fontSize: cardDateSize, color: textColor.withValues(alpha: 0.6));
+/// Keeps small metadata legible against every light and dark paper tint.
+Color cardMutedColor(Color textColor) => textColor.withValues(alpha: 0.72);
 
-/// Muted excerpt.
-TextStyle cardContentStyle(Color textColor) => TextStyle(
-      fontSize: cardContentSize,
-      color: textColor.withValues(alpha: 0.8),
-      height: 1.4,
-    );
+TextStyle cardDateStyle(Color textColor) => TextStyle(
+  fontSize: cardDateSize,
+  height: 1.2,
+  color: cardMutedColor(textColor),
+);
 
-/// Muted metadata (counts).
-TextStyle cardMetaStyle(Color textColor) =>
-    TextStyle(fontSize: cardMetaSize, color: textColor.withValues(alpha: 0.6));
+TextStyle cardContentStyle(
+  Color textColor, {
+  String? fontFamily = 'TanoSerif',
+}) => TextStyle(
+  fontFamily: fontFamily,
+  fontSize: cardContentSize,
+  color: textColor.withValues(alpha: 0.85),
+  height: cardContentLineHeight,
+);
+
+TextStyle cardMetaStyle(Color color) =>
+    TextStyle(fontSize: cardMetaSize, height: 1.2, color: color);

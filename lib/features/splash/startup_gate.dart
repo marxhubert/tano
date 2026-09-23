@@ -1,3 +1,5 @@
+import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -46,8 +48,12 @@ class _StartupGateState extends State<StartupGate> {
       ? widget.child
       : MaterialApp(
           debugShowCheckedModeBanner: false,
-          builder: (context, child) => PrivacyGuard(child: child!),
+          theme: tanoTheme(Brightness.light),
+          darkTheme: tanoTheme(Brightness.dark),
+          builder: (context, child) =>
+              PaperSurface(child: PrivacyGuard(child: child!)),
           home: Scaffold(
+            backgroundColor: Colors.transparent,
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),

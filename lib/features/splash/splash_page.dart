@@ -1,3 +1,4 @@
+import 'package:tano/shared/widgets/paper_surface.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,12 +73,14 @@ class SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: barColor(context),
-      body: Center(
-        child: _error == null
-            ? const CircularProgressIndicator.adaptive()
-            : _buildError(context, _error!),
+    return PaperSurface(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: _error == null
+              ? const CircularProgressIndicator.adaptive()
+              : _buildError(context, _error!),
+        ),
       ),
     );
   }
