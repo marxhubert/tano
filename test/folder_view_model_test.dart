@@ -150,11 +150,11 @@ void main() {
       expect(vm.noteCountIn('f1'), 1);
     });
 
-    test('page title stays "all_notes" without folders', () async {
+    test('page title is "all_docs" without folders', () async {
       final _FakeRepo repo = _FakeRepo(notes: <Note>[_note()]);
       final HomeViewModel vm = _vm(repo);
       expect(vm.hasFolders, isFalse);
-      expect(vm.pageTitleKey, 'all_notes');
+      expect(vm.pageTitleKey, 'all_docs');
     });
 
     test('a bookmarked folder stays first in its group', () async {
