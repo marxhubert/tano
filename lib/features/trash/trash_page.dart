@@ -240,7 +240,7 @@ class _TrashPageState extends State<TrashPage> {
         _actions(
           onRestore: () => _viewModel.restoreNote(note.id),
           onDelete: () => _deleteNote(context, note),
-          textColor: _cardTextColor(context, note.category),
+          textColor: cardTextColor(context, note.category),
         ),
       ],
     );
@@ -277,17 +277,11 @@ class _TrashPageState extends State<TrashPage> {
         _actions(
           onRestore: () => _viewModel.restoreFolder(folder.id),
           onDelete: () => _deleteFolder(context, folder),
-          textColor: _cardTextColor(context, folder.category),
+          textColor: cardTextColor(context, folder.category),
         ),
       ],
     );
   }
-
-  /// The ink [EntityCard] computes for [category], so the trash actions sit on
-  /// the card's own colour whatever the card shows.
-  Color _cardTextColor(BuildContext context, String category) => getTextColor(
-    themeCategory(category, true, brightness: Theme.of(context).brightness),
-  );
 
   /// The two trash actions, overlaid on a card (on top of its content). The
   /// only difference from a normal card: in a list they sit centred, 8 px above

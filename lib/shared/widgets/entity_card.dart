@@ -106,7 +106,7 @@ class EntityCard extends StatelessWidget {
       true,
       brightness: Theme.of(context).brightness,
     );
-    final Color textColor = getTextColor(bgColor);
+    final Color textColor = cardTextColor(context, category);
     final Color borderColor = cardBorderColor(isDark);
     final bool showCover = coverImage != null && !isLocked;
     // Keep dates and titles clear of the selection control. A grid cover

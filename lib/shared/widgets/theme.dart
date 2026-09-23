@@ -303,6 +303,14 @@ Color themeCategory(
   }
 }
 
+/// The ink that reads on the paper colour of [category].
+///
+/// The card computes it for its content; the trash's overlaid actions need the
+/// same value, so both call this instead of repeating the pair.
+Color cardTextColor(BuildContext context, String category) => getTextColor(
+  themeCategory(category, true, brightness: Theme.of(context).brightness),
+);
+
 /// Site palette, shared by paper decoration and translucent navigation.
 Color paperRuleColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
