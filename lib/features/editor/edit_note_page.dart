@@ -484,9 +484,7 @@ class _EditNoteState extends State<EditNote>
     }
     if (!mounted) return;
     setState(() {});
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: 1, folderId: folderId);
+    await announceMove(context, count: 1, folderId: folderId);
   }
 
   /// The thin "|" separating two metadata values.

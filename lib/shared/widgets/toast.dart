@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -77,6 +78,21 @@ Future<void> showMovedToast(
         ? '$what ${AppText.tr('moved')}'
         : '$what ${AppText.tr('moved_to', <String, String>{'folder': name})}',
   );
+}
+
+/// The feedback after a move: one haptic tap, then the moved toast.
+///
+/// The widget may be gone by the time the toast is due, so the context is
+/// rechecked between the two steps. Home, Folder and the editor all confirm a
+/// move this way.
+Future<void> announceMove(
+  BuildContext context, {
+  required int count,
+  required String? folderId,
+}) async {
+  await FeedbackController.instance.impact();
+  if (!context.mounted) return;
+  await showMovedToast(context, count: count, folderId: folderId);
 }
 
 /// Confirms a lock change, on a note or on a folder.

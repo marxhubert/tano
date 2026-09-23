@@ -440,9 +440,7 @@ class _FolderPageState extends State<FolderPage>
     if (_isSearchMode) _exitSearchMode();
     await _load();
     if (!mounted) return;
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: count, folderId: folderId);
+    await announceMove(context, count: count, folderId: folderId);
   }
 
   /// The folder content narrowed by the local search, before the kind filter:

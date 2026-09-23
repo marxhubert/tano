@@ -336,9 +336,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     final int count = _viewModel.selected.length;
     await _viewModel.moveSelectedTo(folderId);
     if (!mounted) return;
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: count, folderId: folderId);
+    await announceMove(context, count: count, folderId: folderId);
   }
 
   /// True when the page has nothing to show: the illustration is then the only
