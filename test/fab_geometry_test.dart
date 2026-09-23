@@ -121,7 +121,12 @@ void main() {
       viewPadding: const EdgeInsets.only(top: 24, bottom: 20),
     );
     final paintedBottom = 768 - 20 - 24;
-    expect(paintedBottom - menu.height, 24 + kToolbarHeight);
+    // It clears the safe area and the toolbar, and never passes two thirds.
+    expect(
+      paintedBottom - menu.height,
+      greaterThanOrEqualTo(24 + kToolbarHeight),
+    );
+    expect(menu.menuHeight, lessThanOrEqualTo(768 * 2 / 3));
   });
 
   test('insufficient vertical space produces zero menu height', () {

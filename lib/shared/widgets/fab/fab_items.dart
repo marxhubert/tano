@@ -35,6 +35,8 @@ class _SubMenuLayoutState extends State<_SubMenuLayout> {
         Container(
           padding: const EdgeInsets.fromLTRB(20.0, 2.0, 10.0, 2.0),
           decoration: BoxDecoration(
+            // No fill: the header stands on the FAB's own surface, exactly like
+            // the bar it belongs to.
             border: Border(
               bottom: BorderSide(
                 color: _fabForeground(context).withValues(alpha: 0.1),
@@ -90,7 +92,10 @@ class _SubMenuLayoutState extends State<_SubMenuLayout> {
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  child: body,
+                  child: ColoredBox(
+                    color: _fabActiveSurface(context),
+                    child: body,
+                  ),
                 ),
               ),
             ],
@@ -100,7 +105,12 @@ class _SubMenuLayoutState extends State<_SubMenuLayout> {
           controller: _scrollController,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [header, body],
+            children: [
+              header,
+              // The list wears the active action's colour; the header above it
+              // keeps the FAB's own surface, like the bar it belongs to.
+              ColoredBox(color: _fabActiveSurface(context), child: body),
+            ],
           ),
         );
       },

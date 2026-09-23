@@ -71,10 +71,12 @@ class FabGeometry {
         : 20.0;
     final paintedBottom =
         media.size.height - bottomInset - bottomGap + offset.dy;
-    final maxMenuHeight = math.max(
-      0.0,
-      paintedBottom - media.viewPadding.top - kToolbarHeight - barHeight,
-    );
+    // A second-degree menu never takes more than two thirds of the screen: its
+    // list scrolls inside that.
+    final double room =
+        paintedBottom - media.viewPadding.top - kToolbarHeight - barHeight;
+    final double ceiling = media.size.height * (3 / 5);
+    final maxMenuHeight = math.max(0.0, room < ceiling ? room : ceiling);
 
     return FabGeometry._(
       expandedWidth: expandedWidth,

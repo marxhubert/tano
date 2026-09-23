@@ -2,23 +2,24 @@ part of 'app_fab.dart';
 
 mixin _FabMenusMixin on _FabStateMixin {
   Widget _buildVerticalMenuContent(BuildContext context) {
-    return ColoredBox(
-      color: _fabMenuSurface(context),
-      child: switch (_verticalMenu) {
-        FabVerticalMenu.color => SingleChildScrollView(
-          child: _buildColorMenu(context),
-        ),
-        FabVerticalMenu.add => SingleChildScrollView(
-          child: _buildAddMenu(context),
-        ),
-        FabVerticalMenu.more => SingleChildScrollView(
-          child: _buildMoreMenu(context),
-        ),
-        FabVerticalMenu.link => _buildLinkMenu(context),
-        FabVerticalMenu.move => _buildMoveMenu(context),
-        FabVerticalMenu.none => const SizedBox.shrink(),
-      },
-    );
+    // A first-degree menu's space wears the active action's colour, exactly as a
+    // second-degree one's list does; the second keeps its header untouched.
+    Widget active(Widget child) =>
+        ColoredBox(color: _fabActiveSurface(context), child: child);
+    return switch (_verticalMenu) {
+      FabVerticalMenu.color => active(
+        SingleChildScrollView(child: _buildColorMenu(context)),
+      ),
+      FabVerticalMenu.add => active(
+        SingleChildScrollView(child: _buildAddMenu(context)),
+      ),
+      FabVerticalMenu.more => active(
+        SingleChildScrollView(child: _buildMoreMenu(context)),
+      ),
+      FabVerticalMenu.link => _buildLinkMenu(context),
+      FabVerticalMenu.move => _buildMoveMenu(context),
+      FabVerticalMenu.none => const SizedBox.shrink(),
+    };
   }
 
   Widget _loadStatus({required bool failed, required VoidCallback retry}) {
@@ -27,7 +28,7 @@ mixin _FabMenusMixin on _FabStateMixin {
         icon: Symbols.refresh,
         label: AppText.tr('retry'),
         onTap: retry,
-      );
+      ); //
     }
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -278,10 +279,14 @@ mixin _FabMenusMixin on _FabStateMixin {
                                       child: Row(
                                         children: <Widget>[
                                           Expanded(
-                                            child: Container(color: pair.light),
+                                            child: Container(
+                                              color: swatchTone(pair.light),
+                                            ),
                                           ),
                                           Expanded(
-                                            child: Container(color: pair.dark),
+                                            child: Container(
+                                              color: swatchTone(pair.dark),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -329,14 +334,10 @@ mixin _FabMenusMixin on _FabStateMixin {
   }
 
   Widget _buildAddMenu(BuildContext context) {
-    // On the folder page the "+" offers a cover image or a new note.
+    // On the folder page the "+" offers a new note or a task: a folder has no
+    // cover to choose.
     if (widget.isFolderMode) {
       return _buildVerticalList([
-        _VerticalMenuItem(
-          icon: Symbols.imagesmode,
-          label: AppText.tr('option_image'),
-          onTap: widget.onImageSelected,
-        ),
         _VerticalMenuItem(
           icon: Symbols.add_notes,
           label: AppText.tr('add_note'),

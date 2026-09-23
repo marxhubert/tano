@@ -6,9 +6,18 @@ import 'package:tano/shared/widgets/theme.dart';
 /// The site's ruled hero paper, painted once behind each route. Decorative
 /// layers never participate in pointer handling or accessibility semantics.
 class PaperSurface extends StatelessWidget {
-  const PaperSurface({super.key, required this.child, this.notebook = false});
+  const PaperSurface({
+    super.key,
+    required this.child,
+    this.notebook = false,
+    this.paper,
+  });
   final Widget child;
   final bool notebook;
+
+  /// The paper's own colour. Null keeps the default: a note or a folder passes
+  /// its tone here, so the sheet itself takes the colour it stands for.
+  final Color? paper;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +33,7 @@ class PaperSurface extends StatelessWidget {
             child: RepaintBoundary(
               child: CustomPaint(
                 painter: _PaperPainter(
-                  paper: barColor(context),
+                  paper: paper ?? barColor(context),
                   rule: paperRuleColor(context),
                   grain: primaryTextColor(context).withValues(alpha: .025),
                   margin: amberColor(context).withValues(alpha: .22),

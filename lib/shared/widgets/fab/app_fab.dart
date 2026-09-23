@@ -39,7 +39,8 @@ Color _fabMenuSurface(BuildContext context) =>
 /// The open action's zone paints the menu's own surface, so the zone and the
 /// panel read as one piece of teal: the shape marks the active action, not a
 /// tint. A lighter tint here is what left the two teals in the first place.
-Color _fabActiveSurface(BuildContext context) => _fabMenuSurface(context);
+Color _fabActiveSurface(BuildContext context) =>
+    Theme.of(context).colorScheme.primary;
 Color _fabImportant(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
     ? const Color(0xFF603600)

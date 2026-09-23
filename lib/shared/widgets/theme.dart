@@ -41,16 +41,21 @@ class TanoStates {
 
 // --- Palette Pastel (Notes) ---
 class TanoPastels {
-  static const menthe = (light: Color(0xFFE9F0E4), dark: Color(0xFF202A22));
-  static const citron = (light: Color(0xFFF7EFD2), dark: Color(0xFF302A19));
-  static const peche = (light: Color(0xFFF5E4D4), dark: Color(0xFF32241C));
-  static const lavande = (light: Color(0xFFEEE7F0), dark: Color(0xFF29212E));
-  static const rose = (light: Color(0xFFF5E4DF), dark: Color(0xFF312020));
-  static const azur = (light: Color(0xFFE7ECED), dark: Color(0xFF1F282B));
-  static const sable = (light: Color(0xFFF1E6CF), dark: Color(0xFF2C2518));
-  static const sauge = (light: Color(0xFFE8EBD9), dark: Color(0xFF252A1D));
-  static const bonbon = (light: Color(0xFFF2E1E5), dark: Color(0xFF2E2027));
-  static const nuage = (light: Color(0xFFFFFDF6), dark: Color(0xFF221C14));
+  // The ten themes keep the paper's warmth, but each one has to be told apart
+  // from its neighbours in the FAB's couplets: ten near-whites were not.
+  // Built from the three dusty tones the site already uses — the warm yellow,
+  // the off-white and the dark ink — with the hue nudged far enough between
+  // them to be told apart at a glance. A first try at the site's material.
+  static const menthe = (light: Color(0xFFD9E2D6), dark: Color(0xFF223028));
+  static const citron = (light: Color(0xFFF0E4B8), dark: Color(0xFF33301C));
+  static const peche = (light: Color(0xFFEFDCC6), dark: Color(0xFF35251A));
+  static const lavande = (light: Color(0xFFE4DFE6), dark: Color(0xFF2A2230));
+  static const rose = (light: Color(0xFFF0DCDF), dark: Color(0xFF332022));
+  static const azur = (light: Color(0xFFDBE2E4), dark: Color(0xFF1F2A2E));
+  static const sable = (light: Color(0xFFEADCC0), dark: Color(0xFF2F2718));
+  static const sauge = (light: Color(0xFFDFE3C9), dark: Color(0xFF262B1D));
+  static const bonbon = (light: Color(0xFFEBD8E0), dark: Color(0xFF302028));
+  static const nuage = (light: Color(0xFFF3F0E7), dark: Color(0xFF241E16));
 
   static List<({Color light, Color dark, String name})> get all => [
     (light: menthe.light, dark: menthe.dark, name: 'menthe'),
@@ -187,8 +192,24 @@ Color cardBorderColor(bool isDark) =>
     isDark ? const Color(0xFF3A3122) : const Color(0xFFD9CBB0);
 
 /// Every route uses the hero paper; category colors belong to cards only.
+/// The page keeps one paper everywhere: a note or a folder colours its own
+/// card, never the sheet it sits on.
 Color getImmersiveBackgroundColor(Color noteColor, {bool isDark = false}) =>
     isDark ? darkBackground : lightBackground;
+
+/// The swatch's own tone: the same hue as the theme, pushed to a saturation
+/// the eye can tell apart from its neighbours. Only the colour picker uses it;
+/// the colour itself, applied to a card, keeps its dusty paper value.
+Color swatchTone(Color color) {
+  final HSLColor hsl = HSLColor.fromColor(color);
+  final bool dark = hsl.lightness < .5;
+  return hsl
+      .withSaturation((hsl.saturation * 3.0).clamp(0.0, 1.0))
+      .withLightness(
+        dark ? (hsl.lightness * 1.7).clamp(0.0, .42) : hsl.lightness,
+      )
+      .toColor();
+}
 
 /// Dynamic surface color for bars and background.
 Color barColor(BuildContext context) {
