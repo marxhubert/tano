@@ -402,7 +402,7 @@ class _FolderPageState extends State<FolderPage>
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
     if (selected.notes.isNotEmpty) {
-      showUndoDelete(
+      await announceDeletion(
         context,
         repository: repository,
         batch: DeletedBatch(notes: selected.notes, indexes: selected.indexes),

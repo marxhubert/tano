@@ -4,7 +4,6 @@ import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/document_filter_controller.dart';
-import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/toast.dart';
@@ -317,12 +316,12 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     await _viewModel.addFolder(name);
   }
 
-  void _showUndoSnackBar() {
+  Future<void> _showUndoSnackBar() async {
     ScaffoldMessenger.of(context).clearSnackBars();
     final DeletedBatch? batch = _viewModel.lastDeletedBatch;
     if (batch == null || batch.isEmpty) return;
     // The same notice, the same words and the same restore as a folder page.
-    showUndoDelete(
+    await announceDeletion(
       context,
       repository: getIt<NotesRepository>(),
       batch: batch,
@@ -582,9 +581,8 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
               );
               if (confirmDeletion == true) {
                 await _viewModel.deleteSelected();
-                await FeedbackController.instance.impact();
                 if (!mounted) return;
-                _showUndoSnackBar();
+                await _showUndoSnackBar();
               }
             },
             onMoveTo: _moveSelectedTo,
