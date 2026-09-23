@@ -23,6 +23,9 @@ test data is disposable.
 - `focusSearchField` / `leaveSearchMode`, `openNoteEditor` and
   `requestLockChange` are the single implementations of the search timing, the
   editor's authentication prologue and the lock decision.
+- Removed dead code: three unreferenced strings, the legacy JSON note codec, an
+  unused radius, the unreachable no-selection delete branch and the FAB's
+  never-wired callbacks.
 - Removed the repository-level `toggleLock`, which no caller used and which
   bypassed the editor's authentication and feedback flow.
 - Folder search records its query in the shared history, like Home.
