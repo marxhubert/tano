@@ -41,23 +41,12 @@ mixin _FabMenusMixin on _FabStateMixin {
     );
   }
 
-  List<Note> _getSortedNotes() {
-    final List<Note> sorted = List.from(_availableNotes);
-
-    sorted.sort((a, b) {
-      int cmp;
-      if (_sortCriteria == ListSortCriteria.date) {
-        // Date sort: Default Ascending = Newest first
-        cmp = b.date.compareTo(a.date);
-      } else {
-        // Title sort: Default Ascending = A-Z
-        cmp = a.title.toLowerCase().compareTo(b.title.toLowerCase());
-      }
-      return _isAscending ? cmp : -cmp;
-    });
-
-    return sorted;
-  }
+  /// The link list uses the app's own card ordering (important first, then the
+  /// chosen criterion), instead of a private comparator that could drift.
+  List<Note> _getSortedNotes() => EntitySorting<Note>(
+    by: _sortCriteria == ListSortCriteria.date ? 'date' : 'alpha',
+    ascending: _isAscending,
+  ).sort(_availableNotes);
 
   Widget _buildLinkMenu(BuildContext context) {
     final sortedNotes = _getSortedNotes();
@@ -93,19 +82,11 @@ mixin _FabMenusMixin on _FabStateMixin {
     );
   }
 
-  List<Folder> _getSortedFolders() {
-    final List<Folder> sorted = List.from(_availableFolders);
-    sorted.sort((a, b) {
-      int cmp;
-      if (_sortCriteria == ListSortCriteria.date) {
-        cmp = b.date.compareTo(a.date);
-      } else {
-        cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      }
-      return _isAscending ? cmp : -cmp;
-    });
-    return sorted;
-  }
+  /// The move list shares the same card ordering as the link list.
+  List<Folder> _getSortedFolders() => EntitySorting<Folder>(
+    by: _sortCriteria == ListSortCriteria.date ? 'date' : 'alpha',
+    ascending: _isAscending,
+  ).sort(_availableFolders);
 
   /// The folder list offered by the "move to" action. It mirrors the note-link
   /// list, header included, so both second-degree menus feel the same.
