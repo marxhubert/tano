@@ -99,12 +99,6 @@ class _ThemePreview extends StatelessWidget {
               // The frame never moves: selecting only changes colours, and the
               // chosen mock earns a halo drawn outside its box.
               borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(
-                // The unselected outline uses the section border colour, so the
-                // mock and the card around it share one rule.
-                color: isSelected ? tanoAmber : cardBorderColor(isDark),
-                width: 1.0,
-              ),
               boxShadow: isSelected
                   ? <BoxShadow>[
                       BoxShadow(
@@ -112,6 +106,17 @@ class _ThemePreview extends StatelessWidget {
                       ),
                     ]
                   : null,
+            ),
+            // The border sits above the child: painted behind, the teal top bar
+            // swallowed its top edge and the two top corners.
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(
+                // The unselected outline uses the section border colour, so the
+                // mock and the card around it share one rule.
+                color: isSelected ? tanoAmber : cardBorderColor(isDark),
+                width: 1.0,
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(
