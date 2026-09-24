@@ -44,12 +44,11 @@ class ArchiveViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Deletes [ids] for good. The caller authenticates locked content first.
-  Future<void> deletePermanently(List<String> ids) async {
+  /// Moves [ids] to the trash: they leave the archive and can be restored from
+  /// the recycle bin, where an archived document goes back to Home.
+  Future<void> trash(List<String> ids) async {
     if (ids.isEmpty) return;
-    for (final String id in ids) {
-      await repository.deleteNotePermanently(id);
-    }
+    await trashNotesAtomically(repository, ids);
     _docs.removeWhere((Note note) => ids.contains(note.id));
     notifyListeners();
   }

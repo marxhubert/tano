@@ -19,6 +19,7 @@ class _Repo implements NotesRepository, ArchiveRepository {
   final List<Note> archived;
   final List<String> unarchived = <String>[];
   final List<String> deleted = <String>[];
+  final List<String> trashed = <String>[];
 
   @override
   Future<List<Note>> loadNotes() async => const <Note>[];
@@ -30,7 +31,11 @@ class _Repo implements NotesRepository, ArchiveRepository {
   @override
   Future<void> upsertNote(Note note) async {}
   @override
-  Future<void> trashNote(String id) async {}
+  Future<void> trashNote(String id) async {
+    trashed.add(id);
+    archived.removeWhere((Note note) => note.id == id);
+  }
+
   @override
   Future<void> restoreNote(String id) async {}
   @override
@@ -103,7 +108,7 @@ void main() {
     expect(find.byIcon(Symbols.delete_forever), findsOneWidget);
     // One searchable document does not earn the search action.
     expect(find.byIcon(Symbols.document_search), findsNothing);
-    expect(find.byIcon(Symbols.select), findsOneWidget);
+    expect(find.byIcon(Symbols.select_all), findsOneWidget);
   });
 
   testWidgets('the search action appears from the second searchable document', (
@@ -133,13 +138,13 @@ void main() {
     );
     await pumpArchive(tester, repo);
 
-    await tester.tap(find.byIcon(Symbols.select));
+    await tester.tap(find.byIcon(Symbols.select_all));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Symbols.unarchive), findsOneWidget);
     expect(find.byIcon(Symbols.delete), findsOneWidget);
     expect(find.byIcon(Symbols.document_search), findsNothing);
-    expect(find.byIcon(Symbols.select), findsNothing);
+    expect(find.byIcon(Symbols.select_all), findsNothing);
 
     // Select one card, then unarchive the selection.
     await tester.tap(find.byType(EntityCard).first);
@@ -148,5 +153,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.unarchived, contains('a'));
+  });
+
+  testWidgets('deleting from the archive moves the document to the trash', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final _Repo repo = _Repo(archived: <Note>[_archivedNote('a', 'A')]);
+    await pumpArchive(tester, repo);
+
+    await tester.tap(find.byIcon(Symbols.select_all));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EntityCard).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Symbols.delete));
+    await tester.pumpAndSettle();
+
+    // The confirmation runs the delete, which only moves to the trash.
+    await tester.tap(find.text('DELETE'));
+    await tester.pumpAndSettle();
+
+    expect(repo.trashed, contains('a'));
+    expect(repo.deleted, isEmpty);
   });
 }

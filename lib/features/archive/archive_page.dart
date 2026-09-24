@@ -227,11 +227,13 @@ class _ArchivePageState extends State<ArchivePage> {
       action: AppText.tr('delete'),
     );
     if (confirm != true || !mounted) return;
-    final bool deleted = await runStorageOperation(
+    // Deleting from the archive moves the documents to the trash, where they
+    // stay restorable; nothing is destroyed here.
+    final bool trashed = await runStorageOperation(
       context,
-      () => _viewModel.deletePermanently(ids),
+      () => _viewModel.trash(ids),
     );
-    if (!deleted || !mounted) return;
+    if (!trashed || !mounted) return;
     setState(_selection.exit);
   }
 
@@ -262,7 +264,7 @@ class _ArchivePageState extends State<ArchivePage> {
           onPressed: _enterSearchMode,
         ),
       IconButton(
-        icon: const Icon(Symbols.select),
+        icon: const Icon(Symbols.select_all),
         tooltip: AppText.tr('select'),
         onPressed: _enterSelection,
       ),
@@ -292,21 +294,29 @@ class _ArchivePageState extends State<ArchivePage> {
           actions: _actions(),
           onPop: _selection.isActive ? _exitSelection : null,
           floatingActionButtonLocation: FlushFabLocation(onLeft: _fabOnLeft),
-          floatingActionButton: _isSearchMode
-              ? AppFab(
-                  onLeft: _fabOnLeft,
-                  isSearchMode: true,
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  onSearchChanged: (String value) {
-                    setState(() {
-                      _searchQuery = value;
-                      if (value.trim().isNotEmpty) _searchStarted = true;
-                    });
-                  },
-                  onReset: _clearSearch,
-                )
-              : null,
+          // The search FAB zooms in and out. It stays in the tree, scaled to
+          // zero when the search is closed, so both transitions are animated.
+          floatingActionButton: IgnorePointer(
+            ignoring: !_isSearchMode,
+            child: AnimatedScale(
+              scale: _isSearchMode ? 1.0 : 0.0,
+              duration: TanoMotion.base,
+              curve: Curves.easeInOutBack,
+              child: AppFab(
+                onLeft: _fabOnLeft,
+                isSearchMode: true,
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onSearchChanged: (String value) {
+                  setState(() {
+                    _searchQuery = value;
+                    if (value.trim().isNotEmpty) _searchStarted = true;
+                  });
+                },
+                onReset: _clearSearch,
+              ),
+            ),
+          ),
           slivers: <Widget>[
             if (!_loading && _showFilterTags)
               SliverToBoxAdapter(

@@ -553,11 +553,7 @@ class SQLiteNotesRepository
       for (final String id in ids) {
         await txn.update(
           'notes',
-          <String, Object?>{
-            'isDeleted': 1,
-            'deletedAt': now,
-            'updatedAt': now,
-          },
+          <String, Object?>{'isDeleted': 1, 'deletedAt': now, 'updatedAt': now},
           where: 'id = ?',
           whereArgs: <Object?>[id],
         );
@@ -568,15 +564,41 @@ class SQLiteNotesRepository
   @override
   Future<void> restoreNote(String id) async {
     final db = await _database;
+    final List<Map<String, Object?>> rows = await db.query(
+      'notes',
+      columns: <String>['isArchived', 'folderId'],
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
+    if (rows.isEmpty) return;
+    final bool wasArchived = rows.first['isArchived'] == 1;
+    final String? folderId = rows.first['folderId'] as String?;
+
+    // An archived document goes straight Home. A document deleted from a
+    // folder returns to that folder only while the folder still exists.
+    String? targetFolder;
+    if (!wasArchived && folderId != null) {
+      final List<Map<String, Object?>> folder = await db.query(
+        'folders',
+        columns: <String>['id'],
+        where: 'id = ? AND isDeleted = 0',
+        whereArgs: <Object?>[folderId],
+      );
+      targetFolder = folder.isEmpty ? null : folderId;
+    }
+
     await db.update(
       'notes',
-      {
+      <String, Object?>{
         'isDeleted': 0,
         'deletedAt': null,
+        'isArchived': 0,
+        'archivedAt': null,
+        'folderId': targetFolder,
         'updatedAt': DateTime.now().toString(),
       },
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: <Object?>[id],
     );
   }
 
@@ -621,7 +643,8 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<void> restoreArchivedNote(String id) => restoreArchivedNotes(<String>[id]);
+  Future<void> restoreArchivedNote(String id) =>
+      restoreArchivedNotes(<String>[id]);
 
   @override
   Future<void> restoreArchivedNotes(List<String> ids) async {
