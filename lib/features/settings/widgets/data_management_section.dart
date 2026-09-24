@@ -28,6 +28,13 @@ class DataManagementSection extends StatelessWidget {
               ),
             ),
             SettingsTile(
+              title: AppText.tr('option_archive'),
+              selected: false,
+              onTap: () {
+                Navigator.of(context).pushNamed('/archive');
+              },
+            ),
+            SettingsTile(
               title: AppText.tr('option_recycle_bin'),
               selected: false,
               onTap: () {
@@ -52,6 +59,7 @@ class DataManagementSection extends StatelessWidget {
             ),
           ],
           footer: <Widget>[
+            SettingsFooterText(text: AppText.tr('desc_archive')),
             SettingsFooterText(text: AppText.tr('desc_recycle_bin')),
             SettingsFooterText(text: AppText.tr('desc_reset_data')),
           ],

@@ -118,9 +118,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     _viewModel.removeListener(_onViewModelChanged);
     ViewLayoutController.instance.removeListener(_syncViewLayout);
     SortPreferencesController.instance.removeListener(_onSortChanged);
-    DocumentFilterController.instance.removeListener(
-      _onDocumentFilterChanged,
-    );
+    DocumentFilterController.instance.removeListener(_onDocumentFilterChanged);
     FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
@@ -181,9 +179,8 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
 
   void _onSortChanged() => _applySortPreferences();
 
-  void _onDocumentFilterChanged() => _viewModel.setDocumentFilter(
-    DocumentFilterController.instance.filter,
-  );
+  void _onDocumentFilterChanged() =>
+      _viewModel.setDocumentFilter(DocumentFilterController.instance.filter);
 
   /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {
@@ -347,6 +344,17 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     }
     if (!mounted) return;
     await announceMove(context, count: count, folderId: folderId);
+  }
+
+  /// Archives the selection: the documents leave Home, nothing is deleted.
+  Future<void> _archiveSelected() async {
+    if (!_viewModel.hasSelection) return;
+    if (!await runStorageOperation(context, _viewModel.archiveSelected)) {
+      await _viewModel.load();
+      return;
+    }
+    if (!mounted) return;
+    await _viewModel.load();
   }
 
   /// True when the page has nothing to show: the illustration is then the only
@@ -603,6 +611,7 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
               await _showUndoSnackBar();
             },
             onMoveTo: _moveSelectedTo,
+            onMoveToArchive: _archiveSelected,
             onClearSelection: _viewModel.clearSelection,
             onSelectAll: _viewModel.selectAll,
           ),

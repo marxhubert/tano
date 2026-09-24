@@ -370,6 +370,28 @@ class HomeViewModel extends ChangeNotifier {
     _selection.exit();
   }
 
+  /// Archives the selected notes: they leave Home for the archive.
+  ///
+  /// Like a move, the whole batch is written before the list changes.
+  Future<void> archiveSelected() async {
+    final String now = DateTime.now().toString();
+    final ({List<Note> notes, List<int> indexes}) selected =
+        collectSelectedNotes(
+          _allNotes,
+          (Note note) => _selection.contains(note.id),
+        );
+    final List<Note> archived = selected.notes
+        .map(
+          (Note note) =>
+              note.copyWith(isArchived: true, archivedAt: now, updatedAt: now),
+        )
+        .toList();
+    await upsertNotesAtomically(repository, archived);
+    _allNotes.removeWhere((Note note) => _selection.contains(note.id));
+    _sort();
+    _selection.exit();
+  }
+
   Future<void> removeNote(String id) async {
     final int index = _allNotes.indexWhere((Note note) => note.id == id);
     if (index == -1) return;
@@ -390,15 +412,31 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> reinsertLastDeleted() async {
     final DeletedBatch? batch = _lastDeleted;
     if (batch == null) return;
+    // Folders come back first, so a note can find the one it was filed in.
+    for (final Folder folder in batch.folders) {
+      _folders.add(folder.copyWith(isDeleted: false));
+    }
     for (int i = 0; i < batch.notes.length; i++) {
       final Note note = batch.notes[i];
       final int index = batch.indexes[i] > _allNotes.length
           ? _allNotes.length
           : batch.indexes[i];
-      _allNotes.insert(index, note.copyWith(isDeleted: false, deletedAt: null));
-    }
-    for (final Folder folder in batch.folders) {
-      _folders.add(folder.copyWith(isDeleted: false));
+      // A note returns to its folder only while that folder exists; otherwise
+      // it lands Home, exactly like a restore from the trash.
+      final bool folderExists =
+          note.folderId != null &&
+          _folders.any(
+            (Folder folder) =>
+                folder.id == note.folderId && !folder.isDeleted,
+          );
+      _allNotes.insert(
+        index,
+        note.copyWith(
+          isDeleted: false,
+          deletedAt: null,
+          folderId: folderExists ? note.folderId : null,
+        ),
+      );
     }
     _sort();
     _lastDeleted = null;

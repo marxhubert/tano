@@ -19,12 +19,14 @@ Widget buildNoteCard({
   required VoidCallback onOpen,
   required VoidCallback onToggleSelection,
   required VoidCallback onEnterSelection,
+  String? dateText,
+  IconData? dateIcon,
 }) {
   return EntityCard(
     kind: note.kind,
     category: note.category,
     title: note.title,
-    subtitle: formatNoteDate(note.date),
+    subtitle: dateText ?? formatNoteDate(note.date),
     coverImage: note.coverImage,
     isImportant: note.important,
     isLocked: note.isLocked,
@@ -40,12 +42,16 @@ Widget buildNoteCard({
             textColor: textColor,
             activeNoteIds: activeNoteIds,
             hasCover: hasCover,
+            dateText: dateText,
+            dateIcon: dateIcon,
           )
         : buildNoteGridContent(
             note: note,
             textColor: textColor,
             activeNoteIds: activeNoteIds,
             hasCover: hasCover,
+            dateText: dateText,
+            dateIcon: dateIcon,
           ),
   );
 }

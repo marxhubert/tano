@@ -100,6 +100,15 @@ String deleteSelectionTitle({required int count, required int total}) {
   return AppText.tr('delete_note');
 }
 
+/// Whether [note]'s title, description or content contains [query].
+///
+/// The folder and the archive narrow their loaded documents the same way; both
+/// lower-case the query once and call this.
+bool noteMatchesQuery(Note note, String query) =>
+    note.title.toLowerCase().contains(query) ||
+    note.description.toLowerCase().contains(query) ||
+    note.content.toLowerCase().contains(query);
+
 /// The stored filter name, or null for anything unknown.
 DocumentFilter? documentFilterFromName(String? name) {
   for (final DocumentFilter filter in DocumentFilter.values) {

@@ -10,10 +10,12 @@ class _InMemoryNotesRepository implements NotesRepository {
   final List<Note> notes;
 
   @override
-  Future<List<Note>> loadNotes() async => notes.where((n) => !n.isDeleted).toList();
+  Future<List<Note>> loadNotes() async =>
+      notes.where((n) => !n.isDeleted).toList();
 
   @override
-  Future<List<Note>> loadTrashNotes() async => notes.where((n) => n.isDeleted).toList();
+  Future<List<Note>> loadTrashNotes() async =>
+      notes.where((n) => n.isDeleted).toList();
 
   @override
   Future<void> upsertNote(Note note) async {
@@ -40,13 +42,9 @@ class _InMemoryNotesRepository implements NotesRepository {
   Future<void> restoreNote(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
     if (index != -1) {
-      notes[index] = notes[index].copyWith(
-        isDeleted: false,
-        deletedAt: null,
-      );
+      notes[index] = notes[index].copyWith(isDeleted: false, deletedAt: null);
     }
   }
-
 
   @override
   Future<void> deleteNotePermanently(String id) async {
@@ -56,10 +54,12 @@ class _InMemoryNotesRepository implements NotesRepository {
   @override
   Future<List<Note>> searchNotes(String query) async {
     return notes
-        .where((n) =>
-            !n.isDeleted &&
-            (n.title.toLowerCase().contains(query.toLowerCase()) ||
-                n.content.toLowerCase().contains(query.toLowerCase())))
+        .where(
+          (n) =>
+              !n.isDeleted &&
+              (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                  n.content.toLowerCase().contains(query.toLowerCase())),
+        )
         .toList();
   }
 
@@ -67,7 +67,6 @@ class _InMemoryNotesRepository implements NotesRepository {
   Future<void> deleteAllNotes() async {
     notes.clear();
   }
-
 }
 
 Note _note(
@@ -187,32 +186,29 @@ void main() {
       expect(vm.viewLayout, 'gridlist');
     });
 
-    test(
-      'multiple selection deletes all the selected notes',
-      () async {
-        final initialNotes = <Note>[_note('1'), _note('2'), _note('3')];
-        final repository = _InMemoryNotesRepository(List.from(initialNotes));
-        final vm = HomeViewModel(
-          repository: repository,
-          initialNotes: initialNotes,
-        );
+    test('multiple selection deletes all the selected notes', () async {
+      final initialNotes = <Note>[_note('1'), _note('2'), _note('3')];
+      final repository = _InMemoryNotesRepository(List.from(initialNotes));
+      final vm = HomeViewModel(
+        repository: repository,
+        initialNotes: initialNotes,
+      );
 
-        vm.enterSelectionMode('1');
-        vm.toggleSelection('3');
+      vm.enterSelectionMode('1');
+      vm.toggleSelection('3');
 
-        expect(vm.hasSelection, isTrue);
-        expect(vm.selectedCount, 2);
+      expect(vm.hasSelection, isTrue);
+      expect(vm.selectedCount, 2);
 
-        await vm.deleteSelected();
+      await vm.deleteSelected();
 
-        expect(vm.notesCount, 1);
-        expect(vm.notes.first.id, '2');
-        expect(vm.isInSelectionMode, isFalse);
-        
-        // In Phase 2, notes are not removed from repository but marked as deleted
-        expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));
-      },
-    );
+      expect(vm.notesCount, 1);
+      expect(vm.notes.first.id, '2');
+      expect(vm.isInSelectionMode, isFalse);
+
+      // In Phase 2, notes are not removed from repository but marked as deleted
+      expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));
+    });
 
     test('applyNoteAction adds a note', () async {
       final repository = _InMemoryNotesRepository();
@@ -283,6 +279,25 @@ void main() {
       expect(vm.notes.first.id, '1');
       // In Phase 2, notes are not removed from repository but marked as deleted
       expect(repository.notes.where((n) => !n.isDeleted), hasLength(1));
+    });
+
+    test('archiveSelected takes the selected notes out of Home', () async {
+      final initialNotes = <Note>[_note('1'), _note('2')];
+      final repository = _InMemoryNotesRepository(List.from(initialNotes));
+      final vm = HomeViewModel(
+        repository: repository,
+        initialNotes: initialNotes,
+      );
+
+      vm.enterSelectionMode('1');
+      await vm.archiveSelected();
+
+      expect(vm.notes.map((Note n) => n.id), <String>['2']);
+      expect(vm.isInSelectionMode, isFalse);
+      expect(
+        repository.notes.firstWhere((Note n) => n.id == '1').isArchived,
+        isTrue,
+      );
     });
 
     test('exitSelectionMode clears the selection', () {

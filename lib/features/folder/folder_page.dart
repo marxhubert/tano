@@ -131,9 +131,7 @@ class _FolderPageState extends State<FolderPage>
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
     SortPreferencesController.instance.removeListener(_onSortChanged);
-    DocumentFilterController.instance.removeListener(
-      _onDocumentFilterChanged,
-    );
+    DocumentFilterController.instance.removeListener(_onDocumentFilterChanged);
     FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -475,6 +473,24 @@ class _FolderPageState extends State<FolderPage>
     await announceMove(context, count: count, folderId: folderId);
   }
 
+  /// Archives the selected notes: they leave the folder for the archive.
+  Future<void> _archiveSelected() async {
+    if (_selection.isEmpty) return;
+    final NotesRepository repository = getIt<NotesRepository>();
+    if (repository is! ArchiveRepository) return;
+    final List<String> ids = _notes
+        .where((Note note) => _selection.contains(note.id))
+        .map((Note note) => note.id)
+        .toList();
+    final bool archived = await runStorageOperation(
+      context,
+      () => (repository as ArchiveRepository).archiveNotes(ids),
+    );
+    if (!archived || !mounted) return;
+    setState(_selection.exit);
+    await _load();
+  }
+
   /// The folder content narrowed by the local search, before the kind filter:
   /// the segmented control counts every kind from here. A locked note never
   /// shows up in the search results.
@@ -487,9 +503,7 @@ class _FolderPageState extends State<FolderPage>
               NoteAccessPolicy([
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
-              (note.title.toLowerCase().contains(query) ||
-                  note.description.toLowerCase().contains(query) ||
-                  note.content.toLowerCase().contains(query)),
+              noteMatchesQuery(note, query),
         )
         .toList();
   }
@@ -726,6 +740,7 @@ class _FolderPageState extends State<FolderPage>
             onReset: _clearSearch,
             onDelete: _deleteSelected,
             onMoveTo: _moveTo,
+            onMoveToArchive: _archiveSelected,
             onClearSelection: () => setState(_selection.clear),
             onSelectAll: () => setState(
               // Only the notes currently shown (search results included).
@@ -790,7 +805,9 @@ class _FolderPageState extends State<FolderPage>
     if (notes.isEmpty) {
       return emptyStateSliver(
         context,
-        _isSearchMode ? AppText.tr('no_note_found') : AppText.tr('folder_empty'),
+        _isSearchMode
+            ? AppText.tr('no_note_found')
+            : AppText.tr('folder_empty'),
         image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
       );
     }
