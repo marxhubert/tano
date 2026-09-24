@@ -31,6 +31,9 @@ flutter build appbundle --release --dart-define-from-file=identity.json
 flutter build ipa --release --dart-define-from-file=identity.json
 ```
 
+CI builds both targets in debug and release (release without a signing profile), so
+tree shaking, AOT and R8 breakage is caught before the signed step above.
+
 Increase `pubspec.yaml` version/build number and update changelog/release notes.
 Use Xcode Archive/Distribute with the correct signing team. Configure Sentry DSN
 only after envelope/consent/non-retention validation; symbol upload requires external
