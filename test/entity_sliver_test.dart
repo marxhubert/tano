@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 
@@ -28,13 +29,15 @@ void main() {
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsets.all(16),
-                    sliver: EntitySliver<int>(
-                      items: List.generate(columns + 1, (i) => i),
+                    sliver: EntitySliver<Folder>(
+                      items: List.generate(
+                        columns + 1,
+                        (i) => Folder(id: '$i', name: '$i'),
+                      ),
                       isList: isList,
                       cardBuilder: (context, item) => SizedBox(
-                        key: ValueKey(item),
                         height: 100,
-                        child: Text('$item'),
+                        child: Text(item.name),
                       ),
                     ),
                   ),
@@ -44,11 +47,11 @@ void main() {
           ),
         );
 
-        final Rect first = tester.getRect(find.byKey(const ValueKey(0)));
+        final Rect first = tester.getRect(find.byKey(const ValueKey('0')));
         final Rect lastInRow = tester.getRect(
-          find.byKey(ValueKey(columns - 1)),
+          find.byKey(ValueKey('${columns - 1}')),
         );
-        final Rect nextRow = tester.getRect(find.byKey(ValueKey(columns)));
+        final Rect nextRow = tester.getRect(find.byKey(ValueKey('$columns')));
         expect(lastInRow.top, first.top);
         expect(lastInRow.right, closeTo(layout.size.width - 16, 0.01));
         expect(nextRow.top, closeTo(first.bottom + 8, 0.01));

@@ -8,31 +8,35 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
+import 'package:tano/core/services/lock_gate.dart';
 import 'package:tano/shared/controllers/selection_controller.dart';
-import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/shared/config/card_sorting.dart';
+import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
-import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/search_mode.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
-import 'package:tano/shared/config/date_format.dart';
+import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
-import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
-import 'package:tano/shared/widgets/note_card_bodies.dart';
+import 'package:tano/shared/widgets/note_card.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -50,10 +54,9 @@ class FolderPage extends StatefulWidget {
   State<FolderPage> createState() => _FolderPageState();
 }
 
-class _FolderPageState extends State<FolderPage> with RouteAware {
+class _FolderPageState extends State<FolderPage>
+    with RouteAware, FabRouteCollapse<FolderPage> {
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  Timer? _routeCollapseTimer;
-  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   DocumentFilter _documentFilter = DocumentFilter.all;
@@ -102,6 +105,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     _folder = widget.folder;
     _titleFocusNode.addListener(_onTitleFocusChanged);
     ViewLayoutController.instance.addListener(_onViewLayoutChanged);
+    SortPreferencesController.instance.addListener(_onSortChanged);
+    DocumentFilterController.instance.addListener(_onDocumentFilterChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     _loadPreferences();
     _load();
@@ -116,38 +121,19 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     }
   }
 
-  /// Called when another route (the editor, ...) is pushed on top of this page.
-  /// Fold the FAB once the page is fully covered, so it is already back in its
-  /// resting form when the user returns.
   @override
-  void didPushNext() {
-    _routeCollapseTimer?.cancel();
-    final generation = ++_routeCollapseGeneration;
-    final route = ModalRoute.of(context);
-    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
-      if (mounted &&
-          generation == _routeCollapseGeneration &&
-          route?.isCurrent == false) {
-        _fabKey.currentState?.collapse();
-      }
-    });
-  }
-
-  @override
-  void didPopNext() {
-    // A quick return invalidates the delayed fold from the outgoing route.
-    // It must not close a FAB the user has already reopened on this page.
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
-  }
+  GlobalKey<AppFabState> get fabKey => _fabKey;
 
   @override
   void dispose() {
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    disposeFabRouteCollapse();
     routeObserver.unsubscribe(this);
     _titleFocusNode.removeListener(_onTitleFocusChanged);
     ViewLayoutController.instance.removeListener(_onViewLayoutChanged);
+    SortPreferencesController.instance.removeListener(_onSortChanged);
+    DocumentFilterController.instance.removeListener(
+      _onDocumentFilterChanged,
+    );
     FabSideController.instance.removeListener(_onFabSideChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -183,28 +169,43 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (mounted) await _loadPreferences();
   }
 
-  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setString('documentFilter', filter.name);
-  }
-
   Future<void> _loadPreferences() async {
     await ViewLayoutController.instance.load();
+    await SortPreferencesController.instance.load();
+    await DocumentFilterController.instance.load();
     await FabSideController.instance.load();
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _documentFilter =
-          documentFilterFromName(prefs.getString('documentFilter')) ??
-          DocumentFilter.all;
-      _sortBy = prefs.getString('sortBy') ?? 'date';
-      _secondarySortBy = prefs.getString('secondarySortBy') ?? 'date';
-      _sortAscending = prefs.getBool('sortAscending') ?? true;
+      _documentFilter = DocumentFilterController.instance.filter;
+      _syncSort();
       _notes = _sorted(_notes);
     });
   }
 
-  /// Notes sorted like the home screen: pinned first, then the chosen
+  /// Copies the shared sorting controller into the page's own fields.
+  void _syncSort() {
+    final SortPreferencesController sort = SortPreferencesController.instance;
+    _sortBy = sort.by;
+    _secondarySortBy = sort.secondaryBy;
+    _sortAscending = sort.ascending;
+  }
+
+  /// Settings changed the chosen order: re-sort without re-reading the keys.
+  void _onSortChanged() {
+    if (!mounted) return;
+    setState(() {
+      _syncSort();
+      _notes = _sorted(_notes);
+    });
+  }
+
+  /// The filter changed on this page or on Home: mirror it.
+  void _onDocumentFilterChanged() {
+    if (!mounted) return;
+    setState(() => _documentFilter = DocumentFilterController.instance.filter);
+  }
+
+  /// Notes sorted like the home screen: important first, then the chosen
   /// criterion. Without this the folder kept the raw repository order.
   List<Note> _sorted(List<Note> notes) => NoteSorting(
     by: _sortBy,
@@ -216,10 +217,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     final List<Note> all = await getIt<NotesRepository>().loadNotes();
     if (!mounted) return;
     setState(() {
-      _activeNoteIds = all
-          .where((Note note) => !note.isDeleted)
-          .map((Note note) => note.id)
-          .toSet();
+      _activeNoteIds = activeEntityIds(all);
       _notes = _sorted(
         all.where((Note note) => note.folderId == _folder.id).toList(),
       );
@@ -237,16 +235,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       _isSearchMode = true;
       _searchStarted = false;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _isSearchMode) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+    focusSearchField(
+      focusNode: _searchFocusNode,
+      isStillActive: () => mounted && _isSearchMode,
+    );
   }
 
   void _exitSearchMode() {
-    _searchController.clear();
-    _searchFocusNode.unfocus();
+    leaveSearchMode(controller: _searchController, focusNode: _searchFocusNode);
     setState(() {
       _isSearchMode = false;
       _searchStarted = false;
@@ -258,7 +254,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     final Folder updated = folder.copyWith(
       updatedAt: DateTime.now().toString(),
     );
-    await _foldersRepository?.upsertFolder(updated);
+    final FoldersRepository? repository = _foldersRepository;
+    if (repository != null &&
+        !await runStorageOperation(
+          context,
+          () => repository.upsertFolder(updated),
+        )) {
+      return;
+    }
     if (!mounted) return;
     setState(() => _folder = updated);
   }
@@ -295,23 +298,12 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (_isSearchMode) _exitSearchMode();
     // A locked note always asks for the system credential, unless the folder
     // itself is locked: opening it already authenticated the user.
-    bool authenticated = _folder.isLocked;
-    if (note.isLocked && !authenticated) {
-      authenticated = await getIt<AuthService>().authenticate(
-        reason: AppText.tr('auth_reason'),
-      );
-      if (!authenticated || !mounted) return;
-    }
-    final NoteAction? result = await Navigator.push<NoteAction>(
+    final NoteAction? result = await openNoteEditor(
       context,
-      MaterialPageRoute<NoteAction>(
-        builder: (BuildContext context) => EditNote(
-          add: add,
-          index: -1,
-          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
-          authenticated: authenticated,
-        ),
-      ),
+      add: add,
+      note: note,
+      authenticated: _folder.isLocked,
+      requiresAuthentication: note.isLocked && !_folder.isLocked,
     );
     if (result != null && result.note != null) {
       if (result.kind == NoteActionKind.delete) {
@@ -326,32 +318,25 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Note _newNote() => Note(folderId: _folder.id, category: _folder.category);
 
   Future<void> _toggleLock() async {
-    if (!_folder.isLocked) {
-      if (!await getIt<AuthService>().isAvailable()) {
-        if (!mounted) return;
-        await showAdaptiveAlert(
-          context: context,
-          title: AppText.tr('lock_unavailable_title'),
-          message: AppText.tr('lock_requires_device_lock'),
-        );
-        return;
-      }
-      await _save(_folder.copyWith(isLocked: true));
+    final LockGateResult gate = await requestLockChange(
+      isLocked: _folder.isLocked,
+    );
+    if (gate == LockGateResult.unavailable) {
       if (!mounted) return;
-      await FeedbackController.instance.success();
-      if (!mounted) return;
-      await showLockToast(context, locked: true, folder: true);
+      await showAdaptiveAlert(
+        context: context,
+        title: AppText.tr('lock_unavailable_title'),
+        message: AppText.tr('lock_requires_device_lock'),
+      );
       return;
     }
-    final bool authenticated = await getIt<AuthService>().authenticate(
-      reason: AppText.tr('auth_reason'),
-    );
-    if (!authenticated || !mounted) return;
-    await _save(_folder.copyWith(isLocked: false));
+    if (gate == LockGateResult.refused || !mounted) return;
+    final bool locked = !_folder.isLocked;
+    await _save(_folder.copyWith(isLocked: locked));
     if (!mounted) return;
     await FeedbackController.instance.success();
     if (!mounted) return;
-    await showLockToast(context, locked: false, folder: true);
+    await showLockToast(context, locked: locked, folder: true);
   }
 
   Future<void> _delete() async {
@@ -366,10 +351,11 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (confirm != true || !mounted) return;
 
     // The folder keeps its notes: they stay filed and travel with it.
-    await _foldersRepository?.trashFolder(_folder.id);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    final bool trashed = await runStorageOperation(context, () async {
+      await _foldersRepository?.trashFolder(_folder.id);
+    });
+    if (!trashed || !mounted) return;
+    Navigator.of(context).pop();
   }
 
   void _enterSelection(String id) {
@@ -387,18 +373,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (_isSearchMode) _exitSearchMode();
   }
 
-  /// Title of the delete confirmation, based on the current selection.
-  String _deleteActionTitle() {
-    final int count = _selection.count;
-    final int total = _visibleNotes.length;
-    if (count > 1) {
-      return count == total
-          ? AppText.tr('delete_all_notes')
-          : AppText.tr('delete_notes', <String, String>{'count': '$count'});
-    }
-    return AppText.tr('delete_note');
-  }
-
   Future<void> _deleteSelected() async {
     // A locked note is only deleted from inside, once opened: the list never
     // removes one, exactly like Home.
@@ -410,7 +384,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     }
     final bool? confirm = await getConfirmation(
       context: context,
-      actionTitle: _deleteActionTitle(),
+      actionTitle: deleteSelectionTitle(
+        count: _selection.count,
+        total: _visibleNotes.length,
+      ),
       action: AppText.tr('delete'),
     );
     if (confirm != true || !mounted) return;
@@ -418,16 +395,23 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
     // Keep what leaves, with its place, so the undo can put it back exactly
     // where it was - the same accounting the home page does.
-    final List<int> indexes = <int>[];
-    final List<Note> removed = <Note>[];
-    for (int i = 0; i < _notes.length; i++) {
-      if (_selection.contains(_notes[i].id)) {
-        indexes.add(i);
-        removed.add(_notes[i]);
-      }
-    }
-    for (final Note note in removed) {
-      await repository.trashNote(note.id);
+    final ({List<Note> notes, List<int> indexes}) selected =
+        collectSelectedNotes(
+          _notes,
+          (Note note) => _selection.contains(note.id),
+        );
+    final bool trashed = await runStorageOperation(
+      context,
+      () => trashNotesAtomically(
+        repository,
+        selected.notes.map((Note note) => note.id).toList(),
+      ),
+    );
+    if (!trashed) {
+      // Storage refused the batch as a whole: reload so the folder and storage
+      // agree again.
+      if (mounted) await _load();
+      return;
     }
     if (!mounted) return;
     setState(() {
@@ -436,17 +420,20 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     });
     // Leaving the selection never brings the search back.
     if (_isSearchMode) _exitSearchMode();
-    if (removed.isNotEmpty) {
-      showUndoDelete(
+    if (selected.notes.isNotEmpty) {
+      await announceDeletion(
         context,
         repository: repository,
-        batch: DeletedBatch(notes: removed, indexes: indexes),
+        batch: DeletedBatch(notes: selected.notes, indexes: selected.indexes),
         onRestored: () async {
           if (!mounted) return;
           setState(() {
             // From the end, so an insertion never shifts a place still to come.
-            for (int i = indexes.length - 1; i >= 0; i--) {
-              _notes.insert(indexes[i].clamp(0, _notes.length), removed[i]);
+            for (int i = selected.indexes.length - 1; i >= 0; i--) {
+              _notes.insert(
+                selected.indexes[i].clamp(0, _notes.length),
+                selected.notes[i],
+              );
             }
           });
         },
@@ -460,10 +447,23 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     final List<Note> selected = _notes
         .where((Note note) => _selection.contains(note.id))
         .toList();
-    for (final Note note in selected) {
-      await repository.upsertNote(
-        note.copyWith(folderId: folderId, updatedAt: DateTime.now().toString()),
-      );
+    final List<Note> moved = selected
+        .map(
+          (Note note) => note.copyWith(
+            folderId: folderId,
+            updatedAt: DateTime.now().toString(),
+          ),
+        )
+        .toList();
+    final bool saved = await runStorageOperation(
+      context,
+      () => upsertNotesAtomically(repository, moved),
+    );
+    if (!saved) {
+      // Storage refused the batch as a whole: reload so the folder and storage
+      // agree again.
+      if (mounted) await _load();
+      return;
     }
     final int count = selected.length;
     if (!mounted) return;
@@ -472,9 +472,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     if (_isSearchMode) _exitSearchMode();
     await _load();
     if (!mounted) return;
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: count, folderId: folderId);
+    await announceMove(context, count: count, folderId: folderId);
   }
 
   /// The folder content narrowed by the local search, before the kind filter:
@@ -537,7 +535,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           (!_showSearchHistory && _searchQuery.trim().isEmpty));
 
   String _noteCountLabel(int count) =>
-      '$count ${count > 1 ? AppText.tr('notes') : AppText.tr('note')}';
+      groupCountLabel(total: count, noun: 'note');
 
   /// Metadata on the title line, mirroring the home page: the selection while
   /// selecting, the result count while searching, the note count otherwise.
@@ -546,7 +544,6 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
       // While searching, the total is the number of results.
       final int count = _selection.count;
       final int total = _visibleNotes.length;
-      if (count == 0) return AppText.tr('no_note_selected');
       final List<Note> selected = _visibleNotes
           .where((Note note) => _selection.contains(note.id))
           .toList();
@@ -555,20 +552,7 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
         tasks: selected.where((Note note) => note.isTask).length,
         folders: 0,
       );
-      if (count > 1 && count == total) {
-        return AppText.tr('all_${noun}s_selected', <String, String>{
-          'count': '$count',
-        });
-      }
-      if (count > 1) {
-        return AppText.tr('${noun}s_selected', <String, String>{
-          'count': '$count',
-          'total': '$total',
-        });
-      }
-      return AppText.tr('single_${noun}_selected', <String, String>{
-        'count': '$count',
-      });
+      return selectionCountLabel(count: count, total: total, noun: noun);
     }
     if (_resultsVisible) return _noteCountLabel(_visibleNotes.length);
     return null;
@@ -603,17 +587,9 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    // The folder's colour theming tints the page, exactly like a note.
+    // The folder's colour tints its own card, not the page.
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color folderColor = themeCategory(
-      _folder.category,
-      true,
-      brightness: Theme.of(context).brightness,
-    );
-    final Color immersiveBg = getImmersiveBackgroundColor(
-      folderColor,
-      isDark: isDark,
-    );
+    final Color immersiveBg = getImmersiveBackgroundColor(isDark: isDark);
     // The folder's FAB always rests in its reduced form; tapping it expands
     // the action bar. This keeps it from hiding the notes or the cover.
     // The recent searches live in a shared controller: the page rebuilds when
@@ -707,6 +683,8 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
           floatingActionButton: AppFab(
             key: _fabKey,
             onLeft: _fabOnLeft,
+            // The folder shares the editor's bar (its add/more menus), so it
+            // must select it here; isFolderMode then adapts those menus.
             isEditorMode: true,
             isFolderMode: true,
             isSelectionMode: _selection.isActive,
@@ -771,11 +749,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
                     selectionLabel: _selection.isActive
                         ? _headerMetadata
                         : null,
-                    onChanged: (DocumentFilter filter) => setState(() {
-                      _selection.exit();
-                      _documentFilter = filter;
-                      _saveDocumentFilterPref(filter);
-                    }),
+                    onChanged: (DocumentFilter filter) {
+                      setState(_selection.exit);
+                      DocumentFilterController.instance.set(filter);
+                    },
                   ),
                 ),
               ),
@@ -811,15 +788,10 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
   Widget _buildNotes() {
     final List<Note> notes = _visibleNotes;
     if (notes.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(
-          context,
-          _isSearchMode
-              ? AppText.tr('no_note_found')
-              : AppText.tr('folder_empty'),
-          image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
-        ),
+      return emptyStateSliver(
+        context,
+        _isSearchMode ? AppText.tr('no_note_found') : AppText.tr('folder_empty'),
+        image: _isSearchMode ? EmptyArt.search : EmptyArt.folder,
       );
     }
 
@@ -835,41 +807,14 @@ class _FolderPageState extends State<FolderPage> with RouteAware {
     );
   }
 
-  Widget _card(Note note, {required bool isList}) {
-    return EntityCard(
-      kind: note.kind,
-      category: note.category,
-      title: note.title,
-      subtitle: formatNoteDate(note.date),
-      coverImage: note.coverImage,
-      isImportant: note.important,
-      isLocked: note.isLocked,
-      isListLayout: isList,
-      isSelected: _selection.contains(note.id),
-      isInSelectionMode: _selection.isActive,
-      onSelectionToggle: () => _toggleSelection(note.id),
-      onLongPress: () => _enterSelection(note.id),
-      onTap: () {
-        if (_selection.isActive) {
-          _toggleSelection(note.id);
-        } else {
-          _openNote(add: false, note: note);
-        }
-      },
-      // Same body as the home page cards.
-      builder: (BuildContext context, Color textColor, bool hasCover) => isList
-          ? buildNoteListContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _activeNoteIds,
-              hasCover: hasCover,
-            )
-          : buildNoteGridContent(
-              note: note,
-              textColor: textColor,
-              activeNoteIds: _activeNoteIds,
-              hasCover: hasCover,
-            ),
-    );
-  }
+  Widget _card(Note note, {required bool isList}) => buildNoteCard(
+    note: note,
+    isList: isList,
+    isSelected: _selection.contains(note.id),
+    isInSelectionMode: _selection.isActive,
+    activeNoteIds: _activeNoteIds,
+    onOpen: () => _openNote(add: false, note: note),
+    onToggleSelection: () => _toggleSelection(note.id),
+    onEnterSelection: () => _enterSelection(note.id),
+  );
 }

@@ -8,7 +8,7 @@ import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/editor/edit_note_page.dart';
 import 'package:tano/features/editor/edit_note_view_model.dart';
 import 'package:tano/features/notes/home_view_model.dart';
-import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/notes/widgets/note_cards.dart';
 import 'package:tano/main.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
@@ -80,14 +80,6 @@ class _InMemoryNotesRepository implements NotesRepository {
     final index = notes.indexWhere((n) => n.id == id);
     if (index != -1) {
       notes[index] = notes[index].copyWith(isDeleted: false, deletedAt: null);
-    }
-  }
-
-  @override
-  Future<void> toggleLock(String id, {String? password}) async {
-    final index = notes.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      notes[index] = notes[index].copyWith(isLocked: !notes[index].isLocked);
     }
   }
 
@@ -523,8 +515,9 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: <Widget>[
-                NoteListView(
+                NoteCards(
                   viewModel: vm,
+                  isList: true,
                   onOpenNote: (Note note) {},
                 ),
               ],

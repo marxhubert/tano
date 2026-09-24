@@ -16,7 +16,7 @@ import 'package:tano/features/editor/edit_note_view_model.dart';
 
 class _Auth extends AuthService {
   @override
-  Future<bool> isAvailable() async => true;
+  Future<bool> isAvailable() async => false;
 }
 
 void main() {
@@ -88,7 +88,8 @@ void main() {
       );
       final bytes = await ExportService(
         attachments: store,
-      ).build(notes: [stored], unlockLockedNotes: true);
+        argon2: Argon2Params.fast,
+      ).build(notes: [stored], password: 'secret123');
       final target = SQLiteNotesRepository(
         databaseFactoryOverride: databaseFactoryFfi,
         databasePath: '${directory.path}/target.db',
@@ -98,7 +99,8 @@ void main() {
         repository: target,
         attachments: store,
         auth: _Auth(),
-      ).import(bytes);
+        argon2: Argon2Params.fast,
+      ).import(bytes, password: 'secret123');
       final imported = (await target.loadNotes()).single;
       expect(imported.isTask, isTrue);
       expect(imported.content, stored.content);

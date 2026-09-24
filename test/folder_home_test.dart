@@ -25,6 +25,7 @@ import 'package:tano/shared/widgets/note_card_bodies.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/paper_surface.dart';
 import 'package:tano/shared/widgets/theme.dart';
+import 'package:tano/shared/config/search_history_controller.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 
@@ -70,8 +71,6 @@ class _Repo implements NotesRepository, FoldersRepository {
 
   @override
   Future<void> restoreNote(String id) async {}
-  @override
-  Future<void> toggleLock(String id, {String? password}) async {}
   @override
   Future<void> deleteNotePermanently(String id) async {}
   @override
@@ -232,6 +231,8 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    // The singleton survives between tests: start each one with no history.
+    await SearchHistoryController.instance.clear();
     await LocaleController.instance.init();
     await ThemeController.instance.init();
     PackageInfo.setMockInitialValues(
@@ -1213,6 +1214,15 @@ void main() {
     await tester.enterText(searchField, 'Fil');
     await tester.pumpAndSettle();
     expect(find.text('Results'), findsWidgets);
+
+    // Leaving the search remembers the query, exactly like Home.
+    await SearchHistoryController.instance.clear();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(
+      SearchHistoryController.instance.entries,
+      contains('Fil'),
+    );
   });
 
   testWidgets('selection keeps the folder title and puts the count right', (

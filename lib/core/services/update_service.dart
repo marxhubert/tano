@@ -133,7 +133,7 @@ class UpdateService {
     return AppUpdate(
       status: UpdateStatus.available,
       version: published,
-      storeUrl: trackUrl == null ? null : Uri.tryParse(trackUrl),
+      storeUrl: _trustedStoreUrl(trackUrl),
     );
   }
 
@@ -146,6 +146,17 @@ class UpdateService {
       );
     }
     return const AppUpdate(status: UpdateStatus.upToDate);
+  }
+
+  /// Apple's store page, kept only when it is Apple over HTTPS. The lookup
+  /// response is remote input: it must not be able to open an arbitrary scheme
+  /// or hand the user to another app.
+  static Uri? _trustedStoreUrl(String? raw) {
+    final Uri? uri = raw == null ? null : Uri.tryParse(raw);
+    if (uri == null || uri.scheme != 'https' || uri.host != 'apps.apple.com') {
+      return null;
+    }
+    return uri;
   }
 
   Future<Uri> _playPage() async {

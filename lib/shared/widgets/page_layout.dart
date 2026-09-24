@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/entity_layout.dart';
+import 'package:tano/shared/widgets/fab/fab_layout_metrics.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -34,35 +35,27 @@ class FlushFabLocation extends StandardFabLocation {
     ScaffoldPrelayoutGeometry scaffoldGeometry,
     double adjustment,
   ) {
-    final double screen = scaffoldGeometry.scaffoldSize.width;
+    final Size screen = scaffoldGeometry.scaffoldSize;
     final double fabWidth = scaffoldGeometry.floatingActionButtonSize.width;
-    final EdgeInsets safe = scaffoldGeometry.minInsets;
-    final double sideInset = safe.left > safe.right ? safe.left : safe.right;
     // A compact window — a landscape phone, or a tablet — anchors the FAB to
     // the edge of its content column, safe insets excluded: 12 for a phone, 24
     // for a tablet. A phone in portrait keeps hugging that column as before.
-    if (compactChrome(scaffoldGeometry.scaffoldSize)) {
-      final double gap = tabletViewport(scaffoldGeometry.scaffoldSize)
-          ? 24.0
-          : 12.0;
-      final double available = screen - sideInset * 2;
-      final double content = available < appContentMaxWidth
-          ? available
-          : appContentMaxWidth;
-      final double columnLeft = (screen - content) / 2;
-      return onLeft ? columnLeft + gap : columnLeft + content - fabWidth - gap;
+    final ({double left, double width}) column = fabContentColumn(
+      screen,
+      scaffoldGeometry.minInsets,
+    );
+    if (compactChrome(screen)) {
+      final double gap = fabHorizontalGap(screen);
+      return onLeft
+          ? column.left + gap
+          : column.left + column.width - fabWidth - gap;
     }
-    final double available = screen - sideInset * 2;
-    final double content = available < appContentMaxWidth
-        ? available
-        : appContentMaxWidth;
-    final double columnLeft = (screen - content) / 2;
     if (onLeft) {
       // The left edge is the anchor: an expanded bar grows rightwards from it.
-      return columnLeft + paddingX;
+      return column.left + paddingX;
     }
     // The right edge never moves: an expanded bar grows leftwards from it.
-    return columnLeft + content - fabWidth - paddingX;
+    return column.left + column.width - fabWidth - paddingX;
   }
 
   @override
@@ -75,7 +68,7 @@ class FlushFabLocation extends StandardFabLocation {
     // edge: 12 for a landscape phone, 24 for a tablet. A phone in portrait keeps
     // its old padding.
     final bool compact = compactChrome(screen);
-    final double gap = tabletViewport(screen) ? 24.0 : 12.0;
+    final double gap = fabBottomGap(screen);
     double offset =
         (compact
             ? screen.height - scaffoldGeometry.minInsets.bottom - gap
@@ -143,7 +136,7 @@ class PageScaffold extends StatefulWidget {
   final bool alignAppBarTitleLeft;
 
   /// When true, a landscape phone drops the body's title line and moves the
-  /// title to the app bar, its flags around it ("bookmark + title + lock").
+  /// title to the app bar, its flags around it ("important + title + lock").
   /// Home keeps its title line; only a folder asks for this.
   final bool condenseHeader;
 
@@ -154,7 +147,7 @@ class PageScaffold extends StatefulWidget {
   final Widget? headerMetadataWidget;
 
   /// Flags shown in front of the reduced (app bar) title, in the order
-  /// "bookmark + title + lock". The body title line keeps using
+  /// "important + title + lock". The body title line keeps using
   /// [headerMetadataWidget], so each presentation can style its own mark.
   final Widget? headerMetadataLeading;
 

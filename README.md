@@ -1,6 +1,6 @@
 # TanoNote
 
-[![Version](https://img.shields.io/badge/version-0.9.0--beta-orange)](https://github.com/marxhubert/tano/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1--beta-orange)](https://github.com/marxhubert/tano/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-brightgreen)](https://flutter.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
@@ -9,7 +9,7 @@
 [Flutter](https://flutter.dev) for Android and iOS. Notes, task lists and folders
 work locally without a connection. Projects and remote collaboration remain future
 work. Optional crash reports and user-requested store updates
-use the network. See the [audit and release blockers](docs/audit-2026-09-18.md).
+use the network. See [history](docs/history.md) for the audits behind the current code.
 
 ## Features
 
@@ -27,20 +27,22 @@ use the network. See the [audit and release blockers](docs/audit-2026-09-18.md).
 - Attachments (images, PDF, documents), opened with the system viewer.
 
 ### Organisation
-- Folders with their own colour theme, cover, bookmark and lock.
+- Folders with their own colour theme, bookmark and lock.
 - Bookmark notes and folders.
 - Search notes; notes locked directly or through their folder are excluded.
-- Multi-selection of notes and folders: move, delete with confirmation. The home
-  list also offers an undo after a swipe-to-delete.
-- Sorting (date, title, favourites, colour theme) and grid or list layouts.
+- Multi-selection of notes and folders: move and delete, both with confirmation
+  and an undo after a deletion.
+- Sorting (date, last modified, title, favourites, colour theme) and grid or list
+  layouts.
 
 ### Security and privacy
 - The database is SQLite encrypted with SQLCipher. Its key lives in the OS
   secure storage (`flutter_secure_storage`) and never leaves the device.
 - Locked notes and folders are gated by the device credential (biometrics, PIN
   or passcode). The app never stores a password of its own.
-- Export is either a plain ZIP (cleartext) or an Argon2id + AES-GCM container.
-  Import merges: it never overwrites or deletes existing notes.
+- Export is either a plain ZIP (cleartext, refused while locked notes are in the
+  selection) or an Argon2id + AES-GCM container. Import merges: it never overwrites
+  or deletes existing notes.
 - Deleted items go to a recycle bin before being permanently removed.
 
 ### Interface
@@ -81,9 +83,10 @@ The full recipe — keystore, archive, tag, release — lives in
 
 ### Identity
 
-The in-app author, contact address and support links are read from build settings.
-The repository still contains public author attribution, privacy-policy contact
-details and the application bundle identifier. Configure your own signing team
+The in-app author, contact address and support links are read from build settings,
+and the same ignored file carries the Sentry DSN when crash reports are
+configured. The repository still contains public author attribution,
+privacy-policy contact details and the application bundle identifier. Configure your own signing team
 locally for iOS; no team is selected in the shared project. `identity.json.dist` is the
 template — copy it, fill it in, and point the tool at it. The filled file is
 ignored by git, the template is not.
@@ -110,10 +113,10 @@ flutter test integration_test
 ```
 
 The GitHub Actions workflow (`.github/workflows/ci.yml`) runs `flutter analyze`,
-`flutter test` (the golden tests are compared locally: they depend on how the
-host rasterises text) and a debug build of both targets — Android on Ubuntu, iOS
-on macOS without a signing profile — on every push to `master` and on every pull
-request.
+`flutter test --exclude-tags golden` (the golden tests are compared locally: they
+depend on how the host rasterises text) and a debug build of both targets —
+Android on Ubuntu, iOS on macOS without a signing profile — on every push to
+`master` or `develop` and on every pull request.
 
 ## Site
 
@@ -147,6 +150,8 @@ template. The version always comes from `pubspec.yaml`, through
 | `package_info_plus` | Version and device information |
 | `material_symbols_icons` | Icon set |
 | `url_launcher` | External links |
+| `sentry_flutter` | Consent-gated crash reports |
+| `in_app_update` | Android in-app updates |
 
 ## Project structure
 
@@ -173,7 +178,8 @@ lib/
 
 `docs/` holds the reference (architecture, security, components, privacy) and the
 steering documents: [roadmap](docs/roadmap.md), [backlog](docs/backlog.md),
-[store listings](docs/store-listing.md) and [release](docs/release.md). See the [current audit](docs/audit-2026-09-18.md) and
+[store listings](docs/store-listing.md) and [release](docs/release.md). See
+[history](docs/history.md) for the earlier audits and the
 [remote collaboration design](docs/collaboration.md).
 
 ## Contributing

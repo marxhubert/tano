@@ -29,21 +29,26 @@ Initial 18 September consolidation: 316 passing tests including 20 goldens. Foll
 with clean static analysis. The command output is the source of truth for counts. Native builds, SQLCipher/backup verification and captured
 Sentry envelopes are separate checks, not implied by Dart test success.
 
-## Step 2 validation
+## Current validation
 
-333 tests pass, including 20 unchanged goldens. Static analysis is clean.
-Debug Android and unsigned debug iOS builds succeed. New scenarios cover lifecycle
-privacy, protected drafts/system Back, OS credential return, startup retries and
-partial initialization, unreadable preferences, save failure/retry, and orphan
-collection with shared/trash/corrupt references. See [step 2](consolidation-step-2.md).
-These builds do not replace real-device security checks.
+On `refactor/consolidation`: 470 tests pass, including 32 unchanged goldens.
+Static analysis is clean. Scenarios cover lifecycle privacy, protected
+drafts/system Back, OS credential return, startup retries and partial
+initialization, unreadable preferences, save failure/retry, orphan collection
+with shared/trash/corrupt references, cleartext-export refusal, locked trash
+deletion, the shared sort/filter controllers, the atomic move/delete batches,
+the manifest-v3 folder round-trip, the FTS5 search index (prefix match, reindex
+on update, deleted notes excluded, LIKE fallback helper), and a deterministic
+import fuzz smoke test plus a 300-note import/search. See [history](history.md) for
+the earlier validation records. These builds do not replace real-device security
+checks.
 
 ## Developer fixtures
 
 In a debug build, open Settings > Reset data > Developer reset and confirm.
 This replaces all notes, folders, attachments and preferences with synthetic
 fixtures: five folders (one empty), 33 unfiled notes and 15–27 notes in each
-populated folder, with long text, bookmarks, themes, note links and checklists.
+populated folder, with long text, important marks, themes, note links and checklists.
 Locked fixtures are enabled only when the device has a system credential.
 The button is hidden and the operation rejected in profile/release builds.
 Normal reset and first launch keep an empty database. Fixtures cover notes, folders

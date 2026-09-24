@@ -33,11 +33,13 @@ Future<void> exportData(BuildContext context) async {
             : note,
       )
       .toList();
-  if (notes.any((note) => note.isLocked)) {
+  final bool hasLockedFolder = folders.any((Folder folder) => folder.isLocked);
+  if (notes.any((note) => note.isLocked) || hasLockedFolder) {
     if (!await getIt<AuthService>().authenticate()) return;
   }
   if (!context.mounted) return;
   final int lockedCount = notes.where((Note n) => n.isLocked).length;
+  final bool hasLockedContent = lockedCount > 0 || hasLockedFolder;
 
   bool encrypted = true;
   String? error;
@@ -50,18 +52,30 @@ Future<void> exportData(BuildContext context) async {
     onEncryptedChanged: (bool value) => encrypted = value,
     error: () => error,
     onErrorChanged: (String? value) => error = value,
-    hasLockedNotes: lockedCount > 0,
+    hasLockedContent: hasLockedContent,
   );
 
   final password = passwordController.text;
   passwordController.dispose();
   if (confirmed != true || !context.mounted) return;
 
-  final Uint8List bytes = await ExportService().build(
-    notes: notes,
-    password: encrypted ? password : null,
-    unlockLockedNotes: !encrypted,
-  );
+  final Uint8List bytes;
+  try {
+    bytes = await ExportService().build(
+      notes: notes,
+      folders: folders,
+      password: encrypted ? password : null,
+    );
+  } on ExportException catch (error) {
+    if (context.mounted) {
+      showAdaptiveAlert(
+        context: context,
+        title: AppText.tr('export_failed'),
+        message: error.message,
+      );
+    }
+    return;
+  }
   final String stamp = DateTime.now().toIso8601String().split('T').first;
   await FilePicker.saveFile(
     fileName: 'tanonote-$stamp.tano',
@@ -80,13 +94,19 @@ Future<bool?> _showExportDialog(
   required ValueChanged<bool> onEncryptedChanged,
   required String? Function() error,
   required ValueChanged<String?> onErrorChanged,
-  required bool hasLockedNotes,
+  required bool hasLockedContent,
 }) {
   return showPlatformDialog<bool>(
     context: context,
     builder: (BuildContext dialogContext, bool isApple) => StatefulBuilder(
       builder: (BuildContext context, StateSetter setDialogState) {
         final bool encrypted = isEncrypted();
+        // Locked content must never land in a cleartext file, so the switch is
+        // frozen on as soon as the selection contains any.
+        void setEncrypted(bool value) => setDialogState(() {
+          onEncryptedChanged(value);
+          onErrorChanged(null);
+        });
         final List<Widget> content = <Widget>[
           if (isApple)
             Row(
@@ -94,10 +114,7 @@ Future<bool?> _showExportDialog(
                 Expanded(child: Text(AppText.tr('export_encrypt'))),
                 CupertinoSwitch(
                   value: encrypted,
-                  onChanged: (bool value) => setDialogState(() {
-                    onEncryptedChanged(value);
-                    onErrorChanged(null);
-                  }),
+                  onChanged: hasLockedContent ? null : setEncrypted,
                 ),
               ],
             )
@@ -106,10 +123,7 @@ Future<bool?> _showExportDialog(
               contentPadding: EdgeInsets.zero,
               title: Text(AppText.tr('export_encrypt')),
               value: encrypted,
-              onChanged: (bool value) => setDialogState(() {
-                onEncryptedChanged(value);
-                onErrorChanged(null);
-              }),
+              onChanged: hasLockedContent ? null : setEncrypted,
             ),
           if (encrypted) ...<Widget>[
             if (isApple) ...<Widget>[
@@ -147,18 +161,18 @@ Future<bool?> _showExportDialog(
               AppText.tr('import_clear_warning'),
               style: const TextStyle(fontSize: TanoText.tiny),
             ),
-            if (hasLockedNotes) ...<Widget>[
-              if (!isApple) const SizedBox(height: appPaddingTight),
-              Text(
-                AppText.tr('export_locked_warning'),
-                style: TextStyle(
-                  fontSize: TanoText.tiny,
-                  color: isApple
-                      ? CupertinoColors.systemRed
-                      : TanoStates.error.dark,
-                ),
+          ],
+          if (hasLockedContent) ...<Widget>[
+            if (!isApple) const SizedBox(height: appPaddingTight),
+            Text(
+              AppText.tr('export_locked_required'),
+              style: TextStyle(
+                fontSize: TanoText.tiny,
+                color: isApple
+                    ? CupertinoColors.systemRed
+                    : TanoStates.error.dark,
               ),
-            ],
+            ),
           ],
         ];
 
@@ -252,6 +266,7 @@ Future<void> importData(BuildContext context) async {
       context,
       AppText.tr('import_done', <String, String>{
         'added': '${result.added}',
+        'folders': '${result.foldersAdded}',
         'skipped': '${result.skipped}',
         'unlocked': '${result.unlocked}',
       }),

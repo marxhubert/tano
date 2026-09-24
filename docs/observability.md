@@ -1,7 +1,9 @@
 # Diagnostics and external connections
 
 Crash reports require consent, default off. Builds without `SENTRY_DSN` do not
-initialize Sentry. A DSN is an ingestion address, not an administration secret.
+initialize Sentry. A DSN is a write-only ingestion address, not an administration
+secret, but it is kept out of the public repository: put it in the ignored
+`identity.json` and build with `--dart-define-from-file=identity.json`.
 Symbol-upload tokens and project configuration stay outside git.
 
 ## Allowed diagnostic payload

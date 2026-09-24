@@ -7,8 +7,15 @@ class ArchiveValidation {
   static const maxArchiveBytes = 64 * 1024 * 1024;
   static const maxExpandedBytes = 128 * 1024 * 1024;
   static const maxEntryBytes = 32 * 1024 * 1024;
-  static const maxManifestBytes = 4 * 1024 * 1024;
+
+  /// Every note travels inside the single JSON manifest, so this is the bound a
+  /// large library hits first. 32 MiB holds [maxNotes] notes of typical length;
+  /// the 128 MiB total expansion still caps the whole archive.
+  static const maxManifestBytes = 32 * 1024 * 1024;
   static const maxEntries = 2000;
+
+  /// Most notes (and folders) one manifest may carry.
+  static const maxNotes = 10000;
 
   static Map<String, Uint8List> read(Uint8List bytes) {
     if (bytes.length > maxArchiveBytes) {

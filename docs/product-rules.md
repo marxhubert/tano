@@ -14,13 +14,17 @@ within that folder, even if their own lock flag is set. The flag is preserved:
 moving a locked object to an unlocked folder does not unlock it. An unlocked source
 note linking to locked note A must authenticate before opening A. An authenticated
 folder grants inherited access only inside that same folder, not to arbitrary links.
+Destroying locked content for good — permanently deleting a locked note, or emptying
+the trash while it holds locked items — requires the device credential; the trash
+keeps both actions visible for every item.
 
 Export offers encrypted and cleartext files. Both require legitimate access to
-protected source objects. In a cleartext export, encrypted local content is decoded
-and object lock flags are cleared. In a password-encrypted export, lock flags remain.
-The current manifests support notes (v1) and task lists (v2), with attachments.
-Neither carries folders or projects. Task lists are free and follow note access rules.
-These rules apply to those future objects when their format and persistence ship.
+protected source objects. A cleartext export is refused while the selection holds a
+locked object: locked content only ever leaves through a password-encrypted export,
+where lock flags remain. Manifest v3 carries the notes, the tasks, their attachments
+and the folders that hold them. Projects are still not carried. Task lists are free
+and follow note access rules; these rules apply to projects when their format and
+persistence ship.
 
 Import preserves locks on a device with a credential. On a device without one, it
 unlocks imported objects and reports the number affected. Existing local objects

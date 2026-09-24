@@ -34,23 +34,52 @@ jobs:
         # text: they are generated and reviewed locally, never here.
         run: flutter test --exclude-tags golden
 
+      - name: Check documentation links
+        # A removed or renamed document must not leave a dangling link behind.
+        run: |
+          failed=0
+          for f in README.md docs/*.md; do
+            dir=$(dirname "$f")
+            while IFS= read -r link; do
+              case "$link" in
+                http*) continue ;;
+              esac
+              if [ ! -f "$dir/$link" ]; then
+                echo "BROKEN $f -> $link"
+                failed=1
+              fi
+            done < <(grep -oE '\]\([^)]+\.md\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
+          done
+          exit $failed
+
   build:
-    name: Build (${{ matrix.target }})
+    name: Build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
-      # A broken Android build must not hide a broken iOS one.
+      # A broken Android build must not hide a broken iOS one, and a release
+      # build (tree shaking, AOT, R8) can fail where a debug one passes.
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
+            label: Android debug
             target: apk
             args: --debug
+          - os: ubuntu-latest
+            label: Android release
+            target: apk
+            args: --release
           - os: macos-latest
+            label: iOS debug
             target: ios
             # No signing profile here: the point is to compile the app, not to
             # produce something installable.
             args: --debug --no-codesign
+          - os: macos-latest
+            label: iOS release
+            target: ios
+            args: --release --no-codesign
     steps:
       - name: Checkout
         uses: actions/checkout@v4

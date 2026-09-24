@@ -21,7 +21,7 @@ of accumulating blank rows. Completed rows
 appear below a divider and a collapsible, primary-colored heading with an animated
 chevron. The section disappears when no completed row remains. Unchecking
 returns the row to its original relative position among active rows. A list with
-all rows completed can still add new active rows. The metadata shows the bookmark indicator on the right and the lock before the
+all rows completed can still add new active rows. The metadata shows the important indicator on the right and the lock before the
 date, separated by a divider. It counts all nonblank
 rows, completed or not; the empty drafting row is not counted or persisted.
 

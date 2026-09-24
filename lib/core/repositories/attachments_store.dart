@@ -29,6 +29,11 @@ class AttachmentsStore {
   /// Plaintext copies materialized on demand, keyed by stored name.
   final Map<String, String> _materialized = <String, String>{};
 
+  /// How long a materialized plaintext copy may stay in the cache before it is
+  /// swept. Long enough for the system viewer, short enough that a copy does
+  /// not outlive the viewing session.
+  static const Duration materializedTtl = Duration(minutes: 10);
+
   Future<Directory> _dir() async {
     final Directory docs = await _documentsDirectory();
     final Directory dir = Directory(p.join(docs.path, 'attachments'));
@@ -91,6 +96,9 @@ class AttachmentsStore {
     final String? cached = _materialized[name];
     if (cached != null && await File(cached).exists()) return cached;
 
+    // A new viewing session is the natural moment to sweep old plaintext.
+    await clearExpiredMaterialized();
+
     final Directory dir = await _dir();
     final Uint8List encrypted = await File(
       p.join(dir.path, name),
@@ -145,6 +153,25 @@ class AttachmentsStore {
     );
     if (await cache.exists()) await cache.delete(recursive: true);
     _materialized.clear();
+  }
+
+  /// Deletes plaintext copies older than [materializedTtl].
+  ///
+  /// Sweeping by the file's own modification time means copies materialized by
+  /// any [AttachmentsStore] instance in the process are collected, not only the
+  /// ones this instance remembers.
+  Future<void> clearExpiredMaterialized() async {
+    final Directory cache = Directory(
+      p.join((await _cacheDirectory()).path, 'tano_attachments'),
+    );
+    if (!await cache.exists()) return;
+    final DateTime cutoff = DateTime.now().subtract(materializedTtl);
+    await for (final FileSystemEntity entity in cache.list(followLinks: false)) {
+      if (entity is! File) continue;
+      if ((await entity.stat()).modified.isAfter(cutoff)) continue;
+      await entity.delete();
+      _materialized.remove(p.basename(entity.path));
+    }
   }
 
   /// Startup-only collection. Do not call while an editor/import can be active.

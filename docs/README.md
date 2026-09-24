@@ -5,9 +5,6 @@ repository is public, including documents not deployed to GitHub Pages.
 
 ## Current implementation and decisions
 
-- [Site design audit](site-design-audit.md): paper identity and app redesign.
-- [Audit and follow-up](audit-2026-09-18.md)
-- [Consolidation step 2](consolidation-step-2.md): lifecycle privacy, recovery and file collection
 - [Product rules](product-rules.md), [architecture](architecture.md), [modularity](modularity.md)
 - [Security](security.md), [privacy](privacy.md), [observability](observability.md)
 - [Folders](folders.md), [Premium](premium.md), [roadmap](roadmap.md)
@@ -17,10 +14,10 @@ repository is public, including documents not deployed to GitHub Pages.
 [Design system](design-system.md), [components](components.md), [tests](tests.md),
 [release](release.md), [store listing](store-listing.md), [backlog](backlog.md).
 [Remote collaboration](collaboration.md) is a target, not an implemented transport.
-[UI polish history](ui-polish-history.md) records earlier visual decisions.
+[Task lists](tasks.md) covers the free checklist documents, shared editing and
+persistence.
 
 The app has never been published. Existing development data is disposable; no
 production-data migration is required. This exception must end before the first
-public release. Old documents and removed plans remain available in git history.
-
-- [Task lists](tasks.md): free checklist documents, shared editing and persistence.
+public release. [History](history.md) keeps the durable decisions of the earlier
+audits and polish cycles; their complete text remains in git history.

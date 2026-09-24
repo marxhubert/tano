@@ -96,10 +96,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         icon: Symbols.palette,
         label: AppText.tr('menu_theme'),
         isActive: _verticalMenu == FabVerticalMenu.color,
-        onTap: () {
-          _toggleVerticalMenu(FabVerticalMenu.color);
-          widget.onColorLens?.call();
-        },
+        onTap: () => _toggleVerticalMenu(FabVerticalMenu.color),
       ),
       _EditorAction(
         icon: Symbols.build_circle,
@@ -108,10 +105,7 @@ mixin _FabBarsMixin on _FabStateMixin {
         isActive:
             _verticalMenu == FabVerticalMenu.more ||
             _verticalMenu == FabVerticalMenu.move,
-        onTap: () {
-          _toggleVerticalMenu(FabVerticalMenu.more);
-          widget.onMore?.call();
-        },
+        onTap: () => _toggleVerticalMenu(FabVerticalMenu.more),
       ),
       _EditorAction(
         icon: widget.onLeft

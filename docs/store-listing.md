@@ -6,13 +6,14 @@ Validate every claim against the binary and [privacy policy](privacy.md).
 ## Suggested description
 
 TanoNote keeps your notes organized with rich text, checklists, links, attachments
-and folders. Use bookmarks, colors, search and device-authenticated locks, then
+and folders. Use important marks, colors, search and device-authenticated locks, then
 export your notes with optional password encryption. Core notes and folders work
 offline. Projects with Kanban task management, sharing and remote collaboration
 are planned Premium features and are not currently available for purchase.
 
-Avoid claims of implemented task/project persistence, complete app backup, universal
-anonymity, no network connections or security certification.
+Avoid claims of project persistence, cross-device sync, a complete app backup
+(folders are carried; project data is not), universal anonymity, no network
+connections or security certification.
 
 ## Public policy
 

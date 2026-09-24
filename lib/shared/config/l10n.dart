@@ -111,9 +111,7 @@ class AppText {
   /// Every translatable string, by key.
   static const Map<String, String> _en = <String, String>{
     // Home
-    'all_notes': 'All notes',
     'all_docs': 'All docs',
-    'all_tasks': 'All tasks',
     'filter_all': 'All',
     'filter_notes': 'Notes',
     'filter_tasks': 'Tasks',
@@ -134,7 +132,6 @@ class AppText {
     'note': 'note',
     'notes': 'notes',
     'search': 'Search',
-    'no_note_selected': 'No note selected',
     'all_notes_selected': 'All {count} notes are selected',
     'notes_selected': '{count}/{total} notes selected',
     'single_note_selected': '{count} single note selected',
@@ -181,15 +178,15 @@ class AppText {
     'export_password': 'Password',
     'export_password_hint': '8 characters minimum',
     'password_too_short': 'The password must be at least 8 characters.',
-    'export_locked_warning':
-        'Some notes are locked: a cleartext export will unlock them.',
+    'export_locked_required': 'Locked notes require an encrypted export.',
+    'export_failed': 'Export failed',
     'export_done': 'Export saved.',
     'import_password_title': 'Encrypted export',
     'import_password_message': 'Enter the password of this export.',
     'import_failed': 'Import failed',
     'import_too_large': 'This export exceeds the 64 MiB limit.',
     'import_done':
-        '{added} notes added, {skipped} skipped, {unlocked} unlocked.',
+        '{added} notes added, {folders} folders, {skipped} skipped, {unlocked} unlocked.',
     'import_clear_warning':
         'Cleartext exports are not protected. Keep them safe.',
     'quit_app': 'Quit',
@@ -360,7 +357,6 @@ class AppText {
     'onboarding_replay': 'Replay the introduction',
     // Feedback and text
     'menu_feedback': 'Feedback and text',
-    'text_size': 'Text size',
     'text_size_small': 'Small',
     'text_size_normal': 'Normal',
     'text_size_large': 'Large',
@@ -380,9 +376,7 @@ class AppText {
 
   static const Map<String, String> _fr = <String, String>{
     // Home
-    'all_notes': 'Toutes les notes',
     'all_docs': 'Tous les docs',
-    'all_tasks': 'Toutes les tâches',
     'filter_all': 'Tous',
     'filter_notes': 'Notes',
     'filter_tasks': 'Tâches',
@@ -403,7 +397,6 @@ class AppText {
     'note': 'note',
     'notes': 'notes',
     'search': 'Rechercher',
-    'no_note_selected': 'Aucune note sélectionnée',
     'all_notes_selected': 'Toutes les {count} notes sont sélectionnées',
     'notes_selected': '{count}/{total} notes sélectionnées',
     'single_note_selected': '{count} seule note sélectionnée',
@@ -450,15 +443,16 @@ class AppText {
     'export_password': 'Mot de passe',
     'export_password_hint': '8 caractères minimum',
     'password_too_short': 'Le mot de passe doit faire au moins 8 caractères.',
-    'export_locked_warning':
-        'Des notes sont verrouillées : un export en clair les déverrouillera.',
+    'export_locked_required':
+        'Les notes verrouillées exigent un export chiffré.',
+    'export_failed': "Échec de l'export",
     'export_done': 'Export enregistré.',
     'import_password_title': 'Export chiffré',
     'import_password_message': "Saisissez le mot de passe de cet export.",
     'import_failed': "Échec de l'import",
     'import_too_large': "Cet export dépasse la limite de 64 Mio.",
     'import_done':
-        '{added} notes ajoutées, {skipped} ignorées, {unlocked} déverrouillées.',
+        '{added} notes ajoutées, {folders} dossiers, {skipped} ignorées, {unlocked} déverrouillées.',
     'import_clear_warning':
         "Les exports en clair ne sont pas protégés. Gardez-les en sécurité.",
     'quit_app': 'Quitter',
@@ -630,7 +624,6 @@ class AppText {
     'onboarding_replay': "Revoir l'introduction",
     // Retours et texte
     'menu_feedback': 'Retours et texte',
-    'text_size': 'Taille du texte',
     'text_size_small': 'Petit',
     'text_size_normal': 'Normal',
     'text_size_large': 'Grand',
@@ -650,9 +643,7 @@ class AppText {
 
   static const Map<String, String> _mg = <String, String>{
     // Home
-    'all_notes': 'Naoty rehetra',
     'all_docs': 'Rakitra rehetra',
-    'all_tasks': 'Asa rehetra',
     'filter_all': 'Rehetra',
     'filter_notes': 'Naoty',
     'filter_tasks': 'Asa',
@@ -673,7 +664,6 @@ class AppText {
     'note': 'naoty',
     'notes': 'naoty',
     'search': 'Karohy',
-    'no_note_selected': 'Tsy misy naoty voafantina',
     'all_notes_selected': 'Voafantina daholo ny naoty {count}',
     'notes_selected': 'Naoty {count}/{total} voafantina',
     'single_note_selected': 'Naoty {count} voafantina',
@@ -720,8 +710,9 @@ class AppText {
     'export_password': 'Teny miafina',
     'export_password_hint': '8 litera farafahakeliny',
     'password_too_short': 'Tokony 8 litera Farafahakeliny ny teny miafina.',
-    'export_locked_warning':
-        'Misy naoty voahidy: ny fanondranana mazava dia hamaha azy ireo.',
+    'export_locked_required':
+        'Mila fanondranana voahidy ny naoty voahidy.',
+    'export_failed': 'Tsy nahomby ny fanondranana',
     'export_done': 'Voatahiry ny fanondranana.',
     'import_password_title': 'Fanondranana voahidy',
     'import_password_message':
@@ -729,7 +720,7 @@ class AppText {
     'import_failed': 'Tsy nahomby ny fampidirana',
     'import_too_large': 'Mihoatra ny fetra 64 MiB ity rakitra ity.',
     'import_done':
-        '{added} naoty nampidirina, {skipped} nolavina, {unlocked} navahana.',
+        '{added} naoty nampidirina, {folders} lahatahiry, {skipped} nolavina, {unlocked} navahana.',
     'import_clear_warning':
         'Tsy voaaro ny fanondranana mazava. Tano tsara izy ireo.',
     'quit_app': 'Hiala',
@@ -900,7 +891,6 @@ class AppText {
     'onboarding_replay': 'Avereno jerena ny fanazavana',
     // Famaliana sy lahatsoratra
     'menu_feedback': 'Famaliana sy lahatsoratra',
-    'text_size': "Haben'ny soratra",
     'text_size_small': 'Kely',
     'text_size_normal': 'Antonony',
     'text_size_large': 'Lehibe',

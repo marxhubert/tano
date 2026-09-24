@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
@@ -7,7 +8,7 @@ import 'package:tano/shared/widgets/theme.dart';
 /// Both layouts adapt to the viewport with [entityColumnCount]. Grid cards keep
 /// an almost square ratio; list cards retain their natural row height. It belongs
 /// in a [CustomScrollView]; callers add outer [SliverPadding].
-class EntitySliver<T> extends StatelessWidget {
+class EntitySliver<T extends ContentEntity> extends StatelessWidget {
   const EntitySliver({
     super.key,
     required this.items,
@@ -30,6 +31,13 @@ class EntitySliver<T> extends StatelessWidget {
   /// Builds the cards in the visible and cached rows, rather than the full list.
   final Widget Function(BuildContext context, T item) cardBuilder;
 
+  /// One card, keyed by the entity id so a reorder or a single removal never
+  /// reuses another entity's element (and its image or selection state).
+  Widget _keyedCard(BuildContext context, T item) => KeyedSubtree(
+    key: ValueKey<String>(item.id),
+    child: cardBuilder(context, item),
+  );
+
   @override
   Widget build(BuildContext context) {
     final Size viewport = MediaQuery.sizeOf(context);
@@ -46,7 +54,7 @@ class EntitySliver<T> extends StatelessWidget {
               if (column > 0) const SizedBox(width: appPaddingTight),
               Expanded(
                 child: row * columns + column < items.length
-                    ? cardBuilder(context, items[row * columns + column])
+                    ? _keyedCard(context, items[row * columns + column])
                     : const SizedBox.shrink(),
               ),
             ],
@@ -67,7 +75,7 @@ class EntitySliver<T> extends StatelessWidget {
       ),
       itemCount: items.length,
       itemBuilder: (BuildContext context, int index) =>
-          cardBuilder(context, items[index]),
+          _keyedCard(context, items[index]),
     );
   }
 }
