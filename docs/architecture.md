@@ -7,8 +7,10 @@ define intended behavior.
 
 Flutter code is divided into `core` (models, repositories, services), `features`
 (screens and presentation logic), and `shared` (configuration and UI). GetIt assembles
-services. Notes and folders use `SQLiteNotesRepository`, schema 9, with SQLCipher
-in production. FFI tests use ordinary SQLite and do not prove native encryption.
+services. Notes and folders use `SQLiteNotesRepository`, schema 10, with SQLCipher
+in production. A v10 FTS5 external-content index backs search; it is rebuilt on
+first creation and kept in sync by triggers, and a build without FTS5 falls back
+to the LIKE query. FFI tests use ordinary SQLite and do not prove native encryption.
 
 Attachments are encrypted separately. Covers are decoded in memory; external
 viewers require a temporary plaintext file. Sensitive preferences are encrypted.

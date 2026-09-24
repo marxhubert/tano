@@ -418,7 +418,7 @@ void main() {
       },
     );
 
-    test('searchNotes escapes LIKE wildcards literally', () async {
+    test('searchNotes ignores punctuation and never treats it as a wildcard', () async {
       await repository.upsertNote(
         Note(
           id: 'pct',
@@ -444,13 +444,105 @@ void main() {
         ),
       );
 
-      final percent = await repository.searchNotes('%');
-      expect(percent.map((n) => n.id), contains('pct'));
-      expect(percent.map((n) => n.id), isNot(contains('plain')));
+      // Punctuation alone carries no word to match.
+      expect(await repository.searchNotes('%'), isEmpty);
+      expect(await repository.searchNotes('_'), isEmpty);
+      // A word still finds its note, by prefix.
+      expect(
+        (await repository.searchNotes('100')).map((Note n) => n.id),
+        contains('pct'),
+      );
+      expect(
+        (await repository.searchNotes('a')).map((Note n) => n.id),
+        contains('under'),
+      );
+      expect(
+        (await repository.searchNotes('plain')).map((Note n) => n.id),
+        contains('plain'),
+      );
+    });
 
-      final underscore = await repository.searchNotes('_');
-      expect(underscore.map((n) => n.id), contains('under'));
-      expect(underscore.map((n) => n.id), isNot(contains('plain')));
+    test('searchNotes finds a prefix in title, description or content', () async {
+      await repository.upsertNote(
+        Note(
+          id: 'alpha',
+          title: 'Alpha',
+          content: 'nothing here',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'beta',
+          title: 'Beta',
+          description: 'the alphabet soup',
+          content: '',
+          date: '2026-01-02 00:00:00.000',
+        ),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'gamma',
+          title: 'Gamma',
+          content: 'an alphabetic note',
+          date: '2026-01-03 00:00:00.000',
+        ),
+      );
+
+      expect(
+        (await repository.searchNotes('alph')).map((Note n) => n.id),
+        containsAll(<String>['alpha', 'beta', 'gamma']),
+      );
+      expect(
+        (await repository.searchNotes('soup')).map((Note n) => n.id),
+        <String>['beta'],
+      );
+    });
+
+    test('searchNotes drops trashed notes and follows an update', () async {
+      await repository.upsertNote(
+        Note(
+          id: 'moved',
+          title: 'Before',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      expect(
+        (await repository.searchNotes('before')).map((Note n) => n.id),
+        <String>['moved'],
+      );
+
+      // An update must reindex: the old term is gone, the new one is found.
+      await repository.upsertNote(
+        Note(
+          id: 'moved',
+          title: 'After',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      expect(await repository.searchNotes('before'), isEmpty);
+      expect(
+        (await repository.searchNotes('after')).map((Note n) => n.id),
+        <String>['moved'],
+      );
+
+      await repository.trashNote('moved');
+      expect(await repository.searchNotes('after'), isEmpty);
+    });
+
+    test('ftsPrefixQuery quotes every word and drops punctuation', () {
+      expect(ftsPrefixQuery('Hello World'), '"hello"* "world"*');
+      expect(ftsPrefixQuery('a"b:c*'), '"a"* "b"* "c"*');
+      expect(ftsPrefixQuery('%_  '), isNull);
+      expect(ftsPrefixQuery(''), isNull);
+    });
+
+    test('escapeLikePattern escapes the LIKE wildcards for the fallback', () {
+      expect(escapeLikePattern('100%'), '100\\%');
+      expect(escapeLikePattern('a_b'), 'a\\_b');
+      expect(escapeLikePattern('c\\d'), 'c\\\\d');
     });
   });
 }

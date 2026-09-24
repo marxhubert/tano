@@ -87,8 +87,9 @@ would absorb already lives in one place behind the helpers above.
 
 Task lists now share note editing and storage; see [task lists](tasks.md).
 Manifest v3 carries notes, tasks, their attachments and folders; project data and
-cross-note relations are still out. Extract the remaining transaction-aware commands,
-measure large-data search and move expensive work off the UI. Project persistence
+cross-note relations are still out. Search runs through the v10 FTS5 index on
+Home; a folder still filters its own loaded notes in memory. Extract the remaining
+transaction-aware commands and move expensive work off the UI. Project persistence
 remains separate future work.
 
 ## Premium and collaboration

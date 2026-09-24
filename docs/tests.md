@@ -31,13 +31,15 @@ Sentry envelopes are separate checks, not implied by Dart test success.
 
 ## Current validation
 
-On `refactor/consolidation`: 460 tests pass, including 32 unchanged goldens.
+On `refactor/consolidation`: 464 tests pass, including 32 unchanged goldens.
 Static analysis is clean. Scenarios cover lifecycle privacy, protected
 drafts/system Back, OS credential return, startup retries and partial
 initialization, unreadable preferences, save failure/retry, orphan collection
 with shared/trash/corrupt references, cleartext-export refusal, locked trash
-deletion, the shared sort/filter controllers, the atomic move/delete batches and
-the manifest-v3 folder round-trip. See [history](history.md) for
+deletion, the shared sort/filter controllers, the atomic move/delete batches,
+the manifest-v3 folder round-trip and the FTS5 search index (prefix match,
+reindex on update, deleted notes excluded, LIKE fallback helper). See
+[history](history.md) for
 the earlier validation records. These builds do not replace real-device security
 checks.
 
