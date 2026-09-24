@@ -56,6 +56,37 @@ void main() {
       expect(await repository.loadFolders(), isEmpty);
     });
 
+    test('upsertNotes writes every note of the batch', () async {
+      await repository.upsertNotes(<Note>[
+        Note(id: 'a', title: 'A', content: '', date: '2026-01-01'),
+        Note(id: 'b', title: 'B', content: '', date: '2026-01-02'),
+      ]);
+
+      expect(
+        (await repository.loadNotes()).map((Note note) => note.id),
+        containsAll(<String>['a', 'b']),
+      );
+    });
+
+    test('trashNotes moves the whole batch to the trash', () async {
+      await repository.upsertNotes(<Note>[
+        Note(id: 'a', title: 'A', content: '', date: '2026-01-01'),
+        Note(id: 'b', title: 'B', content: '', date: '2026-01-02'),
+        Note(id: 'c', title: 'C', content: '', date: '2026-01-03'),
+      ]);
+
+      await repository.trashNotes(<String>['a', 'c']);
+
+      expect(
+        (await repository.loadNotes()).map((Note note) => note.id),
+        <String>['b'],
+      );
+      expect(
+        (await repository.loadTrashNotes()).map((Note note) => note.id),
+        containsAll(<String>['a', 'c']),
+      );
+    });
+
     test('a configured provider with no passphrase fails closed', () async {
       final SQLiteNotesRepository guarded = SQLiteNotesRepository(
         databaseFactoryOverride: databaseFactoryFfi,

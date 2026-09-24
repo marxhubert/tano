@@ -400,14 +400,16 @@ class _FolderPageState extends State<FolderPage>
           _notes,
           (Note note) => _selection.contains(note.id),
         );
-    final bool trashed = await runStorageOperation(context, () async {
-      for (final Note note in selected.notes) {
-        await repository.trashNote(note.id);
-      }
-    });
+    final bool trashed = await runStorageOperation(
+      context,
+      () => trashNotesAtomically(
+        repository,
+        selected.notes.map((Note note) => note.id).toList(),
+      ),
+    );
     if (!trashed) {
-      // A failed batch may have trashed only part of the selection: reload so
-      // the folder and storage agree again.
+      // Storage refused the batch as a whole: reload so the folder and storage
+      // agree again.
       if (mounted) await _load();
       return;
     }
@@ -445,19 +447,21 @@ class _FolderPageState extends State<FolderPage>
     final List<Note> selected = _notes
         .where((Note note) => _selection.contains(note.id))
         .toList();
-    final bool saved = await runStorageOperation(context, () async {
-      for (final Note note in selected) {
-        await repository.upsertNote(
-          note.copyWith(
+    final List<Note> moved = selected
+        .map(
+          (Note note) => note.copyWith(
             folderId: folderId,
             updatedAt: DateTime.now().toString(),
           ),
-        );
-      }
-    });
+        )
+        .toList();
+    final bool saved = await runStorageOperation(
+      context,
+      () => upsertNotesAtomically(repository, moved),
+    );
     if (!saved) {
-      // A failed batch may have moved only part of the selection: reload so the
-      // folder and storage agree again.
+      // Storage refused the batch as a whole: reload so the folder and storage
+      // agree again.
       if (mounted) await _load();
       return;
     }

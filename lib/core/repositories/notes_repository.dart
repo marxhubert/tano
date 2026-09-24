@@ -35,3 +35,48 @@ abstract class NotesRepository {
 abstract interface class AtomicNoteImporter {
   Future<void> insertImportedNotes(List<Note> notes);
 }
+
+/// Optional capability: apply a set of note writes in one transaction.
+///
+/// The SQLite repository implements it, so moving or deleting a whole selection
+/// is all-or-nothing. In-memory test doubles keep their simple per-note loop
+/// through [upsertNotesAtomically] and [trashNotesAtomically].
+abstract interface class AtomicNotesWriter {
+  /// Inserts or updates every note in one transaction.
+  Future<void> upsertNotes(List<Note> notes);
+
+  /// Moves every note to the trash in one transaction.
+  Future<void> trashNotes(List<String> ids);
+}
+
+/// Persists [notes] atomically when the repository supports it, one by one
+/// otherwise. An empty batch does nothing.
+Future<void> upsertNotesAtomically(
+  NotesRepository repository,
+  List<Note> notes,
+) async {
+  if (notes.isEmpty) return;
+  if (repository is AtomicNotesWriter) {
+    await (repository as AtomicNotesWriter).upsertNotes(notes);
+    return;
+  }
+  for (final Note note in notes) {
+    await repository.upsertNote(note);
+  }
+}
+
+/// Moves [ids] to the trash atomically when the repository supports it, one by
+/// one otherwise. An empty batch does nothing.
+Future<void> trashNotesAtomically(
+  NotesRepository repository,
+  List<String> ids,
+) async {
+  if (ids.isEmpty) return;
+  if (repository is AtomicNotesWriter) {
+    await (repository as AtomicNotesWriter).trashNotes(ids);
+    return;
+  }
+  for (final String id in ids) {
+    await repository.trashNote(id);
+  }
+}

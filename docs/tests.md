@@ -31,7 +31,7 @@ Sentry envelopes are separate checks, not implied by Dart test success.
 
 ## Current validation
 
-On `refactor/consolidation`: 450 tests pass, including 32 unchanged goldens.
+On `refactor/consolidation`: 452 tests pass, including 32 unchanged goldens.
 Static analysis is clean. Scenarios cover lifecycle privacy, protected
 drafts/system Back, OS credential return, startup retries and partial
 initialization, unreadable preferences, save failure/retry, orphan collection

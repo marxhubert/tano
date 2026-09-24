@@ -28,6 +28,7 @@ class SQLiteNotesRepository
         NotesRepository,
         FoldersRepository,
         AtomicNoteImporter,
+        AtomicNotesWriter,
         AttachmentReferenceSource {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
@@ -429,6 +430,21 @@ class SQLiteNotesRepository
   }
 
   @override
+  Future<void> upsertNotes(List<Note> notes) async {
+    if (notes.isEmpty) return;
+    final Database db = await _database;
+    await db.transaction((Transaction txn) async {
+      for (final Note note in notes) {
+        await txn.insert(
+          'notes',
+          note.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
   Future<void> trashNote(String id) async {
     final db = await _database;
     await db.update(
@@ -441,6 +457,27 @@ class SQLiteNotesRepository
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  @override
+  Future<void> trashNotes(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final Database db = await _database;
+    final String now = DateTime.now().toString();
+    await db.transaction((Transaction txn) async {
+      for (final String id in ids) {
+        await txn.update(
+          'notes',
+          <String, Object?>{
+            'isDeleted': 1,
+            'deletedAt': now,
+            'updatedAt': now,
+          },
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+      }
+    });
   }
 
   @override

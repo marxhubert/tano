@@ -331,9 +331,10 @@ class HomeViewModel extends ChangeNotifier {
           _allNotes,
           (Note note) => _selection.contains(note.id),
         );
-    for (final Note note in selected.notes) {
-      await repository.trashNote(note.id);
-    }
+    await trashNotesAtomically(
+      repository,
+      selected.notes.map((Note note) => note.id).toList(),
+    );
     _allNotes.removeWhere((Note note) => _selection.contains(note.id));
     _lastDeleted = DeletedBatch(
       notes: selected.notes,
@@ -344,16 +345,26 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// Moves the selected notes into [folderId], or unfiles them when null.
+  ///
+  /// The write happens first and as one batch: the visible list is only updated
+  /// once storage accepted every note, so a failure cannot leave a half-moved
+  /// selection on screen.
   Future<void> moveSelectedTo(String? folderId) async {
+    final List<int> indexes = <int>[];
+    final List<Note> moved = <Note>[];
     for (int i = 0; i < _allNotes.length; i++) {
       if (!_selection.contains(_allNotes[i].id)) continue;
-      final Note moved =
-          (folderId == null
-                  ? _allNotes[i].withoutFolder()
-                  : _allNotes[i].copyWith(folderId: folderId))
-              .copyWith(updatedAt: DateTime.now().toString());
-      _allNotes[i] = moved;
-      await repository.upsertNote(moved);
+      indexes.add(i);
+      moved.add(
+        (folderId == null
+                ? _allNotes[i].withoutFolder()
+                : _allNotes[i].copyWith(folderId: folderId))
+            .copyWith(updatedAt: DateTime.now().toString()),
+      );
+    }
+    await upsertNotesAtomically(repository, moved);
+    for (int i = 0; i < moved.length; i++) {
+      _allNotes[indexes[i]] = moved[i];
     }
     _sort();
     _selection.exit();

@@ -28,8 +28,9 @@ test data is disposable.
   haptic as Home after a delete.
 - `runStorageOperation` is the one recoverable-write wrapper: the editor, Home
   and a folder report a failed write with the same message and reload instead of
-  leaving optimistic state behind. The batches are still not atomic at the
-  repository level: that is the next recovery step.
+  leaving optimistic state behind. Multi-note moves and deletes go through the
+  `AtomicNotesWriter` capability, so the SQLite store applies each batch in one
+  transaction while test doubles keep a plain loop.
 - Removed dead code: three unreferenced strings, the legacy JSON note codec, an
   unused radius, the unreachable no-selection delete branch and the FAB's
   never-wired callbacks.
