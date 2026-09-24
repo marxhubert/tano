@@ -11,6 +11,12 @@ Older releases are described on the
 
 ### Added
 
+- An archive sets documents aside without deleting them: an `Archive` entry in
+  Settings, a page with the shared grid or list layout, document filter and
+  search, per-card restore and delete, and read-only opening with Find-in.
+  Restoring returns the document to Home and resets its creation date; a folder
+  can never be archived.
+
 - The four empty screens share one component and one illustration each — empty
   box, empty folder, recycle bin, no result — tinted with the app's colour.
 - A `CheckDisc` mark for every "this one is chosen": the settings' selected row,
