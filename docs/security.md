@@ -16,7 +16,9 @@ in [product rules](product-rules.md). UI authentication is not remote authorizat
 Attachment names cannot be paths. Import validates archive version, names, entry
 types, duplicates, references and CRC; limits are 64 MiB input, 128 MiB expanded,
 32 MiB per entry, 4 MiB manifest and 2,000 entries. Inflation is bounded even when
-metadata understates size. Add fuzzing and memory profiling before release.
+metadata understates size. A deterministic mutation/fuzz smoke test and a 300-note
+import/search exercise the path; full coverage-guided fuzzing and device-side memory
+profiling remain before release.
 
 Clear exports contain readable data and are refused when the selection holds a
 locked note, so locked content only ever leaves through an encrypted container.
