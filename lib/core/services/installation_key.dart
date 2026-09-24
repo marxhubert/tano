@@ -4,6 +4,19 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Raised when a freshly generated installation key could not be persisted.
+///
+/// Continuing with an unpersisted key would silently re-encrypt data with a
+/// key that vanishes on the next launch.
+class InstallationKeyException implements Exception {
+  const InstallationKeyException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'InstallationKeyException: $message';
+}
+
 /// Owns the per-installation encryption keys.
 ///
 /// The keys are generated on first launch and stored in the OS secure storage
@@ -56,13 +69,26 @@ class InstallationKey {
     final String? cached = _cache[name];
     if (cached != null) return cached;
 
-    String? stored = await _storage.read(key: name);
-    if (stored == null) {
-      stored = _randomBase64Key();
-      await _storage.write(key: name, value: stored);
+    final String? stored = await _storage.read(key: name);
+    if (stored != null) {
+      _cache[name] = stored;
+      return stored;
     }
-    _cache[name] = stored;
-    return stored;
+
+    // First launch: generate the key, then read it back. A write that did not
+    // land (unsupported platform, locked keystore) must fail loudly here:
+    // caching the key anyway would let this session encrypt data with a key
+    // the next launch cannot reproduce.
+    final String created = _randomBase64Key();
+    await _storage.write(key: name, value: created);
+    final String? persisted = await _storage.read(key: name);
+    if (persisted != created) {
+      throw const InstallationKeyException(
+        'Secure storage did not persist the installation key.',
+      );
+    }
+    _cache[name] = created;
+    return created;
   }
 
   /// 32 cryptographically secure random bytes, base64 encoded.

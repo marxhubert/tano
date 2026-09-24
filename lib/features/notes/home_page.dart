@@ -3,35 +3,37 @@ import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/core/models/task.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:tano/shared/config/feedback_controller.dart';
+import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
-import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/view_layout_controller.dart';
 import 'package:tano/shared/widgets/toast.dart';
 import 'package:tano/shared/widgets/undo_delete.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/features/notes/home_view_model.dart';
 import 'package:tano/features/notes/widgets/folder_grid_view.dart';
-import 'package:tano/features/notes/widgets/note_grid_view.dart';
-import 'package:tano/features/notes/widgets/note_list_view.dart';
+import 'package:tano/features/notes/widgets/note_cards.dart';
 import 'package:tano/features/folder/folder_page.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/fab/app_fab.dart';
+import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
-import 'package:tano/features/editor/edit_note_page.dart';
+import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
 import 'package:tano/shared/config/route_observer.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/search_mode.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/widgets/search_history.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
@@ -54,12 +56,10 @@ class Home extends StatefulWidget {
   }
 }
 
-class HomeState extends State<Home> with RouteAware {
+class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   late final HomeViewModel _viewModel;
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final GlobalKey<AppFabState> _fabKey = GlobalKey<AppFabState>();
-  Timer? _routeCollapseTimer;
-  int _routeCollapseGeneration = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchMode = false;
@@ -90,6 +90,8 @@ class HomeState extends State<Home> with RouteAware {
     _loadPreferences();
     _viewModel.addListener(_onViewModelChanged);
     ViewLayoutController.instance.addListener(_syncViewLayout);
+    SortPreferencesController.instance.addListener(_onSortChanged);
+    DocumentFilterController.instance.addListener(_onDocumentFilterChanged);
     FabSideController.instance.addListener(_onFabSideChanged);
     if (widget.openEditorOnLaunch && (widget.initialNotes?.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -109,44 +111,32 @@ class HomeState extends State<Home> with RouteAware {
 
   @override
   void dispose() {
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    disposeFabRouteCollapse();
     routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     ViewLayoutController.instance.removeListener(_syncViewLayout);
+    SortPreferencesController.instance.removeListener(_onSortChanged);
+    DocumentFilterController.instance.removeListener(
+      _onDocumentFilterChanged,
+    );
     FabSideController.instance.removeListener(_onFabSideChanged);
     _viewModel.dispose();
     super.dispose();
   }
 
+  @override
+  GlobalKey<AppFabState> get fabKey => _fabKey;
+
   /// Called when another route (editor, settings, ...) is pushed on top of
   /// Home. Dismiss the undo snack bar immediately so it does not linger if
-  /// the user comes back before its timeout.
+  /// the user comes back before its timeout, then let [FabRouteCollapse] fold
+  /// the FAB.
   @override
   void didPushNext() {
     ScaffoldMessenger.of(context).clearSnackBars();
-    // Fold the FAB once Home is fully covered, so it is already reduced when
-    // the user comes back, with no visible collapse during the push.
-    _routeCollapseTimer?.cancel();
-    final generation = ++_routeCollapseGeneration;
-    final route = ModalRoute.of(context);
-    _routeCollapseTimer = Timer(const Duration(milliseconds: 450), () {
-      if (mounted &&
-          generation == _routeCollapseGeneration &&
-          route?.isCurrent == false) {
-        _fabKey.currentState?.collapse();
-      }
-    });
-  }
-
-  @override
-  void didPopNext() {
-    // A quick return invalidates the delayed fold from the outgoing route.
-    // It must not close a FAB the user has already reopened on this page.
-    _routeCollapseGeneration++;
-    _routeCollapseTimer?.cancel();
+    super.didPushNext();
   }
 
   void _onViewModelChanged() {
@@ -167,38 +157,33 @@ class HomeState extends State<Home> with RouteAware {
   /// The FAB's side, shared with every other page.
   bool get _fabOnLeft => FabSideController.instance.onLeft;
 
-  Future<SecurePreferences> _getPrefs() => SecurePreferences.getInstance();
-
   Future<void> _loadPreferences() async {
-    final SecurePreferences prefs = await _getPrefs();
-    // The shared controller owns the choice; Home only mirrors it.
+    // The shared controllers own the choices; Home only mirrors them.
     await ViewLayoutController.instance.load();
     _viewModel.setViewLayout(ViewLayoutController.instance.layout);
-    if (!prefs.containsKey('sortBy')) {
-      await prefs.setString('sortBy', 'date');
-    }
-    _viewModel.setSortBy(prefs.getString('sortBy') ?? 'date');
+    await SortPreferencesController.instance.load();
+    _applySortPreferences();
 
-    if (!prefs.containsKey('secondarySortBy')) {
-      await prefs.setString('secondarySortBy', 'date');
-    }
-    _viewModel.setSecondarySortBy(prefs.getString('secondarySortBy') ?? 'date');
-
-    if (!prefs.containsKey('sortAscending')) {
-      await prefs.setBool('sortAscending', true);
-    }
-    _viewModel.setSortAscending(prefs.getBool('sortAscending') ?? true);
-
-    if (!prefs.containsKey('documentFilter')) {
-      await prefs.setString('documentFilter', DocumentFilter.all.name);
-    }
-    _viewModel.setDocumentFilter(
-      documentFilterFromName(prefs.getString('documentFilter')) ??
-          DocumentFilter.all,
-    );
+    await DocumentFilterController.instance.load();
+    _viewModel.setDocumentFilter(DocumentFilterController.instance.filter);
 
     await FabSideController.instance.load();
   }
+
+  /// Mirrors the shared sorting controller into the view model, which re-sorts
+  /// and notifies on any real change.
+  void _applySortPreferences() {
+    final SortPreferencesController sort = SortPreferencesController.instance;
+    _viewModel.setSortBy(sort.by);
+    _viewModel.setSecondarySortBy(sort.secondaryBy);
+    _viewModel.setSortAscending(sort.ascending);
+  }
+
+  void _onSortChanged() => _applySortPreferences();
+
+  void _onDocumentFilterChanged() => _viewModel.setDocumentFilter(
+    DocumentFilterController.instance.filter,
+  );
 
   /// The side is global: the controller notifies every page and persists it.
   Future<void> _setFabOnLeft(bool value) async {
@@ -219,27 +204,14 @@ class HomeState extends State<Home> with RouteAware {
   Future<void> _openNoteEditor({required bool add, required Note note}) async {
     // Opening a note leaves the search: coming back shows the whole list.
     if (_isSearchMode) _exitSearchMode();
-    bool authenticated = false;
     // A locked note filed in a locked folder does not prompt again.
-    if (_viewModel.isNoteEffectivelyLocked(note)) {
-      authenticated = await getIt<AuthService>().authenticate(
-        reason: AppText.tr('auth_reason'),
-      );
-      // The system prompt is awaited: the widget may be gone by now.
-      if (!authenticated || !mounted) return;
-    }
-
-    final NoteAction? result = await Navigator.push(
+    final NoteAction? result = await openNoteEditor(
       context,
-      MaterialPageRoute<NoteAction>(
-        builder: (context) => EditNote(
-          add: add,
-          index: -1,
-          noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
-          authenticated: authenticated,
-        ),
-        fullscreenDialog: true,
-      ),
+      add: add,
+      note: note,
+      authenticated: false,
+      requiresAuthentication: _viewModel.isNoteEffectivelyLocked(note),
+      fullscreenDialog: true,
     );
     if (result != null) {
       await _viewModel.applyNoteAction(
@@ -271,23 +243,15 @@ class HomeState extends State<Home> with RouteAware {
     setState(() {
       _isSearchMode = true;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Only focus if the user is still in search mode: the frame may run
-      // after a quick enter-then-cancel, which must not leave an orphaned
-      // focused node (and an open keyboard) on the home screen.
-      if (mounted && _isSearchMode) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+    focusSearchField(
+      focusNode: _searchFocusNode,
+      isStillActive: () => mounted && _isSearchMode,
+    );
   }
 
   void _exitSearchMode() {
-    // Leaving the search is what makes it a search: remember the query before
-    // the field is emptied.
-    SearchHistoryController.instance.add(_searchController.text);
+    leaveSearchMode(controller: _searchController, focusNode: _searchFocusNode);
     _clearSearch();
-    // Release the search focus so the keyboard closes immediately.
-    _searchFocusNode.unfocus();
     setState(() {
       _isSearchMode = false;
     });
@@ -320,33 +284,9 @@ class HomeState extends State<Home> with RouteAware {
     required String noun,
   }) {
     if (!_viewModel.isInSelectionMode || count == 0) {
-      return '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
+      return groupCountLabel(total: total, noun: noun);
     }
-    if (count > 1) {
-      if (count == total) {
-        return AppText.tr('all_${noun}s_selected', <String, String>{
-          'count': '$count',
-        });
-      }
-      return AppText.tr('${noun}s_selected', <String, String>{
-        'count': '$count',
-        'total': '$total',
-      });
-    }
-    return AppText.tr('single_${noun}_selected', <String, String>{
-      'count': '$count',
-    });
-  }
-
-  String _deleteActionTitle() {
-    if (_viewModel.selectedCount > 1) {
-      return _viewModel.selectedCount == _viewModel.notesCount
-          ? AppText.tr('delete_all_notes')
-          : AppText.tr('delete_notes', <String, String>{
-              'count': '${_viewModel.selectedCount}',
-            });
-    }
-    return AppText.tr('delete_note');
+    return selectionCountLabel(count: count, total: total, noun: noun);
   }
 
   /// Prompts for a folder name and creates it. The prompt keeps its save action
@@ -374,15 +314,17 @@ class HomeState extends State<Home> with RouteAware {
     );
 
     if (name == null || !mounted) return;
-    await _viewModel.addFolder(name);
+    await runStorageOperation(context, () async {
+      await _viewModel.addFolder(name);
+    });
   }
 
-  void _showUndoSnackBar() {
+  Future<void> _showUndoSnackBar() async {
     ScaffoldMessenger.of(context).clearSnackBars();
     final DeletedBatch? batch = _viewModel.lastDeletedBatch;
     if (batch == null || batch.isEmpty) return;
     // The same notice, the same words and the same restore as a folder page.
-    showUndoDelete(
+    await announceDeletion(
       context,
       repository: getIt<NotesRepository>(),
       batch: batch,
@@ -394,11 +336,17 @@ class HomeState extends State<Home> with RouteAware {
   /// always where the eye is looking.
   Future<void> _moveSelectedTo(String? folderId) async {
     final int count = _viewModel.selected.length;
-    await _viewModel.moveSelectedTo(folderId);
+    if (!await runStorageOperation(
+      context,
+      () => _viewModel.moveSelectedTo(folderId),
+    )) {
+      // A failed batch may have moved only part of the selection: reload so the
+      // list and storage agree again.
+      await _viewModel.load();
+      return;
+    }
     if (!mounted) return;
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: count, folderId: folderId);
+    await announceMove(context, count: count, folderId: folderId);
   }
 
   /// True when the page has nothing to show: the illustration is then the only
@@ -409,18 +357,16 @@ class HomeState extends State<Home> with RouteAware {
   Widget _layoutChanger(List<Note> notes, String viewLayout) {
     if (notes.isEmpty) {
       if (_viewModel.hasSearchQuery) {
-        return SliverFillRemaining(
-          hasScrollBody: false,
-          child: emptyState(
-            context,
-            AppText.tr('no_note_found'),
-            image: EmptyArt.search,
-          ),
+        return emptyStateSliver(
+          context,
+          AppText.tr('no_note_found'),
+          image: EmptyArt.search,
         );
       }
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState(context, AppText.tr('no_data'), image: EmptyArt.box),
+      return emptyStateSliver(
+        context,
+        AppText.tr('no_data'),
+        image: EmptyArt.box,
       );
     }
 
@@ -428,23 +374,13 @@ class HomeState extends State<Home> with RouteAware {
   }
 
   Widget _notesSliver(List<Note> notes, String viewLayout) {
-    switch (viewLayout) {
-      case 'gridlist':
-        return NoteGridView(
-          viewModel: _viewModel,
-          onOpenNote: (Note note) {
-            _openNoteEditor(add: false, note: note);
-          },
-        );
-      case 'list':
-      default:
-        return NoteListView(
-          viewModel: _viewModel,
-          onOpenNote: (Note note) {
-            _openNoteEditor(add: false, note: note);
-          },
-        );
-    }
+    return NoteCards(
+      viewModel: _viewModel,
+      isList: viewLayout == 'list',
+      onOpenNote: (Note note) {
+        _openNoteEditor(add: false, note: note);
+      },
+    );
   }
 
   /// True while the field is open on an empty query with something to offer.
@@ -497,16 +433,8 @@ class HomeState extends State<Home> with RouteAware {
     countOf: _viewModel.countFor,
     // Selecting something replaces the tags with the selection sentence.
     selectionLabel: _viewModel.isInSelectionMode ? _notesMetadata : null,
-    onChanged: (DocumentFilter filter) {
-      _viewModel.setDocumentFilter(filter);
-      _saveDocumentFilterPref(filter);
-    },
+    onChanged: DocumentFilterController.instance.set,
   );
-
-  Future<void> _saveDocumentFilterPref(DocumentFilter filter) async {
-    final SecurePreferences prefs = await _getPrefs();
-    await prefs.setString('documentFilter', filter.name);
-  }
 
   Widget _notesSectionHeader() {
     return SliverToBoxAdapter(
@@ -643,28 +571,36 @@ class HomeState extends State<Home> with RouteAware {
             },
             onReset: _clearSearch,
             onDelete: () async {
-              if (!_viewModel.hasSelection) {
-                // TODO: No action needed for now, maybe show a hint?
-              } else if (_viewModel.hasLockedInSelection) {
+              // The FAB only offers delete with a selection, so the only
+              // refusal left is a locked item.
+              if (_viewModel.hasLockedInSelection) {
                 showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
-              } else {
-                final bool? confirmDeletion = await getConfirmation(
-                  context: context,
-                  actionTitle: _deleteActionTitle(),
-                  action: AppText.tr('delete'),
-                  message: _viewModel.hasFolderInSelection
-                      ? AppText.tr('delete_folder_question', <String, String>{
-                          'count': '${_viewModel.selectedFoldersNoteCount}',
-                        })
-                      : null,
-                );
-                if (confirmDeletion == true) {
-                  await _viewModel.deleteSelected();
-                  await FeedbackController.instance.impact();
-                  if (!mounted) return;
-                  _showUndoSnackBar();
-                }
+                return;
               }
+              final bool? confirmDeletion = await getConfirmation(
+                context: context,
+                actionTitle: deleteSelectionTitle(
+                  count: _viewModel.selectedCount,
+                  total: _viewModel.notesCount,
+                ),
+                action: AppText.tr('delete'),
+                message: _viewModel.hasFolderInSelection
+                    ? AppText.tr('delete_folder_question', <String, String>{
+                        'count': '${_viewModel.selectedFoldersNoteCount}',
+                      })
+                    : null,
+              );
+              if (!context.mounted || confirmDeletion != true) return;
+              if (!await runStorageOperation(
+                context,
+                _viewModel.deleteSelected,
+              )) {
+                // A failed batch may have trashed only part of the selection:
+                // reload so the list and storage agree again.
+                await _viewModel.load();
+                return;
+              }
+              await _showUndoSnackBar();
             },
             onMoveTo: _moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,

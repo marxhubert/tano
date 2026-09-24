@@ -1,13 +1,16 @@
 # Architecture
 
-Updated 19 September 2026. [Product rules](product-rules.md) define intended behavior.
+Updated for the `refactor/consolidation` branch. [Product rules](product-rules.md)
+define intended behavior.
 
 ## Current implementation
 
 Flutter code is divided into `core` (models, repositories, services), `features`
 (screens and presentation logic), and `shared` (configuration and UI). GetIt assembles
-services. Notes and folders use `SQLiteNotesRepository`, schema 9, with SQLCipher
-in production. FFI tests use ordinary SQLite and do not prove native encryption.
+services. Notes and folders use `SQLiteNotesRepository`, schema 10, with SQLCipher
+in production. A v10 FTS5 external-content index backs search; it is rebuilt on
+first creation and kept in sync by triggers, and a build without FTS5 falls back
+to the LIKE query. FFI tests use ordinary SQLite and do not prove native encryption.
 
 Attachments are encrypted separately. Covers are decoded in memory; external
 viewers require a temporary plaintext file. Sensitive preferences are encrypted.
@@ -24,26 +27,40 @@ See [task lists](tasks.md) for editing and storage details.
 grant blanket permission for arbitrary linked notes. Future remote authorization
 must live at command/protocol boundaries, not only in widgets.
 
-Import validates a bounded v1/v2 manifest archive before writing files. It resolves attachment
-name collisions and inserts notes in one SQLite transaction. Imported notes have no
-folder because neither manifest carries folder metadata. Existing IDs, including trash,
-are skipped. Filesystem and SQLite writes are not one atomic transaction: a crash
-can leave encrypted orphans, collected at the next startup before editing begins.
+Import validates a bounded v1/v2/v3 manifest archive before writing files. It resolves
+attachment name collisions and inserts the folders and their notes in one SQLite
+transaction. A note keeps its folder only when the archive carries that folder; a
+folder already present under the same id is not duplicated. Existing IDs, including
+trash, are skipped. Filesystem and SQLite writes are not one atomic transaction: a
+crash can leave encrypted orphans, collected at the next startup before editing begins.
 
 ## Development data
 
 No shipped data exists. Known legacy JSON/backup files are deleted, and a plaintext
 SQLite database is discarded when opening with a production password. The current
 schema still has upgrade support for development versions; no plaintext migration
-or permanent plaintext backup is maintained. Before public release, establish a
-versioned, tested migration and recovery policy for all future schema changes.
+or permanent plaintext backup is maintained.
 
-## Next consolidation
+## Post-release migration policy
 
-Extract repeated commands (metadata, move, trash, restore, lock), enforce
-permissions and invariants, persist atomically, then notify UI. Handle failures
-without leaving optimistic state inconsistent. Startup orphan collection, recovery UI and lifecycle locking are implemented;
-validate their native behavior before release. Project persistence remains future work.
+From the first public release, every schema or format change must ship a forward
+migration that preserves user data; a destructive reset stays an explicit user
+action only. Each released schema version gets a test that opens it and reaches
+the current version, extending the existing v5/v6→10 upgrade tests. The disposable
+policy above must never apply to released user data.
+
+## Consolidation state
+
+Shared behavior is factored to single sources of truth: `NoteCards` / `buildNoteCard`,
+`EntitySliver`, the sort and filter controllers, `FabRouteCollapse` / `FabLayoutMetrics`,
+`openNoteEditor`, `requestLockChange`, and the wording/feedback helpers. The remaining
+refactors are optional and listed in [roadmap](roadmap.md).
+
+Still to harden: extract the repeated metadata/move/trash/restore commands, enforce
+permissions and invariants, persist them atomically, then notify the UI, so a failed
+write never leaves optimistic state inconsistent. Startup orphan collection, recovery
+UI and lifecycle locking are implemented; validate their native behavior before
+release. Project persistence remains future work (private fork).
 
 [PremiumAccess](premium.md) defines feature boundaries; no store adapter exists.
 [Collaboration](collaboration.md) is a design target. No signaling, CRDT or replication

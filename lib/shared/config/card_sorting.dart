@@ -1,7 +1,7 @@
 import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/note.dart';
 
-/// Sorts notes the way every screen shows them: **bookmarked first**, then the
+/// Sorts notes the way every screen shows them: **important first**, then the
 /// chosen criterion, with the same fallbacks as the home screen.
 class EntitySorting<T extends ContentEntity> {
   const EntitySorting({
@@ -58,7 +58,7 @@ class NoteSorting extends EntitySorting<Note> {
   const NoteSorting({super.by, super.secondaryBy, super.ascending});
 }
 
-/// The card ordering rule, in **one** place: bookmarked cards first, then the
+/// The card ordering rule, in **one** place: important cards first, then the
 /// main criterion, then the fallback when the criterion ties on important/theme,
 /// then the date when neither criterion is the date, finally reversed when
 /// [ascending] is false. Shared by notes and folders; only the criterion

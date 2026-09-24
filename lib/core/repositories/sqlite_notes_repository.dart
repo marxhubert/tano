@@ -10,12 +10,25 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 
+/// Raised when the encrypted store cannot be opened safely.
+///
+/// Startup shows its retry screen for it instead of touching the data.
+class StorageUnavailableException implements Exception {
+  const StorageUnavailableException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'StorageUnavailableException: $message';
+}
+
 /// SQLite-backed [NotesRepository] and [FoldersRepository] implementation.
 class SQLiteNotesRepository
     implements
         NotesRepository,
         FoldersRepository,
         AtomicNoteImporter,
+        AtomicNotesWriter,
         AttachmentReferenceSource {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
@@ -46,13 +59,17 @@ class SQLiteNotesRepository
   Database? _db;
   Future<Database>? _opening;
 
+  /// Whether the FTS5 index is available on this SQLite build. Set once, after
+  /// the database opens.
+  bool _ftsAvailable = false;
+
   Future<Database> get _database async {
     if (_db != null) return _db!;
     _db = await (_opening ??= _initDb().whenComplete(() => _opening = null));
     return _db!;
   }
 
-  static const int _schemaVersion = 9;
+  static const int _schemaVersion = 10;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -66,7 +83,20 @@ class SQLiteNotesRepository
     final String path =
         _databasePath ??
         join(await _databaseFactory.getDatabasesPath(), 'tano_notes.db');
-    final String? password = await _passwordProvider?.call();
+    // A null provider is the explicit test-only cleartext mode. When a
+    // provider is configured, it must yield a passphrase: falling back to a
+    // cleartext database would silently drop the encryption the key protects.
+    final String? password;
+    if (_passwordProvider == null) {
+      password = null;
+    } else {
+      password = await _passwordProvider();
+      if (password == null || password.isEmpty) {
+        throw const StorageUnavailableException(
+          'The database passphrase is unavailable.',
+        );
+      }
+    }
 
     // Pre-release data is disposable. Never recover plaintext test databases.
     final directory = await _documentsDirectory();
@@ -94,8 +124,52 @@ class SQLiteNotesRepository
         onUpgrade: _upgradeSchema,
       ),
     );
+    await _ensureFts(db);
 
     return db;
+  }
+
+  /// Creates the FTS5 index and the triggers that keep it in sync.
+  ///
+  /// The index is external-content: it stores the inverted index, not a second
+  /// copy of the note text. When the SQLite build has no FTS5, the flag stays
+  /// false and [searchNotes] keeps its LIKE fallback, so the app still works.
+  Future<void> _ensureFts(Database db) async {
+    try {
+      final List<Map<String, Object?>> existing = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'notes_fts'",
+      );
+      final bool created = existing.isEmpty;
+      await db.execute(
+        'CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5('
+        "title, description, content, content='notes', content_rowid='rowid')",
+      );
+      await db.execute(
+        'CREATE TRIGGER IF NOT EXISTS notes_fts_ai AFTER INSERT ON notes BEGIN '
+        'INSERT INTO notes_fts(rowid, title, description, content) '
+        'VALUES (new.rowid, new.title, new.description, new.content); END',
+      );
+      await db.execute(
+        'CREATE TRIGGER IF NOT EXISTS notes_fts_ad AFTER DELETE ON notes BEGIN '
+        "INSERT INTO notes_fts(notes_fts, rowid, title, description, content) "
+        "VALUES('delete', old.rowid, old.title, old.description, old.content); "
+        'END',
+      );
+      await db.execute(
+        'CREATE TRIGGER IF NOT EXISTS notes_fts_au AFTER UPDATE ON notes BEGIN '
+        "INSERT INTO notes_fts(notes_fts, rowid, title, description, content) "
+        "VALUES('delete', old.rowid, old.title, old.description, old.content); "
+        'INSERT INTO notes_fts(rowid, title, description, content) '
+        'VALUES (new.rowid, new.title, new.description, new.content); END',
+      );
+      if (created) {
+        // Index the notes that already exist when the index is first created.
+        await db.execute("INSERT INTO notes_fts(notes_fts) VALUES('rebuild')");
+      }
+      _ftsAvailable = true;
+    } catch (_) {
+      _ftsAvailable = false;
+    }
   }
 
   Future<bool> _isPlaintextSqlite(File file) async {
@@ -381,24 +455,69 @@ class SQLiteNotesRepository
 
   @override
   Future<void> upsertNote(Note note) async {
-    final db = await _database;
-    await db.insert(
+    final Database db = await _database;
+    final Map<String, Object?> values = note.toJson();
+    // Update first, insert only when the row is new. A REPLACE would remove the
+    // old row without firing the FTS delete trigger, leaving a stale index.
+    final int updated = await db.update(
       'notes',
-      note.toJson(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      values,
+      where: 'id = ?',
+      whereArgs: <Object?>[note.id],
     );
+    if (updated == 0) {
+      await db.insert(
+        'notes',
+        values,
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    }
   }
 
   @override
-  Future<void> insertImportedNotes(List<Note> notes) async {
+  Future<void> insertImportedNotes(
+    List<Note> notes, {
+    List<Folder> folders = const <Folder>[],
+  }) async {
     final db = await _database;
-    await db.transaction((txn) async {
-      for (final note in notes) {
+    await db.transaction((Transaction txn) async {
+      for (final Folder folder in folders) {
+        await txn.insert(
+          'folders',
+          folder.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
+      for (final Note note in notes) {
         await txn.insert(
           'notes',
           note.toJson(),
           conflictAlgorithm: ConflictAlgorithm.abort,
         );
+      }
+    });
+  }
+
+  @override
+  Future<void> upsertNotes(List<Note> notes) async {
+    if (notes.isEmpty) return;
+    final Database db = await _database;
+    await db.transaction((Transaction txn) async {
+      for (final Note note in notes) {
+        final Map<String, Object?> values = note.toJson();
+        final int updated = await txn.update(
+          'notes',
+          values,
+          where: 'id = ?',
+          whereArgs: <Object?>[note.id],
+        );
+        if (updated == 0) {
+          await txn.insert(
+            'notes',
+            values,
+            conflictAlgorithm: ConflictAlgorithm.abort,
+          );
+        }
       }
     });
   }
@@ -419,6 +538,27 @@ class SQLiteNotesRepository
   }
 
   @override
+  Future<void> trashNotes(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final Database db = await _database;
+    final String now = DateTime.now().toString();
+    await db.transaction((Transaction txn) async {
+      for (final String id in ids) {
+        await txn.update(
+          'notes',
+          <String, Object?>{
+            'isDeleted': 1,
+            'deletedAt': now,
+            'updatedAt': now,
+          },
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+      }
+    });
+  }
+
+  @override
   Future<void> restoreNote(String id) async {
     final db = await _database;
     await db.update(
@@ -434,30 +574,6 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<void> toggleLock(String id, {String? password}) async {
-    // Authentication belongs to the application boundary, using the OS credential.
-    final db = await _database;
-    final List<Map<String, dynamic>> result = await db.query(
-      'notes',
-      columns: ['isLocked'],
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (result.isNotEmpty) {
-      final int currentLock = result.first['isLocked'] as int;
-      await db.update(
-        'notes',
-        {
-          'isLocked': currentLock == 1 ? 0 : 1,
-          'updatedAt': DateTime.now().toString(),
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-    }
-  }
-
-  @override
   Future<void> deleteNotePermanently(String id) async {
     final db = await _database;
     await db.delete('notes', where: 'id = ?', whereArgs: [id]);
@@ -465,7 +581,17 @@ class SQLiteNotesRepository
 
   @override
   Future<List<Note>> searchNotes(String query) async {
-    final db = await _database;
+    final Database db = await _database;
+    if (_ftsAvailable) {
+      final String? fts = ftsPrefixQuery(query);
+      if (fts == null) return <Note>[];
+      final List<Map<String, dynamic>> results = await db.rawQuery(
+        'SELECT n.* FROM notes n JOIN notes_fts ON notes_fts.rowid = n.rowid '
+        'WHERE notes_fts MATCH ? AND n.isDeleted = 0 ORDER BY n.rowid',
+        <Object?>[fts],
+      );
+      return results.map((json) => Note.fromJson(json)).toList();
+    }
     final String escaped = escapeLikePattern(query);
     final List<Map<String, dynamic>> results = await db.query(
       'notes',
@@ -496,4 +622,20 @@ String escapeLikePattern(String value) {
       .replaceAll('\\', '\\\\')
       .replaceAll('%', '\\%')
       .replaceAll('_', '\\_');
+}
+
+/// A safe FTS5 prefix query for [raw], or null when it holds no word.
+///
+/// Only letters and digits survive, one quoted prefix term per word, so user
+/// text can never be read as an FTS operator ("AND", quotes, colons...). The
+/// term count is bounded so a pasted paragraph cannot build a huge query.
+String? ftsPrefixQuery(String raw) {
+  final List<String> tokens = raw
+      .toLowerCase()
+      .split(RegExp(r'[^\p{L}\p{N}]+', unicode: true))
+      .where((String token) => token.isNotEmpty)
+      .take(8)
+      .toList();
+  if (tokens.isEmpty) return null;
+  return tokens.map((String token) => '"$token"*').join(' ');
 }

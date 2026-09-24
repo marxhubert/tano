@@ -1,7 +1,7 @@
 # Design system
 
 The reference is the static [site](../site/index.html), audited in
-[Site design audit](site-design-audit.md). The implementation sources are
+[history](history.md). The implementation sources are
 `theme.dart`, `paper_surface.dart`, `card_typography.dart` and `entity_layout.dart`.
 
 ## Paper and ink
@@ -47,7 +47,7 @@ is a portable equivalent to the site's platform serif stack, not its exact font.
 Task rows, controls and small metadata use the system sans serif. No runtime font
 requests or external assets are needed.
 
-Page titles 28, section titles 26, document filter 22, body 17, labels 15, metadata 12.
+Page titles 28, section titles 26, body 17, labels 15, metadata 12, badge 10.
 Cards use their own compact scale: title 14, body 12, date/count 10. Small card
 metadata uses shared muted ink with tested contrast across all category surfaces.
 

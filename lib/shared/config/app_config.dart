@@ -68,11 +68,11 @@ class AppConfig {
   static const String sponsorName = 'GitHub Sponsors';
   static const String paypalName = 'PayPal';
 
-  /// Sentry data source name.
+  /// Sentry data source name, supplied through the ignored `identity.json`
+  /// (`--dart-define-from-file=identity.json`).
   ///
-  /// A DSN is a write-only public key, not a secret: it ships inside the app.
-  /// Override it at build time with
-  /// `--dart-define=SENTRY_DSN=https://...`, for instance to point a build at
-  /// another Sentry project.
+  /// It is a write-only ingestion address, not an administration secret, but it
+  /// stays out of the public repository like the rest of the build identity. An
+  /// empty value (no identity file) means no crash reporting is initialised.
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 }

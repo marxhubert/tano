@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/features/editor/task_list_editor.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/folder.dart';
@@ -36,9 +37,7 @@ import 'package:tano/shared/widgets/toast.dart';
 
 class EditNote extends StatefulWidget {
   final bool add;
-  final int index;
   final NoteAction noteAction;
-  final Note? sourceNote;
 
   /// Whether the lock chain was already unlocked before opening this note.
   /// When true, following a link to a locked note does not prompt again.
@@ -47,9 +46,7 @@ class EditNote extends StatefulWidget {
   const EditNote({
     super.key,
     required this.add,
-    required this.index,
     required this.noteAction,
-    this.sourceNote,
     this.authenticated = false,
   });
 
@@ -419,42 +416,37 @@ class _EditNoteState extends State<EditNote>
     return total > 0 ? _currentFindIndex + 1 : 0;
   }
 
-  Future<bool> _tryStorage(Future<void> Function() operation) async {
-    try {
-      await operation();
-      return true;
-    } catch (_) {
-      if (mounted) {
-        await showAdaptiveAlert(
-          context: context,
-          title: AppText.tr('load_error_title'),
-          message: AppText.tr('storage_recovery_message'),
-        );
-      }
-      return false;
-    }
-  }
+  Future<bool> _tryStorage(Future<void> Function() operation) =>
+      runStorageOperation(context, operation);
 
   Future<bool> _persistSafely(Note note) =>
       _tryStorage(() => _viewModel.persistSavedNote(note));
 
-  Future<void> _saveNote() async {
+  /// Saves the editor, whether it stays open ([popAfter] false, the in-place
+  /// save) or closes ([popAfter] true, the back/save action). The validation
+  /// and the write are shared; only what happens on success differs.
+  Future<void> _save({required bool popAfter}) async {
     _cleanupEmptyChecklists();
-    final Note note = _viewModel.buildNote(
-      title: _titleController.text,
-      content: _contentController.text,
-    );
     if (!_viewModel.isValid(
       title: _titleController.text,
       content: _contentController.text,
     )) {
       showAdaptiveNotice(context, AppText.tr('content_empty'));
-    } else {
-      if (await _persistSafely(note) && mounted) {
-        // The caller reloads; never pop a draft before its write succeeds.
-        Navigator.pop(context);
-      }
+      return;
     }
+    final Note note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (!await _persistSafely(note) || !mounted) return;
+    if (popAfter) {
+      // The caller reloads; never pop a draft before its write succeeds.
+      Navigator.pop(context);
+      return;
+    }
+    // Keep the undo/redo history so the user can still revert to the pre-save
+    // state after saving in place. Rebuild to gray the save button out.
+    setState(() {});
   }
 
   void _deleteNote() {
@@ -480,9 +472,7 @@ class _EditNoteState extends State<EditNote>
     }
     if (!mounted) return;
     setState(() {});
-    await FeedbackController.instance.impact();
-    if (!mounted) return;
-    await showMovedToast(context, count: 1, folderId: folderId);
+    await announceMove(context, count: 1, folderId: folderId);
   }
 
   /// The thin "|" separating two metadata values.
@@ -606,25 +596,6 @@ class _EditNoteState extends State<EditNote>
     setState(() {});
   }
 
-  Future<void> _save() async {
-    _cleanupEmptyChecklists();
-    if (!_viewModel.isValid(
-      title: _titleController.text,
-      content: _contentController.text,
-    )) {
-      showAdaptiveNotice(context, AppText.tr('content_empty'));
-      return;
-    }
-    final note = _viewModel.buildNote(
-      title: _titleController.text,
-      content: _contentController.text,
-    );
-    if (!await _persistSafely(note)) return;
-    // Keep the undo/redo history so the user can still revert to the
-    // pre-save state after saving in place. Rebuild to gray the save button.
-    if (mounted) setState(() {});
-  }
-
   Future<void> _handleLinkTap([LinkTextEditingController? source]) async {
     final controller = source ?? _contentController;
     final offset = controller.selection.baseOffset;
@@ -683,7 +654,6 @@ class _EditNoteState extends State<EditNote>
       MaterialPageRoute(
         builder: (context) => EditNote(
           add: false,
-          index: -1,
           noteAction: NoteAction(kind: NoteActionKind.cancel, note: targetNote),
           authenticated: authenticated,
         ),
@@ -907,15 +877,7 @@ class _EditNoteState extends State<EditNote>
         listenable: _viewModel,
         builder: (BuildContext context, Widget? child) {
           final bool isDark = Theme.of(context).brightness == Brightness.dark;
-          final Color noteColor = themeCategory(
-            _viewModel.category,
-            true,
-            brightness: Theme.of(context).brightness,
-          );
-          final Color immersiveBg = getImmersiveBackgroundColor(
-            noteColor,
-            isDark: isDark,
-          );
+          final Color immersiveBg = getImmersiveBackgroundColor(isDark: isDark);
 
           final bool isDirty = _viewModel.isDirty(
             title: _titleController.text,
@@ -955,7 +917,7 @@ class _EditNoteState extends State<EditNote>
                     ? AppText.tr(_viewModel.isTask ? 'add_task' : 'add_note')
                     : AppText.tr(_viewModel.isTask ? 'edit_task' : 'edit_note'),
                 // The reduced (scrolled) title carries the note's marks, in the
-                // order "bookmark + title + lock".
+                // order "important + title + lock".
                 headerMetadataLeading: _viewModel.important
                     ? reducedTitleBookmark()
                     : null,
@@ -1004,7 +966,9 @@ class _EditNoteState extends State<EditNote>
                         visualDensity: VisualDensity.compact,
                         icon: const Icon(Symbols.save, size: 21.0),
                         tooltip: AppText.tr('save'),
-                        onPressed: isDirty ? _save : null,
+                        onPressed: isDirty
+                            ? () => _save(popAfter: false)
+                            : null,
                       ),
                     ] else
                       const ThemeToggleButton(),
@@ -1076,7 +1040,7 @@ class _EditNoteState extends State<EditNote>
                             if (_viewModel.attachments.isNotEmpty)
                               metadataItem(
                                 context,
-                                Symbols.attach_file,
+                                Symbols.attachment,
                                 'x${_viewModel.attachments.length}',
                               ),
                           ],
@@ -1215,7 +1179,7 @@ class _EditNoteState extends State<EditNote>
                             Row(
                               children: [
                                 Icon(
-                                  Symbols.attach_file,
+                                  Symbols.attachment,
                                   size: 18.0,
                                   color: mutedTextColor(context),
                                 ),
@@ -1279,9 +1243,7 @@ class _EditNoteState extends State<EditNote>
                   onFindPrev: _prevOccurrence,
                   onFindNext: _nextOccurrence,
                   onFindReset: _clearFind,
-                  onSave: _saveNote,
-                  onColorLens:
-                      () {}, // Placeholder for animation triggering if needed
+                  onSave: () => _save(popAfter: true),
                   onColorSelected: (String colorName) async {
                     _cleanupEmptyChecklists();
                     _viewModel.setCategory(colorName);
@@ -1295,8 +1257,6 @@ class _EditNoteState extends State<EditNote>
                       return;
                     }
                   },
-                  onMore:
-                      () {}, // Placeholder for animation triggering if needed
                   onImageSelected: () {
                     _tryStorage(_selectCoverImage);
                     _fabKey.currentState?.closeVerticalMenu();

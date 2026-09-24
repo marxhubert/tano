@@ -6,6 +6,7 @@ import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/models/deleted_batch.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/note.dart';
+import 'package:tano/core/models/content_entity.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/config/card_sorting.dart';
@@ -41,11 +42,9 @@ class HomeViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Mirrors the selection into the FAB shape.
-  void _onSelectionChanged() {
-    _actionButtons = _selection.isActive ? 'multiple' : 'add';
-    notifyListeners();
-  }
+  /// Rebuilds the page when the selection changes: the header, the FAB and the
+  /// actions all read it.
+  void _onSelectionChanged() => notifyListeners();
 
   final NotesRepository repository;
 
@@ -78,7 +77,6 @@ class HomeViewModel extends ChangeNotifier {
   bool _sortAscending = true;
   String _viewLayout = 'gridlist';
   late final SelectionController _selection;
-  String _actionButtons = 'add';
 
   /// Notes and folders removed by the last delete, so undo can restore both.
   DeletedBatch? _lastDeleted;
@@ -106,15 +104,11 @@ class HomeViewModel extends ChangeNotifier {
 
   int get foldersCount => folders.length;
 
-  /// Total selectable items on the home page: unfiled notes plus folders
-  /// (notes filed in a folder are not shown here).
-  int get itemsCount => notesCount + foldersCount;
   String get sortBy => _sortBy;
   String get secondarySortBy => _secondarySortBy;
   bool get sortAscending => _sortAscending;
   String get viewLayout => _viewLayout;
   bool get isInSelectionMode => _selection.isActive;
-  String get actionButtons => _actionButtons;
   bool get hasSelection => _selection.isNotEmpty;
   int get selectedCount => _selection.count;
   Set<String> get selected => _selection.ids;
@@ -155,8 +149,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// IDs of all active (not deleted) notes.
-  Set<String> get activeNoteIds =>
-      _allNotes.where((n) => !n.isDeleted).map((n) => n.id).toSet();
+  Set<String> get activeNoteIds => activeEntityIds(_allNotes);
 
   /// Loads notes and folders from the repository.
   Future<void> load() async {
@@ -310,11 +303,6 @@ class HomeViewModel extends ChangeNotifier {
     folders: selectedFoldersCount,
   );
 
-  bool get hasNoteInSelection => selectedNotesCount > 0;
-
-  /// True when the selection mixes notes and folders.
-  bool get hasMixedSelection => hasNoteInSelection && hasFolderInSelection;
-
   /// Total number of notes held by the selected folders, for the delete
   /// confirmation.
   int get selectedFoldersNoteCount {
@@ -328,8 +316,6 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteSelected() async {
-    final List<Note> removed = <Note>[];
-    final List<int> indexes = <int>[];
     final List<Folder> deletedFolders = _folders
         .where((Folder f) => _selection.contains(f.id))
         .toList();
@@ -340,33 +326,45 @@ class HomeViewModel extends ChangeNotifier {
     }
     _folders.removeWhere((Folder f) => _selection.contains(f.id));
 
-    for (int i = 0; i < _allNotes.length; i++) {
-      if (_selection.contains(_allNotes[i].id)) {
-        removed.add(_allNotes[i]);
-        indexes.add(i);
-        await repository.trashNote(_allNotes[i].id);
-      }
-    }
+    final ({List<Note> notes, List<int> indexes}) selected =
+        collectSelectedNotes(
+          _allNotes,
+          (Note note) => _selection.contains(note.id),
+        );
+    await trashNotesAtomically(
+      repository,
+      selected.notes.map((Note note) => note.id).toList(),
+    );
     _allNotes.removeWhere((Note note) => _selection.contains(note.id));
     _lastDeleted = DeletedBatch(
-      notes: removed,
-      indexes: indexes,
+      notes: selected.notes,
+      indexes: selected.indexes,
       folders: deletedFolders,
     );
     _selection.exit();
   }
 
   /// Moves the selected notes into [folderId], or unfiles them when null.
+  ///
+  /// The write happens first and as one batch: the visible list is only updated
+  /// once storage accepted every note, so a failure cannot leave a half-moved
+  /// selection on screen.
   Future<void> moveSelectedTo(String? folderId) async {
+    final List<int> indexes = <int>[];
+    final List<Note> moved = <Note>[];
     for (int i = 0; i < _allNotes.length; i++) {
       if (!_selection.contains(_allNotes[i].id)) continue;
-      final Note moved =
-          (folderId == null
-                  ? _allNotes[i].withoutFolder()
-                  : _allNotes[i].copyWith(folderId: folderId))
-              .copyWith(updatedAt: DateTime.now().toString());
-      _allNotes[i] = moved;
-      await repository.upsertNote(moved);
+      indexes.add(i);
+      moved.add(
+        (folderId == null
+                ? _allNotes[i].withoutFolder()
+                : _allNotes[i].copyWith(folderId: folderId))
+            .copyWith(updatedAt: DateTime.now().toString()),
+      );
+    }
+    await upsertNotesAtomically(repository, moved);
+    for (int i = 0; i < moved.length; i++) {
+      _allNotes[indexes[i]] = moved[i];
     }
     _sort();
     _selection.exit();
@@ -420,27 +418,6 @@ class HomeViewModel extends ChangeNotifier {
     _sort();
     notifyListeners();
     return folder;
-  }
-
-  /// Persists a folder change (name, theme, cover, lock…).
-  Future<void> saveFolder(Folder folder) async {
-    final Folder updated = folder.copyWith(
-      updatedAt: DateTime.now().toString(),
-    );
-    final int index = _folders.indexWhere((Folder f) => f.id == updated.id);
-    if (index != -1) {
-      _folders[index] = updated;
-    } else {
-      _folders.add(updated);
-    }
-    await _foldersRepository?.upsertFolder(updated);
-    _sort();
-    notifyListeners();
-  }
-
-  /// Notes filed in [folderId], sorted with the current criteria.
-  List<Note> notesInFolder(String folderId) {
-    return _allNotes.where((Note n) => n.folderId == folderId).toList();
   }
 
   /// Number of notes filed in [folderId].

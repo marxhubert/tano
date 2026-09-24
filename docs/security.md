@@ -1,7 +1,7 @@
 # Security
 
 This is an implementation reference, not a security certification.
-See [audit](audit-2026-09-18.md) for evidence and residual risks.
+See [history](history.md) for the audit evidence and residual risks.
 
 ## Current protections
 
@@ -15,13 +15,31 @@ in [product rules](product-rules.md). UI authentication is not remote authorizat
 
 Attachment names cannot be paths. Import validates archive version, names, entry
 types, duplicates, references and CRC; limits are 64 MiB input, 128 MiB expanded,
-32 MiB per entry, 4 MiB manifest and 2,000 entries. Inflation is bounded even when
-metadata understates size. Add fuzzing and memory profiling before release.
+32 MiB per entry, 32 MiB manifest, 2,000 entries and 10,000 notes or folders per
+manifest (the export refuses what the import would reject). Inflation is bounded even when
+metadata understates size. A deterministic mutation/fuzz smoke test, a 300-note
+import/search and a bounded resident-memory check exercise the path; full
+coverage-guided fuzzing and device-side memory profiling remain before release.
 
-Clear exports contain readable data and remove object lock flags. Encrypted exports
-use Argon2id and AES-GCM. Authentication precedes exporting protected content.
-Imported locks survive when OS authentication is available; otherwise they are
-removed for the imported objects. V1 exports notes/files, not a full app backup.
+Clear exports contain readable data and are refused when the selection holds a
+locked note, so locked content only ever leaves through an encrypted container.
+Encrypted exports use Argon2id and AES-GCM. Authentication precedes exporting
+protected content. Imported locks survive when OS authentication is available;
+otherwise they are removed for the imported objects. V1 exports notes/files, not
+a full app backup.
+
+## Known tradeoffs
+
+- A locked card still shows its title, date and kind: they identify the note,
+  while the body, cover and attachments stay behind the credential. Redacting
+  the title would make a locked list unusable.
+- On Android 13+ the app hides the task-switcher thumbnail
+  (`setRecentsScreenshotEnabled(false)`) but leaves screenshots and screen
+  recording available; older versions fall back to `FLAG_SECURE`, which blocks
+  both. iOS covers the last frame before a scene snapshot.
+- A decrypted attachment lives in the cache for at most ten minutes after the
+  viewer opens it, then a sweep removes it; startup and hard reset clear the
+  whole cache.
 
 ## Pre-release cleanup
 
@@ -34,8 +52,9 @@ subjected to this policy: define forward migrations before the first public rele
 
 - Validate the implemented reauthentication guard and native app-switcher covers on devices.
 - Verify the retry screen with native keystore/database failures and key-loss scenarios.
-- Expire temporary external-viewer files safely; copies made by other apps are
-  outside TanoNote's control. Startup/reset already clear local materialized files.
+- Validate the ten-minute sweep of temporary external-viewer files on devices;
+  copies made by other apps are outside TanoNote's control. Startup/reset clear
+  the whole materialized cache.
 - Verify startup orphan collection on devices; full reset is still not one atomic operation.
 - Verify SQLCipher, backup/restore policies, key loss and native logs on real devices.
 - Inspect complete Sentry envelopes and consent withdrawal; native crashes remain
@@ -44,4 +63,4 @@ subjected to this policy: define forward migrations before the first public rele
 FFI tests do not validate native SQLCipher. A Pub advisory scan does not cover all
 native SDKs. Reference: [OWASP MASVS Storage](https://mas.owasp.org/MASVS/05-MASVS-STORAGE/).
 
-See [step 2](consolidation-step-2.md) for the implemented protections and their limits.
+See [history](history.md) for the implemented protections and their limits.

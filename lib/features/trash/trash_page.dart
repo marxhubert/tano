@@ -4,12 +4,14 @@ import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/folder_card_bodies.dart';
@@ -82,9 +84,14 @@ class _TrashPageState extends State<TrashPage> {
                     actionTitle: AppText.tr('delete_all_notes'),
                     action: AppText.tr('delete'),
                   );
-                  if (confirm == true) {
-                    await _viewModel.emptyTrash();
+                  if (confirm != true || !context.mounted) return;
+                  // Emptying the trash destroys locked items for good, so the
+                  // device owner must authenticate first.
+                  if (_viewModel.hasLockedItems &&
+                      !await _confirmLockedDeletion(context)) {
+                    return;
                   }
+                  await _viewModel.emptyTrash();
                 },
               ),
             // The empty screen has nothing left to do but leave, so the way
@@ -106,12 +113,11 @@ class _TrashPageState extends State<TrashPage> {
                 child: Center(child: CircularProgressIndicator.adaptive()),
               )
             else if (_viewModel.isEmpty)
-              SliverFillRemaining(
-                child: emptyState(
-                  context,
-                  AppText.tr('trash_empty'),
-                  image: EmptyArt.bin,
-                ),
+              emptyStateSliver(
+                context,
+                AppText.tr('trash_empty'),
+                image: EmptyArt.bin,
+                hasScrollBody: true,
               )
             else ...<Widget>[
               // Folders first, like on the home page: they keep their content,
@@ -167,14 +173,11 @@ class _TrashPageState extends State<TrashPage> {
     final int folders = _viewModel.deletedFolders.length;
     final int notes = _viewModel.deletedNotes.length;
     final List<String> parts = <String>[
-      if (folders > 0) _count(folders, 'folder', 'folders'),
-      if (notes > 0) _count(notes, 'note', 'notes'),
+      if (folders > 0) groupCountLabel(total: folders, noun: 'folder'),
+      if (notes > 0) groupCountLabel(total: notes, noun: 'note'),
     ];
     return parts.isEmpty ? AppText.tr('empty') : parts.join(' & ');
   }
-
-  String _count(int count, String singular, String plural) =>
-      '$count ${AppText.tr(count > 1 ? plural : singular)}';
 
   /// A plain group title, like the settings section titles: no underline and
   /// no metadata line, just the label.
@@ -233,8 +236,8 @@ class _TrashPageState extends State<TrashPage> {
         // The trash's own part: the two actions, always there, locked or not.
         _actions(
           onRestore: () => _viewModel.restoreNote(note.id),
-          onDelete: () => _deleteNote(context, note.id),
-          textColor: _cardTextColor(context, note.category),
+          onDelete: () => _deleteNote(context, note),
+          textColor: cardTextColor(context, note.category),
         ),
       ],
     );
@@ -270,18 +273,12 @@ class _TrashPageState extends State<TrashPage> {
         ),
         _actions(
           onRestore: () => _viewModel.restoreFolder(folder.id),
-          onDelete: () => _deleteFolder(context, folder.id),
-          textColor: _cardTextColor(context, folder.category),
+          onDelete: () => _deleteFolder(context, folder),
+          textColor: cardTextColor(context, folder.category),
         ),
       ],
     );
   }
-
-  /// The ink [EntityCard] computes for [category], so the trash actions sit on
-  /// the card's own colour whatever the card shows.
-  Color _cardTextColor(BuildContext context, String category) => getTextColor(
-    themeCategory(category, true, brightness: Theme.of(context).brightness),
-  );
 
   /// The two trash actions, overlaid on a card (on top of its content). The
   /// only difference from a normal card: in a list they sit centred, 8 px above
@@ -324,22 +321,40 @@ class _TrashPageState extends State<TrashPage> {
     );
   }
 
-  Future<void> _deleteNote(BuildContext context, String id) async {
+  Future<void> _deleteNote(BuildContext context, Note note) async {
+    if (note.isLocked && !await _confirmLockedDeletion(context)) return;
+    if (!context.mounted) return;
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: AppText.tr('delete_note'),
       action: AppText.tr('delete'),
     );
-    if (confirm == true) await _viewModel.deleteNotePermanently(id);
+    if (confirm == true) await _viewModel.deleteNotePermanently(note.id);
   }
 
-  Future<void> _deleteFolder(BuildContext context, String id) async {
+  Future<void> _deleteFolder(BuildContext context, Folder folder) async {
+    if (_viewModel.folderHasLockedContent(folder.id) &&
+        !await _confirmLockedDeletion(context)) {
+      return;
+    }
+    if (!context.mounted) return;
     final bool? confirm = await getConfirmation(
       context: context,
       actionTitle: AppText.tr('delete_folder'),
       action: AppText.tr('delete'),
     );
-    if (confirm == true) await _viewModel.deleteFolderPermanently(id);
+    if (confirm == true) await _viewModel.deleteFolderPermanently(folder.id);
+  }
+
+  /// Asks the device owner to authenticate before locked content is destroyed
+  /// for good. A refusal (or a device without any credential) keeps the item
+  /// and reports why, exactly like deleting a locked note from Home.
+  Future<bool> _confirmLockedDeletion(BuildContext context) async {
+    final bool authenticated = await getIt<AuthService>().authenticate();
+    if (!authenticated && context.mounted) {
+      showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+    }
+    return authenticated;
   }
 }
 

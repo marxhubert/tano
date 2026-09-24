@@ -11,7 +11,7 @@ exception. Hide the theme toggle when editing actions occupy those slots. Titles
 collapse with scrolling and handle long content without overflow. All routes share
 the ruled hero paper; category colors tint cards only. `SectionTitleLine` and `MetadataLine` own header
 text and metadata rather than duplicating ad-hoc Rows. When a title is reduced to the
-app bar its flags read bookmark + title + lock (`headerMetadataLeading` /
+app bar its flags read important + title + lock (`headerMetadataLeading` /
 `headerMetadataTrailing`); the body title line keeps its own right-hand metadata.
 
 ## FAB
@@ -36,7 +36,7 @@ List heights are compact 100 and normal 112, adjusted for text scaling. Grid cov
 upper half; list covers occupy the left third. A grid cover also earns the kind's
 corner watermark, where a list cover leaves no room for it, and a 1px rule closes the
 cover where it meets the content (bottom in the grid, right in the list). Shared markers
-represent selection, bookmark and lock. Pinning was removed; bookmarks sort first.
+represent selection, important and lock. Pinning was removed; important cards sort first.
 
 Locked cards share a restricted template and inset dotted contour. Grid titles allow
 three lines, list titles two. Insets and inner radii follow the outer-radius-minus-

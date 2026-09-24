@@ -49,11 +49,103 @@ void main() {
       expect(notes.single.title, 'Keep');
     });
 
+    test('insertImportedNotes stores folders before their notes', () async {
+      await repository.insertImportedNotes(
+        <Note>[
+          Note(
+            id: 'n1',
+            title: 'In folder',
+            content: '',
+            date: '2026-01-01',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
+        ],
+      );
+
+      expect((await repository.loadFolders()).single.id, 'f1');
+      expect((await repository.loadNotes()).single.folderId, 'f1');
+    });
+
+    test('a note conflict rolls back the imported folders too', () async {
+      await repository.upsertNote(
+        Note(id: 'n1', title: 'Existing', content: '', date: '2026-01-01'),
+      );
+
+      await expectLater(
+        repository.insertImportedNotes(
+          <Note>[
+            Note(
+              id: 'n1',
+              title: 'Conflict',
+              content: '',
+              date: '2026-01-01',
+              folderId: 'f1',
+            ),
+          ],
+          folders: <Folder>[
+            Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
+          ],
+        ),
+        throwsA(isA<DatabaseException>()),
+      );
+
+      expect(await repository.loadFolders(), isEmpty);
+      expect((await repository.loadNotes()).single.title, 'Existing');
+    });
+
     test('a fresh install starts empty', () async {
       final notes = await repository.loadNotes();
 
       expect(notes, isEmpty);
       expect(await repository.loadFolders(), isEmpty);
+    });
+
+    test('upsertNotes writes every note of the batch', () async {
+      await repository.upsertNotes(<Note>[
+        Note(id: 'a', title: 'A', content: '', date: '2026-01-01'),
+        Note(id: 'b', title: 'B', content: '', date: '2026-01-02'),
+      ]);
+
+      expect(
+        (await repository.loadNotes()).map((Note note) => note.id),
+        containsAll(<String>['a', 'b']),
+      );
+    });
+
+    test('trashNotes moves the whole batch to the trash', () async {
+      await repository.upsertNotes(<Note>[
+        Note(id: 'a', title: 'A', content: '', date: '2026-01-01'),
+        Note(id: 'b', title: 'B', content: '', date: '2026-01-02'),
+        Note(id: 'c', title: 'C', content: '', date: '2026-01-03'),
+      ]);
+
+      await repository.trashNotes(<String>['a', 'c']);
+
+      expect(
+        (await repository.loadNotes()).map((Note note) => note.id),
+        <String>['b'],
+      );
+      expect(
+        (await repository.loadTrashNotes()).map((Note note) => note.id),
+        containsAll(<String>['a', 'c']),
+      );
+    });
+
+    test('a configured provider with no passphrase fails closed', () async {
+      final SQLiteNotesRepository guarded = SQLiteNotesRepository(
+        databaseFactoryOverride: databaseFactoryFfi,
+        databasePath: '${tempDir.path}/guarded.db',
+        documentsDirectory: () async => tempDir,
+        passwordProvider: () async => null,
+      );
+
+      await expectLater(
+        guarded.loadNotes(),
+        throwsA(isA<StorageUnavailableException>()),
+      );
     });
 
     test('deleteAllFolders empties the folders, trashed or not', () async {
@@ -326,7 +418,62 @@ void main() {
       },
     );
 
-    test('searchNotes escapes LIKE wildcards literally', () async {
+    test('migrates a v9 database and indexes it for search', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'task')),
+          title TEXT,
+          content TEXT,
+          description TEXT NOT NULL DEFAULT '',
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT,
+          folderId TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isLocked INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          coverImage TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 9');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'legacy',
+        'title': 'Legacy note',
+        'content': 'searchable body',
+        'description': '',
+        'date': '2026-01-01 00:00:00.000',
+        'isDeleted': 0,
+        'isLocked': 0,
+      });
+      await legacy.close();
+
+      // Opening at v10 creates the FTS index and backfills the existing notes.
+      final List<Note> found = await repository.searchNotes('legacy');
+      expect(found.map((Note n) => n.id), <String>['legacy']);
+    });
+
+    test('searchNotes ignores punctuation and never treats it as a wildcard', () async {
       await repository.upsertNote(
         Note(
           id: 'pct',
@@ -352,13 +499,105 @@ void main() {
         ),
       );
 
-      final percent = await repository.searchNotes('%');
-      expect(percent.map((n) => n.id), contains('pct'));
-      expect(percent.map((n) => n.id), isNot(contains('plain')));
+      // Punctuation alone carries no word to match.
+      expect(await repository.searchNotes('%'), isEmpty);
+      expect(await repository.searchNotes('_'), isEmpty);
+      // A word still finds its note, by prefix.
+      expect(
+        (await repository.searchNotes('100')).map((Note n) => n.id),
+        contains('pct'),
+      );
+      expect(
+        (await repository.searchNotes('a')).map((Note n) => n.id),
+        contains('under'),
+      );
+      expect(
+        (await repository.searchNotes('plain')).map((Note n) => n.id),
+        contains('plain'),
+      );
+    });
 
-      final underscore = await repository.searchNotes('_');
-      expect(underscore.map((n) => n.id), contains('under'));
-      expect(underscore.map((n) => n.id), isNot(contains('plain')));
+    test('searchNotes finds a prefix in title, description or content', () async {
+      await repository.upsertNote(
+        Note(
+          id: 'alpha',
+          title: 'Alpha',
+          content: 'nothing here',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'beta',
+          title: 'Beta',
+          description: 'the alphabet soup',
+          content: '',
+          date: '2026-01-02 00:00:00.000',
+        ),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'gamma',
+          title: 'Gamma',
+          content: 'an alphabetic note',
+          date: '2026-01-03 00:00:00.000',
+        ),
+      );
+
+      expect(
+        (await repository.searchNotes('alph')).map((Note n) => n.id),
+        containsAll(<String>['alpha', 'beta', 'gamma']),
+      );
+      expect(
+        (await repository.searchNotes('soup')).map((Note n) => n.id),
+        <String>['beta'],
+      );
+    });
+
+    test('searchNotes drops trashed notes and follows an update', () async {
+      await repository.upsertNote(
+        Note(
+          id: 'moved',
+          title: 'Before',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      expect(
+        (await repository.searchNotes('before')).map((Note n) => n.id),
+        <String>['moved'],
+      );
+
+      // An update must reindex: the old term is gone, the new one is found.
+      await repository.upsertNote(
+        Note(
+          id: 'moved',
+          title: 'After',
+          content: 'x',
+          date: '2026-01-01 00:00:00.000',
+        ),
+      );
+      expect(await repository.searchNotes('before'), isEmpty);
+      expect(
+        (await repository.searchNotes('after')).map((Note n) => n.id),
+        <String>['moved'],
+      );
+
+      await repository.trashNote('moved');
+      expect(await repository.searchNotes('after'), isEmpty);
+    });
+
+    test('ftsPrefixQuery quotes every word and drops punctuation', () {
+      expect(ftsPrefixQuery('Hello World'), '"hello"* "world"*');
+      expect(ftsPrefixQuery('a"b:c*'), '"a"* "b"* "c"*');
+      expect(ftsPrefixQuery('%_  '), isNull);
+      expect(ftsPrefixQuery(''), isNull);
+    });
+
+    test('escapeLikePattern escapes the LIKE wildcards for the fallback', () {
+      expect(escapeLikePattern('100%'), '100\\%');
+      expect(escapeLikePattern('a_b'), 'a\\_b');
+      expect(escapeLikePattern('c\\d'), 'c\\\\d');
     });
   });
 }

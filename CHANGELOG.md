@@ -29,6 +29,12 @@ Older releases are described on the
   the sound. The chosen size multiplies the system's own text scale.
 - Leaving the search remembers the query: the recent ones are offered while the
   field is empty, and can be cleared in one tap.
+- Search is backed by an SQLite FTS5 index, so a large library is searched by
+  prefix instead of a full scan; a build without FTS5 falls back to the old query.
+- A `.tano` backup (manifest v3) now carries folders as well as notes, tasks and
+  attachments, and restoring it puts each note back in its folder.
+- The sort order and the document filter are shared controllers, so Home, a
+  folder and Settings can no longer disagree.
 
 ### Changed
 
@@ -43,6 +49,9 @@ Older releases are described on the
   empty screens hold their place when the keyboard opens.
 - The app's animations read three named durations instead of six loose ones.
 - The privacy policy, the licences and the About notice read the current year.
+- Leaving a folder search remembers the query in the shared history, exactly as
+  Home does.
+- The `.tano` import summary now reports how many folders it created.
 
 ### Fixed
 
@@ -54,9 +63,26 @@ Older releases are described on the
   surface now.
 - "Link a note" is refused when the note is the only one, and "Move to" when
   the app holds no folder at all.
+- **A failed write no longer leaves a partly-applied change.** Home, a folder and
+  the editor report the storage error and reload; moving or deleting a selection
+  is one database transaction.
+- A backup of a large library is no longer refused: the manifest bound fits the
+  import's own note limit, and an over-limit export says so instead of producing
+  an unrestorable file.
+- A cleartext export no longer drops folder associations on import.
 
 ### Security
 
 - The repository carries no personal information: the author's name, the
   contact address and the support links are read from the build, and
   `identity.json` is ignored by git.
+- A cleartext export is refused as soon as the selection holds a locked note or
+  folder; locked content only leaves through a password-encrypted container.
+- Destroying locked content for good — a permanent delete, or emptying the trash
+  while it holds locked items — requires the device credential.
+- An installation key that secure storage did not persist fails loudly instead of
+  silently changing on the next launch, and a database passphrase that cannot be
+  produced fails closed instead of opening the database in the clear.
+- Decrypted attachments handed to the system viewer are swept from the cache
+  after ten minutes.
+- App Store update links are only followed when they point at Apple over HTTPS.

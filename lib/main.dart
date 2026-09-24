@@ -13,7 +13,9 @@ import 'package:tano/shared/config/feedback_controller.dart';
 import 'package:tano/shared/config/fab_side_controller.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/config/document_filter_controller.dart';
 import 'package:tano/shared/config/search_history_controller.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/shared/config/text_scale_controller.dart';
 import 'package:tano/shared/config/theme_controller.dart';
 import 'package:tano/shared/config/language_references_controller.dart';
@@ -38,6 +40,8 @@ Future<void> initializeApplication() async {
     TextScaleController.instance.init(),
     FeedbackController.instance.init(),
     SearchHistoryController.instance.init(),
+    SortPreferencesController.instance.load(),
+    DocumentFilterController.instance.load(),
     FabSideController.instance.load(),
   ]);
 

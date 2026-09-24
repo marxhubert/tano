@@ -23,6 +23,19 @@ class EmptyArt {
       'assets/icons/Ghozi_Muhtarom/organized-folder.png';
 }
 
+/// [emptyState] as a full-body sliver, so every page shows its empty screen
+/// through the same wrapper. [hasScrollBody] stays explicit: the trash lets its
+/// body shrink under the keyboard, the others freeze it.
+Widget emptyStateSliver(
+  BuildContext context,
+  String message, {
+  String? image,
+  bool hasScrollBody = false,
+}) => SliverFillRemaining(
+  hasScrollBody: hasScrollBody,
+  child: emptyState(context, message, image: image),
+);
+
 /// The one way to say "there is nothing here".
 ///
 /// Centred, muted, at the label size, so every empty screen of the app reads

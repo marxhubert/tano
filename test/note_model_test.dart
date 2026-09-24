@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tano/core/models/notes_json_codec.dart';
 import 'package:tano/core/models/note.dart';
 
 void main() {
@@ -100,28 +99,4 @@ void main() {
     });
   });
 
-  group('notes JSON codec', () {
-    test('encodes and decodes the JSON', () {
-      final notes = <Note>[
-        Note(id: '1', title: 'a', content: 'x', important: true),
-        Note(id: '2', title: 'b', content: 'y', important: false),
-      ];
-
-      final restored = decodeNotes(encodeNotes(notes));
-
-      expect(restored, hasLength(2));
-      expect(restored[0].title, 'a');
-      expect(restored[0].important, true);
-      expect(restored[1].title, 'b');
-      expect(restored[1].important, false);
-    });
-
-    test('decodes an empty note list', () {
-      expect(decodeNotes('{"notes": []}'), isEmpty);
-    });
-
-    test('handles a JSON without the notes key', () {
-      expect(decodeNotes('{}'), isEmpty);
-    });
-  });
 }

@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tano/core/repositories/notes_fixtures.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/secure_preferences.dart';
+import 'package:tano/shared/config/sort_preferences_controller.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
@@ -59,27 +60,20 @@ class SettingsViewModel extends ChangeNotifier {
     await _applyConsent(false);
   }
 
-  Future<void> setSorting(String sortBy) async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setString('sortBy', sortBy);
-    if (sortBy == 'alpha' || sortBy == 'date') {
-      await prefs.setString('secondarySortBy', sortBy);
-    }
-  }
+  Future<void> setSorting(String sortBy) =>
+      SortPreferencesController.instance.setBy(sortBy);
 
   Future<String> getSorting() async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    return prefs.getString('sortBy') ?? 'date';
+    await SortPreferencesController.instance.load();
+    return SortPreferencesController.instance.by;
   }
 
-  Future<void> setSortAscending(bool ascending) async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    await prefs.setBool('sortAscending', ascending);
-  }
+  Future<void> setSortAscending(bool ascending) =>
+      SortPreferencesController.instance.setAscending(ascending);
 
   Future<bool> getSortAscending() async {
-    final SecurePreferences prefs = await SecurePreferences.getInstance();
-    return prefs.getBool('sortAscending') ?? true;
+    await SortPreferencesController.instance.load();
+    return SortPreferencesController.instance.ascending;
   }
 
   Future<void> performHardReset({

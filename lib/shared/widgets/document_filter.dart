@@ -43,7 +43,6 @@ enum DocumentFilter {
   /// number for a kind. Both are printed light, so the word stays the label.
   String countText(int count) =>
       this == DocumentFilter.all ? '($count)' : '$count';
-
 }
 
 /// The noun a selection sentence uses. One kind keeps its own name; a selection
@@ -60,6 +59,45 @@ String selectionNounKey({
   if (tasks > 0) return 'task';
   if (folders > 0) return 'folder';
   return 'note';
+}
+
+/// The plain count of a group: "3 notes", "1 task", "2 folders".
+String groupCountLabel({required int total, required String noun}) =>
+    '$total ${total > 1 ? AppText.tr('${noun}s') : AppText.tr(noun)}';
+
+/// The sentence a group prints while selecting: "3/5 notes selected", or "All 5
+/// notes are selected" when the whole group is taken. A single item keeps the
+/// singular wording.
+String selectionCountLabel({
+  required int count,
+  required int total,
+  required String noun,
+}) {
+  if (count > 1) {
+    if (count == total) {
+      return AppText.tr('all_${noun}s_selected', <String, String>{
+        'count': '$count',
+      });
+    }
+    return AppText.tr('${noun}s_selected', <String, String>{
+      'count': '$count',
+      'total': '$total',
+    });
+  }
+  return AppText.tr('single_${noun}_selected', <String, String>{
+    'count': '$count',
+  });
+}
+
+/// The title of the delete confirmation for [count] selected notes out of the
+/// [total] currently shown: taking the whole visible list reads "delete all".
+String deleteSelectionTitle({required int count, required int total}) {
+  if (count > 1) {
+    return count == total
+        ? AppText.tr('delete_all_notes')
+        : AppText.tr('delete_notes', <String, String>{'count': '$count'});
+  }
+  return AppText.tr('delete_note');
 }
 
 /// The stored filter name, or null for anything unknown.
@@ -145,8 +183,8 @@ class DocumentFilterControl extends StatelessWidget {
         selectedBackgroundColor: scheme.primary,
         selectedForegroundColor: scheme.onPrimary,
         side: BorderSide(color: paperRuleColor(context)),
-        // Four segments with counts have to fit a phone: 12px of padding would
-        // wrap "Projects" onto a second line.
+        // The segments with counts have to fit a phone: 12px of padding would
+        // wrap the longest label onto a second line.
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         // The theme's control font, not a bare TextStyle: a family-less style
         // would fall back to whatever the platform supplies.

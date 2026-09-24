@@ -10,6 +10,7 @@ import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/shared/config/card_sorting.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/service_locator.dart';
 import 'fab_geometry.dart';
@@ -87,15 +88,12 @@ class AppFab extends StatefulWidget {
     this.onClearSelection,
     this.onSelectAll,
     this.onSave,
-    this.onColorLens,
-    this.onMore,
     this.onColorSelected,
     this.currentCategory,
     this.currentNoteId,
     this.currentFolderId,
     this.onImageSelected,
     this.onChecklistSelected,
-    this.onLinkSelected,
     this.onNoteLinkSelected,
     this.onAttachmentSelected,
     this.onImportantSelected,
@@ -162,13 +160,10 @@ class AppFab extends StatefulWidget {
   final VoidCallback? onClearSelection;
   final VoidCallback? onSelectAll;
   final VoidCallback? onSave;
-  final VoidCallback? onColorLens;
-  final VoidCallback? onMore;
   final ValueChanged<String>? onColorSelected;
   final String? currentCategory;
   final VoidCallback? onImageSelected;
   final VoidCallback? onChecklistSelected;
-  final VoidCallback? onLinkSelected;
   final ValueChanged<Note>? onNoteLinkSelected;
   final VoidCallback? onAttachmentSelected;
   final VoidCallback? onImportantSelected;

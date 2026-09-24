@@ -21,8 +21,8 @@ its geometry, its state machine, and the rules any change must respect.
 
 Bars, items, menus, lifecycle and measurement remain `part`s of the widget library.
 Presentation state and geometry are independently testable modules. The public
-callback API remains compatible with the pages. See the
-[project review](project-review-2026-09.md) for the instability findings and scope.
+callback API remains compatible with the pages. See
+[history](history.md) for the instability findings and scope.
 
 ## The forms
 
@@ -63,7 +63,7 @@ spilling into the panel — so the two read as one piece.
 | Menu | Opened from | Holds |
 |---|---|---|
 | `add` | `add_circle` / a new note | image, checklist, link, attachment (note, task or folder variants) |
-| `color` | `palette` | the 20 pastel couplets, five per row |
+| `color` | `palette` | the 10 pastel couplets (20 swatches), five per row |
 | `more` | `build_circle` | important, find, move, lock, delete (note) · important, edit, lock, delete (folder) |
 | `link` | "link" inside `add` | every other note, sortable |
 | `move` | "move" inside `more`, or the selection bar | "Home" plus every other folder, sortable |
@@ -256,7 +256,8 @@ at the bottom and clipped by the growing FAB. Each row (`_VerticalMenuItem`) is
 an `InkWell` with an icon, a label and a 12 px vertical padding; a disabled row
 keeps its seat at 38 % opacity.
 
-- **colour** — the 20 pastels of `TanoPastels`, five per row. The couplet is two
+- **colour** — the 10 pastel couplets of `TanoPastels` (20 swatches), five per
+  row. The couplet is two
   colours split diagonally (the row rotated 45°); the selected one gets a soft halo
   36 % larger and an amber check on a white disc.
 - **add** — image · checklist · link · description · attachment, minus the ones
