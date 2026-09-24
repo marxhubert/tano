@@ -1,6 +1,7 @@
 # Architecture
 
-Updated 19 September 2026. [Product rules](product-rules.md) define intended behavior.
+Updated for the `refactor/consolidation` branch. [Product rules](product-rules.md)
+define intended behavior.
 
 ## Current implementation
 
@@ -38,12 +39,18 @@ schema still has upgrade support for development versions; no plaintext migratio
 or permanent plaintext backup is maintained. Before public release, establish a
 versioned, tested migration and recovery policy for all future schema changes.
 
-## Next consolidation
+## Consolidation state
 
-Extract repeated commands (metadata, move, trash, restore, lock), enforce
-permissions and invariants, persist atomically, then notify UI. Handle failures
-without leaving optimistic state inconsistent. Startup orphan collection, recovery UI and lifecycle locking are implemented;
-validate their native behavior before release. Project persistence remains future work.
+Shared behavior is factored to single sources of truth: `NoteCards` / `buildNoteCard`,
+`EntitySliver`, the sort and filter controllers, `FabRouteCollapse` / `FabLayoutMetrics`,
+`openNoteEditor`, `requestLockChange`, and the wording/feedback helpers. The remaining
+refactors are optional and listed in [roadmap](roadmap.md).
+
+Still to harden: extract the repeated metadata/move/trash/restore commands, enforce
+permissions and invariants, persist them atomically, then notify the UI, so a failed
+write never leaves optimistic state inconsistent. Startup orphan collection, recovery
+UI and lifecycle locking are implemented; validate their native behavior before
+release. Project persistence remains future work (private fork).
 
 [PremiumAccess](premium.md) defines feature boundaries; no store adapter exists.
 [Collaboration](collaboration.md) is a design target. No signaling, CRDT or replication
