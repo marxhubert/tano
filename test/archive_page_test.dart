@@ -126,6 +126,17 @@ void main() {
     expect(find.byIcon(Symbols.document_search), findsOneWidget);
   });
 
+  testWidgets('an empty archive offers no selection action', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await pumpArchive(tester, _Repo(archived: <Note>[]));
+
+    expect(find.byIcon(Symbols.select_all), findsNothing);
+    expect(find.byIcon(Symbols.document_search), findsNothing);
+  });
+
   testWidgets('select swaps search and select for unarchive and delete', (
     tester,
   ) async {
@@ -143,10 +154,19 @@ void main() {
 
     expect(find.byIcon(Symbols.unarchive), findsOneWidget);
     expect(find.byIcon(Symbols.delete), findsOneWidget);
+    expect(find.byIcon(Symbols.close), findsOneWidget);
     expect(find.byIcon(Symbols.document_search), findsNothing);
     expect(find.byIcon(Symbols.select_all), findsNothing);
 
-    // Select one card, then unarchive the selection.
+    // The close action leaves the selection without restoring anything.
+    await tester.tap(find.byIcon(Symbols.close));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Symbols.select_all), findsOneWidget);
+    expect(find.byIcon(Symbols.unarchive), findsNothing);
+
+    // Back in the selection: pick one card, then unarchive it.
+    await tester.tap(find.byIcon(Symbols.select_all));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(EntityCard).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Symbols.unarchive));

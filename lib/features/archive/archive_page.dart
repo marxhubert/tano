@@ -245,6 +245,12 @@ class _ArchivePageState extends State<ArchivePage> {
           tooltip: AppText.tr('unarchive'),
           onPressed: _selection.isEmpty ? null : () => _unarchive(_selectedIds),
         ),
+        // Leave the selection without touching anything.
+        IconButton(
+          icon: const Icon(Symbols.close),
+          tooltip: AppText.tr('cancel'),
+          onPressed: _exitSelection,
+        ),
         IconButton(
           icon: Icon(Symbols.delete, color: TanoStates.error.dark),
           tooltip: AppText.tr('delete'),
@@ -263,11 +269,13 @@ class _ArchivePageState extends State<ArchivePage> {
           tooltip: AppText.tr('search'),
           onPressed: _enterSearchMode,
         ),
-      IconButton(
-        icon: const Icon(Symbols.select_all),
-        tooltip: AppText.tr('select'),
-        onPressed: _enterSelection,
-      ),
+      // Nothing to select in an empty archive.
+      if (_viewModel.docs.isNotEmpty)
+        IconButton(
+          icon: const Icon(Symbols.select_all),
+          tooltip: AppText.tr('select'),
+          onPressed: _enterSelection,
+        ),
     ];
   }
 
