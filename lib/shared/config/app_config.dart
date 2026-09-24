@@ -83,6 +83,6 @@ class AppConfig {
   /// Whether this build exposes the developer surface: the "Labs" settings
   /// section, and with it the fixtures reset and the reporting test error.
   ///
-  /// Debug and profile ("dev") builds keep it; a release build never ships it.
-  static bool get showsLabs => !kReleaseMode;
+  /// A debug build keeps it; every other build never ships it.
+  static bool get showsLabs => kDebugMode;
 }

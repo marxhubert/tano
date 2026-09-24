@@ -94,68 +94,71 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     final List<OnboardingSlide> slides = onboardingSlides();
     final bool isLast = _index == _lastIndex;
+    final Size window = MediaQuery.sizeOf(context);
+    // A tablet has width to spare: the whole introduction lives in a centred
+    // column as wide as the primary button, so the skip link, the pages and the
+    // dots all line up with it. A phone keeps the full width.
+    final bool onTablet = tabletViewport(window);
+    final double contentWidth = onTablet
+        ? (window.width - sectionGap * 2) / 2
+        : window.width;
     return PaperSurface(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Column(
-            children: <Widget>[
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: appPaddingTight,
-                  ),
-                  child: TextButton(
-                    onPressed: _finish,
-                    child: Text(
-                      AppText.tr('onboarding_skip'),
-                      style: TextStyle(
-                        color: mutedTextColor(context),
-                        fontSize: TanoText.listTitle,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: contentWidth,
+              child: Column(
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: appPaddingTight,
+                      ),
+                      child: TextButton(
+                        onPressed: _finish,
+                        child: Text(
+                          AppText.tr('onboarding_skip'),
+                          style: TextStyle(
+                            color: mutedTextColor(context),
+                            fontSize: TanoText.listTitle,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  itemCount: slides.length,
-                  onPageChanged: (int index) => setState(() => _index = index),
-                  itemBuilder: (BuildContext context, int index) =>
-                      _Slide(slide: slides[index]),
-                ),
-              ),
-              _Dots(count: slides.length, index: _index),
-              const SizedBox(height: sectionGap),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final Widget button = _PrimaryButton(
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: slides.length,
+                      onPageChanged: (int index) =>
+                          setState(() => _index = index),
+                      itemBuilder: (BuildContext context, int index) =>
+                          _Slide(slide: slides[index]),
+                    ),
+                  ),
+                  _Dots(count: slides.length, index: _index),
+                  const SizedBox(height: sectionGap),
+                  Padding(
+                    // Inside the column the button already has its width; only
+                    // a phone keeps the outer inset it always had.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: onTablet ? 0.0 : sectionGap,
+                    ),
+                    child: _PrimaryButton(
                       label: isLast
                           ? AppText.tr('onboarding_start')
                           : AppText.tr('onboarding_next'),
                       onPressed: _next,
-                    );
-                    // A tablet has width to spare: the call to action takes half
-                    // of it and sits centred instead of stretching across the
-                    // page. A phone keeps the full-width button.
-                    if (!tabletViewport(MediaQuery.sizeOf(context))) {
-                      return button;
-                    }
-                    return Center(
-                      child: SizedBox(
-                        width: constraints.maxWidth / 2,
-                        child: button,
-                      ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  const SizedBox(height: sectionGap),
+                ],
               ),
-              const SizedBox(height: sectionGap),
-            ],
+            ),
           ),
         ),
       ),
@@ -170,34 +173,45 @@ class _Slide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          slide.art,
-          const SizedBox(height: sectionGap),
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: TanoText.pageTitle,
-              fontWeight: FontWeight.bold,
-              color: primaryTextColor(context),
+    // The narrow tablet column wraps the body onto more lines: let a short
+    // window scroll rather than overflow, while a tall one keeps centring.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: sectionGap),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  slide.art,
+                  const SizedBox(height: sectionGap),
+                  Text(
+                    slide.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TanoText.pageTitle,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor(context),
+                    ),
+                  ),
+                  const SizedBox(height: appPaddingMedium),
+                  Text(
+                    slide.body,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TanoText.body,
+                      height: 1.35,
+                      color: mutedTextColor(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: appPaddingMedium),
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: TanoText.body,
-              height: 1.35,
-              color: mutedTextColor(context),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

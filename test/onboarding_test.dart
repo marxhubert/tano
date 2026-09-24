@@ -148,6 +148,11 @@ void main() {
     // Half of the padded line, and centred on the page.
     expect(rect.width, closeTo((1024 - sidePadding * 2) / 2, 1));
     expect(rect.center.dx, closeTo(512, 1));
+
+    // Everything else stays inside that same width, the skip link included.
+    final Rect skip = tester.getRect(find.text(AppText.tr('onboarding_skip')));
+    expect(skip.left, greaterThanOrEqualTo(rect.left - 0.5));
+    expect(skip.right, lessThanOrEqualTo(rect.right + 0.5));
   });
 
   testWidgets('skipping remembers the choice and opens the app', (
