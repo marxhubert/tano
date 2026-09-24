@@ -60,9 +60,7 @@ void main() {
             folderId: 'f1',
           ),
         ],
-        folders: <Folder>[
-          Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
-        ],
+        folders: <Folder>[Folder(id: 'f1', name: 'Work', date: '2026-01-01')],
       );
 
       expect((await repository.loadFolders()).single.id, 'f1');
@@ -85,9 +83,7 @@ void main() {
               folderId: 'f1',
             ),
           ],
-          folders: <Folder>[
-            Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
-          ],
+          folders: <Folder>[Folder(id: 'f1', name: 'Work', date: '2026-01-01')],
         ),
         throwsA(isA<DatabaseException>()),
       );
@@ -473,86 +469,266 @@ void main() {
       expect(found.map((Note n) => n.id), <String>['legacy']);
     });
 
-    test('searchNotes ignores punctuation and never treats it as a wildcard', () async {
+    test('archive takes a note out of Home and back', () async {
       await repository.upsertNote(
         Note(
-          id: 'pct',
-          title: '100% done',
-          content: 'x',
-          date: '2026-01-01 00:00:00.000',
-        ),
-      );
-      await repository.upsertNote(
-        Note(
-          id: 'under',
-          title: 'a_b',
-          content: 'x',
-          date: '2026-01-01 00:00:00.000',
-        ),
-      );
-      await repository.upsertNote(
-        Note(
-          id: 'plain',
-          title: 'plain',
-          content: 'x',
-          date: '2026-01-01 00:00:00.000',
-        ),
-      );
-
-      // Punctuation alone carries no word to match.
-      expect(await repository.searchNotes('%'), isEmpty);
-      expect(await repository.searchNotes('_'), isEmpty);
-      // A word still finds its note, by prefix.
-      expect(
-        (await repository.searchNotes('100')).map((Note n) => n.id),
-        contains('pct'),
-      );
-      expect(
-        (await repository.searchNotes('a')).map((Note n) => n.id),
-        contains('under'),
-      );
-      expect(
-        (await repository.searchNotes('plain')).map((Note n) => n.id),
-        contains('plain'),
-      );
-    });
-
-    test('searchNotes finds a prefix in title, description or content', () async {
-      await repository.upsertNote(
-        Note(
-          id: 'alpha',
-          title: 'Alpha',
-          content: 'nothing here',
-          date: '2026-01-01 00:00:00.000',
-        ),
-      );
-      await repository.upsertNote(
-        Note(
-          id: 'beta',
-          title: 'Beta',
-          description: 'the alphabet soup',
+          id: 'arch',
+          title: 'Set aside',
           content: '',
-          date: '2026-01-02 00:00:00.000',
-        ),
-      );
-      await repository.upsertNote(
-        Note(
-          id: 'gamma',
-          title: 'Gamma',
-          content: 'an alphabetic note',
-          date: '2026-01-03 00:00:00.000',
+          date: '2026-01-01',
+          folderId: 'f1',
         ),
       );
 
+      await repository.archiveNote('arch');
+
+      expect(await repository.loadNotes(), isEmpty);
+      final List<Note> archived = await repository.loadArchivedNotes();
+      expect(archived.single.id, 'arch');
+      expect(archived.single.isArchived, isTrue);
+      expect(archived.single.archivedAt, isNotNull);
+      // An archived note never comes back through search.
+      expect(await repository.searchNotes('aside'), isEmpty);
+
+      await repository.restoreArchivedNote('arch');
+
+      final Note restored = (await repository.loadNotes()).single;
+      expect(restored.isArchived, isFalse);
+      expect(restored.archivedAt, isNull);
+      // Back to Home, and the creation date becomes the restore date.
+      expect(restored.folderId, isNull);
+      expect(restored.date, isNot('2026-01-01'));
+      expect(await repository.loadArchivedNotes(), isEmpty);
+    });
+
+    test('restoreArchivedNotes brings a whole selection back', () async {
+      await repository.upsertNotes(<Note>[
+        Note(id: 'a', title: 'A', content: '', date: '2026-01-01'),
+        Note(id: 'b', title: 'B', content: '', date: '2026-01-01'),
+      ]);
+      await repository.archiveNote('a');
+      await repository.archiveNote('b');
+
+      await repository.restoreArchivedNotes(<String>['a', 'b']);
+
       expect(
-        (await repository.searchNotes('alph')).map((Note n) => n.id),
-        containsAll(<String>['alpha', 'beta', 'gamma']),
+        (await repository.loadNotes()).map((Note n) => n.id),
+        containsAll(<String>['a', 'b']),
       );
+      expect(await repository.loadArchivedNotes(), isEmpty);
+    });
+
+    test(
+      'restore returns a trashed note to its folder while it exists',
+      () async {
+        await repository.upsertFolder(
+          Folder(id: 'f1', name: 'F', date: '2026-01-01'),
+        );
+        await repository.upsertNote(
+          Note(
+            id: 'n',
+            title: 'N',
+            content: '',
+            date: '2026-01-01',
+            folderId: 'f1',
+          ),
+        );
+
+        await repository.trashNote('n');
+        await repository.restoreNote('n');
+
+        expect((await repository.loadNotes()).single.folderId, 'f1');
+      },
+    );
+
+    test('restore sends a trashed note Home when its folder is gone', () async {
+      await repository.upsertFolder(
+        Folder(id: 'f1', name: 'F', date: '2026-01-01'),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'n',
+          title: 'N',
+          content: '',
+          date: '2026-01-01',
+          folderId: 'f1',
+        ),
+      );
+
+      await repository.trashNote('n');
+      await repository.trashFolder('f1');
+      await repository.restoreNote('n');
+
+      expect((await repository.loadNotes()).single.folderId, isNull);
+    });
+
+    test('restore sends an archived-then-trashed note straight Home', () async {
+      await repository.upsertFolder(
+        Folder(id: 'f1', name: 'F', date: '2026-01-01'),
+      );
+      await repository.upsertNote(
+        Note(
+          id: 'n',
+          title: 'N',
+          content: '',
+          date: '2026-01-01',
+          folderId: 'f1',
+        ),
+      );
+
+      await repository.archiveNote('n');
+      await repository.trashNote('n');
+      await repository.restoreNote('n');
+
+      final Note restored = (await repository.loadNotes()).single;
+      expect(restored.folderId, isNull);
+      expect(restored.isArchived, isFalse);
+    });
+
+    test('migrates a v10 database and adds the archive columns', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'task')),
+          title TEXT,
+          content TEXT,
+          description TEXT NOT NULL DEFAULT '',
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT,
+          folderId TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isLocked INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          coverImage TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 10');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'legacy',
+        'title': 'Legacy',
+        'content': '',
+        'description': '',
+        'date': '2026-01-01 00:00:00.000',
+        'isDeleted': 0,
+        'isLocked': 0,
+      });
+      await legacy.close();
+
+      // Opening at v11 adds the archive columns; the old row archives cleanly.
+      await repository.archiveNote('legacy');
       expect(
-        (await repository.searchNotes('soup')).map((Note n) => n.id),
-        <String>['beta'],
+        (await repository.loadArchivedNotes()).map((Note n) => n.id),
+        <String>['legacy'],
       );
     });
+
+    test(
+      'searchNotes ignores punctuation and never treats it as a wildcard',
+      () async {
+        await repository.upsertNote(
+          Note(
+            id: 'pct',
+            title: '100% done',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        );
+        await repository.upsertNote(
+          Note(
+            id: 'under',
+            title: 'a_b',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        );
+        await repository.upsertNote(
+          Note(
+            id: 'plain',
+            title: 'plain',
+            content: 'x',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        );
+
+        // Punctuation alone carries no word to match.
+        expect(await repository.searchNotes('%'), isEmpty);
+        expect(await repository.searchNotes('_'), isEmpty);
+        // A word still finds its note, by prefix.
+        expect(
+          (await repository.searchNotes('100')).map((Note n) => n.id),
+          contains('pct'),
+        );
+        expect(
+          (await repository.searchNotes('a')).map((Note n) => n.id),
+          contains('under'),
+        );
+        expect(
+          (await repository.searchNotes('plain')).map((Note n) => n.id),
+          contains('plain'),
+        );
+      },
+    );
+
+    test(
+      'searchNotes finds a prefix in title, description or content',
+      () async {
+        await repository.upsertNote(
+          Note(
+            id: 'alpha',
+            title: 'Alpha',
+            content: 'nothing here',
+            date: '2026-01-01 00:00:00.000',
+          ),
+        );
+        await repository.upsertNote(
+          Note(
+            id: 'beta',
+            title: 'Beta',
+            description: 'the alphabet soup',
+            content: '',
+            date: '2026-01-02 00:00:00.000',
+          ),
+        );
+        await repository.upsertNote(
+          Note(
+            id: 'gamma',
+            title: 'Gamma',
+            content: 'an alphabetic note',
+            date: '2026-01-03 00:00:00.000',
+          ),
+        );
+
+        expect(
+          (await repository.searchNotes('alph')).map((Note n) => n.id),
+          containsAll(<String>['alpha', 'beta', 'gamma']),
+        );
+        expect(
+          (await repository.searchNotes('soup')).map((Note n) => n.id),
+          <String>['beta'],
+        );
+      },
+    );
 
     test('searchNotes drops trashed notes and follows an update', () async {
       await repository.upsertNote(

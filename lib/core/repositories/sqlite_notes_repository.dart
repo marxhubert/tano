@@ -29,6 +29,7 @@ class SQLiteNotesRepository
         FoldersRepository,
         AtomicNoteImporter,
         AtomicNotesWriter,
+        ArchiveRepository,
         AttachmentReferenceSource {
   SQLiteNotesRepository({
     DatabaseFactory? databaseFactoryOverride,
@@ -69,7 +70,7 @@ class SQLiteNotesRepository
     return _db!;
   }
 
-  static const int _schemaVersion = 10;
+  static const int _schemaVersion = 11;
 
   /// SQLite magic header ("SQLite format 3\u0000"): an unencrypted file starts
   /// with these bytes, an encrypted one does not.
@@ -199,7 +200,9 @@ class SQLiteNotesRepository
         category TEXT,
         isDeleted INTEGER DEFAULT 0,
         isLocked INTEGER DEFAULT 0,
+        isArchived INTEGER DEFAULT 0,
         deletedAt TEXT,
+        archivedAt TEXT,
         attachments TEXT,
         coverImage TEXT,
         folderId TEXT,
@@ -229,6 +232,10 @@ class SQLiteNotesRepository
     int oldVersion,
     int newVersion,
   ) async {
+    if (oldVersion < 11) {
+      await _addColumnIfMissing(db, 'notes', 'isArchived', 'INTEGER DEFAULT 0');
+      await _addColumnIfMissing(db, 'notes', 'archivedAt', 'TEXT');
+    }
     if (oldVersion < 9) {
       await _addColumnIfMissing(
         db,
@@ -438,7 +445,7 @@ class SQLiteNotesRepository
 
     final List<Map<String, dynamic>> active = await db.query(
       'notes',
-      where: 'isDeleted = 0',
+      where: 'isDeleted = 0 AND isArchived = 0',
     );
     return active.map((json) => Note.fromJson(json)).toList();
   }
@@ -546,11 +553,7 @@ class SQLiteNotesRepository
       for (final String id in ids) {
         await txn.update(
           'notes',
-          <String, Object?>{
-            'isDeleted': 1,
-            'deletedAt': now,
-            'updatedAt': now,
-          },
+          <String, Object?>{'isDeleted': 1, 'deletedAt': now, 'updatedAt': now},
           where: 'id = ?',
           whereArgs: <Object?>[id],
         );
@@ -561,15 +564,41 @@ class SQLiteNotesRepository
   @override
   Future<void> restoreNote(String id) async {
     final db = await _database;
+    final List<Map<String, Object?>> rows = await db.query(
+      'notes',
+      columns: <String>['isArchived', 'folderId'],
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
+    if (rows.isEmpty) return;
+    final bool wasArchived = rows.first['isArchived'] == 1;
+    final String? folderId = rows.first['folderId'] as String?;
+
+    // An archived document goes straight Home. A document deleted from a
+    // folder returns to that folder only while the folder still exists.
+    String? targetFolder;
+    if (!wasArchived && folderId != null) {
+      final List<Map<String, Object?>> folder = await db.query(
+        'folders',
+        columns: <String>['id'],
+        where: 'id = ? AND isDeleted = 0',
+        whereArgs: <Object?>[folderId],
+      );
+      targetFolder = folder.isEmpty ? null : folderId;
+    }
+
     await db.update(
       'notes',
-      {
+      <String, Object?>{
         'isDeleted': 0,
         'deletedAt': null,
+        'isArchived': 0,
+        'archivedAt': null,
+        'folderId': targetFolder,
         'updatedAt': DateTime.now().toString(),
       },
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: <Object?>[id],
     );
   }
 
@@ -580,6 +609,69 @@ class SQLiteNotesRepository
   }
 
   @override
+  Future<List<Note>> loadArchivedNotes() async {
+    final db = await _database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'notes',
+      where: 'isArchived = 1 AND isDeleted = 0',
+    );
+    return results.map((json) => Note.fromJson(json)).toList();
+  }
+
+  @override
+  Future<void> archiveNote(String id) => archiveNotes(<String>[id]);
+
+  @override
+  Future<void> archiveNotes(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final db = await _database;
+    final String now = DateTime.now().toString();
+    await db.transaction((Transaction txn) async {
+      for (final String id in ids) {
+        await txn.update(
+          'notes',
+          <String, Object?>{
+            'isArchived': 1,
+            'archivedAt': now,
+            'updatedAt': now,
+          },
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+      }
+    });
+  }
+
+  @override
+  Future<void> restoreArchivedNote(String id) =>
+      restoreArchivedNotes(<String>[id]);
+
+  @override
+  Future<void> restoreArchivedNotes(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final db = await _database;
+    final String now = DateTime.now().toString();
+    await db.transaction((Transaction txn) async {
+      for (final String id in ids) {
+        await txn.update(
+          'notes',
+          <String, Object?>{
+            'isArchived': 0,
+            'archivedAt': null,
+            // Restoring brings the document back to Home and, by contract, its
+            // creation date becomes the restore date.
+            'folderId': null,
+            'date': now,
+            'updatedAt': now,
+          },
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+      }
+    });
+  }
+
+  @override
   Future<List<Note>> searchNotes(String query) async {
     final Database db = await _database;
     if (_ftsAvailable) {
@@ -587,7 +679,8 @@ class SQLiteNotesRepository
       if (fts == null) return <Note>[];
       final List<Map<String, dynamic>> results = await db.rawQuery(
         'SELECT n.* FROM notes n JOIN notes_fts ON notes_fts.rowid = n.rowid '
-        'WHERE notes_fts MATCH ? AND n.isDeleted = 0 ORDER BY n.rowid',
+        'WHERE notes_fts MATCH ? AND n.isDeleted = 0 AND n.isArchived = 0 '
+        'ORDER BY n.rowid',
         <Object?>[fts],
       );
       return results.map((json) => Note.fromJson(json)).toList();
@@ -596,7 +689,7 @@ class SQLiteNotesRepository
     final List<Map<String, dynamic>> results = await db.query(
       'notes',
       where:
-          "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0",
+          "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\') AND isDeleted = 0 AND isArchived = 0",
       whereArgs: ['%$escaped%', '%$escaped%', '%$escaped%'],
     );
     return results.map((json) => Note.fromJson(json)).toList();

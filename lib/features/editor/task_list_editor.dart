@@ -16,12 +16,16 @@ class TaskListEditor extends StatefulWidget {
     required this.onTapText,
     this.autofocus = false,
     this.onCaretChanged,
+    this.readOnly = false,
   });
   final LinkTextEditingController controller;
   final VoidCallback onChanged;
   final VoidCallback onTapText;
   final bool autofocus;
   final VoidCallback? onCaretChanged;
+
+  /// When true the rows are shown but cannot be edited, reordered or deleted.
+  final bool readOnly;
 
   @override
   State<TaskListEditor> createState() => TaskListEditorState();
@@ -331,7 +335,7 @@ class TaskListEditorState extends State<TaskListEditor> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (reorderIndex != null)
+          if (reorderIndex != null && !widget.readOnly)
             ReorderableDragStartListener(
               index: reorderIndex,
               child: const SizedBox(
@@ -348,7 +352,7 @@ class TaskListEditorState extends State<TaskListEditor> {
             child: Checkbox(
               value: row.done,
               semanticLabel: row.controller.text,
-              onChanged: row.controller.text.trim().isEmpty
+              onChanged: widget.readOnly || row.controller.text.trim().isEmpty
                   ? null
                   : (value) {
                       final hadFocus = row.focus.hasFocus;
@@ -367,6 +371,8 @@ class TaskListEditorState extends State<TaskListEditor> {
               controller: row.controller,
               focusNode: row.focus,
               maxLines: null,
+              readOnly: widget.readOnly,
+              showCursor: !widget.readOnly,
               textInputAction: TextInputAction.newline,
               textCapitalization: TextCapitalization.sentences,
               style: TextStyle(
@@ -375,22 +381,23 @@ class TaskListEditorState extends State<TaskListEditor> {
                 decoration: row.done ? TextDecoration.lineThrough : null,
               ),
               decoration: InputDecoration(
-                hintText: AppText.tr('add_task_item'),
+                hintText: widget.readOnly ? null : AppText.tr('add_task_item'),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              onChanged: (text) => _change(row, text),
+              onChanged: widget.readOnly ? null : (text) => _change(row, text),
               onTap: () {
                 _syncSelection(row);
                 widget.onTapText();
               },
             ),
           ),
-          IconButton(
-            icon: const Icon(Symbols.close, size: 18),
-            tooltip: AppText.tr('delete'),
-            onPressed: () => _remove(row),
-          ),
+          if (!widget.readOnly)
+            IconButton(
+              icon: const Icon(Symbols.close, size: 18),
+              tooltip: AppText.tr('delete'),
+              onPressed: () => _remove(row),
+            ),
         ],
       ),
     );

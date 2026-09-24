@@ -15,6 +15,8 @@ Widget buildNoteGridContent({
   required Color textColor,
   required Set<String> activeNoteIds,
   required bool hasCover,
+  String? dateText,
+  IconData? dateIcon,
 }) {
   final Widget title = Text(
     note.title,
@@ -39,11 +41,11 @@ Widget buildNoteGridContent({
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 4.0,
             children: <Widget>[
-              Text(
-                formatNoteDate(note.date),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: cardDateStyle(textColor),
+              _noteDate(
+                note,
+                textColor,
+                dateText: dateText,
+                dateIcon: dateIcon,
               ),
               if (hasCover) Flexible(child: title) else title,
               if (!hasCover)
@@ -82,6 +84,8 @@ Widget buildNoteListContent({
   required Color textColor,
   required Set<String> activeNoteIds,
   required bool hasCover,
+  String? dateText,
+  IconData? dateIcon,
 }) {
   return Padding(
     // Match the grid card's horizontal paper margin.
@@ -106,11 +110,11 @@ Widget buildNoteListContent({
               ),
             ),
             const SizedBox(width: 9.0),
-            Text(
-              formatNoteDate(note.date),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: cardDateStyle(textColor),
+            _noteDate(
+              note,
+              textColor,
+              dateText: dateText,
+              dateIcon: dateIcon,
             ),
           ],
         ),
@@ -139,6 +143,40 @@ Widget buildNoteListContent({
         ),
       ],
     ),
+  );
+}
+
+/// The card's date line. The archive passes its own text and a leading glyph,
+/// so an archived document shows when it was archived.
+Widget _noteDate(
+  Note note,
+  Color textColor, {
+  String? dateText,
+  IconData? dateIcon,
+}) {
+  final String text = dateText ?? formatNoteDate(note.date);
+  if (dateIcon == null) {
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: cardDateStyle(textColor),
+    );
+  }
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Icon(dateIcon, size: cardMetaIconSize, color: cardMutedColor(textColor)),
+      const SizedBox(width: 3.0),
+      Flexible(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: cardDateStyle(textColor),
+        ),
+      ),
+    ],
   );
 }
 

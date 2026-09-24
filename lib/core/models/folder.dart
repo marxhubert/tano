@@ -53,6 +53,12 @@ class Folder implements ContentEntity {
   @override
   final String? deletedAt;
 
+  /// A folder cannot be archived: the archive holds documents only.
+  @override
+  bool get isArchived => false;
+  @override
+  String? get archivedAt => null;
+
   /// Optional cover image file name, displayed on the folder card.
   @override
   final String? coverImage;

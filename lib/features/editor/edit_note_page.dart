@@ -43,11 +43,16 @@ class EditNote extends StatefulWidget {
   /// When true, following a link to a locked note does not prompt again.
   final bool authenticated;
 
+  /// A read-only document opens without a FAB, without the theme toggle and
+  /// without editing controls; Find-in is still available.
+  final bool readOnly;
+
   const EditNote({
     super.key,
     required this.add,
     required this.noteAction,
     this.authenticated = false,
+    this.readOnly = false,
   });
 
   @override
@@ -473,6 +478,26 @@ class _EditNoteState extends State<EditNote>
     if (!mounted) return;
     setState(() {});
     await announceMove(context, count: 1, folderId: folderId);
+  }
+
+  /// Archives the open document and leaves the editor. The note leaves Home;
+  /// nothing is deleted.
+  Future<void> _archiveNote() async {
+    final NotesRepository repository = getIt<NotesRepository>();
+    if (repository is! ArchiveRepository) return;
+    _cleanupEmptyChecklists();
+    final Note note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (!await _persistSafely(note)) return;
+    if (!await _tryStorage(
+      () => (repository as ArchiveRepository).archiveNote(note.id),
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   /// The thin "|" separating two metadata values.
@@ -927,6 +952,7 @@ class _EditNoteState extends State<EditNote>
                 titleController: _titleController,
                 titleFocusNode: _titleFocus,
                 titleHint: AppText.tr('title_here'),
+                titleReadOnly: widget.readOnly,
                 titleOnChanged: (String _) => _recordEdit(),
                 onPop: () async {
                   final bool willPop = await _onWillPopCallback();
@@ -946,6 +972,15 @@ class _EditNoteState extends State<EditNote>
                   // action (edits, theme toggle) is hidden.
                   if (_isFindMode)
                     CancelButton(onPressed: _exitFindMode)
+                  else if (widget.readOnly)
+                    // A read-only document offers Find-in only: no theme
+                    // toggle and no editing actions.
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Symbols.search),
+                      tooltip: AppText.tr('search'),
+                      onPressed: _enterFindMode,
+                    )
                   else ...[
                     // While undo/redo/save are visible, the theme toggle steps
                     // aside to leave them the room.
@@ -1052,6 +1087,7 @@ class _EditNoteState extends State<EditNote>
                     SliverToBoxAdapter(
                       child: ManageableCover(
                         name: _viewModel.coverImage!,
+                        interactive: !widget.readOnly,
                         borderRadius: coverRadius,
                         lightDimAlpha: 0.0,
                         // Tighter gap above, under the metadata line.
@@ -1076,6 +1112,7 @@ class _EditNoteState extends State<EditNote>
                           key: const ValueKey('task-description'),
                           controller: _descriptionController,
                           focusNode: _descriptionFocus,
+                          readOnly: widget.readOnly,
                           maxLength: 500,
                           onTap: () {
                             _descriptionWasActive = true;
@@ -1090,12 +1127,14 @@ class _EditNoteState extends State<EditNote>
                             hintText: AppText.tr('description'),
                             border: InputBorder.none,
                           ),
-                          onChanged: (_) {
-                            _viewModel.description =
-                                _descriptionController.text;
-                            _recordEdit();
-                            _queueCenterTaskFocus();
-                          },
+                          onChanged: widget.readOnly
+                              ? null
+                              : (_) {
+                                  _viewModel.description =
+                                      _descriptionController.text;
+                                  _recordEdit();
+                                  _queueCenterTaskFocus();
+                                },
                         ),
                       ),
                     ),
@@ -1113,7 +1152,8 @@ class _EditNoteState extends State<EditNote>
                           ? TaskListEditor(
                               key: _taskEditorKey,
                               controller: _contentController,
-                              autofocus: widget.add,
+                              autofocus: widget.add && !widget.readOnly,
+                              readOnly: widget.readOnly,
                               onChanged: _recordEdit,
                               onCaretChanged: () {
                                 if (!_descriptionFocus.hasFocus &&
@@ -1133,8 +1173,9 @@ class _EditNoteState extends State<EditNote>
                                 key: _contentFieldKey,
                                 maxLines: null,
                                 minLines: 10,
-                                showCursor: true,
-                                autofocus: widget.add,
+                                readOnly: widget.readOnly,
+                                showCursor: !widget.readOnly,
+                                autofocus: widget.add && !widget.readOnly,
                                 focusNode: _contentFocus,
                                 controller: _contentController,
                                 textInputAction: TextInputAction.newline,
@@ -1153,10 +1194,12 @@ class _EditNoteState extends State<EditNote>
                                 inputFormatters: <TextInputFormatter>[
                                   AutoTaskItemFormatter(),
                                 ],
-                                onChanged: (String content) {
-                                  _getNoteContentLength(content);
-                                  _recordEdit();
-                                },
+                                onChanged: widget.readOnly
+                                    ? null
+                                    : (String content) {
+                                        _getNoteContentLength(content);
+                                        _recordEdit();
+                                      },
                                 onTap: _handleContentTap,
                               ),
                             ),
@@ -1204,7 +1247,9 @@ class _EditNoteState extends State<EditNote>
                                 name: name,
                                 onOpen: () =>
                                     _tryStorage(() => _openAttachment(name)),
-                                onRemove: () => _removeAttachment(name),
+                                onRemove: widget.readOnly
+                                    ? null
+                                    : () => _removeAttachment(name),
                               ),
                           ],
                         ),
@@ -1214,216 +1259,225 @@ class _EditNoteState extends State<EditNote>
                 floatingActionButtonLocation: FlushFabLocation(
                   onLeft: FabSideController.instance.onLeft,
                 ),
-                floatingActionButton: AppFab(
-                  key: _fabKey,
-                  onLeft: FabSideController.instance.onLeft,
-                  isEditorMode: true,
-                  isAddMode: widget.add,
-                  isImportant: _viewModel.important,
-                  isLocked: _viewModel.isLocked,
-                  isTaskMode: _viewModel.isTask,
-                  onLayoutChanged: _queueCenterTaskFocus,
-                  onDescriptionSelected: () {
-                    _fabKey.currentState?.closeVerticalMenu();
-                    setState(() => _showDescription = true);
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) _descriptionFocus.requestFocus();
-                    });
-                  },
-                  canLock: _canLock,
-                  currentCategory: _viewModel.category,
-                  currentNoteId: _viewModel.id,
-                  currentFolderId: _viewModel.folderId,
-                  isFindMode: _isFindMode,
-                  findCurrent: _findCurrent,
-                  findTotal: _findTotal,
-                  controller: _findController,
-                  focusNode: _findFocusNode,
-                  onSearchChanged: _onFindChanged,
-                  onFindPrev: _prevOccurrence,
-                  onFindNext: _nextOccurrence,
-                  onFindReset: _clearFind,
-                  onSave: () => _save(popAfter: true),
-                  onColorSelected: (String colorName) async {
-                    _cleanupEmptyChecklists();
-                    _viewModel.setCategory(colorName);
-                    // Automatic immediate save of the theme change if valid
-                    if (!await _tryStorage(
-                      () => _viewModel.autoSaveThemeOrBookmark(
-                        title: _titleController.text,
-                        content: _contentController.text,
-                      ),
-                    )) {
-                      return;
-                    }
-                  },
-                  onImageSelected: () {
-                    _tryStorage(_selectCoverImage);
-                    _fabKey.currentState?.closeVerticalMenu();
-                  },
-                  onChecklistSelected: () {
-                    _insertChecklist();
-                    _fabKey.currentState?.closeVerticalMenu();
-                  },
-                  onNoteLinkSelected: (Note selectedNote) {
-                    final String linkPlaceholder =
-                        "[[${selectedNote.id}:${selectedNote.title}]]";
-                    if (_viewModel.isTask) {
-                      if (_descriptionWasActive && _showDescription) {
-                        final rawOffset =
-                            _descriptionController.selection.baseOffset;
-                        final offset = _descriptionController
-                            .snapPositionOutOfLink(
-                              rawOffset.clamp(
-                                0,
-                                _descriptionController.text.length,
-                              ),
+                floatingActionButton: widget.readOnly && !_isFindMode
+                    ? null
+                    : AppFab(
+                        key: _fabKey,
+                        onLeft: FabSideController.instance.onLeft,
+                        isEditorMode: true,
+                        isAddMode: widget.add,
+                        isImportant: _viewModel.important,
+                        isLocked: _viewModel.isLocked,
+                        isTaskMode: _viewModel.isTask,
+                        onLayoutChanged: _queueCenterTaskFocus,
+                        onDescriptionSelected: () {
+                          _fabKey.currentState?.closeVerticalMenu();
+                          setState(() => _showDescription = true);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) _descriptionFocus.requestFocus();
+                          });
+                        },
+                        canLock: _canLock,
+                        currentCategory: _viewModel.category,
+                        currentNoteId: _viewModel.id,
+                        currentFolderId: _viewModel.folderId,
+                        isFindMode: _isFindMode,
+                        findCurrent: _findCurrent,
+                        findTotal: _findTotal,
+                        controller: _findController,
+                        focusNode: _findFocusNode,
+                        onSearchChanged: _onFindChanged,
+                        onFindPrev: _prevOccurrence,
+                        onFindNext: _nextOccurrence,
+                        onFindReset: _clearFind,
+                        onSave: () => _save(popAfter: true),
+                        onColorSelected: (String colorName) async {
+                          _cleanupEmptyChecklists();
+                          _viewModel.setCategory(colorName);
+                          // Automatic immediate save of the theme change if valid
+                          if (!await _tryStorage(
+                            () => _viewModel.autoSaveThemeOrBookmark(
+                              title: _titleController.text,
+                              content: _contentController.text,
+                            ),
+                          )) {
+                            return;
+                          }
+                        },
+                        onImageSelected: () {
+                          _tryStorage(_selectCoverImage);
+                          _fabKey.currentState?.closeVerticalMenu();
+                        },
+                        onChecklistSelected: () {
+                          _insertChecklist();
+                          _fabKey.currentState?.closeVerticalMenu();
+                        },
+                        onNoteLinkSelected: (Note selectedNote) {
+                          final String linkPlaceholder =
+                              "[[${selectedNote.id}:${selectedNote.title}]]";
+                          if (_viewModel.isTask) {
+                            if (_descriptionWasActive && _showDescription) {
+                              final rawOffset =
+                                  _descriptionController.selection.baseOffset;
+                              final offset = _descriptionController
+                                  .snapPositionOutOfLink(
+                                    rawOffset.clamp(
+                                      0,
+                                      _descriptionController.text.length,
+                                    ),
+                                  );
+                              final text = _descriptionController.text
+                                  .replaceRange(
+                                    offset,
+                                    offset,
+                                    linkPlaceholder,
+                                  );
+                              if (text.characters.length > 500) {
+                                showTanoToast(
+                                  context,
+                                  AppText.tr('description_limit'),
+                                );
+                                return;
+                              }
+                              _descriptionController.value = TextEditingValue(
+                                text: text,
+                                selection: TextSelection.collapsed(
+                                  offset: offset + linkPlaceholder.length,
+                                ),
+                              );
+                              _viewModel.description = text;
+                              _recordEdit();
+                              _descriptionFocus.requestFocus();
+                            } else {
+                              _taskEditorKey.currentState?.insertText(
+                                linkPlaceholder,
+                              );
+                            }
+                            return;
+                          }
+                          final int cursorPosition = _contentController
+                              .snapPositionOutOfLink(
+                                _contentController.selection.baseOffset,
+                              );
+                          final String currentText = _contentController.text;
+
+                          String newText;
+                          int newCursorPosition;
+
+                          // If no cursor (keyboard closed), insert at the beginning
+                          if (cursorPosition <= 0) {
+                            final String separator = currentText.isEmpty
+                                ? ''
+                                : '\n';
+                            newText = '$linkPlaceholder $separator$currentText';
+                            newCursorPosition = linkPlaceholder.length + 1;
+                          } else {
+                            final String before = currentText.substring(
+                              0,
+                              cursorPosition,
                             );
-                        final text = _descriptionController.text.replaceRange(
-                          offset,
-                          offset,
-                          linkPlaceholder,
-                        );
-                        if (text.characters.length > 500) {
-                          showTanoToast(
-                            context,
-                            AppText.tr('description_limit'),
+                            final String after = currentText.substring(
+                              cursorPosition,
+                            );
+                            newText = '$before$linkPlaceholder $after';
+                            newCursorPosition =
+                                cursorPosition + linkPlaceholder.length + 1;
+                          }
+
+                          _contentController.value = TextEditingValue(
+                            text: newText,
+                            selection: TextSelection.collapsed(
+                              offset: newCursorPosition,
+                            ),
                           );
-                          return;
-                        }
-                        _descriptionController.value = TextEditingValue(
-                          text: text,
-                          selection: TextSelection.collapsed(
-                            offset: offset + linkPlaceholder.length,
-                          ),
-                        );
-                        _viewModel.description = text;
-                        _recordEdit();
-                        _descriptionFocus.requestFocus();
-                      } else {
-                        _taskEditorKey.currentState?.insertText(
-                          linkPlaceholder,
-                        );
-                      }
-                      return;
-                    }
-                    final int cursorPosition = _contentController
-                        .snapPositionOutOfLink(
-                          _contentController.selection.baseOffset,
-                        );
-                    final String currentText = _contentController.text;
+                          _getNoteContentLength(newText);
+                          // A note-link insertion is a real edit: mark the note dirty.
+                          _recordEdit();
+                        },
+                        onAttachmentSelected: () {
+                          _fabKey.currentState?.closeVerticalMenu();
+                          _tryStorage(_addAttachment);
+                        },
+                        onImportantSelected: () async {
+                          _viewModel.toggleImportant();
+                          if (!await _tryStorage(
+                            () => _viewModel.autoSaveThemeOrBookmark(
+                              title: _titleController.text,
+                              content: _contentController.text,
+                            ),
+                          )) {
+                            return;
+                          }
+                        },
+                        onFindSelected: _enterFindMode,
+                        onMoveTo: _moveTo,
+                        onMoveToArchive: _archiveNote,
+                        onLockSelected: () async {
+                          // Locking takes effect immediately (there is no prompt).
+                          // Unlocking shows the system prompt, so close the keyboard
+                          // first.
+                          if (_viewModel.isLocked) {
+                            FocusScope.of(context).unfocus();
+                            await Future.delayed(
+                              const Duration(milliseconds: 200),
+                            );
+                            if (!mounted) return;
+                          }
 
-                    String newText;
-                    int newCursorPosition;
+                          final previousLock = _viewModel.isLocked;
+                          final LockToggleResult result = await _viewModel
+                              .toggleLock();
+                          // The gesture lives in a builder, so guard its own context.
+                          if (!context.mounted) return;
 
-                    // If no cursor (keyboard closed), insert at the beginning
-                    if (cursorPosition <= 0) {
-                      final String separator = currentText.isEmpty ? '' : '\n';
-                      newText = '$linkPlaceholder $separator$currentText';
-                      newCursorPosition = linkPlaceholder.length + 1;
-                    } else {
-                      final String before = currentText.substring(
-                        0,
-                        cursorPosition,
-                      );
-                      final String after = currentText.substring(
-                        cursorPosition,
-                      );
-                      newText = '$before$linkPlaceholder $after';
-                      newCursorPosition =
-                          cursorPosition + linkPlaceholder.length + 1;
-                    }
+                          if (result == LockToggleResult.unavailable) {
+                            // No system credential: refuse rather than lock the note
+                            // forever.
+                            _fabKey.currentState?.closeVerticalMenu();
+                            await showAdaptiveAlert(
+                              context: context,
+                              title: AppText.tr('lock_unavailable_title'),
+                              message: AppText.tr('lock_requires_device_lock'),
+                            );
+                            return;
+                          }
+                          // A cancelled authentication leaves the menu open so the
+                          // user can retry.
+                          if (result == LockToggleResult.cancelled) return;
 
-                    _contentController.value = TextEditingValue(
-                      text: newText,
-                      selection: TextSelection.collapsed(
-                        offset: newCursorPosition,
+                          // Persist silently, exactly like the bookmark: the lock is
+                          // effective immediately, no explicit save is needed.
+                          if (!await _tryStorage(
+                            () => _viewModel.autoSaveThemeOrBookmark(
+                              title: _titleController.text,
+                              content: _contentController.text,
+                            ),
+                          )) {
+                            _viewModel.isLocked = previousLock;
+                            if (mounted) setState(() {});
+                            return;
+                          }
+                          _fabKey.currentState?.closeVerticalMenu();
+                          await FeedbackController.instance.success();
+                          if (!context.mounted) return;
+                          await showLockToast(
+                            context,
+                            locked: result == LockToggleResult.locked,
+                            folder: false,
+                          );
+                        },
+                        onArchiveSelected: _archiveNote,
+                        onDeleteSelected: () async {
+                          final bool? confirmDeletion = await getConfirmation(
+                            context: context,
+                            actionTitle: AppText.tr('delete_note'),
+                            action: AppText.tr('delete'),
+                          );
+                          if (confirmDeletion == true) {
+                            _deleteNote();
+                          }
+                        },
                       ),
-                    );
-                    _getNoteContentLength(newText);
-                    // A note-link insertion is a real edit: mark the note dirty.
-                    _recordEdit();
-                  },
-                  onAttachmentSelected: () {
-                    _fabKey.currentState?.closeVerticalMenu();
-                    _tryStorage(_addAttachment);
-                  },
-                  onImportantSelected: () async {
-                    _viewModel.toggleImportant();
-                    if (!await _tryStorage(
-                      () => _viewModel.autoSaveThemeOrBookmark(
-                        title: _titleController.text,
-                        content: _contentController.text,
-                      ),
-                    )) {
-                      return;
-                    }
-                  },
-                  onFindSelected: _enterFindMode,
-                  onMoveTo: _moveTo,
-                  onLockSelected: () async {
-                    // Locking takes effect immediately (there is no prompt).
-                    // Unlocking shows the system prompt, so close the keyboard
-                    // first.
-                    if (_viewModel.isLocked) {
-                      FocusScope.of(context).unfocus();
-                      await Future.delayed(const Duration(milliseconds: 200));
-                      if (!mounted) return;
-                    }
-
-                    final previousLock = _viewModel.isLocked;
-                    final LockToggleResult result = await _viewModel
-                        .toggleLock();
-                    // The gesture lives in a builder, so guard its own context.
-                    if (!context.mounted) return;
-
-                    if (result == LockToggleResult.unavailable) {
-                      // No system credential: refuse rather than lock the note
-                      // forever.
-                      _fabKey.currentState?.closeVerticalMenu();
-                      await showAdaptiveAlert(
-                        context: context,
-                        title: AppText.tr('lock_unavailable_title'),
-                        message: AppText.tr('lock_requires_device_lock'),
-                      );
-                      return;
-                    }
-                    // A cancelled authentication leaves the menu open so the
-                    // user can retry.
-                    if (result == LockToggleResult.cancelled) return;
-
-                    // Persist silently, exactly like the bookmark: the lock is
-                    // effective immediately, no explicit save is needed.
-                    if (!await _tryStorage(
-                      () => _viewModel.autoSaveThemeOrBookmark(
-                        title: _titleController.text,
-                        content: _contentController.text,
-                      ),
-                    )) {
-                      _viewModel.isLocked = previousLock;
-                      if (mounted) setState(() {});
-                      return;
-                    }
-                    _fabKey.currentState?.closeVerticalMenu();
-                    await FeedbackController.instance.success();
-                    if (!context.mounted) return;
-                    await showLockToast(
-                      context,
-                      locked: result == LockToggleResult.locked,
-                      folder: false,
-                    );
-                  },
-                  onDeleteSelected: () async {
-                    final bool? confirmDeletion = await getConfirmation(
-                      context: context,
-                      actionTitle: AppText.tr('delete_note'),
-                      action: AppText.tr('delete'),
-                    );
-                    if (confirmDeletion == true) {
-                      _deleteNote();
-                    }
-                  },
-                ),
               ),
             ),
           );
@@ -1444,7 +1498,9 @@ class _AttachmentRow extends StatelessWidget {
 
   final String name;
   final VoidCallback onOpen;
-  final VoidCallback onRemove;
+
+  /// Null on a read-only document: the remove button is hidden.
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -1472,16 +1528,17 @@ class _AttachmentRow extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: AppText.tr('delete'),
-            icon: Icon(
-              Symbols.close,
-              size: 16.0,
-              color: mutedTextColor(context),
+          if (onRemove != null)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: AppText.tr('delete'),
+              icon: Icon(
+                Symbols.close,
+                size: 16.0,
+                color: mutedTextColor(context),
+              ),
+              onPressed: onRemove,
             ),
-            onPressed: onRemove,
-          ),
         ],
       ),
     );

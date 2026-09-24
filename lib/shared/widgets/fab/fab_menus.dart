@@ -107,6 +107,19 @@ mixin _FabMenusMixin on _FabStateMixin {
             widget.onMoveTo?.call(null);
           },
         ),
+        // The archive sits right after Home: a document can leave its folder
+        // for the archive, not only for another folder.
+        _VerticalMenuItem(
+          icon: Symbols.archive,
+          iconSize: 20.0,
+          fontSize: _fabLabelSize,
+          maxLines: 2,
+          label: AppText.tr('option_archive'),
+          onTap: () {
+            closeVerticalMenu();
+            widget.onMoveToArchive?.call();
+          },
+        ),
         for (final Folder folder in folders)
           _VerticalMenuItem(
             icon: Symbols.folder,
@@ -446,6 +459,11 @@ mixin _FabMenusMixin on _FabStateMixin {
             : AppText.tr('option_lock'),
         enabled: widget.canLock,
         onTap: widget.onLockSelected,
+      ),
+      _VerticalMenuItem(
+        icon: Symbols.archive,
+        label: AppText.tr('option_archive'),
+        onTap: widget.onArchiveSelected,
       ),
       _VerticalMenuItem(
         icon: Symbols.delete,

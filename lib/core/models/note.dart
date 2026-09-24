@@ -28,7 +28,9 @@ class Note implements ContentEntity {
     this.category = 'nuage',
     this.isDeleted = false,
     this.isLocked = false,
+    this.isArchived = false,
     this.deletedAt,
+    this.archivedAt,
     this.attachments = const <String>[],
     this.coverImage,
     this.folderId,
@@ -62,7 +64,13 @@ class Note implements ContentEntity {
   @override
   final bool isLocked;
   @override
+  final bool isArchived;
+  @override
   final String? deletedAt;
+
+  /// When the document was archived, shown while it stays in the archive.
+  @override
+  final String? archivedAt;
   @override
   final String? coverImage;
 
@@ -86,7 +94,9 @@ class Note implements ContentEntity {
     category: normalizeCategory(json['category'] as String?),
     isDeleted: json['isDeleted'] == 1,
     isLocked: json['isLocked'] == 1,
+    isArchived: json['isArchived'] == 1,
     deletedAt: json['deletedAt'] as String?,
+    archivedAt: json['archivedAt'] as String?,
     attachments: _decodeAttachments(json['attachments']),
     coverImage: json['coverImage'] as String?,
     folderId: json['folderId'] as String?,
@@ -111,7 +121,9 @@ class Note implements ContentEntity {
     'category': category,
     'isDeleted': isDeleted ? 1 : 0,
     'isLocked': isLocked ? 1 : 0,
+    'isArchived': isArchived ? 1 : 0,
     'deletedAt': deletedAt,
+    'archivedAt': archivedAt,
     'attachments': jsonEncode(attachments),
     'coverImage': coverImage,
     'folderId': folderId,
@@ -154,7 +166,9 @@ class Note implements ContentEntity {
     String? category,
     bool? isDeleted,
     bool? isLocked,
+    bool? isArchived,
     Object? deletedAt = unchangedField,
+    Object? archivedAt = unchangedField,
     List<String>? attachments,
     Object? coverImage = unchangedField,
     Object? folderId = unchangedField,
@@ -172,7 +186,9 @@ class Note implements ContentEntity {
       category: category ?? this.category,
       isDeleted: isDeleted ?? this.isDeleted,
       isLocked: isLocked ?? this.isLocked,
+      isArchived: isArchived ?? this.isArchived,
       deletedAt: copiedNullable<String>(deletedAt, this.deletedAt),
+      archivedAt: copiedNullable<String>(archivedAt, this.archivedAt),
       attachments: attachments ?? this.attachments,
       coverImage: copiedNullable<String>(coverImage, this.coverImage),
       folderId: copiedNullable<String>(folderId, this.folderId),

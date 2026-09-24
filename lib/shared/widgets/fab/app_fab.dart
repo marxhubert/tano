@@ -105,6 +105,8 @@ class AppFab extends StatefulWidget {
     this.onMoveTo,
     this.onLockSelected,
     this.onDeleteSelected,
+    this.onArchiveSelected,
+    this.onMoveToArchive,
     this.onEditTitle,
   });
 
@@ -182,6 +184,12 @@ class AppFab extends StatefulWidget {
   final ValueChanged<String?>? onMoveTo;
   final VoidCallback? onLockSelected;
   final VoidCallback? onDeleteSelected;
+
+  /// The document menu's "Archive" action, just before Delete.
+  final VoidCallback? onArchiveSelected;
+
+  /// The Move-to menu's "Archive" entry, right after Home.
+  final VoidCallback? onMoveToArchive;
 
   /// Folder page: renames the folder from the title line.
   final VoidCallback? onEditTitle;

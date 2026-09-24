@@ -32,6 +32,14 @@ class SelectionController extends ChangeNotifier {
   /// Whether [id] may be selected, per the injected rule.
   bool canSelect(String id) => _isSelectable?.call(id) ?? true;
 
+  /// Enters selection mode with nothing selected yet, for a page whose
+  /// "select" button starts an empty selection.
+  void begin() {
+    if (_isActive) return;
+    _isActive = true;
+    notifyListeners();
+  }
+
   /// Enters selection mode with [id] selected. No-op when not selectable.
   void enter(String id) {
     if (!canSelect(id)) return;

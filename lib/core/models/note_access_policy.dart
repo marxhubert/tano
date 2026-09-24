@@ -10,6 +10,7 @@ class NoteAccessPolicy {
 
   bool isReachable(Note note) =>
       !note.isDeleted &&
+      !note.isArchived &&
       (note.folderId == null ||
           (_folders[note.folderId] != null &&
               !_folders[note.folderId]!.isDeleted));

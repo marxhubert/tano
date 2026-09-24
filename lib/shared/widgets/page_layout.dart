@@ -110,6 +110,7 @@ class PageScaffold extends StatefulWidget {
     this.titleFocusNode,
     this.titleHint,
     this.titleOnChanged,
+    this.titleReadOnly = false,
     this.backgroundColor,
     this.titlePaddingLeft,
     this.titleWidget,
@@ -160,6 +161,10 @@ class PageScaffold extends StatefulWidget {
   final GlobalKey<ScaffoldState>? scaffoldKey;
   final VoidCallback? onPop;
   final TextEditingController? titleController;
+
+  /// When true the title field (when [titleController] is set) cannot be
+  /// edited: the read-only document shows its title without an editor.
+  final bool titleReadOnly;
   final FocusNode? titleFocusNode;
   final String? titleHint;
   final ValueChanged<String>? titleOnChanged;
@@ -529,9 +534,11 @@ class _PageScaffoldState extends State<PageScaffold> {
         maxLines: 3,
         minLines: 1,
         maxLength: 100,
+        readOnly: widget.titleReadOnly,
+        showCursor: !widget.titleReadOnly,
         textInputAction: TextInputAction.next,
         textCapitalization: TextCapitalization.sentences,
-        onChanged: widget.titleOnChanged,
+        onChanged: widget.titleReadOnly ? null : widget.titleOnChanged,
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: TanoText.pageTitle,

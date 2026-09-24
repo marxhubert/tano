@@ -268,6 +268,23 @@ void main() {
       // Both the note and the folder come back.
       expect(vm.notes.map((Note n) => n.id), contains('n1'));
       expect(vm.folders.map((Folder f) => f.id), <String>['f1']);
+      // The filed note returns to its folder, which came back with it.
+      expect(vm.noteCountIn('f1'), 1);
+    });
+
+    test('undo sends a note Home when its folder no longer exists', () async {
+      final _FakeRepo repo = _FakeRepo(
+        // The note still points at a folder that is not in the batch.
+        notes: <Note>[_note(id: 'n1', folderId: 'gone')],
+      );
+      final HomeViewModel vm = _vm(repo);
+      vm.enterSelectionMode('n1');
+      await vm.deleteSelected();
+      expect(vm.notes, isEmpty);
+
+      await vm.reinsertLastDeleted();
+
+      expect(vm.notes.single.folderId, isNull);
     });
 
     test('moving a selected note files it in the target folder', () async {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 
 void main() {
@@ -66,6 +67,25 @@ void main() {
       expect(restored.id, '');
       expect(restored.important, false);
       expect(restored.category, 'nuage');
+      expect(restored.isArchived, isFalse);
+      expect(restored.archivedAt, isNull);
+    });
+
+    test('serializes and deserializes the archive fields', () {
+      final note = Note(
+        id: '1',
+        title: 'a',
+        isArchived: true,
+        archivedAt: '2026-08-14 10:00:00.000',
+      );
+
+      final restored = Note.fromJson(note.toJson());
+
+      expect(restored.isArchived, isTrue);
+      expect(restored.archivedAt, '2026-08-14 10:00:00.000');
+      // A folder cannot be archived.
+      expect(Folder(id: 'f').isArchived, isFalse);
+      expect(Folder(id: 'f').archivedAt, isNull);
     });
 
     test('createdAt and updatedAt default to the date', () {

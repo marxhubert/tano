@@ -22,6 +22,7 @@ Future<NoteAction?> openNoteEditor(
   required bool authenticated,
   required bool requiresAuthentication,
   bool fullscreenDialog = false,
+  bool readOnly = false,
 }) async {
   bool granted = authenticated;
   if (requiresAuthentication) {
@@ -38,6 +39,7 @@ Future<NoteAction?> openNoteEditor(
         add: add,
         noteAction: NoteAction(kind: NoteActionKind.cancel, note: note),
         authenticated: granted,
+        readOnly: readOnly,
       ),
       fullscreenDialog: fullscreenDialog,
     ),

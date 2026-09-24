@@ -153,6 +153,34 @@ void main() {
     expect(find.text('Alpha'), findsOneWidget);
   });
 
+  testWidgets('the move menu offers Archive right after Home', (
+    WidgetTester tester,
+  ) async {
+    await _pumpFab(
+      tester,
+      _Repo(
+        notes: <Note>[_note('n1')],
+        folders: <Folder>[_folder('f1', 'Alpha')],
+      ),
+      currentNoteId: 'n1',
+    );
+    await tester.tap(find.byIcon(Symbols.build_circle));
+    await tester.pumpAndSettle();
+    await _tapsAndOpens(tester, AppText.tr('option_move'));
+
+    final double archiveY = tester
+        .getTopLeft(find.text(AppText.tr('option_archive')))
+        .dy;
+    final double homeY = tester
+        .getTopLeft(find.text(AppText.tr('no_folder')))
+        .dy;
+    final double folderY = tester.getTopLeft(find.text('Alpha')).dy;
+
+    expect(archiveY, greaterThan(homeY));
+    expect(archiveY, lessThan(folderY));
+    expect(find.byIcon(Symbols.archive), findsOneWidget);
+  });
+
   testWidgets('the folder the note already sits in is never offered', (
     WidgetTester tester,
   ) async {

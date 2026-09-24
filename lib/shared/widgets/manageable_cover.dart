@@ -15,6 +15,7 @@ class ManageableCover extends StatefulWidget {
     super.key,
     required this.name,
     required this.onRemove,
+    this.interactive = true,
     this.height,
     this.fit = BoxFit.cover,
     this.padding = const EdgeInsets.symmetric(vertical: appPaddingMedium),
@@ -27,6 +28,10 @@ class ManageableCover extends StatefulWidget {
 
   /// Removes the cover. Runs only after the user confirms.
   final Future<void> Function() onRemove;
+
+  /// When false the cover cannot be removed: a read-only document shows it
+  /// without the long-press affordance.
+  final bool interactive;
 
   /// Fixed height of the cover, cropped by [fit]. When null the image keeps
   /// its own aspect ratio at full width instead of being
@@ -93,8 +98,9 @@ class _ManageableCoverState extends State<ManageableCover> {
         },
         child: GestureDetector(
           // Long press reveals the remove button, like a note's cover.
-          onLongPress: () =>
-              setState(() => _showRemoveButton = !_showRemoveButton),
+          onLongPress: widget.interactive
+              ? () => setState(() => _showRemoveButton = !_showRemoveButton)
+              : null,
           child: _rounded(
             Stack(
               children: <Widget>[
@@ -137,7 +143,7 @@ class _ManageableCoverState extends State<ManageableCover> {
                       ),
                     ),
                   ),
-                if (_corrupted || _showRemoveButton)
+                if (widget.interactive && (_corrupted || _showRemoveButton))
                   Positioned(
                     top: 8.0,
                     right: 8.0,
