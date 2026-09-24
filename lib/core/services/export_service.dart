@@ -7,6 +7,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/services/archive_validation.dart';
 import 'package:tano/core/services/local_cipher.dart';
 
 /// Builds `.tano` export containers.
@@ -81,6 +82,13 @@ class ExportService {
     List<Folder> folders = const <Folder>[],
     String? password,
   }) async {
+    // Refuse what the importer would reject anyway, so the user is never left
+    // with a backup that cannot be restored.
+    if (notes.length > ArchiveValidation.maxNotes) {
+      throw const ExportException(
+        'Too many notes for a single .tano export.',
+      );
+    }
     if (password == null &&
         (notes.any((Note note) => note.isLocked) ||
             folders.any((Folder folder) => folder.isLocked))) {

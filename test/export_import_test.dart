@@ -9,6 +9,7 @@ import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
+import 'package:tano/core/services/archive_validation.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/services/export_service.dart';
 import 'package:tano/core/services/import_service.dart';
@@ -336,6 +337,17 @@ void main() {
       throwsA(isA<ImportException>()),
     );
     expect(repository.notes, isEmpty);
+  });
+
+  test('an export refuses more notes than an import can restore', () async {
+    final List<Note> many = <Note>[
+      for (int i = 0; i <= ArchiveValidation.maxNotes; i++) _note(id: 'n$i'),
+    ];
+
+    expect(
+      () => exporter().build(notes: many),
+      throwsA(isA<ExportException>()),
+    );
   });
 
   test('cleartext export refuses to include a locked folder', () async {

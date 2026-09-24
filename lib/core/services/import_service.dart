@@ -94,14 +94,16 @@ class ImportService {
         throw const FormatException('Unsupported manifest');
       }
       final rows = decoded['notes'] as List;
-      if (rows.length > 10000) throw const FormatException('Too many notes');
+      if (rows.length > ArchiveValidation.maxNotes) {
+        throw const FormatException('Too many notes');
+      }
       incoming = rows
           .map((row) => Note.fromJson(row as Map<String, dynamic>))
           .toList();
 
       final Object? folderRows = decoded['folders'];
       if (folderRows is List) {
-        if (folderRows.length > 10000) {
+        if (folderRows.length > ArchiveValidation.maxNotes) {
           throw const FormatException('Too many folders');
         }
         incomingFolders = folderRows

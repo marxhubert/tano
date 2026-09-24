@@ -171,9 +171,9 @@ void main() {
       databasePath: '${tempDir.path}/scale.db',
       documentsDirectory: () async => tempDir,
     );
-    // Small enough that the JSON manifest stays under the 4 MiB limit; the
-    // point is the note count, not the payload size.
-    final String body = 'x' * 256;
+    // ~4.4 MiB of JSON: over the old 4 MiB manifest limit, under the raised
+    // 32 MiB one. This is what a few thousand ordinary notes weigh.
+    final String body = 'x' * 2048;
     final List<Note> notes = <Note>[
       for (int i = 0; i < 2000; i++)
         Note(
