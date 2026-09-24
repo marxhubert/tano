@@ -22,10 +22,12 @@ class _InMemoryNotesRepository implements NotesRepository {
   final List<Note> notes;
 
   @override
-  Future<List<Note>> loadNotes() async => notes.where((Note n) => !n.isDeleted).toList();
+  Future<List<Note>> loadNotes() async =>
+      notes.where((Note n) => !n.isDeleted).toList();
 
   @override
-  Future<List<Note>> loadTrashNotes() async => notes.where((Note n) => n.isDeleted).toList();
+  Future<List<Note>> loadTrashNotes() async =>
+      notes.where((Note n) => n.isDeleted).toList();
 
   @override
   Future<void> upsertNote(Note note) async {
@@ -63,10 +65,12 @@ class _InMemoryNotesRepository implements NotesRepository {
 
   @override
   Future<List<Note>> searchNotes(String query) async => notes
-      .where((Note n) =>
-          !n.isDeleted &&
-          (n.title.toLowerCase().contains(query.toLowerCase()) ||
-              n.content.toLowerCase().contains(query.toLowerCase())))
+      .where(
+        (Note n) =>
+            !n.isDeleted &&
+            (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                n.content.toLowerCase().contains(query.toLowerCase())),
+      )
       .toList();
 
   @override
@@ -120,7 +124,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppText.tr('onboarding_title_3')), findsOneWidget);
     // The last page carries the closing label instead of "next".
-    expect(find.text(AppText.tr('onboarding_start').toUpperCase()), findsOneWidget);
+    expect(
+      find.text(AppText.tr('onboarding_start').toUpperCase()),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a tablet halves and centres the primary button', (tester) async {
+    tester.view.physicalSize = const Size(1024, 1366);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    OnboardingController.instance.debugSetSeen(false);
+
+    await tester.pumpWidget(const Tano(themeMode: ThemeMode.light));
+    await tester.pumpAndSettle();
+
+    final Finder button = find.widgetWithText(
+      ElevatedButton,
+      AppText.tr('onboarding_next').toUpperCase(),
+    );
+    final Rect rect = tester.getRect(button);
+    const double sidePadding = 24.0;
+    // Half of the padded line, and centred on the page.
+    expect(rect.width, closeTo((1024 - sidePadding * 2) / 2, 1));
+    expect(rect.center.dx, closeTo(512, 1));
+
+    // Everything else stays inside that same width, the skip link included.
+    final Rect skip = tester.getRect(find.text(AppText.tr('onboarding_skip')));
+    expect(skip.left, greaterThanOrEqualTo(rect.left - 0.5));
+    expect(skip.right, lessThanOrEqualTo(rect.right + 0.5));
   });
 
   testWidgets('skipping remembers the choice and opens the app', (

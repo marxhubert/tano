@@ -70,6 +70,22 @@ class CrashReports {
     }
   }
 
+  /// Sends one clearly-labelled test error so the reporting path can be
+  /// verified from the developer "Labs" section.
+  ///
+  /// Returns false when the SDK is not running — no consent, or a build without
+  /// a DSN — so the caller can say so instead of failing silently. The scrubber
+  /// keeps the exception's type and drops its free-form value, so the event
+  /// reads as `TanoLabsTestException` on the dashboard.
+  static Future<bool> sendTestError() async {
+    if (!_initialised) return false;
+    await Sentry.captureException(
+      const TanoLabsTestException(),
+      stackTrace: StackTrace.current,
+    );
+    return true;
+  }
+
   static Future<void> _configure(SentryFlutterOptions options) async {
     options.dsn = AppConfig.sentryDsn;
 
@@ -178,4 +194,15 @@ class CrashReports {
       value != null && RegExp(r'^[a-zA-Z_$][a-zA-Z0-9_$.<>]*$').hasMatch(value)
       ? value
       : null;
+}
+
+/// The deliberate test error the Labs action reports.
+///
+/// Its type is the one field [CrashReports.scrub] keeps, so it identifies the
+/// test on the dashboard without carrying any content of its own.
+class TanoLabsTestException implements Exception {
+  const TanoLabsTestException();
+
+  @override
+  String toString() => 'TanoLabsTestException (Labs)';
 }

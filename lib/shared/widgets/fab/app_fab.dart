@@ -42,6 +42,7 @@ Color _fabMenuSurface(BuildContext context) =>
 /// tint. A lighter tint here is what left the two teals in the first place.
 Color _fabActiveSurface(BuildContext context) =>
     Theme.of(context).colorScheme.primary;
+
 /// The bookmark once it is full: solid ink, so it stands off the teal bar —
 /// white on the light theme, black on the dark one. No outline.
 Color _fabImportant(BuildContext context) =>
@@ -238,7 +239,8 @@ class AppFabState extends State<AppFab>
             child: TextFieldTapRegion(
               child: AnimatedContainer(
                 onEnd: _reportSettledLayout,
-                duration: TanoMotion.base,
+                // A shrinking menu swap snaps: see _menuMeasured.
+                duration: _instantMenuResize ? Duration.zero : TanoMotion.base,
                 curve: Curves.easeInOut,
                 height: geometry.height,
                 width: geometry.width,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 enum DocumentFilter {
@@ -150,7 +151,7 @@ class DocumentFilterControl extends StatelessWidget {
     // One kind needs no choice: its own count says everything the three
     // segments would.
     final DocumentFilter? onlyKind = sentence == null ? _onlyKind() : null;
-    return SegmentedButton<DocumentFilter>(
+    final Widget control = SegmentedButton<DocumentFilter>(
       segments: <ButtonSegment<DocumentFilter>>[
         if (sentence != null)
           ButtonSegment<DocumentFilter>(value: value, label: Text(sentence))
@@ -201,6 +202,16 @@ class DocumentFilterControl extends StatelessWidget {
           context,
         ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         visualDensity: VisualDensity.compact,
+      ),
+    );
+
+    // A tablet has width to spare: the tags take half of it and centre,
+    // instead of stretching across the page. A phone keeps the full width.
+    if (!tabletViewport(MediaQuery.sizeOf(context))) return control;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) => Center(
+        // Exactly half the line, kept a bar rather than shrunk to its labels.
+        child: SizedBox(width: constraints.maxWidth / 2, child: control),
       ),
     );
   }

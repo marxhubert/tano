@@ -41,6 +41,9 @@ Older releases are described on the
   attachments, and restoring it puts each note back in its folder.
 - The sort order and the document filter are shared controllers, so Home, a
   folder and Settings can no longer disagree.
+- A developer-only **Labs** section closes the settings, shown in debug and
+  development builds only. It gathers the fixtures reset — moved off the reset
+  page — and a lab that sends one labelled test error to Sentry.
 
 ### Changed
 
@@ -58,6 +61,11 @@ Older releases are described on the
 - Leaving a folder search remembers the query in the shared history, exactly as
   Home does.
 - The `.tano` import summary now reports how many folders it created.
+- A tablet halves and centres the document tags and the introduction's primary
+  button; a phone holds the introduction in portrait.
+- The four text-size choices keep a fixed slot, so a bold "A" no longer nudges
+  the row, and a landscape window scrolls from the empty margin beside its
+  centred column.
 
 ### Fixed
 
@@ -76,6 +84,8 @@ Older releases are described on the
   import's own note limit, and an over-limit export says so instead of producing
   an unrestorable file.
 - A cleartext export no longer drops folder associations on import.
+- Switching the FAB from a long menu to a short one no longer lagged: a shorter
+  menu snaps into place instead of animating an empty panel away.
 
 ### Security
 

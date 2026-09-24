@@ -123,9 +123,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(child: FeedbackSection()),
-        ),
+        home: Scaffold(body: SingleChildScrollView(child: FeedbackSection())),
       ),
     );
 
@@ -137,5 +135,33 @@ void main() {
     await tester.tap(find.byType(Switch).first);
     await tester.pump();
     expect(FeedbackController.instance.haptics, isFalse);
+  });
+
+  testWidgets('choosing a size never shifts the row', (tester) async {
+    await tester.runAsync(
+      () => TextScaleController.instance.setSize(TanoTextSize.normal),
+    );
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: SingleChildScrollView(child: FeedbackSection())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final List<Offset> before = <Offset>[
+      for (int i = 0; i < 4; i++) tester.getCenter(find.text('A').at(i)),
+    ];
+    // The third one ("large") turns bold: its glyph grows a hair, and the fixed
+    // slot has to keep every "A", and its check, exactly where it was.
+    await tester.tap(find.text('A').at(2));
+    await tester.pumpAndSettle();
+    final List<Offset> after = <Offset>[
+      for (int i = 0; i < 4; i++) tester.getCenter(find.text('A').at(i)),
+    ];
+
+    for (int i = 0; i < 4; i++) {
+      expect(after[i].dx, closeTo(before[i].dx, .01));
+      expect(after[i].dy, closeTo(before[i].dy, .01));
+    }
   });
 }

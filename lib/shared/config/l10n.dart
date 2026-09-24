@@ -348,6 +348,15 @@ class AppText {
     if (kDebugMode)
       'developer_reset_failed':
           'Reset could not finish. Some data may already have been replaced. Retry to reload all demo data.',
+    // Labs: the developer surface, debug builds only.
+    if (kDebugMode) 'labs': 'Labs',
+    if (kDebugMode)
+      'labs_hint': 'Developer tools. Debug builds only, never in a release.',
+    if (kDebugMode) 'labs_sentry_test': 'Send a test error',
+    if (kDebugMode) 'labs_sentry_sent': 'Test error sent to Sentry.',
+    if (kDebugMode)
+      'labs_sentry_unavailable':
+          'Crash reports are off. Turn them on before sending a test.',
     // Introduction
     'onboarding_skip': 'Skip',
     'onboarding_next': 'Next',
@@ -622,6 +631,16 @@ class AppText {
     if (kDebugMode)
       'developer_reset_failed':
           'La réinitialisation a échoué. Certaines données ont peut-être déjà été remplacées. Réessayez pour recharger toutes les données de démonstration.',
+    // Labos : la surface développeur, réservée aux versions debug.
+    if (kDebugMode) 'labs': 'Labos',
+    if (kDebugMode)
+      'labs_hint':
+          'Outils développeur. Réservés aux versions debug, jamais à une version publiée.',
+    if (kDebugMode) 'labs_sentry_test': 'Envoyer une erreur de test',
+    if (kDebugMode) 'labs_sentry_sent': 'Erreur de test envoyée à Sentry.',
+    if (kDebugMode)
+      'labs_sentry_unavailable':
+          'Les rapports de crash sont désactivés. Activez-les avant d’envoyer un test.',
     // Introduction
     'onboarding_skip': 'Passer',
     'onboarding_next': 'Suivant',
@@ -728,8 +747,7 @@ class AppText {
     'export_password': 'Teny miafina',
     'export_password_hint': '8 litera farafahakeliny',
     'password_too_short': 'Tokony 8 litera Farafahakeliny ny teny miafina.',
-    'export_locked_required':
-        'Mila fanondranana voahidy ny naoty voahidy.',
+    'export_locked_required': 'Mila fanondranana voahidy ny naoty voahidy.',
     'export_failed': 'Tsy nahomby ny fanondranana',
     'export_done': 'Voatahiry ny fanondranana.',
     'import_password_title': 'Fanondranana voahidy',
@@ -894,6 +912,18 @@ class AppText {
     if (kDebugMode)
       'developer_reset_failed':
           'Tsy vita ny famerenana. Mety efa niova ny angona sasany. Andramo indray hampidirana ny angona andrana rehetra.',
+    // Laboratoara: ny sehatra ho an'ny mpamorona, amin'ny kinova debug ihany.
+    if (kDebugMode) 'labs': 'Laboratoara',
+    if (kDebugMode)
+      'labs_hint':
+          "Fitaovana ho an'ny mpamorona. Amin'ny kinova debug ihany, tsy amin'ny kinova avoaka.",
+    if (kDebugMode) 'labs_sentry_test': 'Alefaso ny hadisoana fanandramana',
+    if (kDebugMode)
+      'labs_sentry_sent':
+          "Nalefa tany amin'ny Sentry ny hadisoana fanandramana.",
+    if (kDebugMode)
+      'labs_sentry_unavailable':
+          'Tsy mandeha ny tatitra momba ny olana. Velomy aloha vao mandefa fanandramana.',
     // Fampidirana
     'onboarding_skip': 'Hitsambikina',
     'onboarding_next': 'Manaraka',

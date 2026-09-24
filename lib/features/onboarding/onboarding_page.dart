@@ -3,10 +3,12 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tano/features/onboarding/onboarding_slides.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// The introduction, shown once on the first launch and reachable again from
@@ -27,8 +29,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
+  /// Whether this page locked a phone to portrait, so it can hand the device
+  /// back on the way out.
+  bool _forcedPortrait = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_forcedPortrait || _orientationChecked) return;
+    _orientationChecked = true;
+    // A phone reads the introduction upright: hold it in portrait while the
+    // pages are on screen. A tablet keeps the room it has to rotate freely.
+    if (!tabletViewport(MediaQuery.sizeOf(context))) {
+      _forcedPortrait = true;
+      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
+
+  bool _orientationChecked = false;
+
   @override
   void dispose() {
+    // Only the first-run introduction owns the orientation: a replay opened
+    // from the settings leaves the lock the settings itself applies in place.
+    if (_forcedPortrait && widget.onFinished == null) {
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -65,52 +94,71 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     final List<OnboardingSlide> slides = onboardingSlides();
     final bool isLast = _index == _lastIndex;
+    final Size window = MediaQuery.sizeOf(context);
+    // A tablet has width to spare: the whole introduction lives in a centred
+    // column as wide as the primary button, so the skip link, the pages and the
+    // dots all line up with it. A phone keeps the full width.
+    final bool onTablet = tabletViewport(window);
+    final double contentWidth = onTablet
+        ? (window.width - sectionGap * 2) / 2
+        : window.width;
     return PaperSurface(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Column(
-            children: <Widget>[
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: appPaddingTight,
-                  ),
-                  child: TextButton(
-                    onPressed: _finish,
-                    child: Text(
-                      AppText.tr('onboarding_skip'),
-                      style: TextStyle(
-                        color: mutedTextColor(context),
-                        fontSize: TanoText.listTitle,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: contentWidth,
+              child: Column(
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: appPaddingTight,
+                      ),
+                      child: TextButton(
+                        onPressed: _finish,
+                        child: Text(
+                          AppText.tr('onboarding_skip'),
+                          style: TextStyle(
+                            color: mutedTextColor(context),
+                            fontSize: TanoText.listTitle,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: slides.length,
+                      onPageChanged: (int index) =>
+                          setState(() => _index = index),
+                      itemBuilder: (BuildContext context, int index) =>
+                          _Slide(slide: slides[index]),
+                    ),
+                  ),
+                  _Dots(count: slides.length, index: _index),
+                  const SizedBox(height: sectionGap),
+                  Padding(
+                    // Inside the column the button already has its width; only
+                    // a phone keeps the outer inset it always had.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: onTablet ? 0.0 : sectionGap,
+                    ),
+                    child: _PrimaryButton(
+                      label: isLast
+                          ? AppText.tr('onboarding_start')
+                          : AppText.tr('onboarding_next'),
+                      onPressed: _next,
+                    ),
+                  ),
+                  const SizedBox(height: sectionGap),
+                ],
               ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  itemCount: slides.length,
-                  onPageChanged: (int index) => setState(() => _index = index),
-                  itemBuilder: (BuildContext context, int index) =>
-                      _Slide(slide: slides[index]),
-                ),
-              ),
-              _Dots(count: slides.length, index: _index),
-              const SizedBox(height: sectionGap),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-                child: _PrimaryButton(
-                  label: isLast
-                      ? AppText.tr('onboarding_start')
-                      : AppText.tr('onboarding_next'),
-                  onPressed: _next,
-                ),
-              ),
-              const SizedBox(height: sectionGap),
-            ],
+            ),
           ),
         ),
       ),
@@ -125,34 +173,45 @@ class _Slide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          slide.art,
-          const SizedBox(height: sectionGap),
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: TanoText.pageTitle,
-              fontWeight: FontWeight.bold,
-              color: primaryTextColor(context),
+    // The narrow tablet column wraps the body onto more lines: let a short
+    // window scroll rather than overflow, while a tall one keeps centring.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: sectionGap),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  slide.art,
+                  const SizedBox(height: sectionGap),
+                  Text(
+                    slide.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TanoText.pageTitle,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor(context),
+                    ),
+                  ),
+                  const SizedBox(height: appPaddingMedium),
+                  Text(
+                    slide.body,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TanoText.body,
+                      height: 1.35,
+                      color: mutedTextColor(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: appPaddingMedium),
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: TanoText.body,
-              height: 1.35,
-              color: mutedTextColor(context),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
