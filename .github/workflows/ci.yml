@@ -62,22 +62,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The debug labels keep the exact check names the protected master
+          # branch requires ("Build (apk)" and "Build (ios)"); the release jobs
+          # add coverage under their own names.
           - os: ubuntu-latest
-            label: Android debug
+            label: apk
             target: apk
             args: --debug
           - os: ubuntu-latest
-            label: Android release
+            label: apk release
             target: apk
             args: --release
           - os: macos-latest
-            label: iOS debug
+            label: ios
             target: ios
             # No signing profile here: the point is to compile the app, not to
             # produce something installable.
             args: --debug --no-codesign
           - os: macos-latest
-            label: iOS release
+            label: ios release
             target: ios
             args: --release --no-codesign
     steps:
