@@ -51,6 +51,12 @@ class Project implements ContentEntity {
   final bool isDeleted;
   @override
   final String? deletedAt;
+
+  /// A project is not archivable: the archive holds notes and tasks.
+  @override
+  bool get isArchived => false;
+  @override
+  String? get archivedAt => null;
   @override
   final String? coverImage;
 

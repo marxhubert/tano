@@ -56,6 +56,24 @@ abstract interface class AtomicNotesWriter {
   Future<void> trashNotes(List<String> ids);
 }
 
+/// Optional capability: documents set aside in the archive.
+///
+/// Only notes and tasks can be archived, never a folder. SQLite implements it;
+/// the archive page, the document menu and the Move-to list go through it.
+abstract interface class ArchiveRepository {
+  /// Loads every archived document.
+  Future<List<Note>> loadArchivedNotes();
+
+  /// Archives one document: it leaves Home and its folder.
+  Future<void> archiveNote(String id);
+
+  /// Takes one document back to Home and resets its creation date.
+  Future<void> restoreArchivedNote(String id);
+
+  /// Takes several documents back to Home in one transaction.
+  Future<void> restoreArchivedNotes(List<String> ids);
+}
+
 /// Persists [notes] atomically when the repository supports it, one by one
 /// otherwise. An empty batch does nothing.
 Future<void> upsertNotesAtomically(

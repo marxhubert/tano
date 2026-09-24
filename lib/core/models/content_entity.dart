@@ -14,6 +14,10 @@ abstract interface class ContentEntity {
   bool get isLocked;
   bool get isDeleted;
   String? get deletedAt;
+
+  /// An archived document leaves Home and its folders without being deleted.
+  bool get isArchived;
+  String? get archivedAt;
   String? get coverImage;
 }
 
