@@ -34,6 +34,24 @@ jobs:
         # text: they are generated and reviewed locally, never here.
         run: flutter test --exclude-tags golden
 
+      - name: Check documentation links
+        # A removed or renamed document must not leave a dangling link behind.
+        run: |
+          failed=0
+          for f in README.md docs/*.md; do
+            dir=$(dirname "$f")
+            while IFS= read -r link; do
+              case "$link" in
+                http*) continue ;;
+              esac
+              if [ ! -f "$dir/$link" ]; then
+                echo "BROKEN $f -> $link"
+                failed=1
+              fi
+            done < <(grep -oE '\]\([^)]+\.md\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
+          done
+          exit $failed
+
   build:
     name: Build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
