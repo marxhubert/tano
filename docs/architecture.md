@@ -39,8 +39,15 @@ crash can leave encrypted orphans, collected at the next startup before editing 
 No shipped data exists. Known legacy JSON/backup files are deleted, and a plaintext
 SQLite database is discarded when opening with a production password. The current
 schema still has upgrade support for development versions; no plaintext migration
-or permanent plaintext backup is maintained. Before public release, establish a
-versioned, tested migration and recovery policy for all future schema changes.
+or permanent plaintext backup is maintained.
+
+## Post-release migration policy
+
+From the first public release, every schema or format change must ship a forward
+migration that preserves user data; a destructive reset stays an explicit user
+action only. Each released schema version gets a test that opens it and reaches
+the current version, extending the existing v5/v6→10 upgrade tests. The disposable
+policy above must never apply to released user data.
 
 ## Consolidation state
 
