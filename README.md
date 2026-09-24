@@ -83,9 +83,10 @@ The full recipe — keystore, archive, tag, release — lives in
 
 ### Identity
 
-The in-app author, contact address and support links are read from build settings.
-The repository still contains public author attribution, privacy-policy contact
-details and the application bundle identifier. Configure your own signing team
+The in-app author, contact address and support links are read from build settings,
+and the same ignored file carries the Sentry DSN when crash reports are
+configured. The repository still contains public author attribution,
+privacy-policy contact details and the application bundle identifier. Configure your own signing team
 locally for iOS; no team is selected in the shared project. `identity.json.dist` is the
 template — copy it, fill it in, and point the tool at it. The filled file is
 ignored by git, the template is not.

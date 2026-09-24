@@ -35,8 +35,9 @@ CI builds both targets in debug and release (release without a signing profile),
 tree shaking, AOT and R8 breakage is caught before the signed step above.
 
 Increase `pubspec.yaml` version/build number and update changelog/release notes.
-Use Xcode Archive/Distribute with the correct signing team. Configure Sentry DSN
-only after envelope/consent/non-retention validation; symbol upload requires external
+Use Xcode Archive/Distribute with the correct signing team. Configure the Sentry
+DSN in the ignored `identity.json` only after envelope/consent/non-retention
+validation; symbol upload requires external
 credentials and project settings. Review permissions, privacy manifests and actual
 store disclosures. Premium purchases are not configured and must not be advertised
 as purchasable until store verification and restoration are tested.

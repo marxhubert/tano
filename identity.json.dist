@@ -4,5 +4,7 @@
   "AUTHOR_URL": "https://your-site.example",
   "GITHUB_ACCOUNT": "your-github-account",
   "COFFEE_URL": "https://www.buymeacoffee.com/your-account",
-  "PAYPAL_URL": "https://paypal.me/your-account"
+  "PAYPAL_URL": "https://paypal.me/your-account",
+
+  "SENTRY_DSN": ""
 }

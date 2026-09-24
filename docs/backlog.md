@@ -12,11 +12,16 @@ is not selected and must not contradict the no-central-content-storage objective
 ## Technical
 
 Typed menu models, stricter lints, explicit load failures and accessibility checks.
-Migrate the app and `sentry_flutter` off the Kotlin Gradle Plugin to Flutter's
-Built-in Kotlin before a future Flutter upgrade starts failing the release build
-(Flutter 3.47 warns about it). Recheck Kotlin/Gradle and Swift Package
-Manager/CocoaPods compatibility when upgrading Flutter or native plugins; previous
-warnings are not evidence about future package versions. Desktop/web are separate
+Built-in Kotlin: the app runs AGP 9.1.0 / Kotlin 2.3.20 with
+`android.builtInKotlin=false` and `android.newDsl=false` in
+`android/gradle.properties`, and both `android/app/build.gradle.kts` and
+`sentry_flutter` apply the Kotlin Gradle Plugin. Flutter 3.47 warns that a future
+version will fail on plugin-supplied KGP. Removing the app's own `kotlin-android`
+line alone would not silence it and turning the flags on would touch every other
+plugin, so the migration waits for a `sentry_flutter` release that supports
+Built-in Kotlin. Recheck Kotlin/Gradle and Swift Package Manager/CocoaPods
+compatibility when upgrading Flutter or native plugins; previous warnings are not
+evidence about future package versions. Desktop/web are separate
 porting projects, not proof that native encryption works on those targets.
 
 ## Decisions already made
