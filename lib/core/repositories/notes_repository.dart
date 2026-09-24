@@ -67,6 +67,9 @@ abstract interface class ArchiveRepository {
   /// Archives one document: it leaves Home and its folder.
   Future<void> archiveNote(String id);
 
+  /// Archives several documents in one transaction.
+  Future<void> archiveNotes(List<String> ids);
+
   /// Takes one document back to Home and resets its creation date.
   Future<void> restoreArchivedNote(String id);
 

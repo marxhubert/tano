@@ -4,7 +4,6 @@ import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
-import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/features/trash/trash_view_model.dart';
 import 'package:tano/shared/config/date_format.dart';
 import 'package:tano/shared/config/l10n.dart';
@@ -89,7 +88,7 @@ class _TrashPageState extends State<TrashPage> {
                   // Emptying the trash destroys locked items for good, so the
                   // device owner must authenticate first.
                   if (_viewModel.hasLockedItems &&
-                      !await _confirmLockedDeletion(context)) {
+                      !await confirmLockedDeletion(context)) {
                     return;
                   }
                   await _viewModel.emptyTrash();
@@ -284,7 +283,7 @@ class _TrashPageState extends State<TrashPage> {
   }
 
   Future<void> _deleteNote(BuildContext context, Note note) async {
-    if (note.isLocked && !await _confirmLockedDeletion(context)) return;
+    if (note.isLocked && !await confirmLockedDeletion(context)) return;
     if (!context.mounted) return;
     final bool? confirm = await getConfirmation(
       context: context,
@@ -296,7 +295,7 @@ class _TrashPageState extends State<TrashPage> {
 
   Future<void> _deleteFolder(BuildContext context, Folder folder) async {
     if (_viewModel.folderHasLockedContent(folder.id) &&
-        !await _confirmLockedDeletion(context)) {
+        !await confirmLockedDeletion(context)) {
       return;
     }
     if (!context.mounted) return;
@@ -308,14 +307,4 @@ class _TrashPageState extends State<TrashPage> {
     if (confirm == true) await _viewModel.deleteFolderPermanently(folder.id);
   }
 
-  /// Asks the device owner to authenticate before locked content is destroyed
-  /// for good. A refusal (or a device without any credential) keeps the item
-  /// and reports why, exactly like deleting a locked note from Home.
-  Future<bool> _confirmLockedDeletion(BuildContext context) async {
-    final bool authenticated = await getIt<AuthService>().authenticate();
-    if (!authenticated && context.mounted) {
-      showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
-    }
-    return authenticated;
-  }
 }

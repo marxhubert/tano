@@ -480,6 +480,26 @@ class _EditNoteState extends State<EditNote>
     await announceMove(context, count: 1, folderId: folderId);
   }
 
+  /// Archives the open document and leaves the editor. The note leaves Home;
+  /// nothing is deleted.
+  Future<void> _archiveNote() async {
+    final NotesRepository repository = getIt<NotesRepository>();
+    if (repository is! ArchiveRepository) return;
+    _cleanupEmptyChecklists();
+    final Note note = _viewModel.buildNote(
+      title: _titleController.text,
+      content: _contentController.text,
+    );
+    if (!await _persistSafely(note)) return;
+    if (!await _tryStorage(
+      () => (repository as ArchiveRepository).archiveNote(note.id),
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
   /// The thin "|" separating two metadata values.
   Widget _metadataSeparator(BuildContext context) => Text(
     '|',
@@ -1391,6 +1411,7 @@ class _EditNoteState extends State<EditNote>
                         },
                         onFindSelected: _enterFindMode,
                         onMoveTo: _moveTo,
+                        onMoveToArchive: _archiveNote,
                         onLockSelected: () async {
                           // Locking takes effect immediately (there is no prompt).
                           // Unlocking shows the system prompt, so close the keyboard
@@ -1445,6 +1466,7 @@ class _EditNoteState extends State<EditNote>
                             folder: false,
                           );
                         },
+                        onArchiveSelected: _archiveNote,
                         onDeleteSelected: () async {
                           final bool? confirmDeletion = await getConfirmation(
                             context: context,

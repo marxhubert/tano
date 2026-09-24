@@ -597,15 +597,27 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<void> archiveNote(String id) async {
+  Future<void> archiveNote(String id) => archiveNotes(<String>[id]);
+
+  @override
+  Future<void> archiveNotes(List<String> ids) async {
+    if (ids.isEmpty) return;
     final db = await _database;
     final String now = DateTime.now().toString();
-    await db.update(
-      'notes',
-      <String, Object?>{'isArchived': 1, 'archivedAt': now, 'updatedAt': now},
-      where: 'id = ?',
-      whereArgs: <Object?>[id],
-    );
+    await db.transaction((Transaction txn) async {
+      for (final String id in ids) {
+        await txn.update(
+          'notes',
+          <String, Object?>{
+            'isArchived': 1,
+            'archivedAt': now,
+            'updatedAt': now,
+          },
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+      }
+    });
   }
 
   @override

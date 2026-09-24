@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/shared/config/l10n.dart';
+import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// Shows an adaptive confirmation dialog (Material on Android, Cupertino on iOS).
@@ -83,6 +85,17 @@ Future<bool?> getConfirmation({
       ],
     ),
   );
+}
+
+/// Asks the device owner to authenticate before locked content is destroyed
+/// for good. A refusal (or a device without any credential) keeps the item and
+/// reports why, exactly like deleting a locked note from Home.
+Future<bool> confirmLockedDeletion(BuildContext context) async {
+  final bool authenticated = await getIt<AuthService>().authenticate();
+  if (!authenticated && context.mounted) {
+    showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
+  }
+  return authenticated;
 }
 
 /// Shows an adaptive informational alert (Material on Android, Cupertino on
