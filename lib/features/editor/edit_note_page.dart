@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:tano/core/models/task.dart';
 import 'package:tano/features/editor/task_list_editor.dart';
 import 'package:tano/shared/widgets/privacy_guard.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/core/models/note_access_policy.dart';
 import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/models/folder.dart';
@@ -415,21 +416,8 @@ class _EditNoteState extends State<EditNote>
     return total > 0 ? _currentFindIndex + 1 : 0;
   }
 
-  Future<bool> _tryStorage(Future<void> Function() operation) async {
-    try {
-      await operation();
-      return true;
-    } catch (_) {
-      if (mounted) {
-        await showAdaptiveAlert(
-          context: context,
-          title: AppText.tr('load_error_title'),
-          message: AppText.tr('storage_recovery_message'),
-        );
-      }
-      return false;
-    }
-  }
+  Future<bool> _tryStorage(Future<void> Function() operation) =>
+      runStorageOperation(context, operation);
 
   Future<bool> _persistSafely(Note note) =>
       _tryStorage(() => _viewModel.persistSavedNote(note));

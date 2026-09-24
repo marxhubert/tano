@@ -26,6 +26,7 @@ import 'package:tano/features/editor/open_editor.dart';
 import 'package:tano/core/models/action.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/shared/widgets/page_header.dart';
 import 'package:tano/shared/widgets/page_layout.dart';
 import 'package:tano/shared/widgets/theme_toggle.dart';
@@ -313,7 +314,9 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
     );
 
     if (name == null || !mounted) return;
-    await _viewModel.addFolder(name);
+    await runStorageOperation(context, () async {
+      await _viewModel.addFolder(name);
+    });
   }
 
   Future<void> _showUndoSnackBar() async {
@@ -333,7 +336,15 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
   /// always where the eye is looking.
   Future<void> _moveSelectedTo(String? folderId) async {
     final int count = _viewModel.selected.length;
-    await _viewModel.moveSelectedTo(folderId);
+    if (!await runStorageOperation(
+      context,
+      () => _viewModel.moveSelectedTo(folderId),
+    )) {
+      // A failed batch may have moved only part of the selection: reload so the
+      // list and storage agree again.
+      await _viewModel.load();
+      return;
+    }
     if (!mounted) return;
     await announceMove(context, count: count, folderId: folderId);
   }
@@ -579,11 +590,17 @@ class HomeState extends State<Home> with RouteAware, FabRouteCollapse<Home> {
                       })
                     : null,
               );
-              if (confirmDeletion == true) {
-                await _viewModel.deleteSelected();
-                if (!mounted) return;
-                await _showUndoSnackBar();
+              if (!context.mounted || confirmDeletion != true) return;
+              if (!await runStorageOperation(
+                context,
+                _viewModel.deleteSelected,
+              )) {
+                // A failed batch may have trashed only part of the selection:
+                // reload so the list and storage agree again.
+                await _viewModel.load();
+                return;
               }
+              await _showUndoSnackBar();
             },
             onMoveTo: _moveSelectedTo,
             onClearSelection: _viewModel.clearSelection,

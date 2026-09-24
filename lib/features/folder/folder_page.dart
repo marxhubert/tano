@@ -33,6 +33,7 @@ import 'package:tano/shared/widgets/fab/app_fab.dart';
 import 'package:tano/shared/widgets/fab/fab_route_collapse.dart';
 import 'package:tano/shared/widgets/app_bar_actions.dart';
 import 'package:tano/shared/widgets/confirm.dart';
+import 'package:tano/shared/widgets/storage_recovery.dart';
 import 'package:tano/shared/widgets/menu.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/note_card.dart';
@@ -253,7 +254,14 @@ class _FolderPageState extends State<FolderPage>
     final Folder updated = folder.copyWith(
       updatedAt: DateTime.now().toString(),
     );
-    await _foldersRepository?.upsertFolder(updated);
+    final FoldersRepository? repository = _foldersRepository;
+    if (repository != null &&
+        !await runStorageOperation(
+          context,
+          () => repository.upsertFolder(updated),
+        )) {
+      return;
+    }
     if (!mounted) return;
     setState(() => _folder = updated);
   }
@@ -343,10 +351,11 @@ class _FolderPageState extends State<FolderPage>
     if (confirm != true || !mounted) return;
 
     // The folder keeps its notes: they stay filed and travel with it.
-    await _foldersRepository?.trashFolder(_folder.id);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    final bool trashed = await runStorageOperation(context, () async {
+      await _foldersRepository?.trashFolder(_folder.id);
+    });
+    if (!trashed || !mounted) return;
+    Navigator.of(context).pop();
   }
 
   void _enterSelection(String id) {
@@ -391,8 +400,16 @@ class _FolderPageState extends State<FolderPage>
           _notes,
           (Note note) => _selection.contains(note.id),
         );
-    for (final Note note in selected.notes) {
-      await repository.trashNote(note.id);
+    final bool trashed = await runStorageOperation(context, () async {
+      for (final Note note in selected.notes) {
+        await repository.trashNote(note.id);
+      }
+    });
+    if (!trashed) {
+      // A failed batch may have trashed only part of the selection: reload so
+      // the folder and storage agree again.
+      if (mounted) await _load();
+      return;
     }
     if (!mounted) return;
     setState(() {
@@ -428,10 +445,21 @@ class _FolderPageState extends State<FolderPage>
     final List<Note> selected = _notes
         .where((Note note) => _selection.contains(note.id))
         .toList();
-    for (final Note note in selected) {
-      await repository.upsertNote(
-        note.copyWith(folderId: folderId, updatedAt: DateTime.now().toString()),
-      );
+    final bool saved = await runStorageOperation(context, () async {
+      for (final Note note in selected) {
+        await repository.upsertNote(
+          note.copyWith(
+            folderId: folderId,
+            updatedAt: DateTime.now().toString(),
+          ),
+        );
+      }
+    });
+    if (!saved) {
+      // A failed batch may have moved only part of the selection: reload so the
+      // folder and storage agree again.
+      if (mounted) await _load();
+      return;
     }
     final int count = selected.length;
     if (!mounted) return;

@@ -26,6 +26,10 @@ test data is disposable.
 - `deleteSelectionTitle`, `announceMove` and `announceDeletion` own the delete
   dialog title and the move/delete feedback; the folder page now taps the same
   haptic as Home after a delete.
+- `runStorageOperation` is the one recoverable-write wrapper: the editor, Home
+  and a folder report a failed write with the same message and reload instead of
+  leaving optimistic state behind. The batches are still not atomic at the
+  repository level: that is the next recovery step.
 - Removed dead code: three unreferenced strings, the legacy JSON note codec, an
   unused radius, the unreachable no-selection delete branch and the FAB's
   never-wired callbacks.
