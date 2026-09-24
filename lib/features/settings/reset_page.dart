@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:tano/features/settings/data_transfer.dart';
 import 'package:tano/features/settings/settings_view_model.dart';
 import 'package:tano/features/settings/widgets/settings_widgets.dart';
@@ -101,43 +100,6 @@ class _ResetPageState extends State<ResetPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Developer reset: same shape as the reset button, grey.
-                    // Its bottom space belongs to the button, so removing the
-                    // button removes the gap with the real reset too.
-                    if (kDebugMode)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: appPaddingMedium,
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 54.0,
-                          child: ElevatedButton(
-                            onPressed: _viewModel.isResetting
-                                ? null
-                                : _handleDeveloperReset,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: paperSecondary(context),
-                              foregroundColor: primaryTextColor(context),
-                              disabledBackgroundColor: paperSecondary(
-                                context,
-                              ).withValues(alpha: 0.4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(pillRadius),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              AppText.tr('developer_reset').toUpperCase(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: TanoText.body,
-                                letterSpacing: 1.1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                     SizedBox(
                       width: double.infinity,
                       height: 54.0,
@@ -201,40 +163,6 @@ class _ResetPageState extends State<ResetPage> {
         deleteData: _deleteData,
         deletePrefs: _deletePrefs,
       );
-      if (mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/home', (route) => false);
-      }
-    }
-  }
-
-  Future<void> _handleDeveloperReset() async {
-    final bool? confirm = await getConfirmation(
-      context: context,
-      actionTitle: AppText.tr('developer_reset'),
-      action: AppText.tr('reset'),
-    );
-    if (confirm == true) {
-      try {
-        await _viewModel.developerReset();
-      } catch (_) {
-        if (!mounted) return;
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(AppText.tr('developer_reset')),
-            content: Text(AppText.tr('developer_reset_failed')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppText.tr('ok')),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
       if (mounted) {
         Navigator.of(
           context,

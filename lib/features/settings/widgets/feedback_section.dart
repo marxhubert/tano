@@ -73,6 +73,9 @@ class _TextSizePreview extends StatelessWidget {
     TanoTextSize.extraLarge => 'text_size_extra_large',
   };
 
+  /// The fixed footprint of one choice, wide enough for the bold "A".
+  static const double _previewWidth = 56.0;
+
   double get _glyphSize => switch (size) {
     TanoTextSize.small => 16.0,
     TanoTextSize.normal => 20.0,
@@ -89,33 +92,48 @@ class _TextSizePreview extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(
-              height: 40.0,
-              child: Center(
-                child: Text(
-                  'A',
-                  style: TextStyle(
-                    fontSize: _glyphSize,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: primaryTextColor(context),
+        // One fixed width per choice: a bold "A" is a hair wider than a normal
+        // one, and without this the whole row redistributed and jumped on every
+        // selection. The width also reserves that room before it is needed.
+        child: SizedBox(
+          width: _previewWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SizedBox(
+                height: 40.0,
+                width: double.infinity,
+                child: Center(
+                  child: Text(
+                    'A',
+                    style: TextStyle(
+                      fontSize: _glyphSize,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: primaryTextColor(context),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: appPaddingTight),
-            if (isSelected)
-              const CheckDisc(color: tanoAmber)
-            else
-              Icon(
-                Symbols.circle,
-                color: Colors.grey.withValues(alpha: 0.5),
-                size: 20,
+              const SizedBox(height: appPaddingTight),
+              // The disc and the empty circle share one centred box, so the
+              // choices line up whatever their glyph.
+              SizedBox(
+                height: 20.0,
+                width: double.infinity,
+                child: Center(
+                  child: isSelected
+                      ? const CheckDisc(color: tanoAmber)
+                      : Icon(
+                          Symbols.circle,
+                          color: Colors.grey.withValues(alpha: 0.5),
+                          size: 20,
+                        ),
+                ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );

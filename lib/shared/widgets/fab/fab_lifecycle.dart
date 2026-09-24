@@ -31,6 +31,14 @@ mixin _FabStateMixin on State<AppFab> {
   bool _hasFolders = false;
   int _requestGeneration = 0;
   double _measuredMenuHeight = 0;
+
+  /// Which menu [_measuredMenuHeight] belongs to. A swap to a shorter menu must
+  /// not animate the shrink: the new list would sit under a tall empty panel.
+  FabVerticalMenu _measuredMenu = FabVerticalMenu.none;
+
+  /// Set for the single rebuild that follows a shrink, so the container snaps
+  /// instead of animating the empty space away.
+  bool _instantMenuResize = false;
   ListSortCriteria _sortCriteria = ListSortCriteria.date;
   bool _isAscending = true;
   bool _layoutReportPending = false;
@@ -94,6 +102,7 @@ mixin _FabStateMixin on State<AppFab> {
     setState(() {
       _invalidateRequests();
       _presentation.collapse();
+      _resetMeasuredMenu();
     });
   }
 
@@ -104,7 +113,16 @@ mixin _FabStateMixin on State<AppFab> {
     setState(() {
       _invalidateRequests();
       _presentation.closeMenu();
+      _resetMeasuredMenu();
     });
+  }
+
+  /// Forgets the measured height once a menu closes, so the next open starts
+  /// from the bar and grows into place.
+  void _resetMeasuredMenu() {
+    _measuredMenuHeight = 0;
+    _measuredMenu = FabVerticalMenu.none;
+    _instantMenuResize = false;
   }
 
   void _showMenu(FabVerticalMenu menu) {
@@ -215,9 +233,16 @@ mixin _FabStateMixin on State<AppFab> {
 
   void _menuMeasured(Size size) {
     if (!mounted || _verticalMenu == FabVerticalMenu.none) return;
-    if ((size.height - _measuredMenuHeight).abs() > .5) {
-      setState(() => _measuredMenuHeight = size.height);
-    }
+    final bool changed = _measuredMenu != _verticalMenu;
+    if (!changed && (size.height - _measuredMenuHeight).abs() <= .5) return;
+    setState(() {
+      // Swapping menus: growing animates, shrinking snaps. Animating the shrink
+      // showed the short list under a tall empty panel until the box caught up,
+      // which read as lag. Keyboard and rotation changes keep their animation.
+      _instantMenuResize = changed && size.height < _measuredMenuHeight;
+      _measuredMenuHeight = size.height;
+      _measuredMenu = _verticalMenu;
+    });
   }
 
   void _scheduleLayoutReport() {

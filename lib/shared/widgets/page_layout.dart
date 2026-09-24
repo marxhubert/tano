@@ -204,6 +204,23 @@ class _PageScaffoldState extends State<PageScaffold> {
     if (mounted) setState(() {});
   }
 
+  static bool _isLandscape(BuildContext context) {
+    final Size size = MediaQuery.sizeOf(context);
+    return size.width > size.height;
+  }
+
+  /// Scrolls the body from a drag that began on the empty space beside the
+  /// centred column, so the whole page reacts however wide the window is.
+  void _scrollFromEdge(DragUpdateDetails details) {
+    if (!_scrollController.hasClients) return;
+    final ScrollPosition position = _scrollController.position;
+    final double target = (position.pixels - details.delta.dy).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    position.jumpTo(target);
+  }
+
   void _onScroll() {
     final bool showTitle = _scrollController.offset > 120;
     if (showTitle != _showAppBarTitle) {
@@ -332,9 +349,17 @@ class _PageScaffoldState extends State<PageScaffold> {
             ),
           ),
         ),
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: sideInset),
-          child: _buildBody(textColor, keyboard),
+        body: GestureDetector(
+          // A landscape window centres its column and leaves empty margins on
+          // both sides. A drag that starts on that empty space must still
+          // scroll the page: it drives the body's own controller. A drag that
+          // lands on the scroll view itself stays with the scroll view.
+          behavior: HitTestBehavior.translucent,
+          onVerticalDragUpdate: _isLandscape(context) ? _scrollFromEdge : null,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: sideInset),
+            child: _buildBody(textColor, keyboard),
+          ),
         ),
         floatingActionButton: widget.floatingActionButton,
         floatingActionButtonLocation: widget.floatingActionButtonLocation,

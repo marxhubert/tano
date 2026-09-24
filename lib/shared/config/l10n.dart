@@ -337,10 +337,20 @@ class AppText {
     'lang_fr': 'FRENCH',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Delete photo',
-    if (kDebugMode) 'developer_reset': 'Developer reset',
-    if (kDebugMode)
+    if (!kReleaseMode) 'developer_reset': 'Developer reset',
+    if (!kReleaseMode)
       'developer_reset_failed':
           'Reset could not finish. Some data may already have been replaced. Retry to reload all demo data.',
+    // Labs: the developer surface, debug and development builds only.
+    if (!kReleaseMode) 'labs': 'Labs',
+    if (!kReleaseMode)
+      'labs_hint':
+          'Developer tools. Debug and development builds only, never in a release.',
+    if (!kReleaseMode) 'labs_sentry_test': 'Send a test error',
+    if (!kReleaseMode) 'labs_sentry_sent': 'Test error sent to Sentry.',
+    if (!kReleaseMode)
+      'labs_sentry_unavailable':
+          'Crash reports are off. Turn them on before sending a test.',
     // Introduction
     'onboarding_skip': 'Skip',
     'onboarding_next': 'Next',
@@ -604,10 +614,20 @@ class AppText {
     'lang_fr': 'FRANÇAIS',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Supprimer la photo',
-    if (kDebugMode) 'developer_reset': 'Réinitialisation développeur',
-    if (kDebugMode)
+    if (!kReleaseMode) 'developer_reset': 'Réinitialisation développeur',
+    if (!kReleaseMode)
       'developer_reset_failed':
           'La réinitialisation a échoué. Certaines données ont peut-être déjà été remplacées. Réessayez pour recharger toutes les données de démonstration.',
+    // Labos : la surface développeur, réservée aux versions debug et dev.
+    if (!kReleaseMode) 'labs': 'Labos',
+    if (!kReleaseMode)
+      'labs_hint':
+          'Outils développeur. Réservés aux versions debug et développement, jamais à une version publiée.',
+    if (!kReleaseMode) 'labs_sentry_test': 'Envoyer une erreur de test',
+    if (!kReleaseMode) 'labs_sentry_sent': 'Erreur de test envoyée à Sentry.',
+    if (!kReleaseMode)
+      'labs_sentry_unavailable':
+          'Les rapports de crash sont désactivés. Activez-les avant d’envoyer un test.',
     // Introduction
     'onboarding_skip': 'Passer',
     'onboarding_next': 'Suivant',
@@ -710,8 +730,7 @@ class AppText {
     'export_password': 'Teny miafina',
     'export_password_hint': '8 litera farafahakeliny',
     'password_too_short': 'Tokony 8 litera Farafahakeliny ny teny miafina.',
-    'export_locked_required':
-        'Mila fanondranana voahidy ny naoty voahidy.',
+    'export_locked_required': 'Mila fanondranana voahidy ny naoty voahidy.',
     'export_failed': 'Tsy nahomby ny fanondranana',
     'export_done': 'Voatahiry ny fanondranana.',
     'import_password_title': 'Fanondranana voahidy',
@@ -871,10 +890,22 @@ class AppText {
     'lang_fr': 'FRANTSAY',
     'lang_mg': 'MALAGASY',
     'delete_photo': 'Hamafa ny sary',
-    if (kDebugMode) 'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
-    if (kDebugMode)
+    if (!kReleaseMode) 'developer_reset': 'Fanavaozana ho an\'ny mpamorona',
+    if (!kReleaseMode)
       'developer_reset_failed':
           'Tsy vita ny famerenana. Mety efa niova ny angona sasany. Andramo indray hampidirana ny angona andrana rehetra.',
+    // Laboratoara: ny sehatra ho an'ny mpamorona, amin'ny kinova debug sy dev.
+    if (!kReleaseMode) 'labs': 'Laboratoara',
+    if (!kReleaseMode)
+      'labs_hint':
+          "Fitaovana ho an'ny mpamorona. Amin'ny kinova debug sy fampandrosoana ihany, tsy amin'ny kinova avoaka.",
+    if (!kReleaseMode) 'labs_sentry_test': 'Alefaso ny hadisoana fanandramana',
+    if (!kReleaseMode)
+      'labs_sentry_sent':
+          "Nalefa tany amin'ny Sentry ny hadisoana fanandramana.",
+    if (!kReleaseMode)
+      'labs_sentry_unavailable':
+          'Tsy mandeha ny tatitra momba ny olana. Velomy aloha vao mandefa fanandramana.',
     // Fampidirana
     'onboarding_skip': 'Hitsambikina',
     'onboarding_next': 'Manaraka',

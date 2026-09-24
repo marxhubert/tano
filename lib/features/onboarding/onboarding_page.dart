@@ -3,10 +3,12 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tano/features/onboarding/onboarding_slides.dart';
 import 'package:tano/features/splash/splash_page.dart';
 import 'package:tano/shared/config/l10n.dart';
 import 'package:tano/shared/config/onboarding_controller.dart';
+import 'package:tano/shared/widgets/entity_layout.dart';
 import 'package:tano/shared/widgets/theme.dart';
 
 /// The introduction, shown once on the first launch and reachable again from
@@ -27,8 +29,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
+  /// Whether this page locked a phone to portrait, so it can hand the device
+  /// back on the way out.
+  bool _forcedPortrait = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_forcedPortrait || _orientationChecked) return;
+    _orientationChecked = true;
+    // A phone reads the introduction upright: hold it in portrait while the
+    // pages are on screen. A tablet keeps the room it has to rotate freely.
+    if (!tabletViewport(MediaQuery.sizeOf(context))) {
+      _forcedPortrait = true;
+      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
+
+  bool _orientationChecked = false;
+
   @override
   void dispose() {
+    // Only the first-run introduction owns the orientation: a replay opened
+    // from the settings leaves the lock the settings itself applies in place.
+    if (_forcedPortrait && widget.onFinished == null) {
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -102,11 +131,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
               const SizedBox(height: sectionGap),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: sectionGap),
-                child: _PrimaryButton(
-                  label: isLast
-                      ? AppText.tr('onboarding_start')
-                      : AppText.tr('onboarding_next'),
-                  onPressed: _next,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final Widget button = _PrimaryButton(
+                      label: isLast
+                          ? AppText.tr('onboarding_start')
+                          : AppText.tr('onboarding_next'),
+                      onPressed: _next,
+                    );
+                    // A tablet has width to spare: the call to action takes half
+                    // of it and sits centred instead of stretching across the
+                    // page. A phone keeps the full-width button.
+                    if (!tabletViewport(MediaQuery.sizeOf(context))) {
+                      return button;
+                    }
+                    return Center(
+                      child: SizedBox(
+                        width: constraints.maxWidth / 2,
+                        child: button,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: sectionGap),

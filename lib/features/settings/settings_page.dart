@@ -9,6 +9,7 @@ import 'widgets/sorting_section.dart';
 import 'widgets/language_section.dart';
 import 'widgets/about_section.dart';
 import 'widgets/data_management_section.dart';
+import 'widgets/labs_section.dart';
 import 'widgets/settings_widgets.dart';
 
 import 'package:tano/shared/config/l10n.dart';
@@ -61,6 +62,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 const LanguageSection(),
                 AboutSection(viewModel: _viewModel),
                 DataManagementSection(viewModel: _viewModel),
+                // The Labs close the list: they are the developer surface, and
+                // the section hides itself on a release build.
+                LabsSection(viewModel: _viewModel),
                 const SizedBox(height: SettingsGroup.defaultTopSpacing),
               ]),
             ),

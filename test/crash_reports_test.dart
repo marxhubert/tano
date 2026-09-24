@@ -83,6 +83,23 @@ void main() {
     expect(scrubbed.message, event.message);
   });
 
+  test('the test error is not sent while the SDK is off', () async {
+    // The Labs button must say so rather than fail silently.
+    expect(CrashReports.isInitialised, isFalse);
+    expect(await CrashReports.sendTestError(), isFalse);
+  });
+
+  test('the test error keeps a readable type through the scrubber', () {
+    final SentryEvent event = SentryEvent(
+      exceptions: <SentryException>[
+        SentryException(type: 'TanoLabsTestException', value: 'private detail'),
+      ],
+    );
+    final SentryEvent? scrubbed = CrashReports.scrub(event, Hint());
+    expect(scrubbed!.exceptions!.single.type, 'TanoLabsTestException');
+    expect(scrubbed.exceptions!.single.value, isNull);
+  });
+
   test('the consent key is the one the settings screen writes', () async {
     final SecurePreferences prefs = await SecurePreferences.getInstance();
     await prefs.setBool(CrashReports.preferenceKey, true);

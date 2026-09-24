@@ -30,6 +30,8 @@ Inspect actual envelopes after native enrichment on Android/iOS before enabling 
 release DSN. Verify offline queues, consent withdrawal and restart without consent.
 `Sentry.close()` may flush existing queues: stopping new capture does not recall
 already transmitted reports or prove queued reports were purged.
+`CrashReports.sendTestError`, reached from the debug-only Labs section, sends one
+event typed `TanoLabsTestException` so the pipeline can be checked on a device.
 
 Store update checks are user-triggered and contact Apple/Google without note content.
 Those providers process connection metadata. Core notes/folders work offline, but

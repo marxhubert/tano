@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Application configuration and data.
 ///
 /// Centralizes non-linguistic data (application name, author,
@@ -75,4 +77,12 @@ class AppConfig {
   /// stays out of the public repository like the rest of the build identity. An
   /// empty value (no identity file) means no crash reporting is initialised.
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+
+  // --- Developer surface ----------------------------------------------------
+
+  /// Whether this build exposes the developer surface: the "Labs" settings
+  /// section, and with it the fixtures reset and the reporting test error.
+  ///
+  /// Debug and profile ("dev") builds keep it; a release build never ships it.
+  static bool get showsLabs => !kReleaseMode;
 }
