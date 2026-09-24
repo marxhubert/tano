@@ -106,9 +106,9 @@ void main() {
     // Each card keeps the trash's two actions.
     expect(find.byIcon(Symbols.undo), findsOneWidget);
     expect(find.byIcon(Symbols.delete_forever), findsOneWidget);
-    // One searchable document does not earn the search action.
+    // A lone document earns neither search nor select.
     expect(find.byIcon(Symbols.document_search), findsNothing);
-    expect(find.byIcon(Symbols.select_all), findsOneWidget);
+    expect(find.byIcon(Symbols.select_all), findsNothing);
   });
 
   testWidgets('the search action appears from the second searchable document', (
@@ -182,7 +182,9 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    final _Repo repo = _Repo(archived: <Note>[_archivedNote('a', 'A')]);
+    final _Repo repo = _Repo(
+      archived: <Note>[_archivedNote('a', 'A'), _archivedNote('b', 'B')],
+    );
     await pumpArchive(tester, repo);
 
     await tester.tap(find.byIcon(Symbols.select_all));

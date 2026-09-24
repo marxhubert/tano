@@ -269,8 +269,8 @@ class _ArchivePageState extends State<ArchivePage> {
           tooltip: AppText.tr('search'),
           onPressed: _enterSearchMode,
         ),
-      // Nothing to select in an empty archive.
-      if (_viewModel.docs.isNotEmpty)
+      // Selecting earns its place from the second document, like search.
+      if (_viewModel.docs.length > 1)
         IconButton(
           icon: const Icon(Symbols.select_all),
           tooltip: AppText.tr('select'),
