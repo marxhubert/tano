@@ -503,9 +503,7 @@ class _FolderPageState extends State<FolderPage>
               NoteAccessPolicy([
                 _folder,
               ]).isSearchableInFolder(note, _folder.id) &&
-              (note.title.toLowerCase().contains(query) ||
-                  note.description.toLowerCase().contains(query) ||
-                  note.content.toLowerCase().contains(query)),
+              noteMatchesQuery(note, query),
         )
         .toList();
   }

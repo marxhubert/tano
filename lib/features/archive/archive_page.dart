@@ -126,13 +126,7 @@ class _ArchivePageState extends State<ArchivePage> {
     final String query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return _viewModel.docs;
     return _viewModel.docs
-        .where(
-          (Note note) =>
-              !note.isLocked &&
-              (note.title.toLowerCase().contains(query) ||
-                  note.description.toLowerCase().contains(query) ||
-                  note.content.toLowerCase().contains(query)),
-        )
+        .where((Note note) => !note.isLocked && noteMatchesQuery(note, query))
         .toList();
   }
 
