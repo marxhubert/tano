@@ -13,6 +13,7 @@ import 'package:tano/shared/config/service_locator.dart';
 import 'package:tano/shared/widgets/confirm.dart';
 import 'package:tano/shared/widgets/document_filter.dart';
 import 'package:tano/shared/widgets/entity_card.dart';
+import 'package:tano/shared/widgets/entity_card_actions.dart';
 import 'package:tano/shared/widgets/entity_sliver.dart';
 import 'package:tano/shared/widgets/folder_card_bodies.dart';
 import 'package:tano/shared/widgets/note_card_bodies.dart';
@@ -234,7 +235,8 @@ class _TrashPageState extends State<TrashPage> {
                 ),
         ),
         // The trash's own part: the two actions, always there, locked or not.
-        _actions(
+        EntityCardActions(
+          isListLayout: _isListLayout,
           onRestore: () => _viewModel.restoreNote(note.id),
           onDelete: () => _deleteNote(context, note),
           textColor: cardTextColor(context, note.category),
@@ -271,53 +273,13 @@ class _TrashPageState extends State<TrashPage> {
                   hasCover: hasCover,
                 ),
         ),
-        _actions(
+        EntityCardActions(
+          isListLayout: _isListLayout,
           onRestore: () => _viewModel.restoreFolder(folder.id),
           onDelete: () => _deleteFolder(context, folder),
           textColor: cardTextColor(context, folder.category),
         ),
       ],
-    );
-  }
-
-  /// The two trash actions, overlaid on a card (on top of its content). The
-  /// only difference from a normal card: in a list they sit centred, 8 px above
-  /// the bottom edge.
-  Widget _actions({
-    required VoidCallback onRestore,
-    required Future<void> Function() onDelete,
-    required Color textColor,
-  }) {
-    final Widget restore = _TrashAction(
-      icon: Symbols.undo,
-      onTap: onRestore,
-      color: textColor.withValues(alpha: 0.9),
-    );
-    final Widget delete = _TrashAction(
-      icon: Symbols.delete_forever,
-      onTap: onDelete,
-      color: TanoStates.error.dark,
-    );
-    if (_isListLayout) {
-      return Positioned(
-        bottom: 8.0,
-        left: 0.0,
-        right: 0.0,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 12.0,
-          children: <Widget>[restore, delete],
-        ),
-      );
-    }
-    return Positioned(
-      bottom: 6.0,
-      left: 0.0,
-      right: 0.0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[restore, delete],
-      ),
     );
   }
 
@@ -355,37 +317,5 @@ class _TrashPageState extends State<TrashPage> {
       showAdaptiveNotice(context, AppText.tr('delete_locked_error'));
     }
     return authenticated;
-  }
-}
-
-class _TrashAction extends StatelessWidget {
-  const _TrashAction({
-    required this.icon,
-    required this.onTap,
-    required this.color,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(appPaddingSmall),
-        decoration: BoxDecoration(
-          color: barColor(context),
-          shape: BoxShape.circle,
-          // A hairline keeps the dots readable on pale cards.
-          border: Border.all(
-            color: primaryTextColor(context).withValues(alpha: 0.18),
-            width: 0.5,
-          ),
-        ),
-        child: Icon(icon, size: 18, color: color),
-      ),
-    );
   }
 }

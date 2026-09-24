@@ -129,6 +129,9 @@ class AppText {
     'folder_name': 'Folder name',
     'folder_empty': 'This folder is empty',
     'trash_empty': 'Empty trash',
+    'archive_empty': 'Nothing archived',
+    'unarchive': 'Unarchive',
+    'archive_done': 'Archived',
     'note': 'note',
     'notes': 'notes',
     'search': 'Search',
@@ -270,10 +273,13 @@ class AppText {
     'option_update': 'Check for update',
     'update_up_to_date': 'You are up to date',
     'update_unavailable': 'Update check unavailable',
+    'option_archive': 'Archive',
     'option_recycle_bin': 'Recycle bin',
     'option_reset_data': 'Reset data',
     'desc_bug_report':
         "Send optional crash diagnostics without note content or a persistent user identifier. You can withdraw consent at any time.",
+    'desc_archive':
+        'Archived notes and tasks leave Home and their folders until you unarchive them.',
     'desc_recycle_bin':
         'Deleted notes are kept in the recycle bin for 30 days before being permanently removed.',
     'desc_reset_data':
@@ -394,6 +400,9 @@ class AppText {
     'folder_name': 'Nom du dossier',
     'folder_empty': 'Ce dossier est vide',
     'trash_empty': 'Corbeille vide',
+    'archive_empty': 'Aucune archive',
+    'unarchive': 'Désarchiver',
+    'archive_done': 'Archivé',
     'note': 'note',
     'notes': 'notes',
     'search': 'Rechercher',
@@ -537,10 +546,13 @@ class AppText {
     'option_update': 'Mise à jour',
     'update_up_to_date': 'Vous êtes à jour',
     'update_unavailable': 'Vérification indisponible',
+    'option_archive': 'Archive',
     'option_recycle_bin': 'Corbeille',
     'option_reset_data': 'Réinitialiser',
     'desc_bug_report':
         "Envoyez des diagnostics facultatifs sans contenu de note ni identifiant persistant d’usager. Vous pouvez retirer votre consentement à tout moment.",
+    'desc_archive':
+        'Les notes et tâches archivées quittent l\'accueil et leurs dossiers jusqu\'à leur désarchivage.',
     'desc_recycle_bin':
         'Les notes supprimées sont conservées dans la corbeille pendant 30 jours avant d\'être définitivement effacées.',
     'desc_reset_data':
@@ -661,6 +673,9 @@ class AppText {
     'folder_name': 'Anaran\'ny rakitra',
     'folder_empty': 'Foana ity rakitra ity',
     'trash_empty': 'Foana ny fako',
+    'archive_empty': 'Tsy misy tahiry',
+    'unarchive': 'Esory amin\'ny tahiry',
+    'archive_done': 'Voatahiry',
     'note': 'naoty',
     'notes': 'naoty',
     'search': 'Karohy',
@@ -804,6 +819,7 @@ class AppText {
     'option_update': 'Hizaha vao',
     'update_up_to_date': 'Efa farany ianao',
     'update_unavailable': 'Tsy afaka manamarina ny fanavaozana',
+    'option_archive': 'Tahiry',
     'option_recycle_bin': 'Fitoeram-pako',
     'option_reset_data': 'Hamerina ny angona',
     'desc_bug_report':
