@@ -418,6 +418,61 @@ void main() {
       },
     );
 
+    test('migrates a v9 database and indexes it for search', () async {
+      final String path = '${tempDir.path}/tano_notes.db';
+      final Database legacy = await databaseFactoryFfi.openDatabase(path);
+      await legacy.execute('''
+        CREATE TABLE notes (
+          id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'task')),
+          title TEXT,
+          content TEXT,
+          description TEXT NOT NULL DEFAULT '',
+          date TEXT,
+          important INTEGER,
+          category TEXT,
+          isDeleted INTEGER DEFAULT 0,
+          isLocked INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          attachments TEXT,
+          coverImage TEXT,
+          folderId TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('''
+        CREATE TABLE folders (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          date TEXT,
+          important INTEGER DEFAULT 0,
+          category TEXT,
+          isLocked INTEGER DEFAULT 0,
+          isDeleted INTEGER DEFAULT 0,
+          deletedAt TEXT,
+          coverImage TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )
+      ''');
+      await legacy.execute('PRAGMA user_version = 9');
+      await legacy.insert('notes', <String, Object?>{
+        'id': 'legacy',
+        'title': 'Legacy note',
+        'content': 'searchable body',
+        'description': '',
+        'date': '2026-01-01 00:00:00.000',
+        'isDeleted': 0,
+        'isLocked': 0,
+      });
+      await legacy.close();
+
+      // Opening at v10 creates the FTS index and backfills the existing notes.
+      final List<Note> found = await repository.searchNotes('legacy');
+      expect(found.map((Note n) => n.id), <String>['legacy']);
+    });
+
     test('searchNotes ignores punctuation and never treats it as a wildcard', () async {
       await repository.upsertNote(
         Note(

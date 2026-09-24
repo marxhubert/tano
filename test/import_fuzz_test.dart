@@ -164,4 +164,41 @@ void main() {
       contains('n250'),
     );
   });
+
+  test('importing 2000 notes keeps resident memory bounded', () async {
+    final SQLiteNotesRepository repository = SQLiteNotesRepository(
+      databaseFactoryOverride: databaseFactoryFfi,
+      databasePath: '${tempDir.path}/scale.db',
+      documentsDirectory: () async => tempDir,
+    );
+    // Small enough that the JSON manifest stays under the 4 MiB limit; the
+    // point is the note count, not the payload size.
+    final String body = 'x' * 256;
+    final List<Note> notes = <Note>[
+      for (int i = 0; i < 2000; i++)
+        Note(
+          id: 'n$i',
+          title: 'Note $i',
+          content: body,
+          date: '2026-01-01 00:00:00.000',
+        ),
+    ];
+    final Uint8List bytes = await ExportService(
+      attachments: store,
+    ).build(notes: notes);
+
+    final int before = ProcessInfo.currentRss;
+    final ImportResult result = await ImportService(
+      repository: repository,
+      attachments: store,
+      auth: _OpenAuth(),
+    ).import(bytes);
+    final int after = ProcessInfo.currentRss;
+
+    expect(result.added, 2000);
+    // The archive expansion is bounded at 128 MiB; the import must not multiply
+    // it. The ceiling is generous so the test stays robust across hosts and GC
+    // timing, but a catastrophic leak would still trip it.
+    expect(after - before, lessThan(512 * 1024 * 1024));
+  });
 }
