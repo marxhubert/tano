@@ -416,10 +416,20 @@ class SQLiteNotesRepository
   }
 
   @override
-  Future<void> insertImportedNotes(List<Note> notes) async {
+  Future<void> insertImportedNotes(
+    List<Note> notes, {
+    List<Folder> folders = const <Folder>[],
+  }) async {
     final db = await _database;
-    await db.transaction((txn) async {
-      for (final note in notes) {
+    await db.transaction((Transaction txn) async {
+      for (final Folder folder in folders) {
+        await txn.insert(
+          'folders',
+          folder.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
+      for (final Note note in notes) {
         await txn.insert(
           'notes',
           note.toJson(),

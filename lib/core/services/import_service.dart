@@ -3,8 +3,10 @@ import 'dart:typed_data';
 
 import 'package:uuid/uuid.dart';
 import 'package:tano/core/services/archive_validation.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/services/export_service.dart';
@@ -18,12 +20,17 @@ class ImportResult {
     required this.skipped,
     required this.unlocked,
     required this.attachments,
+    this.foldersAdded = 0,
   });
 
   final int added;
   final int skipped;
   final int unlocked;
   final int attachments;
+
+  /// Folders created by this import. A folder already present under the same
+  /// id is skipped, and its notes attach to the existing one.
+  final int foldersAdded;
 }
 
 /// Raised when an export cannot be opened.
@@ -75,13 +82,14 @@ class ImportService {
 
     late final Map<String, Uint8List> files;
     late final List<Note> incoming;
+    late final List<Folder> incomingFolders;
     try {
       files = ArchiveValidation.read(zipped);
       final manifest = files[ExportService.manifestName];
       if (manifest == null) throw const FormatException('Missing manifest');
       final decoded = jsonDecode(utf8.decode(manifest));
       if (decoded is! Map<String, dynamic> ||
-          ![1, 2].contains(decoded['version']) ||
+          ![1, 2, 3].contains(decoded['version']) ||
           decoded['notes'] is! List) {
         throw const FormatException('Unsupported manifest');
       }
@@ -90,6 +98,37 @@ class ImportService {
       incoming = rows
           .map((row) => Note.fromJson(row as Map<String, dynamic>))
           .toList();
+
+      final Object? folderRows = decoded['folders'];
+      if (folderRows is List) {
+        if (folderRows.length > 10000) {
+          throw const FormatException('Too many folders');
+        }
+        incomingFolders = folderRows
+            .map((row) => Folder.fromJson(row as Map<String, dynamic>))
+            .toList();
+      } else {
+        // Manifests 1 and 2 carried no folder list.
+        incomingFolders = <Folder>[];
+      }
+
+      final folderIds = <String>{};
+      for (final Folder folder in incomingFolders) {
+        if (folder.id.trim().isEmpty ||
+            folder.id.length > 256 ||
+            !folderIds.add(folder.id) ||
+            folder.isDeleted) {
+          throw const FormatException('Invalid folder');
+        }
+        final String? cover = folder.coverImage;
+        if (cover != null) {
+          AttachmentsStore.validateName(cover);
+          if (!files.containsKey('${ExportService.attachmentsFolder}$cover')) {
+            throw const FormatException('Missing attachment');
+          }
+        }
+      }
+
       for (final note in incoming) {
         if (note.id.trim().isEmpty || note.id.length > 256) {
           throw const FormatException('Invalid note id');
@@ -111,10 +150,39 @@ class ImportService {
       for (final note in await _repository.loadNotes()) note.id,
       for (final note in await _repository.loadTrashNotes()) note.id,
     };
-    final canLock = await _auth.isAvailable();
+    final Set<String> existingFolderIds = <String>{};
+    if (_repository is FoldersRepository) {
+      final FoldersRepository folders = _repository as FoldersRepository;
+      existingFolderIds.addAll(
+        (await folders.loadFolders()).map((Folder folder) => folder.id),
+      );
+      existingFolderIds.addAll(
+        (await folders.loadTrashFolders()).map((Folder folder) => folder.id),
+      );
+    }
+
+    final bool canLock = await _auth.isAvailable();
+    var unlocked = 0;
+
+    // A folder whose id is already known is not created again: its notes attach
+    // to the existing one. A folder arriving twice is deduplicated the same way.
+    // A locked folder is unlocked on a device that cannot lock, exactly like a
+    // note, so it never becomes unreachable.
+    final List<Folder> foldersToInsert = <Folder>[];
+    for (var folder in incomingFolders) {
+      if (!existingFolderIds.add(folder.id)) continue;
+      if (folder.isLocked && !canLock) {
+        folder = folder.copyWith(isLocked: false);
+        unlocked++;
+      }
+      foldersToInsert.add(folder);
+    }
+    final Set<String> archiveFolderIds = <String>{
+      for (final Folder folder in incomingFolders) folder.id,
+    };
+
     final pending = <Note>[];
     var skipped = 0;
-    var unlocked = 0;
     for (var note in incoming) {
       if (!existingIds.add(note.id)) {
         skipped++;
@@ -124,28 +192,41 @@ class ImportService {
         note = note.copyWith(isLocked: false);
         unlocked++;
       }
-      // v1 does not carry folders; never attach an import to an unrelated
-      // local folder just because their identifiers happen to match.
-      pending.add(note.withoutFolder());
+      // Only a folder the archive itself carries keeps the note filed. A
+      // manifest without folders (v1/v2), or a note pointing elsewhere, lands
+      // unfiled instead of attaching to an unrelated local folder.
+      if (note.folderId == null || !archiveFolderIds.contains(note.folderId)) {
+        note = note.withoutFolder();
+      }
+      pending.add(note);
     }
     final created = <String>[];
     final names = <String, String>{};
     try {
+      Future<void> copyAttachment(String name) async {
+        if (names.containsKey(name)) return;
+        final bytes = files['${ExportService.attachmentsFolder}$name']!;
+        var target = name;
+        while (!await _attachments.writeIfAbsent(target, bytes)) {
+          target = '${const Uuid().v4()}_$name';
+        }
+        created.add(target);
+        names[name] = target;
+      }
+
       for (final note in pending) {
         for (final name in [
           ...note.attachments,
           if (note.coverImage != null) note.coverImage!,
         ]) {
-          if (names.containsKey(name)) continue;
-          final bytes = files['${ExportService.attachmentsFolder}$name']!;
-          var target = name;
-          while (!await _attachments.writeIfAbsent(target, bytes)) {
-            target = '${const Uuid().v4()}_$name';
-          }
-          created.add(target);
-          names[name] = target;
+          await copyAttachment(name);
         }
       }
+      for (final folder in foldersToInsert) {
+        final String? cover = folder.coverImage;
+        if (cover != null) await copyAttachment(cover);
+      }
+
       final toStore = pending
           .map(
             (note) => note.copyWith(
@@ -158,12 +239,28 @@ class ImportService {
             ),
           )
           .toList();
+      final List<Folder> foldersToStore = foldersToInsert
+          .map(
+            (folder) => folder.coverImage == null
+                ? folder
+                : folder.copyWith(coverImage: names[folder.coverImage]),
+          )
+          .toList();
       if (_repository is AtomicNoteImporter) {
         // A concurrent collision aborts the complete batch, not a partial import.
-        await (_repository as AtomicNoteImporter).insertImportedNotes(toStore);
+        await (_repository as AtomicNoteImporter).insertImportedNotes(
+          toStore,
+          folders: foldersToStore,
+        );
       } else {
         // Compatibility for alternate repositories; production uses SQLite's
         // atomic implementation. Such adapters must provide atomic imports.
+        if (_repository is FoldersRepository) {
+          final FoldersRepository folders = _repository as FoldersRepository;
+          for (final folder in foldersToStore) {
+            await folders.upsertFolder(folder);
+          }
+        }
         for (final note in toStore) {
           await _repository.upsertNote(note);
         }
@@ -184,6 +281,7 @@ class ImportService {
       skipped: skipped,
       unlocked: unlocked,
       attachments: attachments,
+      foldersAdded: foldersToInsert.length,
     );
   }
 

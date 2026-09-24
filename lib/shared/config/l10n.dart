@@ -186,7 +186,7 @@ class AppText {
     'import_failed': 'Import failed',
     'import_too_large': 'This export exceeds the 64 MiB limit.',
     'import_done':
-        '{added} notes added, {skipped} skipped, {unlocked} unlocked.',
+        '{added} notes added, {folders} folders, {skipped} skipped, {unlocked} unlocked.',
     'import_clear_warning':
         'Cleartext exports are not protected. Keep them safe.',
     'quit_app': 'Quit',
@@ -452,7 +452,7 @@ class AppText {
     'import_failed': "Échec de l'import",
     'import_too_large': "Cet export dépasse la limite de 64 Mio.",
     'import_done':
-        '{added} notes ajoutées, {skipped} ignorées, {unlocked} déverrouillées.',
+        '{added} notes ajoutées, {folders} dossiers, {skipped} ignorées, {unlocked} déverrouillées.',
     'import_clear_warning':
         "Les exports en clair ne sont pas protégés. Gardez-les en sécurité.",
     'quit_app': 'Quitter',
@@ -720,7 +720,7 @@ class AppText {
     'import_failed': 'Tsy nahomby ny fampidirana',
     'import_too_large': 'Mihoatra ny fetra 64 MiB ity rakitra ity.',
     'import_done':
-        '{added} naoty nampidirina, {skipped} nolavina, {unlocked} navahana.',
+        '{added} naoty nampidirina, {folders} lahatahiry, {skipped} nolavina, {unlocked} navahana.',
     'import_clear_warning':
         'Tsy voaaro ny fanondranana mazava. Tano tsara izy ireo.',
     'quit_app': 'Hiala',

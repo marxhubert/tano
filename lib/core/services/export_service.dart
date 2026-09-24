@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
 import 'package:tano/core/services/local_cipher.dart';
@@ -56,23 +57,35 @@ class ExportService {
   final Argon2Params _argon2;
 
   static const String magic = 'TANO1';
+
+  /// Version of the encrypted container, not of the manifest.
   static const int version = 1;
+
+  /// Current manifest version: notes and their attachments, plus the folders
+  /// that hold them. The importer still accepts the older 1 (notes) and 2
+  /// (notes + tasks) manifests.
+  static const int manifestVersion = 3;
+
   static const String manifestName = 'manifest.json';
   static const String attachmentsFolder = 'attachments/';
   static const int saltLength = 16;
 
-  /// Builds the `.tano` bytes for [notes].
+  /// Builds the `.tano` bytes for [notes] and their [folders].
   ///
   /// [password] encrypts the whole archive. A cleartext export (no password)
-  /// is refused when [notes] holds a locked note, so protected content never
-  /// reaches an unprotected file.
+  /// is refused as soon as a locked note or folder is selected, so protected
+  /// content never reaches an unprotected file. Folders carry their lock flag
+  /// and, when present, their cover attachment.
   Future<Uint8List> build({
     required List<Note> notes,
+    List<Folder> folders = const <Folder>[],
     String? password,
   }) async {
-    if (password == null && notes.any((Note note) => note.isLocked)) {
+    if (password == null &&
+        (notes.any((Note note) => note.isLocked) ||
+            folders.any((Folder folder) => folder.isLocked))) {
       throw const ExportException(
-        'Locked notes cannot be written to a cleartext export.',
+        'Locked content cannot be written to a cleartext export.',
       );
     }
     final List<Map<String, dynamic>> encoded = notes
@@ -84,8 +97,11 @@ class ExportService {
       ArchiveFile.string(
         manifestName,
         jsonEncode(<String, dynamic>{
-          'version': notes.any((note) => note.isTask) ? 2 : version,
+          'version': manifestVersion,
           'notes': encoded,
+          'folders': folders
+              .map((Folder folder) => folder.toJson())
+              .toList(),
         }),
       ),
     );
@@ -94,6 +110,10 @@ class ExportService {
     for (final Note note in notes) {
       names.addAll(note.attachments);
       final String? cover = note.coverImage;
+      if (cover != null) names.add(cover);
+    }
+    for (final Folder folder in folders) {
+      final String? cover = folder.coverImage;
       if (cover != null) names.add(cover);
     }
     for (final String name in names) {

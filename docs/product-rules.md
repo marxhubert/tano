@@ -21,10 +21,10 @@ keeps both actions visible for every item.
 Export offers encrypted and cleartext files. Both require legitimate access to
 protected source objects. A cleartext export is refused while the selection holds a
 locked object: locked content only ever leaves through a password-encrypted export,
-where lock flags remain. The current manifests support notes (v1) and task lists
-(v2), with attachments.
-Neither carries folders or projects. Task lists are free and follow note access rules.
-These rules apply to those future objects when their format and persistence ship.
+where lock flags remain. Manifest v3 carries the notes, the tasks, their attachments
+and the folders that hold them. Projects are still not carried. Task lists are free
+and follow note access rules; these rules apply to projects when their format and
+persistence ship.
 
 Import preserves locks on a device with a credential. On a device without one, it
 unlocks imported objects and reports the number affected. Existing local objects

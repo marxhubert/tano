@@ -86,9 +86,10 @@ would absorb already lives in one place behind the helpers above.
 ## Domain and backup work
 
 Task lists now share note editing and storage; see [task lists](tasks.md).
-Manifest v2 preserves task types. A future format must carry folders and relations.
-Extract transaction-aware commands, measure large-data search/pagination and move
-expensive work off the UI. Project persistence remains separate future work.
+Manifest v3 carries notes, tasks, their attachments and folders; project data and
+cross-note relations are still out. Extract the remaining transaction-aware commands,
+measure large-data search and move expensive work off the UI. Project persistence
+remains separate future work.
 
 ## Premium and collaboration
 

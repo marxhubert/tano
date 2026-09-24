@@ -1,3 +1,4 @@
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 
 /// Contract for persisting notes.
@@ -33,7 +34,13 @@ abstract class NotesRepository {
 
 /// Optional capability for an all-or-nothing transfer, including ID conflicts.
 abstract interface class AtomicNoteImporter {
-  Future<void> insertImportedNotes(List<Note> notes);
+  /// Inserts imported [folders] then [notes] in one transaction, so a conflict
+  /// on either side leaves the store untouched. Folders come first because a
+  /// note may reference one.
+  Future<void> insertImportedNotes(
+    List<Note> notes, {
+    List<Folder> folders = const <Folder>[],
+  });
 }
 
 /// Optional capability: apply a set of note writes in one transaction.

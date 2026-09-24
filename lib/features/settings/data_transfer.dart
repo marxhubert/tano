@@ -33,11 +33,13 @@ Future<void> exportData(BuildContext context) async {
             : note,
       )
       .toList();
-  if (notes.any((note) => note.isLocked)) {
+  final bool hasLockedFolder = folders.any((Folder folder) => folder.isLocked);
+  if (notes.any((note) => note.isLocked) || hasLockedFolder) {
     if (!await getIt<AuthService>().authenticate()) return;
   }
   if (!context.mounted) return;
   final int lockedCount = notes.where((Note n) => n.isLocked).length;
+  final bool hasLockedContent = lockedCount > 0 || hasLockedFolder;
 
   bool encrypted = true;
   String? error;
@@ -50,7 +52,7 @@ Future<void> exportData(BuildContext context) async {
     onEncryptedChanged: (bool value) => encrypted = value,
     error: () => error,
     onErrorChanged: (String? value) => error = value,
-    hasLockedNotes: lockedCount > 0,
+    hasLockedContent: hasLockedContent,
   );
 
   final password = passwordController.text;
@@ -61,6 +63,7 @@ Future<void> exportData(BuildContext context) async {
   try {
     bytes = await ExportService().build(
       notes: notes,
+      folders: folders,
       password: encrypted ? password : null,
     );
   } on ExportException catch (error) {
@@ -91,15 +94,15 @@ Future<bool?> _showExportDialog(
   required ValueChanged<bool> onEncryptedChanged,
   required String? Function() error,
   required ValueChanged<String?> onErrorChanged,
-  required bool hasLockedNotes,
+  required bool hasLockedContent,
 }) {
   return showPlatformDialog<bool>(
     context: context,
     builder: (BuildContext dialogContext, bool isApple) => StatefulBuilder(
       builder: (BuildContext context, StateSetter setDialogState) {
         final bool encrypted = isEncrypted();
-        // A locked note must never land in a cleartext file, so the switch is
-        // frozen on as soon as the selection contains one.
+        // Locked content must never land in a cleartext file, so the switch is
+        // frozen on as soon as the selection contains any.
         void setEncrypted(bool value) => setDialogState(() {
           onEncryptedChanged(value);
           onErrorChanged(null);
@@ -111,7 +114,7 @@ Future<bool?> _showExportDialog(
                 Expanded(child: Text(AppText.tr('export_encrypt'))),
                 CupertinoSwitch(
                   value: encrypted,
-                  onChanged: hasLockedNotes ? null : setEncrypted,
+                  onChanged: hasLockedContent ? null : setEncrypted,
                 ),
               ],
             )
@@ -120,7 +123,7 @@ Future<bool?> _showExportDialog(
               contentPadding: EdgeInsets.zero,
               title: Text(AppText.tr('export_encrypt')),
               value: encrypted,
-              onChanged: hasLockedNotes ? null : setEncrypted,
+              onChanged: hasLockedContent ? null : setEncrypted,
             ),
           if (encrypted) ...<Widget>[
             if (isApple) ...<Widget>[
@@ -159,7 +162,7 @@ Future<bool?> _showExportDialog(
               style: const TextStyle(fontSize: TanoText.tiny),
             ),
           ],
-          if (hasLockedNotes) ...<Widget>[
+          if (hasLockedContent) ...<Widget>[
             if (!isApple) const SizedBox(height: appPaddingTight),
             Text(
               AppText.tr('export_locked_required'),
@@ -263,6 +266,7 @@ Future<void> importData(BuildContext context) async {
       context,
       AppText.tr('import_done', <String, String>{
         'added': '${result.added}',
+        'folders': '${result.foldersAdded}',
         'skipped': '${result.skipped}',
         'unlocked': '${result.unlocked}',
       }),

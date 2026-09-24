@@ -25,11 +25,12 @@ See [task lists](tasks.md) for editing and storage details.
 grant blanket permission for arbitrary linked notes. Future remote authorization
 must live at command/protocol boundaries, not only in widgets.
 
-Import validates a bounded v1/v2 manifest archive before writing files. It resolves attachment
-name collisions and inserts notes in one SQLite transaction. Imported notes have no
-folder because neither manifest carries folder metadata. Existing IDs, including trash,
-are skipped. Filesystem and SQLite writes are not one atomic transaction: a crash
-can leave encrypted orphans, collected at the next startup before editing begins.
+Import validates a bounded v1/v2/v3 manifest archive before writing files. It resolves
+attachment name collisions and inserts the folders and their notes in one SQLite
+transaction. A note keeps its folder only when the archive carries that folder; a
+folder already present under the same id is not duplicated. Existing IDs, including
+trash, are skipped. Filesystem and SQLite writes are not one atomic transaction: a
+crash can leave encrypted orphans, collected at the next startup before editing begins.
 
 ## Development data
 

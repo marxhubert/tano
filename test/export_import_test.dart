@@ -4,8 +4,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tano/core/models/folder.dart';
 import 'package:tano/core/models/note.dart';
 import 'package:tano/core/repositories/attachments_store.dart';
+import 'package:tano/core/repositories/folders_repository.dart';
 import 'package:tano/core/repositories/notes_repository.dart';
 import 'package:tano/core/services/auth_service.dart';
 import 'package:tano/core/services/export_service.dart';
@@ -23,10 +25,13 @@ class _FakeAuth extends AuthService {
   Future<bool> authenticate({String? reason}) async => available;
 }
 
-class _InMemoryRepository implements NotesRepository {
-  _InMemoryRepository([List<Note>? notes]) : notes = notes ?? <Note>[];
+class _InMemoryRepository implements NotesRepository, FoldersRepository {
+  _InMemoryRepository([List<Note>? notes, List<Folder>? folders])
+    : notes = notes ?? <Note>[],
+      folders = folders ?? <Folder>[];
 
   final List<Note> notes;
+  final List<Folder> folders;
 
   @override
   Future<List<Note>> loadNotes() async =>
@@ -60,6 +65,36 @@ class _InMemoryRepository implements NotesRepository {
 
   @override
   Future<void> deleteAllNotes() async => notes.clear();
+
+  @override
+  Future<List<Folder>> loadFolders() async =>
+      folders.where((Folder f) => !f.isDeleted).toList();
+
+  @override
+  Future<List<Folder>> loadTrashFolders() async =>
+      folders.where((Folder f) => f.isDeleted).toList();
+
+  @override
+  Future<void> upsertFolder(Folder folder) async {
+    final int index = folders.indexWhere((Folder f) => f.id == folder.id);
+    if (index == -1) {
+      folders.add(folder);
+    } else {
+      folders[index] = folder;
+    }
+  }
+
+  @override
+  Future<void> trashFolder(String id) async {}
+
+  @override
+  Future<void> restoreFolder(String id) async {}
+
+  @override
+  Future<void> deleteFolderPermanently(String id) async {}
+
+  @override
+  Future<void> deleteAllFolders() async => folders.clear();
 }
 
 Note _note({
@@ -68,6 +103,7 @@ Note _note({
   String content = 'hello',
   bool isLocked = false,
   List<String> attachments = const <String>[],
+  String? folderId,
 }) {
   return Note(
     id: id,
@@ -76,8 +112,17 @@ Note _note({
     date: '2026-01-01 00:00:00.000',
     isLocked: isLocked,
     attachments: attachments,
+    folderId: folderId,
   );
 }
+
+Folder _folder({String id = 'f1', String name = 'Work', bool isLocked = false}) =>
+    Folder(
+      id: id,
+      name: name,
+      date: '2026-01-01 00:00:00.000',
+      isLocked: isLocked,
+    );
 
 void main() {
   late Directory sourceDir;
@@ -291,5 +336,84 @@ void main() {
       throwsA(isA<ImportException>()),
     );
     expect(repository.notes, isEmpty);
+  });
+
+  test('cleartext export refuses to include a locked folder', () async {
+    expect(
+      () => exporter().build(
+        notes: <Note>[_note()],
+        folders: <Folder>[_folder(isLocked: true)],
+      ),
+      throwsA(isA<ExportException>()),
+    );
+  });
+
+  test('a folder and its note round-trip together', () async {
+    final Uint8List bytes = await exporter().build(
+      notes: <Note>[_note(folderId: 'f1')],
+      folders: <Folder>[_folder()],
+    );
+
+    final ImportResult result = await importer().import(bytes);
+
+    expect(result.foldersAdded, 1);
+    expect(repository.folders.map((Folder f) => f.id), <String>['f1']);
+    expect((await repository.loadNotes()).single.folderId, 'f1');
+  });
+
+  test('an existing folder is kept and the note attaches to it', () async {
+    await repository.upsertFolder(_folder(name: 'Already there'));
+
+    final Uint8List bytes = await exporter().build(
+      notes: <Note>[_note(folderId: 'f1')],
+      folders: <Folder>[_folder(name: 'Imported')],
+    );
+
+    final ImportResult result = await importer().import(bytes);
+
+    expect(result.foldersAdded, 0);
+    expect(repository.folders, hasLength(1));
+    expect(repository.folders.single.name, 'Already there');
+    expect((await repository.loadNotes()).single.folderId, 'f1');
+  });
+
+  test('a note pointing outside the archive lands unfiled', () async {
+    final Uint8List bytes = await exporter().build(
+      notes: <Note>[_note(folderId: 'ghost')],
+    );
+
+    await importer().import(bytes);
+
+    expect((await repository.loadNotes()).single.folderId, isNull);
+  });
+
+  test('a locked folder is unlocked when the device cannot lock', () async {
+    final Uint8List bytes = await exporter().build(
+      notes: <Note>[],
+      folders: <Folder>[_folder(isLocked: true)],
+      password: 'secret123',
+    );
+
+    final ImportResult result = await importer(
+      canLock: false,
+    ).import(bytes, password: 'secret123');
+
+    expect(result.unlocked, 1);
+    expect(repository.folders.single.isLocked, isFalse);
+  });
+
+  test('a locked folder stays locked when the device can lock', () async {
+    final Uint8List bytes = await exporter().build(
+      notes: <Note>[],
+      folders: <Folder>[_folder(isLocked: true)],
+      password: 'secret123',
+    );
+
+    final ImportResult result = await importer(
+      canLock: true,
+    ).import(bytes, password: 'secret123');
+
+    expect(result.unlocked, 0);
+    expect(repository.folders.single.isLocked, isTrue);
   });
 }

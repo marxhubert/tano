@@ -49,6 +49,53 @@ void main() {
       expect(notes.single.title, 'Keep');
     });
 
+    test('insertImportedNotes stores folders before their notes', () async {
+      await repository.insertImportedNotes(
+        <Note>[
+          Note(
+            id: 'n1',
+            title: 'In folder',
+            content: '',
+            date: '2026-01-01',
+            folderId: 'f1',
+          ),
+        ],
+        folders: <Folder>[
+          Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
+        ],
+      );
+
+      expect((await repository.loadFolders()).single.id, 'f1');
+      expect((await repository.loadNotes()).single.folderId, 'f1');
+    });
+
+    test('a note conflict rolls back the imported folders too', () async {
+      await repository.upsertNote(
+        Note(id: 'n1', title: 'Existing', content: '', date: '2026-01-01'),
+      );
+
+      await expectLater(
+        repository.insertImportedNotes(
+          <Note>[
+            Note(
+              id: 'n1',
+              title: 'Conflict',
+              content: '',
+              date: '2026-01-01',
+              folderId: 'f1',
+            ),
+          ],
+          folders: <Folder>[
+            Folder(id: 'f1', name: 'Work', date: '2026-01-01'),
+          ],
+        ),
+        throwsA(isA<DatabaseException>()),
+      );
+
+      expect(await repository.loadFolders(), isEmpty);
+      expect((await repository.loadNotes()).single.title, 'Existing');
+    });
+
     test('a fresh install starts empty', () async {
       final notes = await repository.loadNotes();
 
